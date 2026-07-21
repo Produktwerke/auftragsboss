@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+
+# Environment — enthält API-Keys, NIEMALS committen
+.env
+
+# Datenbank (lokale Entwicklung)
+prisma/*.db
+prisma/*.db-journal
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db

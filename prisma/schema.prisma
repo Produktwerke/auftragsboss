@@ -1,0 +1,78 @@
+// VoiceProtokoll Guard — Datenmodell
+// SQLite für Dev; für Produktion provider auf "postgresql" ändern.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Der registrierte Handwerksbetrieb. Identifikation NUR über die
+// WhatsApp-Nummer — kein Login, kein Passwort (Kernprinzip!).
+model Handwerker {
+  id             String      @id @default(cuid())
+  whatsappNummer String      @unique // E.164, z.B. "4917612345678"
+  name           String
+  firma          String
+  email          String // Zieladresse für Protokoll-Mails
+  gewerk         String? // z.B. "Sanitär" — hilft der KI beim Strukturieren
+  erstelltAm     DateTime    @default(now())
+  protokolle     Protokoll[]
+}
+
+// Ein archiviertes Auftrags-Protokoll — der eigentliche Wert des Systems.
+// Unveränderlich nach Erstellung (Beweissicherungs-Charakter).
+model Protokoll {
+  id           String   @id @default(cuid())
+  handwerkerId String
+  handwerker   Handwerker @relation(fields: [handwerkerId], references: [id])
+
+  // Rohdaten — bewusst aufbewahrt (Nachvollziehbarkeit / Streitfall)
+  whatsappMediaId String? // Meta-Media-ID der Original-Sprachnachricht
+  transkript      String // Whisper-Rohtranskript, unverändert
+
+  // Strukturierte Daten (von Claude extrahiert)
+  kundeName      String?
+  kundeAdresse   String?
+  gewerk         String?
+  leistungenJson String // JSON: [{beschreibung, menge}]
+  materialJson   String // JSON: [string]
+  arbeitszeit    String?
+  besonderheiten String?
+  folgetermin    String?
+
+  // Fertiger, kundenfähiger Protokolltext (zum Weiterleiten)
+  protokollText String
+
+  auftragsDatum DateTime @default(now())
+  erstelltAm    DateTime @default(now())
+
+  gewaehrleistung Gewaehrleistung?
+
+  @@index([handwerkerId, auftragsDatum])
+}
+
+// Gewährleistungs-Tracking nach § 634a BGB:
+//   - 2 Jahre für Werkleistungen (Standard)
+//   - 5 Jahre für Arbeiten an Bauwerken
+// Erinnerung 3 Monate vor Ablauf = Wartungs-Verkaufschance,
+// Erinnerung bei Ablauf = Haftungsende dokumentiert.
+model Gewaehrleistung {
+  id          String    @id @default(cuid())
+  protokollId String    @unique
+  protokoll   Protokoll @relation(fields: [protokollId], references: [id])
+
+  typ         String // "WERK_2_JAHRE" | "BAUWERK_5_JAHRE"
+  beginn      DateTime // = Auftrags-/Abnahmedatum
+  ablauf      DateTime // beginn + 2 bzw. 5 Jahre
+  vorwarnung  DateTime // ablauf - 3 Monate
+
+  vorwarnungGesendet Boolean @default(false)
+  ablaufGesendet     Boolean @default(false)
+
+  @@index([vorwarnung, vorwarnungGesendet])
+  @@index([ablauf, ablaufGesendet])
+}

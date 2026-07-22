@@ -1,13 +1,31 @@
 // Schritt 1 der KI-Pipeline: Sprachnachricht → Text.
 // WhatsApp liefert Sprachnachrichten als OGG/Opus — Whisper verarbeitet
-// das Format direkt, ohne Konvertierung.
+// das Format direkt, ohne Konvertierung. Für Tests funktionieren auch
+// m4a/mp3/wav (typische Handy-Sprachmemos).
 import OpenAI, { toFile } from "openai";
-import { config } from "../config.js";
+import { aiConfig } from "../config.js";
 
-const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
+const MIME_TYPEN: Record<string, string> = {
+  ogg: "audio/ogg",
+  oga: "audio/ogg",
+  opus: "audio/ogg",
+  m4a: "audio/mp4",
+  mp4: "audio/mp4",
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  webm: "audio/webm",
+};
 
-export async function transkribiereAudio(audio: Buffer, dateiname = "sprachnachricht.ogg"): Promise<string> {
-  const file = await toFile(audio, dateiname, { type: "audio/ogg" });
+export async function transkribiereAudio(
+  audio: Buffer,
+  dateiname = "sprachnachricht.ogg",
+): Promise<string> {
+  const endung = dateiname.split(".").pop()?.toLowerCase() ?? "ogg";
+  const openai = new OpenAI({ apiKey: aiConfig().OPENAI_API_KEY });
+
+  const file = await toFile(audio, dateiname, {
+    type: MIME_TYPEN[endung] ?? "audio/ogg",
+  });
 
   const result = await openai.audio.transcriptions.create({
     file,

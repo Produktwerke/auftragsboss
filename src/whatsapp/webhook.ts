@@ -9,7 +9,7 @@
 // TODO (vor Produktion): X-Hub-Signature-256 gegen das App-Secret prüfen,
 // damit nur Meta den Endpoint füttern kann.
 import type { FastifyInstance } from "fastify";
-import { config } from "../config.js";
+import { whatsappConfig } from "../config.js";
 import { verarbeiteSprachnachricht } from "../pipeline.js";
 
 // Minimale Typen für den Ausschnitt des Meta-Payloads, den wir brauchen
@@ -32,7 +32,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
   // ── Verifizierungs-Handshake ──────────────────────────────
   app.get("/webhook/whatsapp", async (req, reply) => {
     const q = req.query as Record<string, string>;
-    if (q["hub.mode"] === "subscribe" && q["hub.verify_token"] === config.WHATSAPP_VERIFY_TOKEN) {
+    if (q["hub.mode"] === "subscribe" && q["hub.verify_token"] === whatsappConfig().WHATSAPP_VERIFY_TOKEN) {
       return reply.send(q["hub.challenge"]);
     }
     return reply.code(403).send("Verifizierung fehlgeschlagen");

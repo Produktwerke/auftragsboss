@@ -1,14 +1,15 @@
 // Text-Antworten an den Handwerker zurück auf WhatsApp senden —
 // Bestätigung ("Protokoll ist unterwegs 📬") oder Fehlerhinweis.
-import { config } from "../config.js";
+import { whatsappConfig } from "../config.js";
 
 const GRAPH_BASE = "https://graph.facebook.com/v21.0";
 
 export async function sendeWhatsAppText(anNummer: string, text: string): Promise<void> {
-  const res = await fetch(`${GRAPH_BASE}/${config.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+  const cfg = whatsappConfig();
+  const res = await fetch(`${GRAPH_BASE}/${cfg.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${config.WHATSAPP_ACCESS_TOKEN}`,
+      Authorization: `Bearer ${cfg.WHATSAPP_ACCESS_TOKEN}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({

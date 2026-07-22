@@ -4,9 +4,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { config } from "../config.js";
-
-const anthropic = new Anthropic({ apiKey: config.ANTHROPIC_API_KEY });
+import { anthropicConfig } from "../config.js";
 
 export const ProtokollSchema = z.object({
   kunde: z.object({
@@ -66,6 +64,8 @@ export async function strukturiereTranskript(
   transkript: string,
   kontext: { firma: string; name: string; gewerk?: string | null },
 ): Promise<ProtokollDaten> {
+  const anthropic = new Anthropic({ apiKey: anthropicConfig().ANTHROPIC_API_KEY });
+
   const response = await anthropic.messages.parse({
     model: "claude-opus-4-8",
     max_tokens: 16000,

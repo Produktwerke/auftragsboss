@@ -11,6 +11,9 @@ dist/
 prisma/*.db
 prisma/*.db-journal
 
+# Demo-Ausgabe (generierte E-Mail-Vorschauen)
+demo-ausgabe/
+
 # Logs & OS
 *.log
 .DS_Store

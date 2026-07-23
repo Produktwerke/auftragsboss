@@ -9,6 +9,12 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// Explizite Hintergrund- UND Textfarbe: sonst kippt die Mail im Dark Mode
+// von Outlook/Gmail zu dunkler Schrift auf dunklem Grund (unlesbar).
+const RAHMEN =
+  "font-family:Segoe UI,Arial,sans-serif;max-width:640px;margin:0 auto;" +
+  "background:#ffffff;color:#1a1a1a;line-height:1.5;padding:24px;";
+
 const box = (inhalt: string, farbe = "#f6f8fa") =>
   `<div style="background:${farbe};border-radius:8px;padding:16px 20px;margin:16px 0;">${inhalt}</div>`;
 
@@ -33,14 +39,14 @@ export function protokollMail(args: {
     .join("");
 
   const html = `
-<div style="font-family:Segoe UI,Arial,sans-serif;max-width:640px;margin:0 auto;color:#1a1a1a;line-height:1.5;">
+<div style="${RAHMEN}">
   <h2 style="color:#0b5cad;">✅ Dein Protokoll ist fertig</h2>
   <p><strong>Kunde:</strong> ${escapeHtml(kunde)}${daten.kunde.adresse ? ` · ${escapeHtml(daten.kunde.adresse)}` : ""}<br>
      <strong>Datum:</strong> ${datumDE(auftragsDatum)}${daten.auftrag.gewerk ? `<br><strong>Gewerk:</strong> ${escapeHtml(daten.auftrag.gewerk)}` : ""}</p>
 
   <h3>1️⃣ Protokoll zum Weiterleiten an den Kunden</h3>
   <p style="color:#666;font-size:14px;">Einfach kopieren und per E-Mail oder WhatsApp an den Kunden schicken:</p>
-  ${box(`<div style="white-space:pre-wrap;">${escapeHtml(daten.protokoll_text)}</div>`, "#eef6ee")}
+  ${box(`<div style="white-space:pre-wrap;color:#1a1a1a;">${escapeHtml(daten.protokoll_text)}</div>`, "#eef6ee")}
 
   <h3>2️⃣ Interner Archiv-Eintrag</h3>
   ${box(`
@@ -87,7 +93,7 @@ export function gewaehrleistungsErinnerung(args: {
     return {
       betreff: `🔔 Gewährleistung läuft in 3 Monaten ab: ${kunde}`,
       html: `
-<div style="font-family:Segoe UI,Arial,sans-serif;max-width:640px;margin:0 auto;color:#1a1a1a;line-height:1.5;">
+<div style="${RAHMEN}">
   <h2 style="color:#b7791f;">🔔 Gewährleistungs-Erinnerung</h2>
   <p>Die Gewährleistung für den Auftrag bei <strong>${escapeHtml(kunde)}</strong>
      (${datumDE(auftragsDatum)}, Archiv-Nr. ${protokollId}) läuft am
@@ -108,7 +114,7 @@ export function gewaehrleistungsErinnerung(args: {
   return {
     betreff: `✅ Gewährleistung abgelaufen: ${kunde}`,
     html: `
-<div style="font-family:Segoe UI,Arial,sans-serif;max-width:640px;margin:0 auto;color:#1a1a1a;line-height:1.5;">
+<div style="${RAHMEN}">
   <h2 style="color:#2e7d32;">✅ Gewährleistung beendet</h2>
   <p>Die Gewährleistungsfrist für den Auftrag bei <strong>${escapeHtml(kunde)}</strong>
      (${datumDE(auftragsDatum)}, Archiv-Nr. ${protokollId}) ist am

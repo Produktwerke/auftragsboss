@@ -26,9 +26,8 @@ export function editorSeite(args: {
   dokument: Dokument;
   handwerker: Handwerker;
   preisliste: Preisliste;
-  kundenUrl: string;
 }): string {
-  const { dokument, preisliste, kundenUrl } = args;
+  const { dokument, preisliste } = args;
   const b = preisliste.betrieb;
   const akzent = `#${/^[0-9a-fA-F]{6}$/.test(b.farbe) ? b.farbe : "0B5CAD"}`;
   const logo = ladeLogo(b.logo);
@@ -54,7 +53,6 @@ export function editorSeite(args: {
     einleitung: dokument.einleitung,
     schlusstext: dokument.schlusstext,
     positionen,
-    kundenUrl,
     angenommen: dokument.angenommenAm !== null,
   };
 
@@ -116,12 +114,7 @@ export function editorSeite(args: {
   .btn { border:none; border-radius:8px; padding:11px 16px; font-size:15px; font-weight:600;
          cursor:pointer; background:#eef0f3; color:#333; }
   .btn:hover { background:#e2e6ea; }
-  .btn-link { background:var(--akzent); color:#fff; }
-  .btn-link:hover { background:var(--akzent); opacity:.92; }
   .status { font-size:13px; color:#2e7d32; margin-left:auto; }
-  .linkbox { display:none; margin-top:12px; gap:8px; }
-  .linkbox.sichtbar { display:flex; }
-  .linkbox input { flex:1; font-size:13px; color:#555; }
   .hinweis { background:#eaf2fb; border-radius:8px; padding:12px 14px; font-size:14px; margin-bottom:14px; }
   .warn { background:#fff8e6; }
   @media (max-width:640px){
@@ -130,7 +123,6 @@ export function editorSeite(args: {
     .kopf img { max-height:44px; max-width:120px; }
     .aktionen .zeile1 { gap:8px; }
     .btn { padding:10px 13px; font-size:14px; flex:1; }
-    .btn-link { flex-basis:100%; }
     .status { flex-basis:100%; margin-left:0; text-align:right; }
   }
 </style>
@@ -203,12 +195,7 @@ export function editorSeite(args: {
       <span class="dl-label">Herunterladen als:</span>
       <button class="btn" onclick="exportieren('pdf')">PDF</button>
       <button class="btn" onclick="exportieren('word')">Word</button>
-      <button class="btn btn-link" onclick="kundenlinkZeigen()">Link zum Angebot für den Kunden erzeugen</button>
       <span class="status" id="status"></span>
-    </div>
-    <div class="linkbox" id="linkbox">
-      <input id="linkfeld" readonly value="${escapeHtml(kundenUrl)}">
-      <button class="btn" onclick="linkKopieren()">Kopieren</button>
     </div>
   </div>
 
@@ -377,25 +364,6 @@ function val(id){ return document.getElementById(id).value; }
 async function exportieren(format){
   await speichern();
   window.location.href='/api/a/'+START.token+'/export.'+format;
-}
-
-// Kein alert/prompt — die werden von manchen Browsern geblockt. Stattdessen
-// eine eingebettete Zeile mit dem Link und einem Kopieren-Knopf.
-function kundenlinkZeigen(){
-  document.getElementById('linkbox').classList.add('sichtbar');
-  document.getElementById('linkfeld').select();
-}
-function linkKopieren(){
-  const feld = document.getElementById('linkfeld');
-  feld.select();
-  const fertig = () => {
-    const s=document.getElementById('status'); s.textContent='✓ Link kopiert'; s.style.color='#2e7d32';
-  };
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(feld.value).then(fertig, ()=>{ document.execCommand('copy'); fertig(); });
-  } else {
-    document.execCommand('copy'); fertig();
-  }
 }
 
 render();

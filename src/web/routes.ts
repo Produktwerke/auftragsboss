@@ -13,7 +13,6 @@ import { erzeugeAngebotWord, wordDateiname } from "../angebot/word.js";
 import { erzeugeAngebotPdf } from "../angebot/pdf.js";
 import { editorSeite } from "./editorSeite.js";
 import { dokumentZuDaten, editorZuPositionen, type EditorPosition } from "./dokumentDaten.js";
-import { kundenLink } from "./tokens.js";
 
 interface SpeicherKoerper {
   kundeName?: string;
@@ -42,12 +41,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     const preisliste = ladePreisliste();
 
     return reply.type("text/html; charset=utf-8").send(
-      editorSeite({
-        dokument,
-        handwerker,
-        preisliste,
-        kundenUrl: kundenLink(dokument.kundenToken),
-      }),
+      editorSeite({ dokument, handwerker, preisliste }),
     );
   });
 

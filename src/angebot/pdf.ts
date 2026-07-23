@@ -46,7 +46,14 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
   // ── Briefkopf ─────────────────────────────────────────
   if (logo) {
     try {
-      doc.image(logo.daten, R - logo.breite, 45, { height: Math.min(logo.hoehe, 60) });
+      // Das Logo muss KOMPLETT über der Trennlinie (y=92) bleiben. Höhe so
+      // begrenzen, dass es zwischen Seitenrand (y=46) und Linie passt, und
+      // die Breite proportional mitführen — sonst wird es verzerrt und die
+      // rechtsbündige Position stimmt nicht (Ursache der Überlappung im PDF).
+      const maxHoehe = 40;
+      const h = Math.min(logo.hoehe, maxHoehe);
+      const w = logo.breite * (h / logo.hoehe);
+      doc.image(logo.daten, R - w, 46, { width: w, height: h });
     } catch {
       // Logo unlesbar — dann eben ohne
     }

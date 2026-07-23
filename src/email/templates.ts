@@ -141,8 +141,10 @@ export function dokumentMail(args: {
   nummer: string;
   datum: Date;
   gewaehrleistungAblauf?: Date;
+  wordDateiname?: string;
 }): { betreff: string; html: string } {
-  const { daten, summe, preisliste, transkript, nummer, datum, gewaehrleistungAblauf } = args;
+  const { daten, summe, preisliste, transkript, nummer, datum, gewaehrleistungAblauf, wordDateiname } =
+    args;
   const istAngebot = daten.art === "ANGEBOT";
   const kunde = daten.kunde.name ?? "Unbekannter Kunde";
   const titel = istAngebot ? "Angebot" : "Protokoll";
@@ -151,21 +153,23 @@ export function dokumentMail(args: {
     ? `${istAngebot ? "📄" : "📋"} ${titel} ${nummer}: ${kunde} — ${euro(summe.brutto)}`
     : `${istAngebot ? "📄" : "📋"} ${titel} ${nummer}: ${kunde} — ${summe.positionen.length} Positionen`;
 
-  // Neutraler Hinweis: offene Preise sind der Regelfall, keine Fehlermeldung.
-  const preisHinweis =
-    !summe.vollstaendig && istAngebot
-      ? box(
-          `<strong>✏️ Preise eintragen</strong><br>
-           Das Angebot enthält alle Leistungen als fertiges Gerüst. ${
-             summe.ohnePreise
-               ? "Die Preisspalten sind zum Ausfüllen freigelassen"
-               : `${summe.anzahlOffen} von ${summe.positionen.length} Positionen warten noch auf einen Preis`
-           } — Summen werden erst gebildet, wenn alle Preise stehen.
-           <span style="color:#666;font-size:13px;">Tipp: Häufige Positionen kannst du dauerhaft in
-           <code>preisliste.json</code> hinterlegen, dann füllt das System sie künftig selbst aus.</span>`,
-          "#eaf2fb",
-        )
-      : "";
+  // Der Word-Anhang ist das eigentliche Arbeitsdokument — deshalb ganz oben.
+  const anhangKasten = wordDateiname
+    ? box(
+        `<strong>📎 ${escapeHtml(wordDateiname)}</strong><br>
+         Word-Datei im Anhang — dort ${
+           summe.vollstaendig ? "prüfen und" : "die Preise eintragen,"
+         } bei Bedarf anpassen, dann als PDF speichern und an den Kunden schicken.
+         ${
+           !summe.vollstaendig && istAngebot
+             ? `<br><span style="color:#666;font-size:13px;">Die Preisspalten sind leer gelassen —
+                Summen bildest du nach dem Ausfüllen. Tipp: häufige Positionen dauerhaft in
+                <code>preisliste.json</code> hinterlegen, dann füllt das System sie künftig selbst aus.</span>`
+             : ""
+         }`,
+        "#eaf2fb",
+      )
+    : "";
 
   const rueckfragen =
     daten.rueckfragen.length > 0
@@ -193,11 +197,11 @@ export function dokumentMail(args: {
   const html = `
 <div style="${RAHMEN}">
   <h2 style="color:#0b5cad;margin-top:0;">${istAngebot ? "📄 Dein Angebot ist fertig" : "✅ Dein Protokoll ist fertig"}</h2>
-  ${preisHinweis}
+  ${anhangKasten}
   ${rueckfragen}
 
-  <h3>1️⃣ ${titel} zum Weiterleiten an den Kunden</h3>
-  <p style="color:#666;font-size:14px;">Preise ergänzen, prüfen und an den Kunden schicken:</p>
+  <h3>1️⃣ Vorschau — so sieht die Word-Datei aus</h3>
+  <p style="color:#666;font-size:14px;">Zum Bearbeiten den Anhang öffnen; hier nur zur schnellen Kontrolle:</p>
   <div style="border:1px solid #d7dbe0;border-radius:8px;padding:20px;background:#ffffff;color:#1a1a1a;">
     ${kundenDokument(daten, summe, preisliste, nummer, datum)}
   </div>

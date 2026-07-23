@@ -13,6 +13,7 @@ import { resolve } from "node:path";
 import { PrismaClient } from "@prisma/client";
 import type { DokumentDaten } from "./ai/structure.js";
 import { berechneAngebot } from "./angebot/berechnung.js";
+import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
 import { ladePreisliste } from "./preisliste.js";
 import { dokumentMail, gewaehrleistungsErinnerung } from "./email/templates.js";
 
@@ -203,6 +204,14 @@ async function main(): Promise<void> {
   console.log(`\n③ Archiviert als ${nummer} (${dokument.id})`);
   console.log(`   Gültig bis ${deDatum(summe.gueltigBis)}`);
 
+  // Word-Datei erzeugen (das eigentliche Arbeitsdokument)
+  const word = await erzeugeAngebotWord({ daten: DEMO_DATEN, summe, preisliste, nummer, datum });
+  const docxName = wordDateiname(DEMO_DATEN.art, nummer, DEMO_DATEN.kunde.name);
+  mkdirSync(AUSGABE_ORDNER, { recursive: true });
+  const pWord = resolve(AUSGABE_ORDNER, docxName);
+  writeFileSync(pWord, word);
+  console.log(`\n④ Word-Datei erzeugt: ${docxName} (${(word.length / 1024).toFixed(1)} KB)`);
+
   // E-Mails als HTML erzeugen
   const mail = dokumentMail({
     daten: DEMO_DATEN,
@@ -211,6 +220,7 @@ async function main(): Promise<void> {
     transkript: TRANSKRIPT,
     nummer,
     datum,
+    wordDateiname: docxName,
   });
   const p1 = schreibeHtml("1-angebot-mail.html", mail.html);
 
@@ -227,10 +237,11 @@ async function main(): Promise<void> {
   const anzahl = await prisma.dokument.count();
 
   console.log("\n" + linie("═"));
-  console.log("FERTIG — diese Dateien im Browser öffnen (Doppelklick):");
+  console.log("FERTIG — diese Dateien öffnen (Doppelklick):");
   console.log(linie("═"));
-  console.log(`\n  1. ${p1}\n     → "${mail.betreff}"`);
-  console.log(`\n  2. ${p2}\n     → "${erinnerung.betreff}"`);
+  console.log(`\n  📎 WORD-ANGEBOT (in Word öffnen, Preise eintragen):\n     ${pWord}`);
+  console.log(`\n  1. ${p1}\n     → E-Mail: "${mail.betreff}"`);
+  console.log(`\n  2. ${p2}\n     → E-Mail: "${erinnerung.betreff}"`);
   console.log(`\n📦 Dokumente im Archiv: ${anzahl}   (ansehen mit: npm run db:studio)`);
   console.log("\n" + linie());
   console.log("✅ Preisliste, Summenberechnung, Datenbank und E-Mail-Layout funktionieren.");

@@ -17,11 +17,26 @@ function holeTransporter(): Transporter {
   return transporter;
 }
 
-export async function sendeMail(an: string, betreff: string, html: string): Promise<void> {
+export interface Anhang {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+}
+
+export async function sendeMail(
+  an: string,
+  betreff: string,
+  html: string,
+  anhaenge: Anhang[] = [],
+): Promise<void> {
   await holeTransporter().sendMail({
     from: emailConfig().SMTP_FROM,
     to: an,
     subject: betreff,
     html,
+    attachments: anhaenge,
   });
 }
+
+export const WORD_MIME =
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document";

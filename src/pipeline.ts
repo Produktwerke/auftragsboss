@@ -7,9 +7,10 @@ import { sendeWhatsAppText } from "./whatsapp/send.js";
 import { transkribiereAudio } from "./ai/transcribe.js";
 import { strukturiereTranskript } from "./ai/structure.js";
 import { berechneAngebot, euro } from "./angebot/berechnung.js";
+import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
 import { ladePreisliste } from "./preisliste.js";
 import { dokumentMail } from "./email/templates.js";
-import { sendeMail } from "./email/send.js";
+import { sendeMail, WORD_MIME } from "./email/send.js";
 
 export const prisma = new PrismaClient();
 
@@ -117,7 +118,11 @@ export async function verarbeiteSprachnachricht(args: {
       },
     });
 
-    // 6. E-Mail an den Handwerker
+    // 6. Word-Datei erzeugen — bearbeitbar, Preise trägt der Handwerker ein
+    const word = await erzeugeAngebotWord({ daten, summe, preisliste, nummer, datum });
+    const dateiname = wordDateiname(daten.art, nummer, daten.kunde.name);
+
+    // 7. E-Mail an den Handwerker, mit Word-Datei im Anhang
     const mail = dokumentMail({
       daten,
       summe,
@@ -126,10 +131,13 @@ export async function verarbeiteSprachnachricht(args: {
       nummer,
       datum,
       gewaehrleistungAblauf: istProtokoll ? ablauf : undefined,
+      wordDateiname: dateiname,
     });
-    await sendeMail(handwerker.email, mail.betreff, mail.html);
+    await sendeMail(handwerker.email, mail.betreff, mail.html, [
+      { filename: dateiname, content: word, contentType: WORD_MIME },
+    ]);
 
-    // 7. Bestätigung auf WhatsApp
+    // 8. Bestätigung auf WhatsApp
     const kunde = daten.kunde.name ?? "deinen Auftrag";
     const kopf =
       daten.art === "ANGEBOT"

@@ -6,10 +6,10 @@
 // wird über kleine API-Aufrufe (siehe routes.ts).
 //
 // Bewusst als eine selbsttragende Seite mit eingebettetem CSS und JS: kein
-// Build-Schritt, kein Framework, laden auch auf einem alten Handy schnell.
+// Build-Schritt, kein Framework, lädt auch auf einem alten Handy schnell.
 import type { Dokument, Handwerker } from "@prisma/client";
 import type { Preisliste } from "../preisliste.js";
-import type { Position } from "../ai/structure.js";
+import type { EingabePosition } from "../angebot/berechnung.js";
 import { ladeLogo } from "../betrieb/logo.js";
 
 function escapeHtml(s: string): string {
@@ -28,22 +28,28 @@ export function editorSeite(args: {
   preisliste: Preisliste;
   kundenUrl: string;
 }): string {
-  const { dokument, handwerker, preisliste, kundenUrl } = args;
+  const { dokument, preisliste, kundenUrl } = args;
   const b = preisliste.betrieb;
   const akzent = `#${/^[0-9a-fA-F]{6}$/.test(b.farbe) ? b.farbe : "0B5CAD"}`;
   const logo = ladeLogo(b.logo);
-  const positionen = JSON.parse(dokument.positionenJson) as Position[];
+  const positionen = JSON.parse(dokument.positionenJson) as EingabePosition[];
   const istAngebot = dokument.art === "ANGEBOT";
   const titel = istAngebot ? "Angebot" : "Protokoll";
+
+  // Datum als YYYY-MM-DD für das date-Eingabefeld
+  const datumIso = dokument.datum.toISOString().slice(0, 10);
 
   // Anfangsdaten für das Skript — als JSON in die Seite eingebettet
   const startDaten = {
     token: dokument.bearbeitenToken,
     art: dokument.art,
     nummer: dokument.nummer,
+    kundenNummer: dokument.kundenNummer ?? "",
+    datum: datumIso,
     mwstSatz: dokument.mwstSatz,
     kundeName: dokument.kundeName ?? "",
-    kundeAdresse: dokument.kundeAdresse ?? "",
+    kundeStrasse: dokument.kundeStrasse ?? "",
+    kundePlzOrt: dokument.kundePlzOrt ?? "",
     objekt: dokument.objekt ?? "",
     einleitung: dokument.einleitung,
     schlusstext: dokument.schlusstext,
@@ -63,7 +69,7 @@ export function editorSeite(args: {
   * { box-sizing: border-box; }
   body { margin:0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
          background:#eef0f3; color:#1a1a1a; line-height:1.5; }
-  .rahmen { max-width: 820px; margin: 0 auto; padding: 16px; }
+  .rahmen { max-width: 860px; margin: 0 auto; padding: 16px; }
   .karte { background:#fff; border-radius:12px; padding:22px; margin-bottom:16px;
            box-shadow:0 1px 4px rgba(0,0,0,.08); }
   .kopf { display:flex; justify-content:space-between; align-items:center; gap:16px;
@@ -71,46 +77,62 @@ export function editorSeite(args: {
   .kopf .firma { font-size:20px; font-weight:700; color:var(--akzent); }
   .kopf .adr { font-size:12px; color:#666; margin-top:2px; }
   .kopf img { max-height:64px; max-width:180px; }
-  h1 { font-size:19px; margin:0 0 4px; }
-  .num { color:#666; font-size:14px; margin-bottom:18px; }
   label { display:block; font-size:13px; color:#555; margin:12px 0 4px; font-weight:600; }
   input, textarea, select { width:100%; padding:9px 11px; border:1px solid #cfd4da;
          border-radius:7px; font-size:15px; font-family:inherit; background:#fff; }
   textarea { min-height:80px; resize:vertical; }
   input:focus, textarea:focus, select:focus { outline:2px solid var(--akzent); border-color:var(--akzent); }
   .zwei { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  table { width:100%; border-collapse:collapse; margin-top:8px; }
+  .drei { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  .tab-scroll { overflow-x:auto; margin:8px -6px 0; padding:0 6px; }
+  table { width:100%; min-width:560px; border-collapse:collapse; }
   th { background:var(--akzent); color:#fff; font-size:12px; text-align:left; padding:8px; font-weight:600; }
   th.r, td.r { text-align:right; }
   td { padding:6px 6px; border-bottom:1px solid #eceff2; vertical-align:middle; }
   td input, td select { padding:6px 7px; font-size:14px; }
-  .pos-menge { width:70px; } .pos-einheit { width:78px; } .pos-preis { width:92px; }
+  .pos-menge { width:70px; } .pos-einheit { width:82px; } .pos-preis { width:92px; }
   .zeilensumme { font-weight:600; white-space:nowrap; font-size:14px; }
-  .abschnitt td { background:#f2f5f8; font-weight:700; color:#555; font-size:13px; padding:9px 8px; }
-  .loeschen { background:none; border:none; color:#c0392b; font-size:20px; cursor:pointer;
-              padding:0 4px; line-height:1; }
-  .loeschen:hover { color:#e74c3c; }
+  tr.abschnitt td { background:#f2f5f8; font-weight:700; color:#555; font-size:13px; padding:9px 8px; }
+  tr.zwsumme td { color:#666; font-weight:600; font-size:13px; background:#fafbfc; }
+  tr.hinzu td { border-bottom:none; padding:6px; }
   .neu { background:#f2f5f8; border:1px dashed #b8c0c8; color:#444; border-radius:7px;
-         padding:9px; width:100%; cursor:pointer; font-size:14px; margin-top:8px; }
+         padding:8px; width:100%; cursor:pointer; font-size:13px; }
   .neu:hover { background:#e9edf1; }
+  .kat-neu { margin-top:12px; display:flex; gap:8px; }
+  .kat-neu input { flex:1; }
+  .kat-neu button { white-space:nowrap; }
   .summen { margin-top:16px; margin-left:auto; width:min(340px,100%); font-size:15px; }
   .summen .z { display:flex; justify-content:space-between; padding:5px 0; }
   .summen .gesamt { border-top:2px solid var(--akzent); margin-top:6px; padding-top:10px;
                     font-size:19px; font-weight:700; color:var(--akzent); }
   .offen { color:#aab0b6; letter-spacing:1px; }
-  .aktionen { position:sticky; bottom:0; background:#fff; border-radius:12px; padding:16px;
-              box-shadow:0 -2px 10px rgba(0,0,0,.08); display:flex; gap:10px; flex-wrap:wrap;
-              align-items:center; }
-  .btn { border:none; border-radius:8px; padding:12px 18px; font-size:15px; font-weight:600;
-         cursor:pointer; }
-  .btn-p { background:var(--akzent); color:#fff; }
-  .btn-s { background:#eef0f3; color:#333; }
-  .btn:disabled { opacity:.5; cursor:default; }
+  .loeschen { background:none; border:none; color:#c0392b; font-size:20px; cursor:pointer;
+              padding:0 4px; line-height:1; }
+  .loeschen:hover { color:#e74c3c; }
+  .aktionen { position:sticky; bottom:0; background:#fff; border-radius:12px; padding:14px 16px;
+              box-shadow:0 -2px 10px rgba(0,0,0,.08); }
+  .aktionen .zeile1 { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .dl-label { font-size:14px; font-weight:600; color:#555; }
+  .btn { border:none; border-radius:8px; padding:11px 16px; font-size:15px; font-weight:600;
+         cursor:pointer; background:#eef0f3; color:#333; }
+  .btn:hover { background:#e2e6ea; }
+  .btn-link { background:var(--akzent); color:#fff; }
+  .btn-link:hover { background:var(--akzent); opacity:.92; }
   .status { font-size:13px; color:#2e7d32; margin-left:auto; }
+  .linkbox { display:none; margin-top:12px; gap:8px; }
+  .linkbox.sichtbar { display:flex; }
+  .linkbox input { flex:1; font-size:13px; color:#555; }
   .hinweis { background:#eaf2fb; border-radius:8px; padding:12px 14px; font-size:14px; margin-bottom:14px; }
   .warn { background:#fff8e6; }
-  @media (max-width:640px){ .zwei{grid-template-columns:1fr;} .pos-menge{width:56px;}
-    .karte{padding:16px;} .kopf img{max-height:48px;} }
+  @media (max-width:640px){
+    .zwei, .drei { grid-template-columns:1fr; }
+    .karte { padding:14px; }
+    .kopf img { max-height:44px; max-width:120px; }
+    .aktionen .zeile1 { gap:8px; }
+    .btn { padding:10px 13px; font-size:14px; flex:1; }
+    .btn-link { flex-basis:100%; }
+    .status { flex-basis:100%; margin-left:0; text-align:right; }
+  }
 </style>
 </head>
 <body>
@@ -132,12 +154,17 @@ export function editorSeite(args: {
       ${logo ? `<img src="${logo.dataUrl}" alt="Logo">` : ""}
     </div>
 
-    <h1>${escapeHtml(titel)} bearbeiten</h1>
-    <div class="num">${escapeHtml(dokument.nummer)}${dokument.version > 1 ? ` · Fassung ${dokument.version}` : ""}</div>
-
     <div class="zwei">
       <div><label>Kunde</label><input id="kundeName" value="${escapeHtml(startDaten.kundeName)}" placeholder="z. B. Familie Müller"></div>
-      <div><label>Adresse</label><input id="kundeAdresse" value="${escapeHtml(startDaten.kundeAdresse)}" placeholder="Straße, Ort"></div>
+      <div><label>Kundennummer</label><input id="kundenNummer" value="${escapeHtml(startDaten.kundenNummer)}" placeholder="optional"></div>
+    </div>
+    <div class="zwei">
+      <div><label>Straße und Hausnummer</label><input id="kundeStrasse" value="${escapeHtml(startDaten.kundeStrasse)}" placeholder="z. B. Rotberg 18"></div>
+      <div><label>PLZ und Ort</label><input id="kundePlzOrt" value="${escapeHtml(startDaten.kundePlzOrt)}" placeholder="z. B. 12345 Musterstadt"></div>
+    </div>
+    <div class="zwei">
+      <div><label>${istAngebot ? "Angebotsnummer" : "Protokollnummer"}</label><input id="nummer" value="${escapeHtml(startDaten.nummer)}"></div>
+      <div><label>${istAngebot ? "Angebotsdatum" : "Datum"}</label><input id="datum" type="date" value="${startDaten.datum}"></div>
     </div>
     <label>Objekt / Kurzbeschreibung</label>
     <input id="objekt" value="${escapeHtml(startDaten.objekt)}" placeholder="z. B. Wohnzimmer, ca. 45 m²">
@@ -148,6 +175,7 @@ export function editorSeite(args: {
 
   <div class="karte">
     <label style="margin-top:0;">Positionen</label>
+    <div class="tab-scroll">
     <table>
       <thead><tr>
         <th>Leistung</th><th class="r">Menge</th><th>Einheit</th>
@@ -155,16 +183,14 @@ export function editorSeite(args: {
       </tr></thead>
       <tbody id="zeilen"></tbody>
     </table>
-    <button class="neu" onclick="neuePosition('LEISTUNG')">+ Leistung hinzufügen</button>
-    <button class="neu" onclick="neuePosition('MATERIAL')">+ Material hinzufügen</button>
-
-    <div class="summen">
-      <div class="z"><span>Zwischensumme Arbeit</span><span id="sumArbeit">–</span></div>
-      <div class="z"><span>Zwischensumme Material</span><span id="sumMaterial">–</span></div>
-      <div class="z"><span>Nettosumme</span><span id="sumNetto">–</span></div>
-      <div class="z"><span id="mwstLabel">zzgl. MwSt.</span><span id="sumMwst">–</span></div>
-      <div class="z gesamt"><span>Gesamt</span><span id="sumBrutto">–</span></div>
     </div>
+
+    <div class="kat-neu">
+      <input id="katName" placeholder="Eigene Kategorie, z. B. Gerüst oder Entsorgung">
+      <button class="neu" style="width:auto;" onclick="neueKategorie()">+ Kategorie hinzufügen</button>
+    </div>
+
+    <div class="summen" id="summenBlock"></div>
   </div>
 
   <div class="karte">
@@ -173,10 +199,17 @@ export function editorSeite(args: {
   </div>
 
   <div class="aktionen">
-    <button class="btn btn-p" onclick="exportieren('pdf')">Als PDF</button>
-    <button class="btn btn-s" onclick="exportieren('word')">Als Word</button>
-    <button class="btn btn-s" onclick="kundenlinkZeigen()">Link für Kunden</button>
-    <span class="status" id="status"></span>
+    <div class="zeile1">
+      <span class="dl-label">Herunterladen als:</span>
+      <button class="btn" onclick="exportieren('pdf')">PDF</button>
+      <button class="btn" onclick="exportieren('word')">Word</button>
+      <button class="btn btn-link" onclick="kundenlinkZeigen()">Link zum Angebot für den Kunden erzeugen</button>
+      <span class="status" id="status"></span>
+    </div>
+    <div class="linkbox" id="linkbox">
+      <input id="linkfeld" readonly value="${escapeHtml(kundenUrl)}">
+      <button class="btn" onclick="linkKopieren()">Kopieren</button>
+    </div>
   </div>
 
 </div>
@@ -191,6 +224,7 @@ let positionen = START.positionen.map(p => ({
 
 const euro = n => n.toLocaleString('de-DE',{style:'currency',currency:'EUR'});
 const OFFEN = '<span class="offen">___ €</span>';
+const katName = k => k==='LEISTUNG' ? 'Arbeitsaufwand' : (k==='MATERIAL' ? 'Material' : k);
 
 function zeilensumme(p){
   const menge = p.einheit==='pauschal' ? (p.menge??1) : p.menge;
@@ -198,18 +232,24 @@ function zeilensumme(p){
   return Math.round(menge*p.einzelpreis*100)/100;
 }
 
+/** Kategorien in der Reihenfolge ihres ersten Auftretens. */
+function kategorien(){
+  const reihe = [];
+  for(const p of positionen){ if(!reihe.includes(p.kategorie)) reihe.push(p.kategorie); }
+  return reihe;
+}
+
 function render(){
   const tbody = document.getElementById('zeilen');
   tbody.innerHTML = '';
-  const bloecke = [['LEISTUNG','Arbeitsaufwand'],['MATERIAL','Material']];
-  let idx = 0;
-  for(const [kat,label] of bloecke){
-    const teil = positionen.filter(p=>p.kategorie===kat);
-    if(teil.length===0) continue;
-    if(bloecke.some(([k])=>positionen.some(p=>p.kategorie===k)) ){
+  const kats = kategorien();
+  const mehrere = kats.length > 1;
+
+  for(const kat of kats){
+    if(mehrere){
       const tr = document.createElement('tr');
       tr.className='abschnitt';
-      tr.innerHTML = '<td colspan="6">'+label+'</td>';
+      tr.innerHTML = '<td colspan="6">'+esc(katName(kat))+'</td>';
       tbody.appendChild(tr);
     }
     positionen.forEach((p,i)=>{
@@ -224,8 +264,12 @@ function render(){
         '<td class="r zeilensumme">'+(g==null?OFFEN:euro(g))+'</td>'+
         '<td><button class="loeschen" title="Zeile löschen" onclick="loeschen('+i+')">×</button></td>';
       tbody.appendChild(tr);
-      idx++;
     });
+    // "+ Position hinzufügen" direkt unter dem jeweiligen Abschnitt
+    const trNeu = document.createElement('tr');
+    trNeu.className='hinzu';
+    trNeu.innerHTML = '<td colspan="6"><button class="neu" onclick="neuePosition(\\''+escJs(kat)+'\\')">+ Position'+(mehrere?' unter „'+esc(katName(kat))+'“':'')+' hinzufügen</button></td>';
+    tbody.appendChild(trNeu);
   }
   summen();
 }
@@ -239,21 +283,31 @@ function einheitSelect(i,wert){
 }
 
 function summen(){
-  const teil = kat => positionen.filter(p=>p.kategorie===kat)
-    .reduce((s,p)=>{const g=zeilensumme(p); return g==null?{...s,offen:true}:{netto:s.netto+g,offen:s.offen};},{netto:0,offen:false});
-  const arbeit = teil('LEISTUNG'), material = teil('MATERIAL');
-  const alleDa = positionen.length>0 && positionen.every(p=>zeilensumme(p)!=null);
-  const netto = arbeit.netto+material.netto;
-  const mwst = Math.round(netto*START.mwstSatz)/100;
-  const setz=(id,v)=>document.getElementById(id).innerHTML=v;
-  const hatMaterial = positionen.some(p=>p.kategorie==='MATERIAL');
-  const hatArbeit = positionen.some(p=>p.kategorie==='LEISTUNG');
-  setz('sumArbeit', hatArbeit ? (arbeit.offen?OFFEN:euro(arbeit.netto)) : '–');
-  setz('sumMaterial', hatMaterial ? (material.offen?OFFEN:euro(material.netto)) : '–');
-  setz('sumNetto', alleDa?euro(netto):OFFEN);
-  setz('sumMwst', alleDa?euro(mwst):OFFEN);
-  setz('sumBrutto', alleDa?euro(netto+mwst):OFFEN);
-  document.getElementById('mwstLabel').textContent = 'zzgl. '+START.mwstSatz+' % MwSt.';
+  const kats = kategorien();
+  const mehrere = kats.length > 1;
+  let html = '';
+  let nettoGesamt = 0, alleDa = positionen.length>0;
+
+  for(const kat of kats){
+    const eigene = positionen.filter(p=>p.kategorie===kat);
+    let netto = 0, voll = eigene.length>0;
+    for(const p of eigene){
+      const g = zeilensumme(p);
+      if(g==null) voll=false; else netto+=g;
+    }
+    netto = Math.round(netto*100)/100;
+    nettoGesamt += netto;
+    if(!voll) alleDa = false;
+    if(mehrere){
+      html += '<div class="z"><span>Zwischensumme '+esc(katName(kat))+'</span><span>'+(voll?euro(netto):OFFEN)+'</span></div>';
+    }
+  }
+  nettoGesamt = Math.round(nettoGesamt*100)/100;
+  const mwst = Math.round(nettoGesamt*START.mwstSatz)/100;
+  html += '<div class="z"><span>Nettosumme</span><span>'+(alleDa?euro(nettoGesamt):OFFEN)+'</span></div>';
+  html += '<div class="z"><span>zzgl. '+START.mwstSatz+' % MwSt.</span><span>'+(alleDa?euro(mwst):OFFEN)+'</span></div>';
+  html += '<div class="z gesamt"><span>Gesamt</span><span>'+(alleDa?euro(nettoGesamt+mwst):OFFEN)+'</span></div>';
+  document.getElementById('summenBlock').innerHTML = html;
 }
 
 function setF(i,feld,wert){ positionen[i][feld]=wert; if(feld==='einheit') render(); else summen(); markiereGeaendert(); }
@@ -271,13 +325,29 @@ function setNum(i,feld,wert,el){
 }
 function loeschen(i){ positionen.splice(i,1); render(); markiereGeaendert(); }
 function neuePosition(kat){
-  positionen.push({kategorie:kat,beschreibung:'',menge:null,einheit:'m2',einzelpreis:null});
+  // Hinter der letzten Position derselben Kategorie einfügen
+  let letzte = -1;
+  positionen.forEach((p,i)=>{ if(p.kategorie===kat) letzte=i; });
+  const neue = {kategorie:kat,beschreibung:'',menge:null,einheit:'m2',einzelpreis:null};
+  if(letzte>=0) positionen.splice(letzte+1,0,neue); else positionen.push(neue);
+  render(); markiereGeaendert();
+}
+function neueKategorie(){
+  const feld = document.getElementById('katName');
+  const name = feld.value.trim();
+  if(!name){ feld.focus(); return; }
+  if(kategorien().some(k=>katName(k).toLowerCase()===name.toLowerCase())){
+    feld.select(); return; // gibt es schon — nicht doppelt anlegen
+  }
+  positionen.push({kategorie:name,beschreibung:'',menge:null,einheit:'m2',einzelpreis:null});
+  feld.value='';
   render(); markiereGeaendert();
 }
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function escJs(s){ return (s||'').replace(/\\\\/g,'\\\\\\\\').replace(/'/g,"\\\\'"); }
 
 let aenderungsTimer=null;
-['kundeName','kundeAdresse','objekt','einleitung','schlusstext'].forEach(id=>{
+['kundeName','kundenNummer','kundeStrasse','kundePlzOrt','nummer','datum','objekt','einleitung','schlusstext'].forEach(id=>{
   document.getElementById(id).addEventListener('input',markiereGeaendert);
 });
 function markiereGeaendert(){
@@ -289,7 +359,9 @@ function markiereGeaendert(){
 
 async function speichern(){
   const daten={
-    kundeName:val('kundeName'), kundeAdresse:val('kundeAdresse'), objekt:val('objekt'),
+    kundeName:val('kundeName'), kundenNummer:val('kundenNummer'),
+    kundeStrasse:val('kundeStrasse'), kundePlzOrt:val('kundePlzOrt'),
+    nummer:val('nummer'), datum:val('datum'), objekt:val('objekt'),
     einleitung:val('einleitung'), schlusstext:val('schlusstext'), positionen
   };
   try{
@@ -304,16 +376,26 @@ function val(id){ return document.getElementById(id).value; }
 
 async function exportieren(format){
   await speichern();
-  document.getElementById('status').textContent='Erzeuge '+(format==='pdf'?'PDF':'Word')+' …';
   window.location.href='/api/a/'+START.token+'/export.'+format;
 }
 
+// Kein alert/prompt — die werden von manchen Browsern geblockt. Stattdessen
+// eine eingebettete Zeile mit dem Link und einem Kopieren-Knopf.
 function kundenlinkZeigen(){
-  const url=START.kundenUrl;
-  navigator.clipboard?.writeText(url).then(
-    ()=>alert('Link für den Kunden kopiert:\\n\\n'+url+'\\n\\nDer Kunde sieht das Angebot und kann es mit einem Klick annehmen.'),
-    ()=>prompt('Link für den Kunden:',url)
-  );
+  document.getElementById('linkbox').classList.add('sichtbar');
+  document.getElementById('linkfeld').select();
+}
+function linkKopieren(){
+  const feld = document.getElementById('linkfeld');
+  feld.select();
+  const fertig = () => {
+    const s=document.getElementById('status'); s.textContent='✓ Link kopiert'; s.style.color='#2e7d32';
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(feld.value).then(fertig, ()=>{ document.execCommand('copy'); fertig(); });
+  } else {
+    document.execCommand('copy'); fertig();
+  }
 }
 
 render();

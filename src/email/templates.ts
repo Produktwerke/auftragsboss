@@ -140,7 +140,8 @@ function kundenDokument(
   const empfaenger = `
     <div style="font-size:14px;margin-bottom:16px;">
       ${daten.kunde.name ? `<strong>${escapeHtml(daten.kunde.name)}</strong><br>` : ""}
-      ${daten.kunde.adresse ? `${escapeHtml(daten.kunde.adresse)}<br>` : ""}
+      ${daten.kunde.strasse ? `${escapeHtml(daten.kunde.strasse)}<br>` : ""}
+      ${daten.kunde.plzOrt ? `${escapeHtml(daten.kunde.plzOrt)}<br>` : ""}
     </div>
     <div style="display:flex;justify-content:space-between;font-size:13px;color:#666;margin-bottom:8px;">
       <span><strong style="color:#1a1a1a;font-size:16px;">${titel} ${escapeHtml(nummer)}</strong></span>

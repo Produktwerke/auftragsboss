@@ -68,7 +68,8 @@ async function main(): Promise<void> {
   console.log(linie("═"));
   console.log(`ERKANNTE ART: ${istAngebot ? "📄 ANGEBOT (Arbeiten noch offen)" : "📋 PROTOKOLL (Arbeiten erledigt)"}`);
   console.log(linie("═"));
-  console.log(`Kunde:   ${d.kunde.name ?? "—"}${d.kunde.adresse ? ` · ${d.kunde.adresse}` : ""}`);
+  const adr = [d.kunde.strasse, d.kunde.plzOrt].filter(Boolean).join(", ");
+  console.log(`Kunde:   ${d.kunde.name ?? "—"}${adr ? ` · ${adr}` : ""}`);
   console.log(`Gewerk:  ${d.gewerk ?? "—"}`);
   console.log(`Objekt:  ${d.objekt ?? "—"}`);
 

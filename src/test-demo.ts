@@ -69,7 +69,7 @@ const M = (
 // hier fest hinterlegt, damit kein API-Key nötig ist.
 const DEMO_DATEN: DokumentDaten = {
   art: "ANGEBOT",
-  kunde: { name: "Familie Bär", adresse: "Rotberg 18" },
+  kunde: { name: "Familie Bär", strasse: "Rotberg 18", plzOrt: "12345 Musterstadt" },
   gewerk: "Malerei",
   objekt: "Wohnzimmer, ca. 45 m² Deckenfläche, Deckenhöhe 2,50 m",
   // Regelfall: im Auto diktiert, keine Preise genannt → alle Preise offen.
@@ -191,7 +191,8 @@ async function main(): Promise<void> {
       kundenToken: erzeugeToken(),
       transkript: TRANSKRIPT,
       kundeName: DEMO_DATEN.kunde.name,
-      kundeAdresse: DEMO_DATEN.kunde.adresse,
+      kundeStrasse: DEMO_DATEN.kunde.strasse,
+      kundePlzOrt: DEMO_DATEN.kunde.plzOrt,
       gewerk: DEMO_DATEN.gewerk,
       objekt: DEMO_DATEN.objekt,
       positionenJson: JSON.stringify(summe.positionen),

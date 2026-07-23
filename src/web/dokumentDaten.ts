@@ -3,12 +3,13 @@
 // Datenweg — was im Browser bearbeitet wird, landet unverändert im Dokument.
 import type { Dokument } from "@prisma/client";
 import type { DokumentDaten, Position } from "../ai/structure.js";
+import type { EingabePosition } from "../angebot/berechnung.js";
 
 export function dokumentZuDaten(dok: Dokument): DokumentDaten {
   const positionen = JSON.parse(dok.positionenJson) as Position[];
   return {
     art: dok.art as DokumentDaten["art"],
-    kunde: { name: dok.kundeName, adresse: dok.kundeAdresse },
+    kunde: { name: dok.kundeName, strasse: dok.kundeStrasse, plzOrt: dok.kundePlzOrt },
     gewerk: dok.gewerk,
     objekt: dok.objekt,
     positionen,
@@ -28,14 +29,14 @@ export function dokumentZuDaten(dok: Dokument): DokumentDaten {
 
 /** Die vom Editor gesendeten Felder zurück in Position-Objekte. */
 export interface EditorPosition {
-  kategorie: "LEISTUNG" | "MATERIAL";
+  kategorie: string; // frei — der Handwerker darf eigene Kategorien anlegen
   beschreibung: string;
   menge: number | null;
   einheit: Position["einheit"];
   einzelpreis: number | null;
 }
 
-export function editorZuPositionen(eingabe: EditorPosition[]): Position[] {
+export function editorZuPositionen(eingabe: EditorPosition[]): EingabePosition[] {
   return eingabe.map((p) => ({
     kategorie: p.kategorie,
     vorschlag: false, // im Editor bestätigt der Handwerker jede Zeile bewusst

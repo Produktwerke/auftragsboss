@@ -17,7 +17,11 @@ import { kundenLink } from "./tokens.js";
 
 interface SpeicherKoerper {
   kundeName?: string;
-  kundeAdresse?: string;
+  kundenNummer?: string;
+  kundeStrasse?: string;
+  kundePlzOrt?: string;
+  nummer?: string;
+  datum?: string; // YYYY-MM-DD
   objekt?: string;
   einleitung?: string;
   schlusstext?: string;
@@ -60,11 +64,20 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     const preisliste = ladePreisliste();
     const summe = positionen ? berechneAngebot(positionen, preisliste, dokument.datum) : null;
 
+    // Datum nur übernehmen, wenn es plausibel ist — ein leeres oder kaputtes
+    // Feld darf das Datum nicht auf "Invalid Date" setzen.
+    const neuesDatum = k.datum ? new Date(k.datum) : null;
+    const datumGueltig = neuesDatum && !isNaN(neuesDatum.getTime());
+
     await prisma.dokument.update({
       where: { id: dokument.id },
       data: {
         kundeName: k.kundeName ?? dokument.kundeName,
-        kundeAdresse: k.kundeAdresse ?? dokument.kundeAdresse,
+        kundenNummer: k.kundenNummer ?? dokument.kundenNummer,
+        kundeStrasse: k.kundeStrasse ?? dokument.kundeStrasse,
+        kundePlzOrt: k.kundePlzOrt ?? dokument.kundePlzOrt,
+        nummer: k.nummer?.trim() ? k.nummer.trim() : dokument.nummer,
+        ...(datumGueltig ? { datum: neuesDatum } : {}),
         objekt: k.objekt ?? dokument.objekt,
         einleitung: k.einleitung ?? dokument.einleitung,
         schlusstext: k.schlusstext ?? dokument.schlusstext,
@@ -103,6 +116,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
           preisliste,
           nummer: dokument.nummer,
           datum: dokument.datum,
+          kundenNummer: dokument.kundenNummer,
         });
         return reply
           .type("application/pdf")
@@ -119,6 +133,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
         preisliste,
         nummer: dokument.nummer,
         datum: dokument.datum,
+        kundenNummer: dokument.kundenNummer,
       });
       return reply
         .type("application/vnd.openxmlformats-officedocument.wordprocessingml.document")

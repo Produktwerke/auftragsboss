@@ -136,11 +136,6 @@ function positionsTabelle(summe: Angebotssumme, akzent: string): Table {
     ),
   });
 
-  // Arbeitsaufwand und Material getrennt ausweisen — beides wird
-  // unterschiedlich kalkuliert und gehört im Angebot getrennt summiert.
-  const leistungen = summe.positionen.filter((p) => p.kategorie !== "MATERIAL");
-  const material = summe.positionen.filter((p) => p.kategorie === "MATERIAL");
-
   /** Zwischensummenzeile eines Blocks. Ohne vollständige Preise bleibt sie leer. */
   const zwischensumme = (beschriftung: string, teil: typeof summe.leistungen): TableRow =>
     new TableRow({
@@ -155,23 +150,14 @@ function positionsTabelle(summe: Angebotssumme, akzent: string): Table {
       ],
     });
 
-  const leistungsBlock: TableRow[] = [
-    ...(material.length > 0 ? [abschnittsZeile("Arbeitsaufwand")] : []),
-    ...leistungen.map(positionsZeile),
-    ...(material.length > 0 ? [zwischensumme("Zwischensumme Arbeitsaufwand", summe.leistungen)] : []),
-  ];
-
-  // Bewusst nur "Material": Das Dokument geht am Ende an den Kunden, ein
-  // Hinweis wie "Vorschlag – bitte prüfen" gehört dort nicht hin. Dass es
-  // sich um Vorschläge handelt, steht in der E-Mail an den Handwerker.
-  const materialBlock: TableRow[] =
-    material.length > 0
-      ? [
-          abschnittsZeile("Material"),
-          ...material.map(positionsZeile),
-          zwischensumme("Zwischensumme Material", summe.material),
-        ]
-      : [];
+  // Jede Kategorie (Arbeitsaufwand, Material, eigene) als eigener Block mit
+  // Überschrift und Zwischensumme — bei nur einem Block ohne beides.
+  const mehrereBloecke = summe.bloecke.length > 1;
+  const inhaltsZeilen: TableRow[] = summe.bloecke.flatMap((block) => [
+    ...(mehrereBloecke ? [abschnittsZeile(block.name)] : []),
+    ...block.positionen.map(positionsZeile),
+    ...(mehrereBloecke ? [zwischensumme(`Zwischensumme ${block.name}`, block)] : []),
+  ]);
 
   // Summen nur ausweisen, wenn wirklich alle Preise stehen — sonst leer
   const betrag = (wert: number) => (summe.vollstaendig ? euro(wert) : "");
@@ -200,7 +186,7 @@ function positionsTabelle(summe: Angebotssumme, akzent: string): Table {
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     columnWidths: [600, 4600, 1400, 1600, 1600],
-    rows: [kopf, ...leistungsBlock, ...materialBlock, ...summenZeilen],
+    rows: [kopf, ...inhaltsZeilen, ...summenZeilen],
   });
 }
 
@@ -210,8 +196,9 @@ export async function erzeugeAngebotWord(args: {
   preisliste: Preisliste;
   nummer: string;
   datum: Date;
+  kundenNummer?: string | null;
 }): Promise<Buffer> {
-  const { daten, summe, preisliste, nummer, datum } = args;
+  const { daten, summe, preisliste, nummer, datum, kundenNummer } = args;
   const b = preisliste.betrieb;
   const akzent = /^[0-9a-fA-F]{6}$/.test(b.farbe) ? b.farbe.toUpperCase() : "0B5CAD";
   const logo = ladeLogo(b.logo);
@@ -305,14 +292,15 @@ export async function erzeugeAngebotWord(args: {
           }),
         ]
       : []),
-    ...(daten.kunde.adresse
-      ? [
+    ...[daten.kunde.strasse, daten.kunde.plzOrt]
+      .filter((z): z is string => Boolean(z))
+      .map(
+        (zeileText) =>
           new Paragraph({
             spacing: { after: 0 },
-            children: [new TextRun({ text: daten.kunde.adresse, size: 20 })],
+            children: [new TextRun({ text: zeileText, size: 20 })],
           }),
-        ]
-      : []),
+      ),
 
     // ── Titel + Metadaten ─────────────────────────────────
     new Paragraph({
@@ -324,7 +312,10 @@ export async function erzeugeAngebotWord(args: {
       spacing: { after: 320 },
       children: [
         new TextRun({
-          text: `Datum: ${datumDE(datum)}${daten.objekt ? `   ·   Objekt: ${daten.objekt}` : ""}`,
+          text:
+            `Datum: ${datumDE(datum)}` +
+            (kundenNummer ? `   ·   Kundennummer: ${kundenNummer}` : "") +
+            (daten.objekt ? `   ·   Objekt: ${daten.objekt}` : ""),
           size: 18,
           color: GRAU,
         }),

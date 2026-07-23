@@ -20,12 +20,13 @@ export interface PdfOptionen {
   preisliste: Preisliste;
   nummer: string;
   datum: Date;
+  kundenNummer?: string | null;
   /** Optionaler Annahme-Vermerk für die Auftragsbestätigung. */
   annahme?: { am: Date; von: string };
 }
 
 export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
-  const { daten, summe, preisliste, nummer, datum, annahme } = opts;
+  const { daten, summe, preisliste, nummer, datum, kundenNummer, annahme } = opts;
   const b = preisliste.betrieb;
   const akzent = `#${/^[0-9a-fA-F]{6}$/.test(b.farbe) ? b.farbe : "0B5CAD"}`;
   const grau = "#666666";
@@ -67,7 +68,10 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
   let y = 112;
   doc.fillColor("#1a1a1a").font("Helvetica-Bold").fontSize(11);
   if (daten.kunde.name) doc.text(daten.kunde.name, L, y), (y += 15);
-  if (daten.kunde.adresse) doc.font("Helvetica").fontSize(10).text(daten.kunde.adresse, L, y), (y += 15);
+  doc.font("Helvetica").fontSize(10);
+  for (const adressZeile of [daten.kunde.strasse, daten.kunde.plzOrt]) {
+    if (adressZeile) doc.text(adressZeile, L, y), (y += 14);
+  }
 
   y += 14;
   doc.fillColor("#1a1a1a").font("Helvetica-Bold").fontSize(16).text(`${titel} ${nummer}`, L, y);
@@ -76,7 +80,13 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
     .fillColor(grau)
     .font("Helvetica")
     .fontSize(9)
-    .text(`Datum: ${datumDE(datum)}${daten.objekt ? `   ·   Objekt: ${daten.objekt}` : ""}`, L, y);
+    .text(
+      `Datum: ${datumDE(datum)}` +
+        (kundenNummer ? `   ·   Kundennummer: ${kundenNummer}` : "") +
+        (daten.objekt ? `   ·   Objekt: ${daten.objekt}` : ""),
+      L,
+      y,
+    );
   y += 22;
 
   // ── Annahme-Vermerk (nur Auftragsbestätigung) ─────────
@@ -148,17 +158,13 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
     return yc + zeilenhoehe;
   };
 
-  const leistungen = summe.positionen.filter((p) => p.kategorie !== "MATERIAL");
-  const material = summe.positionen.filter((p) => p.kategorie === "MATERIAL");
-  const hatMaterial = material.length > 0;
-
-  if (hatMaterial) y = zeichneAbschnitt("Arbeitsaufwand", y);
-  for (const p of leistungen) y = zeichneZeile(p, y);
-  if (hatMaterial) {
-    y = zeichneZwischensumme("Zwischensumme Arbeitsaufwand", summe.leistungen, y);
-    y = zeichneAbschnitt("Material", y);
-    for (const p of material) y = zeichneZeile(p, y);
-    y = zeichneZwischensumme("Zwischensumme Material", summe.material, y);
+  // Jede Kategorie als eigener Block — bei nur einem Block ohne Überschrift
+  // und Zwischensumme.
+  const mehrereBloecke = summe.bloecke.length > 1;
+  for (const block of summe.bloecke) {
+    if (mehrereBloecke) y = zeichneAbschnitt(block.name, y);
+    for (const p of block.positionen) y = zeichneZeile(p, y);
+    if (mehrereBloecke) y = zeichneZwischensumme(`Zwischensumme ${block.name}`, block, y);
   }
 
   function zeichneZwischensumme(label: string, teil: Angebotssumme["leistungen"], yc: number): number {

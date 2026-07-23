@@ -96,7 +96,9 @@ model Dokument {
 
   // Strukturierte Daten (von Claude extrahiert)
   kundeName      String?
-  kundeAdresse   String?
+  kundeStrasse   String? // Straße und Hausnummer
+  kundePlzOrt    String? // PLZ und Ort
+  kundenNummer   String? // interne Kundennummer des Betriebs, frei editierbar
   gewerk         String?
   objekt         String?
   positionenJson String // JSON: berechnete Positionen inkl. Preise

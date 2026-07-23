@@ -66,7 +66,14 @@ export const DokumentSchema = z.object({
     ),
   kunde: z.object({
     name: z.string().nullable().describe("Kundenname, z.B. 'Familie Bär'. null wenn nicht genannt."),
-    adresse: z.string().nullable().describe("Straße/Ort des Objekts, falls genannt."),
+    strasse: z
+      .string()
+      .nullable()
+      .describe("Straße und Hausnummer, z.B. 'Rotberg 18'. null wenn nicht genannt."),
+    plzOrt: z
+      .string()
+      .nullable()
+      .describe("PLZ und Ort, z.B. '12345 Musterstadt'. null wenn nicht genannt — nicht raten."),
   }),
   gewerk: z.string().nullable().describe("Gewerk, z.B. 'Malerei', 'Sanitär'."),
   objekt: z

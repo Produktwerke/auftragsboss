@@ -9,13 +9,25 @@
 import type { Position } from "../ai/structure.js";
 import type { Preisliste } from "../preisliste.js";
 
-export interface BerechnetePosition extends Position {
+// Die KI kennt nur LEISTUNG und MATERIAL — der Handwerker darf im Editor
+// aber eigene Hauptkategorien anlegen ("Gerüst", "Entsorgung", …). Deshalb
+// ist die Kategorie ab hier ein freier Text, nicht mehr das enge Enum.
+export type EingabePosition = Omit<Position, "kategorie"> & { kategorie: string };
+
+/** Anzeigename einer Kategorie — die KI-Codes bekommen sprechende Titel. */
+export function kategorieName(kategorie: string): string {
+  if (kategorie === "LEISTUNG") return "Arbeitsaufwand";
+  if (kategorie === "MATERIAL") return "Material";
+  return kategorie;
+}
+
+export interface BerechnetePosition extends EingabePosition {
   nummer: number;
   gesamt: number | null; // null = nicht berechenbar (Menge oder Preis fehlt)
   offen: boolean; // true = Preis wird vom Handwerker noch eingetragen
 }
 
-/** Zwischensumme eines Blocks (Arbeitsaufwand bzw. Material). */
+/** Zwischensumme eines Blocks (Arbeitsaufwand, Material oder eigene Kategorie). */
 export interface Teilsumme {
   netto: number;
   /** true, wenn jede Position dieses Blocks berechenbar ist. */
@@ -23,10 +35,20 @@ export interface Teilsumme {
   anzahl: number;
 }
 
+export interface Kategorieblock extends Teilsumme {
+  /** Interner Schlüssel (z.B. "LEISTUNG" oder ein frei vergebener Name). */
+  kategorie: string;
+  /** Sprechender Titel für die Anzeige, z.B. "Arbeitsaufwand". */
+  name: string;
+  positionen: BerechnetePosition[];
+}
+
 export interface Angebotssumme {
   positionen: BerechnetePosition[];
-  /** Getrennte Zwischensummen — Arbeitsaufwand und Material kalkuliert der
-   *  Handwerker unterschiedlich und will sie im Angebot getrennt sehen. */
+  /** Blöcke in der Reihenfolge ihres ersten Auftretens — jeder mit eigener
+   *  Zwischensumme. Der Handwerker kann eigene Kategorien anlegen. */
+  bloecke: Kategorieblock[];
+  /** Kurzzugriffe für die Standard-Blöcke (E-Mail-Vorlagen). */
   leistungen: Teilsumme;
   material: Teilsumme;
   netto: number;
@@ -48,7 +70,7 @@ export interface Angebotssumme {
 const centGenau = (betrag: number): number => Math.round(betrag * 100) / 100;
 
 export function berechneAngebot(
-  positionen: Position[],
+  positionen: EingabePosition[],
   preisliste: Preisliste,
   ab: Date = new Date(),
 ): Angebotssumme {
@@ -72,10 +94,22 @@ export function berechneAngebot(
     anzahl: auswahl.length,
   });
 
+  // Blöcke in der Reihenfolge des ersten Auftretens der Kategorie
+  const reihenfolge: string[] = [];
+  for (const p of berechnet) {
+    if (!reihenfolge.includes(p.kategorie)) reihenfolge.push(p.kategorie);
+  }
+  const bloecke: Kategorieblock[] = reihenfolge.map((kategorie) => {
+    const eigene = berechnet.filter((p) => p.kategorie === kategorie);
+    return { kategorie, name: kategorieName(kategorie), positionen: eigene, ...teilsumme(eigene) };
+  });
+
   const leistungen = teilsumme(berechnet.filter((p) => p.kategorie !== "MATERIAL"));
   const material = teilsumme(berechnet.filter((p) => p.kategorie === "MATERIAL"));
 
-  const netto = centGenau(leistungen.netto + material.netto);
+  const netto = centGenau(
+    bloecke.reduce((s, b) => s + Math.round(b.netto * 100), 0) / 100,
+  );
   const mwstSatz = preisliste.konditionen.mwstSatz;
   const mwstBetrag = centGenau((netto * mwstSatz) / 100);
 
@@ -86,6 +120,7 @@ export function berechneAngebot(
 
   return {
     positionen: berechnet,
+    bloecke,
     leistungen,
     material,
     netto,

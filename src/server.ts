@@ -2,6 +2,7 @@
 import Fastify from "fastify";
 import { serverConfig } from "./config.js";
 import { whatsappRoutes } from "./whatsapp/webhook.js";
+import { editorRoutes } from "./web/routes.js";
 import { starteGewaehrleistungsJob } from "./jobs/warrantyReminders.js";
 import { starteVorgangTimeoutJob } from "./jobs/vorgangTimeout.js";
 
@@ -11,6 +12,7 @@ const app = Fastify({ logger: true });
 app.get("/health", async () => ({ status: "ok", service: "voiceprotokoll-guard" }));
 
 await app.register(whatsappRoutes);
+await app.register(editorRoutes);
 
 starteGewaehrleistungsJob();
 starteVorgangTimeoutJob();

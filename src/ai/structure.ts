@@ -318,8 +318,10 @@ export async function strukturiereDialog(
     })
     .join("\n\n");
 
+  // Claude Fable 5: Thinking ist immer aktiv (adaptive ist der einzige
+  // zulässige Modus), Sampling-Parameter gibt es nicht mehr.
   const response = await anthropic.messages.parse({
-    model: "claude-opus-4-8",
+    model: "claude-fable-5",
     max_tokens: 16000,
     thinking: { type: "adaptive" },
     system: systemPrompt(preisliste),
@@ -336,6 +338,12 @@ export async function strukturiereDialog(
     output_config: { format: zodOutputFormat(DokumentSchema) },
   });
 
+  // Fable 5 kann Anfragen aus Sicherheitsgründen ablehnen (stop_reason
+  // "refusal") — bei Handwerker-Diktaten praktisch ausgeschlossen, aber
+  // sauber abfangen statt kryptisch scheitern.
+  if (response.stop_reason === "refusal") {
+    throw new Error("Die KI hat die Verarbeitung abgelehnt (refusal) — bitte Diktat prüfen.");
+  }
   if (!response.parsed_output) {
     throw new Error(`Strukturierung fehlgeschlagen (stop_reason: ${response.stop_reason})`);
   }

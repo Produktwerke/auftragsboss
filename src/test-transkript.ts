@@ -44,19 +44,25 @@ async function main(): Promise<void> {
   console.log("   Transkribiere …");
 
   const start = Date.now();
-  const transkript = await transkribiereAudio(readFileSync(voll), voll);
+  const t = await transkribiereAudio(readFileSync(voll), voll);
   const dauer = ((Date.now() - start) / 1000).toFixed(1);
 
-  console.log(`   fertig in ${dauer}s\n`);
+  console.log(`   ${t.varianten.length} Fassung(en) in ${dauer}s\n`);
   console.log(linie("═"));
-  console.log("TRANSKRIPT — dieser Text geht später an die KI");
+  console.log("TRANSKRIPT — diese Fassungen gehen an die KI");
   console.log(linie("═"));
-  console.log(transkript);
+  t.varianten.forEach((v, i) => {
+    console.log(`${i > 0 ? "\n" : ""}Fassung ${i + 1}:\n${v}`);
+  });
   console.log(linie("═"));
+  if (t.varianten.length > 1) {
+    console.log("\nℹ️  Zwei Modelle lassen unterschiedliche Stellen weg —");
+    console.log("   Claude führt die Fassungen zusammen und nimmt den vollen Inhalt.");
+  }
 
   // Zusätzlich als Datei ablegen — bequemer zum Kopieren als aus der Konsole
   const ausgabe = resolve("transkript.txt");
-  writeFileSync(ausgabe, transkript, "utf-8");
+  writeFileSync(ausgabe, t.varianten.join("\n\n---\n\n"), "utf-8");
   console.log(`\n💾 Auch gespeichert unter: ${ausgabe}`);
   console.log(`   Kosten: ca. ${(0.006 * Math.max(1, Number(dauer) / 6)).toFixed(3)} $ (Whisper: 0,6 ct/Minute)\n`);
 }

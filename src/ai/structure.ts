@@ -217,11 +217,17 @@ Du erhältst das Roh-Transkript einer WhatsApp-Sprachnachricht, die ein Handwerk
 
 1. **Hörfehler korrigieren.** Die Spracherkennung verwechselt Fachbegriffe. Erkenne aus dem Handwerkskontext, was gemeint war — z.B. "Balkontiere" → "Balkontüren", "Tabezieher" → "tapezieren", "schläfen" → "schleifen", "fünfzehner Kupferrohr" → "Kupferrohr 15 mm". Vermerke solche Korrekturen in "rueckfragen", wenn du dir nicht sicher bist.
 
-2. **Dokumentart erkennen.** Geht es um Arbeiten, die noch ausgeführt werden sollen (ANGEBOT), oder um bereits erledigte Arbeiten (PROTOKOLL)? Achte auf die Zeitform und darauf, ob Maße für eine Kalkulation aufgenommen werden.
+2. **Mehrere Fassungen zusammenführen.** Eine Sprachnachricht wird von zwei verschiedenen Spracherkennungen unabhängig transkribiert; beide Fassungen bekommst du. Sie stammen von DERSELBEN Aufnahme — es sind keine zwei Aufträge.
+   - **Nimm den vollständigen Inhalt beider Fassungen.** Die Systeme lassen unterschiedliche Stellen weg. Ein Arbeitsschritt, der nur in einer Fassung steht (z.B. "vorher Tapete runter machen"), wurde tatsächlich gesagt und gehört ins Angebot. Ein weggelassener Arbeitsschritt kostet den Handwerker Geld.
+   - **Bei Widersprüchen entscheide fachlich.** Steht in einer Fassung "Balkontüren" und in der anderen "Balkontiere", ist "Balkontüren" richtig.
+   - **Namen und Orte weichen oft ab** ("Familie Bär" / "Familie Behr", "Rotberg" / "Rodeberg"). Wähle die plausiblere Schreibweise und weise in "rueckfragen" darauf hin, dass die Schreibweise zu prüfen ist.
+   - **Zähle nichts doppelt.** Dieselbe Leistung in beiden Fassungen ist EINE Position.
 
-3. **Positionen sauber trennen.** Jede Leistung wird eine eigene Position mit Menge und Einheit. Ordne sie in der Reihenfolge, in der ein Fachmann sie ausführen würde (z.B. erst Tapete entfernen, dann spachteln, dann schleifen, dann tapezieren) — nicht in der Reihenfolge des Diktats.
+3. **Dokumentart erkennen.** Geht es um Arbeiten, die noch ausgeführt werden sollen (ANGEBOT), oder um bereits erledigte Arbeiten (PROTOKOLL)? Achte auf die Zeitform und darauf, ob Maße für eine Kalkulation aufgenommen werden.
 
-4. **Mengen ableiten, aber ehrlich kennzeichnen.** Wenn eine Menge nur indirekt genannt wurde (z.B. Raumfläche für Deckenarbeiten), darfst du sie übernehmen und setzt "mengeUnsicher": true. Rechne keine komplizierten Wandflächen aus, wenn die nötigen Maße fehlen — dann Menge null und ein Eintrag in "rueckfragen".
+4. **Positionen sauber trennen.** Jede Leistung wird eine eigene Position mit Menge und Einheit. Ordne sie in der Reihenfolge, in der ein Fachmann sie ausführen würde (z.B. erst Tapete entfernen, dann spachteln, dann schleifen, dann tapezieren) — nicht in der Reihenfolge des Diktats.
+
+5. **Mengen ableiten, aber ehrlich kennzeichnen.** Wenn eine Menge nur indirekt genannt wurde (z.B. Raumfläche für Deckenarbeiten), darfst du sie übernehmen und setzt "mengeUnsicher": true. Rechne keine komplizierten Wandflächen aus, wenn die nötigen Maße fehlen — dann Menge null und ein Eintrag in "rueckfragen".
 
 5. **Material ergänzen — als sichtbaren Vorschlag.** Zu jeder diktierten Leistung gehört Material, das der Handwerker im Auto meist nicht mit aufzählt. Ergänze es als Positionen mit kategorie "MATERIAL" und vorschlag true. Regeln dafür:
    - Menge NUR setzen, wenn sie sich direkt aus einer Leistung ergibt (Malervlies = Deckenfläche). Verbrauchsmengen wie "wie viel Kleister auf 45 m²" hängen vom Produkt und Untergrund ab — die schätzt du NICHT, Menge bleibt null.
@@ -268,6 +274,8 @@ Ordne Positionen anhand der Suchbegriffe zu. Passt nichts, bleibt der Preis unbe
 export interface DialogNachricht {
   rolle: "handwerker" | "assistent";
   text: string;
+  /** Zweite Transkriptionsfassung derselben Sprachnachricht, falls vorhanden. */
+  zweitfassung?: string;
 }
 
 /**
@@ -285,7 +293,16 @@ export async function strukturiereDialog(
   const b = preisliste.betrieb;
 
   const verlauf = nachrichten
-    .map((n) => (n.rolle === "handwerker" ? `HANDWERKER: ${n.text}` : `RÜCKFRAGE: ${n.text}`))
+    .map((n) => {
+      if (n.rolle === "assistent") return `RÜCKFRAGE: ${n.text}`;
+      if (!n.zweitfassung || n.zweitfassung === n.text) return `HANDWERKER: ${n.text}`;
+      // Zwei Fassungen derselben Aufnahme — Claude führt sie zusammen
+      return (
+        `HANDWERKER (Sprachnachricht, zwei Transkriptionsfassungen derselben Aufnahme):\n` +
+        `  Fassung 1: ${n.text}\n` +
+        `  Fassung 2: ${n.zweitfassung}`
+      );
+    })
     .join("\n\n");
 
   const response = await anthropic.messages.parse({

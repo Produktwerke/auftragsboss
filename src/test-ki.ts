@@ -8,11 +8,13 @@
 //   npm run test:ki                          → eingebautes Beispiel-Diktat
 //   npm run test:ki -- transkript.txt        → eigener getippter Text
 //   npm run test:ki -- sprachmemo.mp3        → echte Sprachaufnahme (+ OpenAI-Key)
-import { readFileSync } from "node:fs";
-import { strukturiereTranskript } from "./ai/structure.js";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { strukturiereDialog, type DialogNachricht } from "./ai/structure.js";
 import { transkribiereAudio } from "./ai/transcribe.js";
 import { ladePreisliste } from "./preisliste.js";
 import { berechneAngebot, euro, mengeMitEinheit } from "./angebot/berechnung.js";
+import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
 
 const BEISPIEL_DIKTAT = `
 So, ich war gerade bei Familie Bär, Rotberg 18. Wohnzimmer tapezieren,
@@ -28,21 +30,22 @@ const deDatum = (d: Date) => d.toLocaleDateString("de-DE");
 
 async function main(): Promise<void> {
   const arg = process.argv[2];
-  let transkript: string;
+  let nachricht: DialogNachricht;
 
   if (!arg) {
     console.log("ℹ️  Kein Argument übergeben — nutze das eingebaute Beispiel-Diktat.\n");
-    transkript = BEISPIEL_DIKTAT;
+    nachricht = { rolle: "handwerker", text: BEISPIEL_DIKTAT };
   } else {
     const endung = arg.split(".").pop()?.toLowerCase() ?? "";
     if (AUDIO_ENDUNGEN.includes(endung)) {
-      console.log(`🎙️  Transkribiere Audiodatei: ${arg} …`);
+      console.log(`🎙️  Transkribiere Audiodatei mit zwei Modellen: ${arg} …`);
       const start = Date.now();
-      transkript = await transkribiereAudio(readFileSync(arg), arg);
-      console.log(`   fertig in ${((Date.now() - start) / 1000).toFixed(1)}s\n`);
+      const t = await transkribiereAudio(readFileSync(arg), arg);
+      console.log(`   ${t.varianten.length} Fassung(en) in ${((Date.now() - start) / 1000).toFixed(1)}s\n`);
+      nachricht = { rolle: "handwerker", text: t.haupttext, zweitfassung: t.varianten[1] };
     } else {
       console.log(`📄 Lese Textdatei: ${arg}\n`);
-      transkript = readFileSync(arg, "utf-8").trim();
+      nachricht = { rolle: "handwerker", text: readFileSync(arg, "utf-8").trim() };
     }
   }
 
@@ -51,11 +54,14 @@ async function main(): Promise<void> {
   console.log(linie("═"));
   console.log("EINGABE — Rohtext des Diktats");
   console.log(linie("═"));
-  console.log(transkript);
+  console.log(`Fassung 1 (whisper-1):\n${nachricht.text}`);
+  if (nachricht.zweitfassung) {
+    console.log(`\nFassung 2 (gpt-4o-transcribe):\n${nachricht.zweitfassung}`);
+  }
 
-  console.log("\n🤖 Claude strukturiert das Diktat …");
+  console.log("\n🤖 Claude führt zusammen und strukturiert …");
   const start = Date.now();
-  const d = await strukturiereTranskript(transkript, preisliste);
+  const d = await strukturiereDialog([nachricht], preisliste);
   console.log(`   fertig in ${((Date.now() - start) / 1000).toFixed(1)}s\n`);
 
   const istAngebot = d.art === "ANGEBOT";
@@ -170,8 +176,28 @@ async function main(): Promise<void> {
     console.log(`🔔 Erinnerung: ${deDatum(vorwarnung)} — Wartungsangebot machen!`);
   }
 
+  // Word-Datei erzeugen, damit das Ergebnis auch als fertiges Dokument vorliegt
+  const nummer = `ANG-${new Date().getFullYear()}-TEST`;
+  const word = await erzeugeAngebotWord({
+    daten: d,
+    summe,
+    preisliste,
+    nummer,
+    datum: new Date(),
+  });
+  const ordner = resolve("demo-ausgabe");
+  mkdirSync(ordner, { recursive: true });
+  const docxName = wordDateiname(d.art, nummer, d.kunde.name);
+  const pfad = resolve(ordner, docxName);
+  writeFileSync(pfad, word);
+
+  console.log("\n" + linie("═"));
+  console.log("📎 WORD-DATEI ERZEUGT");
+  console.log(linie("═"));
+  console.log(pfad);
+
   console.log("\n" + linie());
-  console.log("✅ Testlauf erfolgreich. Kosten: ca. 5–15 Cent.");
+  console.log("✅ Testlauf erfolgreich. Kosten: ca. 10–20 Cent (2 Transkriptionen + Claude).");
   console.log(linie());
 }
 

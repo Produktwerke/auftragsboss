@@ -67,11 +67,16 @@ export async function verarbeiteNachricht(args: {
   }
 
   try {
-    // 2. Eingabe zu Text machen
+    // 2. Eingabe zu Text machen. Sprachnachrichten werden von zwei Modellen
+    //    transkribiert — sie lassen unterschiedliche Stellen weg (siehe
+    //    ai/transcribe.ts); Claude führt die Fassungen später zusammen.
     let inhalt: string;
+    let zweitfassung: string | undefined;
     let art: "sprache" | "text";
     if (mediaId) {
-      inhalt = await transkribiereAudio(await ladeAudio(mediaId));
+      const t = await transkribiereAudio(await ladeAudio(mediaId));
+      inhalt = t.haupttext;
+      zweitfassung = t.varianten[1];
       art = "sprache";
     } else {
       inhalt = (text ?? "").trim();
@@ -101,7 +106,12 @@ export async function verarbeiteNachricht(args: {
     if (!vorgang) {
       vorgang = await prisma.vorgang.create({ data: { handwerkerId: handwerker.id } });
     }
-    vorgang = await ergaenzeNachricht(prisma, vorgang, { rolle: "handwerker", text: inhalt, art });
+    vorgang = await ergaenzeNachricht(prisma, vorgang, {
+      rolle: "handwerker",
+      text: inhalt,
+      art,
+      ...(zweitfassung ? { zweitfassung } : {}),
+    });
 
     // 4. Gesamten Verlauf auswerten
     const preisliste = ladePreisliste();

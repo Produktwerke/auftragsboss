@@ -80,7 +80,11 @@ export function nachrichtenLesen(vorgang: Vorgang): GespeicherteNachricht[] {
 
 /** Nur die Gesprächsanteile, die die KI braucht. */
 export function alsDialog(vorgang: Vorgang): DialogNachricht[] {
-  return nachrichtenLesen(vorgang).map(({ rolle, text }) => ({ rolle, text }));
+  return nachrichtenLesen(vorgang).map(({ rolle, text, zweitfassung }) => ({
+    rolle,
+    text,
+    ...(zweitfassung ? { zweitfassung } : {}),
+  }));
 }
 
 /**

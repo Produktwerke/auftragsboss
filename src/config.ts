@@ -29,15 +29,16 @@ export const serverConfig = lade(
   z.object({ PORT: z.coerce.number().default(3000) }),
 );
 
-export const aiConfig = lade(
-  "KI (Anthropic / OpenAI)",
+// Nur OpenAI — für die Transkription (Whisper). Bewusst getrennt, damit
+// sich eine Sprachnachricht auch ohne Anthropic-Zugang testen lässt.
+export const openaiConfig = lade(
+  "OpenAI (Whisper)",
   z.object({
-    ANTHROPIC_API_KEY: z.string().startsWith("sk-ant-", "muss mit 'sk-ant-' beginnen"),
     OPENAI_API_KEY: z.string().min(10),
   }),
 );
 
-// Nur Anthropic — für das KI-Test-Skript ohne Sprachnachricht.
+// Nur Anthropic — für die Strukturierung des Transkripts.
 export const anthropicConfig = lade(
   "Anthropic",
   z.object({

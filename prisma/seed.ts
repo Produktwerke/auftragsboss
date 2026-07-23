@@ -1,22 +1,29 @@
-// Seed: legt einen Test-Handwerker an, damit die eigene WhatsApp-Nummer
-// sofort erkannt wird. Aufruf: npm run db:seed
+// Seed: legt den Handwerker aus preisliste.json an, damit die eigene
+// WhatsApp-Nummer sofort erkannt wird. Aufruf: npm run db:seed
 import { PrismaClient } from "@prisma/client";
+import { ladePreisliste } from "../src/preisliste.js";
 
 const prisma = new PrismaClient();
 
+// ← HIER die eigene WhatsApp-Nummer eintragen (E.164, ohne "+")
+const WHATSAPP_NUMMER = "4917612345678";
+
 async function main() {
+  const { betrieb } = ladePreisliste();
+
   const handwerker = await prisma.handwerker.upsert({
-    where: { whatsappNummer: "4917612345678" }, // ← HIER eigene Nummer eintragen (E.164 ohne +)
-    update: {},
+    where: { whatsappNummer: WHATSAPP_NUMMER },
+    update: { firma: betrieb.firma, name: betrieb.inhaber, email: betrieb.email },
     create: {
-      whatsappNummer: "4917612345678",
-      name: "Max Mustermann",
-      firma: "Mustermann Haustechnik GmbH",
-      email: "max@mustermann-haustechnik.de", // ← HIER eigene E-Mail eintragen
-      gewerk: "Sanitär / Heizung",
+      whatsappNummer: WHATSAPP_NUMMER,
+      name: betrieb.inhaber,
+      firma: betrieb.firma,
+      email: betrieb.email,
+      gewerk: betrieb.gewerk,
     },
   });
-  console.log("✅ Handwerker angelegt:", handwerker.firma, `(${handwerker.whatsappNummer})`);
+  console.log(`✅ Handwerker angelegt: ${handwerker.firma} (${handwerker.whatsappNummer})`);
+  console.log(`   Dokumente gehen an: ${handwerker.email}`);
 }
 
 main()

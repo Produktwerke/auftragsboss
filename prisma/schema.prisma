@@ -1,4 +1,4 @@
-// VoiceProtokoll Guard — Datenmodell
+// Angebotsblitz — Datenmodell
 // SQLite für Dev; für Produktion provider auf "postgresql" ändern.
 
 generator client {
@@ -13,62 +13,75 @@ datasource db {
 // Der registrierte Handwerksbetrieb. Identifikation NUR über die
 // WhatsApp-Nummer — kein Login, kein Passwort (Kernprinzip!).
 model Handwerker {
-  id             String      @id @default(cuid())
-  whatsappNummer String      @unique // E.164, z.B. "4917612345678"
+  id             String     @id @default(cuid())
+  whatsappNummer String     @unique // E.164, z.B. "4917612345678"
   name           String
   firma          String
-  email          String // Zieladresse für Protokoll-Mails
-  gewerk         String? // z.B. "Sanitär" — hilft der KI beim Strukturieren
-  erstelltAm     DateTime    @default(now())
-  protokolle     Protokoll[]
+  email          String // Zieladresse für die fertigen Dokumente
+  gewerk         String?
+  erstelltAm     DateTime   @default(now())
+  dokumente      Dokument[]
 }
 
-// Ein archiviertes Auftrags-Protokoll — der eigentliche Wert des Systems.
-// Unveränderlich nach Erstellung (Beweissicherungs-Charakter).
-model Protokoll {
-  id           String   @id @default(cuid())
+// Ein Dokument aus einem Diktat — Angebot ODER Protokoll.
+// Beides landet im selben Archiv: der Auftragszyklus eines Kunden
+// bleibt so an einer Stelle nachvollziehbar.
+model Dokument {
+  id           String     @id @default(cuid())
   handwerkerId String
   handwerker   Handwerker @relation(fields: [handwerkerId], references: [id])
 
+  art    String // "ANGEBOT" | "PROTOKOLL"
+  nummer String // z.B. "ANG-2026-0042" bzw. "PRO-2026-0042"
+
   // Rohdaten — bewusst aufbewahrt (Nachvollziehbarkeit / Streitfall)
-  whatsappMediaId String? // Meta-Media-ID der Original-Sprachnachricht
+  whatsappMediaId String?
   transkript      String // Whisper-Rohtranskript, unverändert
 
   // Strukturierte Daten (von Claude extrahiert)
   kundeName      String?
   kundeAdresse   String?
   gewerk         String?
-  leistungenJson String // JSON: [{beschreibung, menge}]
-  materialJson   String // JSON: [string]
-  arbeitszeit    String?
+  objekt         String?
+  positionenJson String // JSON: berechnete Positionen inkl. Preise
+  aufmassNotizen String?
   besonderheiten String?
   folgetermin    String?
+  einleitung     String
+  schlusstext    String
+  rueckfragenJson String @default("[]")
 
-  // Fertiger, kundenfähiger Protokolltext (zum Weiterleiten)
-  protokollText String
+  // Summen — im Code berechnet, nicht von der KI
+  netto       Float
+  mwstSatz    Float
+  mwstBetrag  Float
+  brutto      Float
+  anzahlOffen Int     @default(0) // Positionen ohne Preis
+  gueltigBis  DateTime?
 
-  auftragsDatum DateTime @default(now())
-  erstelltAm    DateTime @default(now())
+  datum      DateTime @default(now())
+  erstelltAm DateTime @default(now())
 
   gewaehrleistung Gewaehrleistung?
 
-  @@index([handwerkerId, auftragsDatum])
+  @@index([handwerkerId, datum])
+  @@index([art])
 }
 
-// Gewährleistungs-Tracking nach § 634a BGB:
+// Gewährleistungs-Tracking nach § 634a BGB — nur für Protokolle:
 //   - 2 Jahre für Werkleistungen (Standard)
 //   - 5 Jahre für Arbeiten an Bauwerken
 // Erinnerung 3 Monate vor Ablauf = Wartungs-Verkaufschance,
 // Erinnerung bei Ablauf = Haftungsende dokumentiert.
 model Gewaehrleistung {
-  id          String    @id @default(cuid())
-  protokollId String    @unique
-  protokoll   Protokoll @relation(fields: [protokollId], references: [id])
+  id         String   @id @default(cuid())
+  dokumentId String   @unique
+  dokument   Dokument @relation(fields: [dokumentId], references: [id])
 
-  typ         String // "WERK_2_JAHRE" | "BAUWERK_5_JAHRE"
-  beginn      DateTime // = Auftrags-/Abnahmedatum
-  ablauf      DateTime // beginn + 2 bzw. 5 Jahre
-  vorwarnung  DateTime // ablauf - 3 Monate
+  typ    String // "WERK_2_JAHRE" | "BAUWERK_5_JAHRE"
+  beginn DateTime
+  ablauf DateTime
+  vorwarnung DateTime
 
   vorwarnungGesendet Boolean @default(false)
   ablaufGesendet     Boolean @default(false)

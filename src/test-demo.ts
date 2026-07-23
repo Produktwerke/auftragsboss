@@ -1,113 +1,128 @@
 // DEMO-MODUS — läuft komplett OHNE API-Keys und OHNE E-Mail-Versand.
 //
 // Durchläuft die gesamte Kette mit fertigen Beispieldaten:
-//   Diktat → (KI übersprungen) → Datenbank-Archiv → Gewährleistungsfrist
+//   Diktat → (KI übersprungen) → Summenberechnung → Datenbank-Archiv
 //          → E-Mail als HTML-Datei zum Anschauen im Browser
 //
 // Damit lässt sich alles testen außer den beiden KI-Schritten:
-// Datenbank, Fristen-Berechnung, E-Mail-Layout, Erinnerungs-Mails.
+// Preisliste, Summenberechnung, Datenbank, E-Mail-Layout, Erinnerungs-Mails.
 //
 // Aufruf: npm run test:demo
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { PrismaClient } from "@prisma/client";
-import type { ProtokollDaten } from "./ai/structure.js";
-import { protokollMail, gewaehrleistungsErinnerung } from "./email/templates.js";
+import type { DokumentDaten } from "./ai/structure.js";
+import { berechneAngebot } from "./angebot/berechnung.js";
+import { ladePreisliste } from "./preisliste.js";
+import { dokumentMail, gewaehrleistungsErinnerung } from "./email/templates.js";
 
 const prisma = new PrismaClient();
 const AUSGABE_ORDNER = resolve("demo-ausgabe");
 
-// ── Beispiel-Betrieb ──────────────────────────────────────
-const BETRIEB = {
-  whatsappNummer: "4917612345678",
-  name: "Max Mustermann",
-  firma: "Mustermann Haustechnik GmbH",
-  email: "max@mustermann-haustechnik.de",
-  gewerk: "Sanitär / Heizung",
-};
+const BETRIEB_WHATSAPP = "4917612345678";
 
 const TRANSKRIPT =
-  "So, ich bin gerade bei Familie Müller in der Gartenstraße 12 fertig geworden. " +
-  "Wir haben heute die Gastherme gewartet, also Brenner gereinigt, Düsen kontrolliert " +
-  "und das Ausdehnungsgefäß getauscht, das war komplett hinüber. Ähm, waren ungefähr " +
-  "zweieinhalb Stunden. Material war das neue Ausdehnungsgefäß 18 Liter und zwei " +
-  "Dichtungen. Wichtig: Ich hab die Frau Müller drauf hingewiesen, dass das Eckventil " +
-  "im Gäste-WC tropft, das müsste eigentlich auch gemacht werden, das wollte sie sich " +
-  "aber noch überlegen. Und wir haben ausgemacht, nächste Woche Dienstag komme ich " +
-  "nochmal vorbei wegen dem Heizkörper im Schlafzimmer, der wird nicht richtig warm.";
+  "So, ich war gerade bei Familie Bär, Rotberg 18. Wohnzimmer tapezieren, ca. 45 " +
+  "Quadratmeter, Deckenhöhe 2,50. Tapete nach Wahl. Decken spachteln, vorher Tapete " +
+  "runter machen, Malervlies an die Decke. Wohnzimmer hat 5 Fenster, davon sind 3 " +
+  "Balkontüren, 1,70 Meter breit die Türen. An den Wänden Löcher zumachen, " +
+  "Kabelkanäle zuspachteln, ein bisschen schleifen und das wars eigentlich.";
 
 // Genau das, was Claude aus dem Transkript machen würde —
 // hier fest hinterlegt, damit kein API-Key nötig ist.
-const DEMO_DATEN: ProtokollDaten = {
-  kunde: { name: "Familie Müller", adresse: "Gartenstraße 12" },
-  auftrag: {
-    gewerk: "Sanitär / Heizung",
-    leistungen: [
-      { beschreibung: "Wartung der Gastherme", menge: null },
-      { beschreibung: "Reinigung des Brenners", menge: null },
-      { beschreibung: "Kontrolle der Düsen", menge: null },
-      { beschreibung: "Austausch des defekten Ausdehnungsgefäßes", menge: "1 Stück" },
-    ],
-    material: ["Ausdehnungsgefäß 18 Liter", "2 Dichtungen"],
-    arbeitszeit: "ca. 2,5 Stunden",
-    besonderheiten:
-      "Kundin wurde auf das tropfende Eckventil im Gäste-WC hingewiesen. Austausch " +
-      "wurde empfohlen, um Folgeschäden zu vermeiden; die Kundin möchte sich dies " +
-      "noch überlegen.",
-    folgetermin: "Dienstag kommender Woche — Prüfung des Heizkörpers im Schlafzimmer",
-  },
-  gewaehrleistung: {
-    typ: "WERK_2_JAHRE",
-    begruendung:
-      "Wartungs- und Instandsetzungsarbeiten an einer bestehenden Heizungsanlage " +
-      "sind keine für Errichtung oder Bestand des Bauwerks wesentlichen Arbeiten.",
-  },
-  protokoll_text: `Sehr geehrte Familie Müller,
+const DEMO_DATEN: DokumentDaten = {
+  art: "ANGEBOT",
+  kunde: { name: "Familie Bär", adresse: "Rotberg 18" },
+  gewerk: "Malerei",
+  objekt: "Wohnzimmer, ca. 45 m² Deckenfläche, Deckenhöhe 2,50 m",
+  // Regelfall: im Auto diktiert, keine Preise genannt → alle Preise offen.
+  positionen: [
+    {
+      beschreibung: "Alte Tapete entfernen und Untergrund reinigen",
+      menge: 45,
+      einheit: "m2",
+      einzelpreis: null,
+      preisquelle: "UNBEKANNT",
+      mengeUnsicher: false,
+    },
+    {
+      beschreibung: "Deckenflächen spachteln",
+      menge: 45,
+      einheit: "m2",
+      einzelpreis: null,
+      preisquelle: "UNBEKANNT",
+      mengeUnsicher: false,
+    },
+    {
+      beschreibung: "Schleifarbeiten",
+      menge: 45,
+      einheit: "m2",
+      einzelpreis: null,
+      preisquelle: "UNBEKANNT",
+      mengeUnsicher: true,
+    },
+    {
+      beschreibung: "Malervlies an der Decke anbringen",
+      menge: 45,
+      einheit: "m2",
+      einzelpreis: null,
+      preisquelle: "UNBEKANNT",
+      mengeUnsicher: false,
+    },
+    {
+      beschreibung: "Wohnzimmer tapezieren (Tapete nach Wahl des Kunden)",
+      menge: null, // Wandfläche nicht berechenbar — Wandmaße fehlen im Diktat
+      einheit: "m2",
+      einzelpreis: null,
+      preisquelle: "UNBEKANNT",
+      mengeUnsicher: false,
+    },
+    {
+      beschreibung: "Löcher und Risse in den Wänden verschließen",
+      menge: null,
+      einheit: "Stk",
+      einzelpreis: null,
+      preisquelle: "UNBEKANNT",
+      mengeUnsicher: false,
+    },
+    {
+      beschreibung: "Kabelkanäle verspachteln",
+      menge: null,
+      einheit: "lfm",
+      einzelpreis: null,
+      preisquelle: "UNBEKANNT",
+      mengeUnsicher: false,
+    },
+  ],
+  aufmassNotizen:
+    "Wohnzimmer ca. 45 m² Grundfläche, Deckenhöhe 2,50 m. 5 Fenster, davon 3 Balkontüren " +
+    "mit je 1,70 m Breite (abzugsrelevant für die Wandfläche).",
+  besonderheiten:
+    "Tapete wird vom Kunden ausgewählt — Materialkosten der Tapete sind im Angebot noch nicht enthalten.",
+  folgetermin: null,
+  einleitung: `Sehr geehrte Familie Bär,
 
-vielen Dank für Ihren Auftrag. Nachfolgend die Dokumentation der durchgeführten Arbeiten:
+vielen Dank für das freundliche Gespräch und die Besichtigung Ihres Wohnzimmers. Gerne unterbreiten wir Ihnen nachfolgend unser Angebot für die besprochenen Maler- und Tapezierarbeiten.`,
+  schlusstext: `Die Tapete wählen Sie nach eigenem Wunsch aus; die Materialkosten hierfür weisen wir nach Ihrer Entscheidung gesondert aus.
 
-Durchgeführte Arbeiten:
-- Wartung der Gastherme
-- Reinigung des Brenners
-- Kontrolle der Düsen
-- Austausch des defekten Ausdehnungsgefäßes
-
-Verwendetes Material:
-- Ausdehnungsgefäß 18 Liter
-- 2 Dichtungen
-
-Arbeitszeit: ca. 2,5 Stunden
-
-Hinweise und Absprachen:
-Im Rahmen der Arbeiten haben wir festgestellt, dass das Eckventil im Gäste-WC tropft. Wir haben Sie hierauf hingewiesen und empfehlen einen zeitnahen Austausch, um Folgeschäden zu vermeiden. Sie möchten sich dies noch überlegen — sprechen Sie uns gerne an.
-
-Folgetermin:
-Wie vereinbart kommen wir am kommenden Dienstag erneut vorbei, um den Heizkörper im Schlafzimmer zu prüfen, der nicht die volle Wärmeleistung erreicht.
-
-Bei Fragen stehen wir Ihnen jederzeit zur Verfügung.
+Bei Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung. Über Ihren Auftrag würden wir uns freuen.
 
 Mit freundlichen Grüßen
-Mustermann Haustechnik GmbH`,
+Mustermann Malerbetrieb GmbH`,
+  rueckfragen: [
+    "Wandfläche fürs Tapezieren fehlt — bitte Raummaße ergänzen (Fenster und Balkontüren abziehen).",
+    "Anzahl der zu schließenden Löcher und laufende Meter Kabelkanal wurden nicht genannt.",
+    "Deckenfläche für die Schleifarbeiten wurde aus der Raumfläche übernommen — bitte prüfen.",
+  ],
+  gewaehrleistung: null, // Angebot → noch keine Gewährleistung
 };
 
-const addJahre = (d: Date, n: number) => {
-  const x = new Date(d);
-  x.setFullYear(x.getFullYear() + n);
-  return x;
-};
-const addMonate = (d: Date, n: number) => {
-  const x = new Date(d);
-  x.setMonth(x.getMonth() + n);
-  return x;
-};
 const deDatum = (d: Date) => d.toLocaleDateString("de-DE");
-const linie = (z = "─") => z.repeat(64);
+const linie = (z = "─") => z.repeat(70);
 
 function schreibeHtml(dateiname: string, html: string): string {
   mkdirSync(AUSGABE_ORDNER, { recursive: true });
   const pfad = resolve(AUSGABE_ORDNER, dateiname);
-  // charset für Umlaute; color-scheme light, damit die Vorschau im Browser
-  // genauso aussieht wie später im E-Mail-Programm
   writeFileSync(
     pfad,
     `<!doctype html><meta charset="utf-8">\n` +
@@ -123,87 +138,103 @@ async function main(): Promise<void> {
   console.log("DEMO-MODUS — komplette Kette ohne API-Keys");
   console.log(linie("═"));
 
-  // 1. Betrieb anlegen (oder vorhandenen nutzen)
+  const preisliste = ladePreisliste();
+  console.log(`\n① Preisliste geladen: ${preisliste.positionen.length} Standardpositionen`);
+  console.log(`   Betrieb: ${preisliste.betrieb.firma}`);
+
+  // Betrieb anlegen (oder vorhandenen nutzen)
   const handwerker = await prisma.handwerker.upsert({
-    where: { whatsappNummer: BETRIEB.whatsappNummer },
+    where: { whatsappNummer: BETRIEB_WHATSAPP },
     update: {},
-    create: BETRIEB,
+    create: {
+      whatsappNummer: BETRIEB_WHATSAPP,
+      name: preisliste.betrieb.inhaber,
+      firma: preisliste.betrieb.firma,
+      email: preisliste.betrieb.email || "test@example.com",
+      gewerk: preisliste.betrieb.gewerk,
+    },
   });
-  console.log(`\n① Betrieb in der Datenbank: ${handwerker.firma}`);
 
-  // 2. Protokoll archivieren + Gewährleistungsfrist berechnen
-  const auftragsDatum = new Date();
-  const jahre = DEMO_DATEN.gewaehrleistung.typ === "BAUWERK_5_JAHRE" ? 5 : 2;
-  const ablauf = addJahre(auftragsDatum, jahre);
-  const vorwarnung = addMonate(ablauf, -3);
+  // Summen berechnen (im Code, nicht von der KI)
+  const datum = new Date();
+  const summe = berechneAngebot(DEMO_DATEN.positionen, preisliste, datum);
+  const jahr = datum.getFullYear();
+  const bisher = await prisma.dokument.count({
+    where: { handwerkerId: handwerker.id, art: DEMO_DATEN.art, datum: { gte: new Date(jahr, 0, 1) } },
+  });
+  const nummer = `ANG-${jahr}-${String(bisher + 1).padStart(4, "0")}`;
 
-  const protokoll = await prisma.protokoll.create({
+  console.log(`\n② Angebotsgerüst erstellt: ${summe.positionen.length} Positionen`);
+  if (summe.vollstaendig) {
+    console.log(`   Netto ${summe.netto.toFixed(2)} € · MwSt ${summe.mwstBetrag.toFixed(2)} € · Brutto ${summe.brutto.toFixed(2)} €`);
+  } else if (summe.ohnePreise) {
+    console.log(`   ✏️  Alle Preisspalten offen — Platzhalter zum Ausfüllen (Regelfall beim Diktat)`);
+  } else {
+    console.log(`   ✏️  ${summe.anzahlOffen} von ${summe.positionen.length} Positionen ohne Preis`);
+  }
+
+  // Archivieren
+  const dokument = await prisma.dokument.create({
     data: {
       handwerkerId: handwerker.id,
+      art: DEMO_DATEN.art,
+      nummer,
       transkript: TRANSKRIPT,
       kundeName: DEMO_DATEN.kunde.name,
       kundeAdresse: DEMO_DATEN.kunde.adresse,
-      gewerk: DEMO_DATEN.auftrag.gewerk,
-      leistungenJson: JSON.stringify(DEMO_DATEN.auftrag.leistungen),
-      materialJson: JSON.stringify(DEMO_DATEN.auftrag.material),
-      arbeitszeit: DEMO_DATEN.auftrag.arbeitszeit,
-      besonderheiten: DEMO_DATEN.auftrag.besonderheiten,
-      folgetermin: DEMO_DATEN.auftrag.folgetermin,
-      protokollText: DEMO_DATEN.protokoll_text,
-      auftragsDatum,
-      gewaehrleistung: {
-        create: { typ: DEMO_DATEN.gewaehrleistung.typ, beginn: auftragsDatum, ablauf, vorwarnung },
-      },
+      gewerk: DEMO_DATEN.gewerk,
+      objekt: DEMO_DATEN.objekt,
+      positionenJson: JSON.stringify(summe.positionen),
+      aufmassNotizen: DEMO_DATEN.aufmassNotizen,
+      besonderheiten: DEMO_DATEN.besonderheiten,
+      folgetermin: DEMO_DATEN.folgetermin,
+      einleitung: DEMO_DATEN.einleitung,
+      schlusstext: DEMO_DATEN.schlusstext,
+      rueckfragenJson: JSON.stringify(DEMO_DATEN.rueckfragen),
+      netto: summe.netto,
+      mwstSatz: summe.mwstSatz,
+      mwstBetrag: summe.mwstBetrag,
+      brutto: summe.brutto,
+      anzahlOffen: summe.anzahlOffen,
+      gueltigBis: summe.gueltigBis,
+      datum,
     },
   });
-  console.log(`② Protokoll archiviert — Archiv-Nr. ${protokoll.id}`);
-  console.log(`③ Gewährleistung: ${jahre} Jahre, läuft ab ${deDatum(ablauf)}`);
-  console.log(`   🔔 Erinnerung geplant für ${deDatum(vorwarnung)}`);
+  console.log(`\n③ Archiviert als ${nummer} (${dokument.id})`);
+  console.log(`   Gültig bis ${deDatum(summe.gueltigBis)}`);
 
-  // 3. Alle drei E-Mails als HTML-Dateien erzeugen
-  const mail = protokollMail({
+  // E-Mails als HTML erzeugen
+  const mail = dokumentMail({
     daten: DEMO_DATEN,
+    summe,
+    preisliste,
     transkript: TRANSKRIPT,
-    protokollId: protokoll.id,
-    auftragsDatum,
-    gewaehrleistungAblauf: ablauf,
+    nummer,
+    datum,
   });
-  const p1 = schreibeHtml("1-protokoll-mail.html", mail.html);
+  const p1 = schreibeHtml("1-angebot-mail.html", mail.html);
 
   const erinnerung = gewaehrleistungsErinnerung({
     art: "VORWARNUNG",
     kunde: DEMO_DATEN.kunde.name ?? "—",
-    auftragsDatum,
-    ablauf,
-    protokollId: protokoll.id,
-    protokollText: DEMO_DATEN.protokoll_text,
+    datum,
+    ablauf: new Date(datum.getFullYear() + 2, datum.getMonth(), datum.getDate()),
+    nummer: `PRO-${jahr}-0001`,
+    einleitung: DEMO_DATEN.einleitung,
   });
   const p2 = schreibeHtml("2-erinnerung-vorwarnung.html", erinnerung.html);
 
-  const ablaufMail = gewaehrleistungsErinnerung({
-    art: "ABLAUF",
-    kunde: DEMO_DATEN.kunde.name ?? "—",
-    auftragsDatum,
-    ablauf,
-    protokollId: protokoll.id,
-    protokollText: DEMO_DATEN.protokoll_text,
-  });
-  const p3 = schreibeHtml("3-erinnerung-ablauf.html", ablaufMail.html);
-
-  // 4. Gesamtstand aus der Datenbank
-  const anzahl = await prisma.protokoll.count();
+  const anzahl = await prisma.dokument.count();
 
   console.log("\n" + linie("═"));
   console.log("FERTIG — diese Dateien im Browser öffnen (Doppelklick):");
   console.log(linie("═"));
   console.log(`\n  1. ${p1}\n     → "${mail.betreff}"`);
   console.log(`\n  2. ${p2}\n     → "${erinnerung.betreff}"`);
-  console.log(`\n  3. ${p3}\n     → "${ablaufMail.betreff}"`);
-  console.log(`\n📦 Protokolle im Archiv: ${anzahl}`);
-  console.log("   (Archiv ansehen mit: npm run db:studio)");
+  console.log(`\n📦 Dokumente im Archiv: ${anzahl}   (ansehen mit: npm run db:studio)`);
   console.log("\n" + linie());
-  console.log("✅ Datenbank, Fristen-Berechnung und E-Mail-Layout funktionieren.");
-  console.log("   Offen bleibt nur der KI-Teil — dafür wird der API-Key gebraucht.");
+  console.log("✅ Preisliste, Summenberechnung, Datenbank und E-Mail-Layout funktionieren.");
+  console.log("   Offen bleibt nur der KI-Teil — dafür wird der Anthropic-Key gebraucht.");
   console.log(linie());
 }
 

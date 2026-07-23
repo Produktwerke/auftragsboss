@@ -1,0 +1,53 @@
+{
+  "_hinweis": "Deine Betriebsdaten. Die Preisliste unten ist OPTIONAL und standardmäßig leer — Angebote werden ganz normal ohne Preise erzeugt, mit Platzhaltern zum Ausfüllen. Nennst du im Diktat einen Preis, wird er übernommen. Wer will, kann hier zusätzlich Standardpreise hinterlegen (Beispiele siehe unten).",
+
+  "betrieb": {
+    "firma": "Mustermann Malerbetrieb GmbH",
+    "inhaber": "Max Mustermann",
+    "strasse": "Handwerkerweg 5",
+    "plz": "12345",
+    "ort": "Musterstadt",
+    "telefon": "01234 / 56789",
+    "email": "info@mustermann-maler.de",
+    "gewerk": "Malerei / Tapezierarbeiten",
+    "ustIdNr": "DE123456789"
+  },
+
+  "konditionen": {
+    "stundensatz": 0,
+    "mwstSatz": 19,
+    "angebotGueltigTage": 30,
+    "anfahrtPauschale": 0,
+    "zahlungsziel": "14 Tage netto nach Rechnungserhalt"
+  },
+
+  "positionen": [],
+
+  "_beispiel_positionen": "Optional: Standardpreise hinterlegen. Dann trägt die KI sie automatisch ein, statt einen Platzhalter zu lassen. Einfach die gewünschten Zeilen nach 'positionen' kopieren. Einheiten: m2, lfm, Stk, Std, pauschal.",
+  "_beispiele": [
+    {
+      "suchbegriffe": ["tapezieren", "tapete kleben"],
+      "beschreibung": "Tapezieren inkl. Kleister (Raufaser oder Vlies)",
+      "einheit": "m2",
+      "preis": 12.5
+    },
+    {
+      "suchbegriffe": ["tapete entfernen", "tapete runter", "enttapezieren"],
+      "beschreibung": "Alte Tapete entfernen und Untergrund reinigen",
+      "einheit": "m2",
+      "preis": 6.5
+    },
+    {
+      "suchbegriffe": ["spachteln", "decke spachteln"],
+      "beschreibung": "Spachtelarbeiten (Q2), inkl. Material",
+      "einheit": "m2",
+      "preis": 9.8
+    },
+    {
+      "suchbegriffe": ["anfahrt", "anfahrtskosten"],
+      "beschreibung": "Anfahrt (pauschal)",
+      "einheit": "pauschal",
+      "preis": 45.0
+    }
+  ]
+}

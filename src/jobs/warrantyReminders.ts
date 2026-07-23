@@ -9,51 +9,52 @@ import { sendeMail } from "../email/send.js";
 
 async function pruefeGewaehrleistungen(): Promise<void> {
   const jetzt = new Date();
+  const einschluss = { dokument: { include: { handwerker: true } } } as const;
 
   // ── Vorwarnungen (3 Monate vor Ablauf) ────────────────────
   const vorwarnungen = await prisma.gewaehrleistung.findMany({
     where: { vorwarnung: { lte: jetzt }, vorwarnungGesendet: false },
-    include: { protokoll: { include: { handwerker: true } } },
+    include: einschluss,
   });
 
   for (const g of vorwarnungen) {
     const mail = gewaehrleistungsErinnerung({
       art: "VORWARNUNG",
-      kunde: g.protokoll.kundeName ?? "Unbekannter Kunde",
-      auftragsDatum: g.protokoll.auftragsDatum,
+      kunde: g.dokument.kundeName ?? "Unbekannter Kunde",
+      datum: g.dokument.datum,
       ablauf: g.ablauf,
-      protokollId: g.protokoll.id,
-      protokollText: g.protokoll.protokollText,
+      nummer: g.dokument.nummer,
+      einleitung: g.dokument.einleitung,
     });
-    await sendeMail(g.protokoll.handwerker.email, mail.betreff, mail.html);
+    await sendeMail(g.dokument.handwerker.email, mail.betreff, mail.html);
     await prisma.gewaehrleistung.update({
       where: { id: g.id },
       data: { vorwarnungGesendet: true },
     });
-    console.log(`🔔 Vorwarnung gesendet: Protokoll ${g.protokoll.id}`);
+    console.log(`🔔 Vorwarnung gesendet: ${g.dokument.nummer}`);
   }
 
   // ── Ablauf-Meldungen ──────────────────────────────────────
   const abgelaufen = await prisma.gewaehrleistung.findMany({
     where: { ablauf: { lte: jetzt }, ablaufGesendet: false },
-    include: { protokoll: { include: { handwerker: true } } },
+    include: einschluss,
   });
 
   for (const g of abgelaufen) {
     const mail = gewaehrleistungsErinnerung({
       art: "ABLAUF",
-      kunde: g.protokoll.kundeName ?? "Unbekannter Kunde",
-      auftragsDatum: g.protokoll.auftragsDatum,
+      kunde: g.dokument.kundeName ?? "Unbekannter Kunde",
+      datum: g.dokument.datum,
       ablauf: g.ablauf,
-      protokollId: g.protokoll.id,
-      protokollText: g.protokoll.protokollText,
+      nummer: g.dokument.nummer,
+      einleitung: g.dokument.einleitung,
     });
-    await sendeMail(g.protokoll.handwerker.email, mail.betreff, mail.html);
+    await sendeMail(g.dokument.handwerker.email, mail.betreff, mail.html);
     await prisma.gewaehrleistung.update({
       where: { id: g.id },
       data: { ablaufGesendet: true },
     });
-    console.log(`✅ Ablauf-Meldung gesendet: Protokoll ${g.protokoll.id}`);
+    console.log(`✅ Ablauf-Meldung gesendet: ${g.dokument.nummer}`);
   }
 }
 

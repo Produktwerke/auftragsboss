@@ -3,7 +3,7 @@
 // das Format direkt, ohne Konvertierung. Für Tests funktionieren auch
 // m4a/mp3/wav (typische Handy-Sprachmemos).
 import OpenAI, { toFile } from "openai";
-import { aiConfig } from "../config.js";
+import { openaiConfig } from "../config.js";
 
 const MIME_TYPEN: Record<string, string> = {
   ogg: "audio/ogg",
@@ -21,7 +21,7 @@ export async function transkribiereAudio(
   dateiname = "sprachnachricht.ogg",
 ): Promise<string> {
   const endung = dateiname.split(".").pop()?.toLowerCase() ?? "ogg";
-  const openai = new OpenAI({ apiKey: aiConfig().OPENAI_API_KEY });
+  const openai = new OpenAI({ apiKey: openaiConfig().OPENAI_API_KEY });
 
   const file = await toFile(audio, dateiname, {
     type: MIME_TYPEN[endung] ?? "audio/ogg",
@@ -31,11 +31,17 @@ export async function transkribiereAudio(
     file,
     model: "whisper-1",
     language: "de", // Deutsch priorisieren — robust auch bei Dialekt
-    // Fachbegriff-Priming verbessert die Erkennung von Handwerks-Vokabular
+    // Fachbegriff-Priming: Whisper verwechselt Handwerksvokabular sonst hörbar
+    // (beobachtet: "Balkontüren"→"Balkontiere", "tapezieren"→"Tabezieher",
+    // "schleifen"→"schläfen"). Die Begriffe hier senken die Fehlerquote spürbar.
     prompt:
-      "Diktat eines Handwerkers nach einem Kundentermin: Auftragsdetails, " +
-      "Material, Arbeitszeiten, Kundendaten. Fachbegriffe aus Sanitär, " +
-      "Heizung, Elektrik, Malerei, Dachdeckerei.",
+      "Diktat eines Handwerkers nach einem Kundentermin: Aufmaß, Auftragsdetails, " +
+      "Material, Mengen, Arbeitszeiten, Kundendaten. Verwendete Fachbegriffe: " +
+      "Aufmaß, Quadratmeter, laufende Meter, Deckenhöhe, Balkontüren, Fensterlaibung, " +
+      "tapezieren, Raufaser, Malervlies, Renoviervlies, spachteln, Spachtelmasse, " +
+      "schleifen, grundieren, Dispersionsfarbe, Anstrich, Kabelkanäle, Dübellöcher, " +
+      "Sanitär, Heizung, Gastherme, Ausdehnungsgefäß, Eckventil, Kupferrohr, " +
+      "Elektrik, Steckdose, Dachdeckerei, Trockenbau, Rigips.",
   });
 
   return result.text.trim();

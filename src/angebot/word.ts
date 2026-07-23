@@ -80,14 +80,12 @@ function positionsZeile(p: BerechnetePosition): TableRow {
       ? mengeMitEinheit(p.menge, p.einheit)
       : ""; // leer lassen — der Handwerker trägt die Menge in Word ein
 
-  const beschreibung = p.mengeUnsicher
-    ? `${p.beschreibung}  (Menge bitte prüfen)`
-    : p.beschreibung;
-
+  // Keine Arbeitsnotizen im Kundendokument — Hinweise auf unsichere Mengen
+  // stehen in der E-Mail an den Handwerker, nicht im Angebot.
   return new TableRow({
     children: [
       zelle({ text: String(p.nummer), rechts: true, farbe: GRAU }),
-      zelle({ text: beschreibung }),
+      zelle({ text: p.beschreibung }),
       zelle({ text: menge, rechts: true }),
       zelle({ text: p.einzelpreis !== null ? euro(p.einzelpreis) : "", rechts: true }),
       zelle({ text: p.gesamt !== null ? euro(p.gesamt) : "", rechts: true, fett: p.gesamt !== null }),
@@ -131,16 +129,12 @@ function positionsTabelle(summe: Angebotssumme): Table {
   // bewusst als solche erkennbar sein, nicht stillschweigend mitlaufen.
   const leistungen = summe.positionen.filter((p) => p.kategorie !== "MATERIAL");
   const material = summe.positionen.filter((p) => p.kategorie === "MATERIAL");
+  // Bewusst nur "Material": Das Dokument geht am Ende an den Kunden, ein
+  // Hinweis wie "Vorschlag – bitte prüfen" gehört dort nicht hin. Dass es
+  // sich um Vorschläge handelt, steht in der E-Mail an den Handwerker.
   const materialBlock: TableRow[] =
     material.length > 0
-      ? [
-          abschnittsZeile(
-            material.some((p) => p.vorschlag)
-              ? "Material  (Vorschlag – bitte prüfen und Mengen ergänzen)"
-              : "Material",
-          ),
-          ...material.map(positionsZeile),
-        ]
+      ? [abschnittsZeile("Material"), ...material.map(positionsZeile)]
       : [];
 
   // Summen nur ausweisen, wenn wirklich alle Preise stehen — sonst leer

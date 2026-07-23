@@ -127,20 +127,25 @@ async function main(): Promise<void> {
   console.log(`⚠️  Besonderheiten: ${d.besonderheiten ?? "—"}`);
   console.log(`📅 Folgetermin:    ${d.folgetermin ?? "—"}`);
 
+  console.log("\n" + linie("═"));
+  console.log(
+    d.dialog.aktion === "NACHFRAGEN"
+      ? "💬 WHATSAPP: RÜCKFRAGE — der Dialog bliebe offen"
+      : "💬 WHATSAPP: ABSCHLUSS — das Dokument würde jetzt erstellt",
+  );
+  console.log(linie("═"));
+  if (d.dialog.nachricht.trim()) {
+    console.log(d.dialog.nachricht);
+  } else {
+    console.log("(keine Zwischennachricht — nur die Fertigmeldung)");
+  }
+
   if (d.fehlendeInfos.length > 0) {
-    console.log("\n" + linie("═"));
-    console.log("💬 RÜCKFRAGEN, DIE PER WHATSAPP GESTELLT WÜRDEN");
-    console.log(linie("═"));
+    console.log("\nErfasste Lücken:");
     for (const f of d.fehlendeInfos) {
       const marke = f.wichtigkeit === "PFLICHT" ? "❗" : "·";
       console.log(`   ${marke} ${f.frage}   (${f.feld}, ${f.wichtigkeit.toLowerCase()})`);
     }
-    const pflicht = d.fehlendeInfos.filter((f) => f.wichtigkeit === "PFLICHT").length;
-    console.log(
-      pflicht > 0
-        ? `\n   → ${pflicht} Pflichtangabe(n) fehlen: Der Dialog bliebe offen und würde nachfragen.`
-        : "\n   → Keine Pflichtangabe fehlt: Das Dokument würde sofort erstellt.",
-    );
   }
 
   if (d.rueckfragen.length > 0) {

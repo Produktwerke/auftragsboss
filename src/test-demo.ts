@@ -110,6 +110,10 @@ Mustermann Malerbetrieb GmbH`,
     "Anzahl der zu schließenden Löcher und laufende Meter Kabelkanal wurden nicht genannt.",
     "Deckenfläche für die Schleifarbeiten wurde aus der Raumfläche übernommen — bitte prüfen.",
   ],
+  dialog: {
+    aktion: "ABSCHLIESSEN",
+    nachricht: "",
+  },
   fehlendeInfos: [
     {
       feld: "Wandfläche",

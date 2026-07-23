@@ -20,14 +20,7 @@ import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
 import { ladePreisliste } from "./preisliste.js";
 import { dokumentMail } from "./email/templates.js";
 import { sendeMail, WORD_MIME } from "./email/send.js";
-import {
-  MAX_RUNDEN,
-  alsDialog,
-  ergaenzeNachricht,
-  holeOffenenVorgang,
-  istAbschluss,
-  rueckfragenText,
-} from "./dialog.js";
+import { MAX_RUNDEN, alsDialog, ergaenzeNachricht, holeOffenenVorgang } from "./dialog.js";
 
 export const prisma = new PrismaClient();
 
@@ -86,9 +79,7 @@ export async function verarbeiteNachricht(args: {
     }
 
     let vorgang = await holeOffenenVorgang(prisma, handwerker.id);
-    const willAbschliessen = istAbschluss(inhalt);
 
-    // Zu kurze Nachricht nur abweisen, wenn sie kein Gesprächsbeitrag sein kann
     if (inhalt.length < 3) {
       await sendeWhatsAppText(
         vonNummer,
@@ -96,7 +87,8 @@ export async function verarbeiteNachricht(args: {
       );
       return;
     }
-    if (!vorgang && inhalt.length < 20 && !willAbschliessen) {
+    // Ohne laufenden Vorgang ist eine Zwei-Wort-Nachricht kein Auftrag
+    if (!vorgang && inhalt.length < 20) {
       await sendeWhatsAppText(
         vonNummer,
         "🎙️ Schick mir eine *Sprachnachricht* mit den Auftragsdetails — Kunde, Adresse, was gemacht werden soll. Ich mache ein fertiges Angebot daraus.",
@@ -104,14 +96,12 @@ export async function verarbeiteNachricht(args: {
       return;
     }
 
-    // 3. Vorgang anlegen oder fortführen
+    // 3. Vorgang anlegen oder fortführen. Auch ein "mach ich später" gehört in
+    //    den Verlauf — die KI liest daraus die Absicht ab.
     if (!vorgang) {
       vorgang = await prisma.vorgang.create({ data: { handwerkerId: handwerker.id } });
     }
-    // "weiter" ist ein Steuerbefehl, kein Inhalt — nicht in den Verlauf aufnehmen
-    if (!willAbschliessen) {
-      vorgang = await ergaenzeNachricht(prisma, vorgang, { rolle: "handwerker", text: inhalt, art });
-    }
+    vorgang = await ergaenzeNachricht(prisma, vorgang, { rolle: "handwerker", text: inhalt, art });
 
     // 4. Gesamten Verlauf auswerten
     const preisliste = ladePreisliste();
@@ -122,16 +112,16 @@ export async function verarbeiteNachricht(args: {
     }
     const daten = await strukturiereDialog(dialog, preisliste);
 
-    // 5. Rückfragen nötig?
-    const pflichtFragen = daten.fehlendeInfos.filter((f) => f.wichtigkeit === "PFLICHT");
-    const nochRundenFrei = vorgang.runde < MAX_RUNDEN;
+    // 5. Nachfragen oder abschließen? Das entscheidet die KI aus dem Verlauf —
+    //    kein Stichwort, das der Handwerker kennen müsste. Das Rundenlimit ist
+    //    nur ein Sicherheitsnetz gegen Endlosschleifen.
+    const nachfragen =
+      daten.dialog.aktion === "NACHFRAGEN" &&
+      vorgang.runde < MAX_RUNDEN &&
+      daten.dialog.nachricht.trim().length > 0;
 
-    if (pflichtFragen.length > 0 && nochRundenFrei && !willAbschliessen) {
-      const frageText = rueckfragenText(
-        pflichtFragen.slice(0, 3).map((f) => f.frage),
-        vorgang.runde,
-        vorgang.runde + 1 >= MAX_RUNDEN,
-      );
+    if (nachfragen) {
+      const frageText = daten.dialog.nachricht.trim();
       await sendeWhatsAppText(vonNummer, frageText);
       await prisma.vorgang.update({
         where: { id: vorgang.id },
@@ -144,11 +134,16 @@ export async function verarbeiteNachricht(args: {
           letzteAktivitaet: new Date(),
         },
       });
-      console.log(`❓ ${pflichtFragen.length} Rückfrage(n) an ${handwerker.firma} (Runde ${vorgang.runde + 1}).`);
+      console.log(`❓ Rückfrage an ${handwerker.firma} (Runde ${vorgang.runde + 1}).`);
       return;
     }
 
-    // 6. Abschließen
+    // 6. Abschließen. Hat der Handwerker etwas vertagt, greift die KI das
+    //    kurz auf ("Alles klar, ich schick dir schon mal einen Entwurf…") —
+    //    danach folgt die Fertigmeldung des Programms.
+    if (daten.dialog.nachricht.trim().length > 0) {
+      await sendeWhatsAppText(vonNummer, daten.dialog.nachricht.trim());
+    }
     await erstelleDokument({ vorgang, handwerkerId: handwerker.id, vonNummer, daten, preisliste });
   } catch (err) {
     console.error("Pipeline-Fehler:", err);

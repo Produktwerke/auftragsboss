@@ -17,8 +17,14 @@ export const TIMEOUT_MINUTEN = 20;
 export const NEUER_VORGANG_NACH_MINUTEN = 60;
 
 /**
- * Stichwörter, mit denen der Handwerker den Dialog sofort beendet.
- * Bewusst großzügig — er soll nicht raten müssen, welches Wort funktioniert.
+ * NOTFALLNETZ — nicht der eigentliche Mechanismus.
+ *
+ * Ob der Dialog endet, entscheidet die KI aus dem Verlauf: "mach ich später",
+ * "keine Ahnung" oder eine Antwort, die an der Frage vorbeigeht, werden als
+ * Abschluss verstanden, ohne dass der Handwerker ein Zauberwort kennen muss.
+ *
+ * Diese Liste greift nur, wenn die KI-Auswertung ausfällt (Netzfehler, Timeout).
+ * Sie ist damit eine Absicherung, kein zu lernendes Vokabular.
  */
 const ABSCHLUSS_WOERTER = [
   "weiter",
@@ -49,7 +55,8 @@ export interface GespeicherteNachricht extends DialogNachricht {
 }
 
 /**
- * Erkennt, ob der Handwerker abbrechen möchte.
+ * Grobe Erkennung eines Abbruchwunsches — siehe Hinweis oben, das ist nur
+ * das Notfallnetz.
  *
  * Nur bei KURZEN Nachrichten — sonst würde ein Diktat wie "…dann machen wir
  * weiter mit der Decke…" fälschlich als Abbruch gewertet.
@@ -114,24 +121,13 @@ export async function ergaenzeNachricht(
   });
 }
 
-/** Formuliert die Rückfragen als eine WhatsApp-Nachricht. */
-export function rueckfragenText(
-  fragen: string[],
-  runde: number,
-  letzteRunde: boolean,
-): string {
+/**
+ * Ersatz-Rückfrage, falls die KI keine eigene Nachricht geliefert hat.
+ * Im Regelfall formuliert die KI den Text selbst und passend zum Verlauf.
+ */
+export function rueckfragenText(fragen: string[]): string {
   const kopf =
-    runde === 0
-      ? fragen.length === 1
-        ? "Fast fertig — eine Sache fehlt mir noch:"
-        : `Fast fertig — ${fragen.length} Sachen fehlen mir noch:`
-      : "Danke! Noch kurz:";
-
+    fragen.length === 1 ? "Eine Sache fehlt mir noch:" : `${fragen.length} Sachen fehlen mir noch:`;
   const liste = fragen.map((f, i) => `${i + 1}. ${f}`).join("\n");
-
-  const fuss = letzteRunde
-    ? "\n\nAntworte per Sprache oder Text — danach erstelle ich das Angebot auf jeden Fall."
-    : "\n\nAntworte per Sprache oder Text. Oder schreib *weiter*, dann mache ich es mit dem fertig, was ich habe.";
-
-  return `${kopf}\n${liste}${fuss}`;
+  return `${kopf}\n${liste}\n\nAntworte einfach per Sprache oder Text.`;
 }

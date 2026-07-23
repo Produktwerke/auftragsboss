@@ -78,6 +78,29 @@ export const DokumentSchema = z.object({
     .describe(
       "Erst alle LEISTUNGEN in sinnvoller Ausführungsreihenfolge, danach das zugehörige MATERIAL.",
     ),
+  dialog: z
+    .object({
+      aktion: z
+        .enum(["NACHFRAGEN", "ABSCHLIESSEN"])
+        .describe(
+          "NACHFRAGEN: Es fehlt eine Pflichtangabe UND es ist realistisch, dass der Handwerker sie gerade " +
+            "liefern kann. ABSCHLIESSEN: alles Nötige da, ODER er weicht aus / vertagt / weiß es nicht / " +
+            "geht auf die Frage nicht ein. Im Zweifel ABSCHLIESSEN — lieber ein Entwurf zum Nacharbeiten " +
+            "als ein genervter Handwerker.",
+        ),
+      nachricht: z
+        .string()
+        .describe(
+          "Die WhatsApp-Nachricht an den Handwerker. Du-Form, knapp, ohne Floskeln, wie von einem " +
+            "hilfsbereiten Kollegen.\n" +
+            "Bei NACHFRAGEN: die fehlenden Punkte als kurze nummerierte Liste. Kein Hinweis auf Zauberwörter.\n" +
+            "Bei ABSCHLIESSEN nach einem Ausweichen: eine kurze Bestätigung, die das Vertagen aufgreift und " +
+            "sagt, was jetzt passiert — z.B. 'Alles klar, ich schick dir schon mal einen Entwurf. Die " +
+            "Adresse kannst du in der Word-Datei direkt ergänzen.'\n" +
+            "Bei ABSCHLIESSEN ohne offene Punkte: leerer String (das Programm meldet die Fertigstellung selbst).",
+        ),
+    })
+    .describe("Wie es im WhatsApp-Dialog weitergeht."),
   fehlendeInfos: z
     .array(
       z.object({
@@ -206,7 +229,21 @@ Du erhältst das Roh-Transkript einer WhatsApp-Sprachnachricht, die ein Handwerk
    - Keine Dopplung: wurde ein Material bereits diktiert, ist es eine normale Position mit vorschlag false.
    - Im Zweifel weglassen. Ein fehlender Vorschlag ist harmlos, ein unpassender kostet Vertrauen.
 
-6. **Fehlende Angaben melden.** Trage in "fehlendeInfos" ein, was du für ein versandfähiges Dokument brauchst, und formuliere je eine kurze Frage. Der Handwerker bekommt sie per WhatsApp und kann direkt antworten. Halte dich kurz: höchstens 3 Fragen, davon so wenige PFLICHT wie möglich. Bei einem ANGEBOT sind Kundenname und Adresse PFLICHT — ohne sie lässt sich kein Anschreiben erstellen.
+6. **Fehlende Angaben melden.** Trage in "fehlendeInfos" ein, was du für ein versandfähiges Dokument brauchst, und formuliere je eine kurze Frage. Halte dich kurz: höchstens 3 Fragen, davon so wenige PFLICHT wie möglich. Bei einem ANGEBOT sind Kundenname und Adresse PFLICHT — ohne sie lässt sich kein Anschreiben erstellen.
+
+7. **Den Dialog führen wie ein Mensch.** Entscheide in "dialog", ob du nachfragst oder abschließt. Es gibt KEINE Zauberwörter, die der Handwerker kennen müsste — lies seine Absicht aus dem, was er schreibt oder sagt.
+
+   ABSCHLIESSEN, sobald eines davon zutrifft:
+   - Alle Pflichtangaben liegen vor.
+   - Er vertagt: "mach ich später", "schick ich dir nach", "muss ich nachmessen", "klär ich noch mit dem Kunden".
+   - Er weiß es nicht: "keine Ahnung", "weiß ich nicht", "steht noch nicht fest".
+   - Er will loslegen: "passt", "reicht so", "schick einfach", "weiter".
+   - Er geht auf eine gestellte Frage schlicht nicht ein und redet über etwas anderes.
+   - Du hast dieselbe Angabe schon einmal erfragt und keine Antwort bekommen.
+
+   NACHFRAGEN nur, wenn wirklich eine PFLICHT-Angabe fehlt und nichts darauf hindeutet, dass er sie nicht liefern will oder kann.
+
+   Der Handwerker sitzt im Auto. Zweimal nachhaken ist die absolute Obergrenze, einmal ist meist besser. Ein Angebot mit einer Lücke, die er am Schreibtisch in zehn Sekunden füllt, ist immer besser als ein Dialog, der ihn aufhält.
 
 ## Absolute Regeln
 

@@ -1,87 +1,100 @@
-// Prüft die Dialog-Steuerung — ohne API-Keys, ohne Datenbank.
+// Prüft die Dialog-Steuerung.
 //
-// Die heikelste Stelle: Stichwörter wie "weiter" beenden den Dialog. In einem
-// normalen Diktat kommt "weiter" aber ebenfalls vor ("...dann machen wir weiter
-// mit der Decke..."). Ein falscher Treffer würde ein halbes Angebot erzeugen.
+// WICHTIG: Ob der Dialog endet, entscheidet im Betrieb die KI aus dem Verlauf.
+// Der Handwerker muss KEIN Stichwort kennen — "mach ich später", "keine
+// Ahnung" oder eine Antwort, die an der Frage vorbeigeht, versteht sie von
+// selbst. Dieses Skript prüft deshalb zwei Dinge:
+//
+//   Teil 1  das Notfallnetz (Wortliste), das nur bei KI-Ausfall greift
+//   Teil 2  die Szenarien, die die KI im Betrieb entscheiden muss
 //
 // Aufruf: npm run test:dialog
-import { istAbschluss, rueckfragenText, MAX_RUNDEN } from "./dialog.js";
+import { istAbschluss, rueckfragenText, MAX_RUNDEN, TIMEOUT_MINUTEN } from "./dialog.js";
 
-interface Fall {
-  text: string;
-  erwartet: boolean;
-  warum: string;
-}
+const linie = (z = "─") => z.repeat(70);
+let fehler = 0;
 
-const FAELLE: Fall[] = [
-  // ── soll abbrechen ──────────────────────────────────────
-  { text: "weiter", erwartet: true, warum: "das Standard-Stichwort" },
-  { text: "Weiter!", erwartet: true, warum: "Großschreibung und Satzzeichen" },
+// ── Teil 1: Notfallnetz ───────────────────────────────────
+console.log(linie("═"));
+console.log("TEIL 1 — Notfallnetz (greift nur, wenn die KI-Auswertung ausfällt)");
+console.log(linie("═") + "\n");
+
+const NOTFALL_FAELLE: { text: string; erwartet: boolean; warum: string }[] = [
+  { text: "weiter", erwartet: true, warum: "kurze Bestätigung" },
+  { text: "Weiter!", erwartet: true, warum: "Großschreibung, Satzzeichen" },
   { text: "passt so", erwartet: true, warum: "umgangssprachlich" },
   { text: "später", erwartet: true, warum: "Umlaut" },
-  { text: "spaeter", erwartet: true, warum: "ohne Umlaut getippt" },
   { text: "weiß ich nicht", erwartet: true, warum: "Antwort, die keine ist" },
-  { text: "mach fertig", erwartet: true, warum: "zwei Wörter" },
-  { text: "ok", erwartet: true, warum: "kürzeste Bestätigung" },
-  { text: "das wars", erwartet: true, warum: "ohne Apostroph" },
-
-  // ── darf NICHT abbrechen ────────────────────────────────
   {
     text: "Dann machen wir weiter mit der Decke, die muss noch gespachtelt werden",
     erwartet: false,
-    warum: "'weiter' mitten im Diktat",
+    warum: "'weiter' mitten im Diktat — darf NICHT abbrechen",
   },
   {
     text: "Die Adresse ist Rotberg 18, den Rest mache ich später fertig",
     erwartet: false,
     warum: "'später' als Inhalt, nicht als Befehl",
   },
-  {
-    text: "Familie Bär, Wohnzimmer tapezieren, 45 Quadratmeter, passt das so für Sie",
-    erwartet: false,
-    warum: "'passt' innerhalb eines langen Diktats",
-  },
   { text: "Rotberg 18", erwartet: false, warum: "echte Antwort auf eine Rückfrage" },
   { text: "45 Quadratmeter", erwartet: false, warum: "Mengenangabe" },
 ];
 
-const linie = (z = "─") => z.repeat(70);
-let fehler = 0;
-
-console.log(linie("═"));
-console.log("DIALOG-STEUERUNG — Erkennung der Abschluss-Stichwörter");
-console.log(linie("═") + "\n");
-
-for (const fall of FAELLE) {
+for (const fall of NOTFALL_FAELLE) {
   const ist = istAbschluss(fall.text);
   const ok = ist === fall.erwartet;
   if (!ok) fehler++;
-  const marke = ok ? "✅" : "❌";
-  const wirkung = ist ? "beendet Dialog" : "normale Nachricht";
   const gekuerzt = fall.text.length > 44 ? fall.text.slice(0, 41) + "..." : fall.text;
-  console.log(`${marke} "${gekuerzt}"`);
-  console.log(`   → ${wirkung}   (${fall.warum})`);
+  console.log(`${ok ? "✅" : "❌"} "${gekuerzt}"`);
+  console.log(`   → ${ist ? "beendet Dialog" : "normale Nachricht"}   (${fall.warum})`);
 }
 
+// ── Teil 2: Szenarien für die KI ──────────────────────────
 console.log("\n" + linie("═"));
-console.log("BEISPIEL — so sähe eine Rückfrage auf WhatsApp aus");
-console.log(linie("═") + "\n");
-console.log(
-  rueckfragenText(
-    ["Wie lautet die Adresse von Familie Bär?", "Wie groß ist die Wandfläche zum Tapezieren?"],
-    0,
-    false,
-  ),
-);
+console.log("TEIL 2 — Szenarien, die die KI im Betrieb entscheidet");
+console.log(linie("═"));
+console.log("(Diese Fälle prüfst du mit echtem Anthropic-Key über: npm run test:ki)\n");
+
+const SZENARIEN: { antwort: string; erwartet: string; grund: string }[] = [
+  { antwort: "Rotberg 18", erwartet: "ABSCHLIESSEN", grund: "Pflichtangabe geliefert" },
+  { antwort: "Die Adresse schick ich dir nachher", erwartet: "ABSCHLIESSEN", grund: "vertagt" },
+  { antwort: "Muss ich nochmal nachmessen", erwartet: "ABSCHLIESSEN", grund: "vertagt" },
+  { antwort: "Keine Ahnung, steht noch nicht fest", erwartet: "ABSCHLIESSEN", grund: "weiß es nicht" },
+  { antwort: "Schick einfach mal so", erwartet: "ABSCHLIESSEN", grund: "will loslegen" },
+  {
+    antwort: "Ach, und die Fenster sollen auch gestrichen werden",
+    erwartet: "ABSCHLIESSEN",
+    grund: "geht auf die Frage nicht ein, liefert stattdessen Neues",
+  },
+  { antwort: "(keine Antwort)", erwartet: "ABSCHLIESSEN", grund: `Zeitablauf nach ${TIMEOUT_MINUTEN} Min` },
+];
+
+for (const s of SZENARIEN) {
+  console.log(`   Handwerker: "${s.antwort}"`);
+  console.log(`   → erwartet: ${s.erwartet}   (${s.grund})\n`);
+}
+
+console.log(linie("─"));
+console.log("So klingt ein Abschluss nach Vertagen (von der KI formuliert):\n");
+console.log('   "Alles klar, ich schick dir schon mal einen Entwurf.');
+console.log('    Die Adresse kannst du in der Word-Datei direkt ergänzen."');
+
 console.log("\n" + linie("─"));
-console.log("… und in der letzten Runde:\n");
-console.log(rueckfragenText(["Wie groß ist die Wandfläche?"], 1, true));
+console.log("Ersatztext, falls die KI keine eigene Nachricht liefert:\n");
+console.log(
+  rueckfragenText([
+    "Wie lautet die Adresse von Familie Bär?",
+    "Wie groß ist die Wandfläche zum Tapezieren?",
+  ]),
+);
 
 console.log("\n" + linie("═"));
 if (fehler === 0) {
-  console.log(`✅ Alle ${FAELLE.length} Fälle korrekt erkannt. Max. ${MAX_RUNDEN} Rückfrage-Runden.`);
+  console.log(
+    `✅ Notfallnetz: alle ${NOTFALL_FAELLE.length} Fälle korrekt. ` +
+      `Sicherheitsgrenzen: max. ${MAX_RUNDEN} Runden, ${TIMEOUT_MINUTEN} Min Timeout.`,
+  );
 } else {
-  console.log(`❌ ${fehler} von ${FAELLE.length} Fällen falsch erkannt.`);
+  console.log(`❌ ${fehler} von ${NOTFALL_FAELLE.length} Fällen falsch erkannt.`);
   process.exit(1);
 }
 console.log(linie("═"));

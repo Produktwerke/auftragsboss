@@ -17,6 +17,14 @@ export const TIMEOUT_MINUTEN = 20;
 export const NEUER_VORGANG_NACH_MINUTEN = 60;
 
 /**
+ * So lange nach dem Fertigstellen gilt eine neue Nachricht als NACHTRAG zum
+ * eben erstellten Dokument — "ach, die Fenster sollen auch gestrichen werden"
+ * oder "tapezieren machen wir für 14 Euro". So muss niemand die Word-Tabelle
+ * anfassen; das Nachbessern läuft wie das Diktieren selbst.
+ */
+export const NACHTRAG_MINUTEN = 45;
+
+/**
  * NOTFALLNETZ — nicht der eigentliche Mechanismus.
  *
  * Ob der Dialog endet, entscheidet die KI aus dem Verlauf: "mach ich später",
@@ -110,6 +118,32 @@ export async function holeOffenenVorgang(
     return null;
   }
   return offen;
+}
+
+/**
+ * Sucht einen gerade abgeschlossenen Vorgang, an den sich ein Nachtrag
+ * anschließen kann — und öffnet ihn wieder.
+ */
+export async function holeNachtragsVorgang(
+  prisma: PrismaClient,
+  handwerkerId: string,
+): Promise<Vorgang | null> {
+  const grenze = new Date(Date.now() - NACHTRAG_MINUTEN * 60_000);
+  const letzter = await prisma.vorgang.findFirst({
+    where: {
+      handwerkerId,
+      status: "ABGESCHLOSSEN",
+      dokumentId: { not: null },
+      letzteAktivitaet: { gte: grenze },
+    },
+    orderBy: { letzteAktivitaet: "desc" },
+  });
+  if (!letzter) return null;
+
+  return prisma.vorgang.update({
+    where: { id: letzter.id },
+    data: { status: "OFFEN", runde: 0, letzteAktivitaet: new Date() },
+  });
 }
 
 export async function ergaenzeNachricht(

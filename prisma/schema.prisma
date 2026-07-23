@@ -60,6 +60,11 @@ model Dokument {
   art    String // "ANGEBOT" | "PROTOKOLL"
   nummer String // z.B. "ANG-2026-0042" bzw. "PRO-2026-0042"
 
+  // Nachträge behalten die Angebotsnummer und zählen die Fassung hoch.
+  // Die alte Fassung bleibt im Archiv — wichtig für die Nachvollziehbarkeit.
+  version  Int     @default(1)
+  ersetztId String? // Dokument-ID der vorherigen Fassung
+
   // Rohdaten — bewusst aufbewahrt (Nachvollziehbarkeit / Streitfall)
   whatsappMediaId String?
   transkript      String // Whisper-Rohtranskript, unverändert
@@ -92,6 +97,7 @@ model Dokument {
 
   @@index([handwerkerId, datum])
   @@index([art])
+  @@index([nummer])
 }
 
 // Gewährleistungs-Tracking nach § 634a BGB — nur für Protokolle:

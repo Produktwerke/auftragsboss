@@ -164,16 +164,29 @@ export function dokumentMail(args: {
   datum: Date;
   gewaehrleistungAblauf?: Date;
   wordDateiname?: string;
+  version?: number;
 }): { betreff: string; html: string } {
-  const { daten, summe, preisliste, transkript, nummer, datum, gewaehrleistungAblauf, wordDateiname } =
-    args;
+  const {
+    daten,
+    summe,
+    preisliste,
+    transkript,
+    nummer,
+    datum,
+    gewaehrleistungAblauf,
+    wordDateiname,
+    version = 1,
+  } = args;
+  const istNachtrag = version > 1;
   const istAngebot = daten.art === "ANGEBOT";
   const kunde = daten.kunde.name ?? "Unbekannter Kunde";
   const titel = istAngebot ? "Angebot" : "Protokoll";
 
+  const kopfSymbol = istNachtrag ? "🔄" : istAngebot ? "📄" : "📋";
+  const zusatz = istNachtrag ? ` (Fassung ${version})` : "";
   const betreff = summe.vollstaendig
-    ? `${istAngebot ? "📄" : "📋"} ${titel} ${nummer}: ${kunde} — ${euro(summe.brutto)}`
-    : `${istAngebot ? "📄" : "📋"} ${titel} ${nummer}: ${kunde} — ${summe.positionen.length} Positionen`;
+    ? `${kopfSymbol} ${titel} ${nummer}${zusatz}: ${kunde} — ${euro(summe.brutto)}`
+    : `${kopfSymbol} ${titel} ${nummer}${zusatz}: ${kunde} — ${summe.positionen.length} Positionen`;
 
   // Der Word-Anhang ist das eigentliche Arbeitsdokument — deshalb ganz oben.
   const anhangKasten = wordDateiname
@@ -216,9 +229,26 @@ export function dokumentMail(args: {
          )}`
       : "";
 
+  const nachtragKasten = istNachtrag
+    ? box(
+        `<strong>🔄 Aktualisierte Fassung ${version}</strong><br>
+         Dein Nachtrag ist eingearbeitet. Die Angebotsnummer bleibt gleich —
+         verwende ab jetzt die Datei aus <em>dieser</em> E-Mail.
+         Die vorherige Fassung bleibt im Archiv.`,
+        "#eaf2fb",
+      )
+    : "";
+
   const html = `
 <div style="${RAHMEN}">
-  <h2 style="color:#0b5cad;margin-top:0;">${istAngebot ? "📄 Dein Angebot ist fertig" : "✅ Dein Protokoll ist fertig"}</h2>
+  <h2 style="color:#0b5cad;margin-top:0;">${
+    istNachtrag
+      ? `🔄 ${titel} ${escapeHtml(nummer)} aktualisiert`
+      : istAngebot
+        ? "📄 Dein Angebot ist fertig"
+        : "✅ Dein Protokoll ist fertig"
+  }</h2>
+  ${nachtragKasten}
   ${anhangKasten}
   ${rueckfragen}
 

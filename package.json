@@ -12,6 +12,7 @@
     "test:ki": "tsx src/test-ki.ts",
     "test:demo": "tsx src/test-demo.ts",
     "test:dialog": "tsx src/test-dialog.ts",
+    "test:nachtrag": "tsx src/test-nachtrag.ts",
     "test:transkript": "tsx src/test-transkript.ts",
     "test:whisper": "tsx src/test-whisper.ts",
     "db:push": "prisma db push",

@@ -20,7 +20,13 @@ import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
 import { ladePreisliste } from "./preisliste.js";
 import { dokumentMail } from "./email/templates.js";
 import { sendeMail, WORD_MIME } from "./email/send.js";
-import { MAX_RUNDEN, alsDialog, ergaenzeNachricht, holeOffenenVorgang } from "./dialog.js";
+import {
+  MAX_RUNDEN,
+  alsDialog,
+  ergaenzeNachricht,
+  holeNachtragsVorgang,
+  holeOffenenVorgang,
+} from "./dialog.js";
 
 export const prisma = new PrismaClient();
 
@@ -36,11 +42,14 @@ function addiereMonate(datum: Date, monate: number): Date {
   return d;
 }
 
-/** Fortlaufende Nummer pro Betrieb und Dokumentart, z.B. ANG-2026-0007. */
+/**
+ * Fortlaufende Nummer pro Betrieb und Dokumentart, z.B. ANG-2026-0007.
+ * Zählt nur Erstfassungen — Nachträge behalten ihre Nummer.
+ */
 async function naechsteNummer(handwerkerId: string, art: string, datum: Date): Promise<string> {
   const jahresBeginn = new Date(datum.getFullYear(), 0, 1);
   const bisher = await prisma.dokument.count({
-    where: { handwerkerId, art, datum: { gte: jahresBeginn } },
+    where: { handwerkerId, art, version: 1, datum: { gte: jahresBeginn } },
   });
   return `${art === "ANGEBOT" ? "ANG" : "PRO"}-${datum.getFullYear()}-${String(bisher + 1).padStart(4, "0")}`;
 }
@@ -83,7 +92,10 @@ export async function verarbeiteNachricht(args: {
       art = "text";
     }
 
+    // Laufender Dialog? Sonst prüfen, ob es ein Nachtrag zum eben erstellten
+    // Dokument ist ("ach, die Fenster auch noch…").
     let vorgang = await holeOffenenVorgang(prisma, handwerker.id);
+    if (!vorgang) vorgang = await holeNachtragsVorgang(prisma, handwerker.id);
 
     if (inhalt.length < 3) {
       await sendeWhatsAppText(
@@ -178,7 +190,15 @@ export async function erstelleDokument(args: {
   const handwerker = await prisma.handwerker.findUniqueOrThrow({ where: { id: handwerkerId } });
   const datum = new Date();
   const summe = berechneAngebot(daten.positionen, preisliste, datum);
-  const nummer = await naechsteNummer(handwerkerId, daten.art, datum);
+
+  // Nachtrag? Dann Nummer behalten und die Fassung hochzählen. Die alte
+  // Fassung bleibt im Archiv stehen — nachvollziehbar, was wann galt.
+  const vorher = vorgang.dokumentId
+    ? await prisma.dokument.findUnique({ where: { id: vorgang.dokumentId } })
+    : null;
+  const istNachtrag = vorher !== null && vorher.art === daten.art;
+  const nummer = istNachtrag ? vorher.nummer : await naechsteNummer(handwerkerId, daten.art, datum);
+  const version = istNachtrag ? vorher.version + 1 : 1;
 
   const istProtokoll = daten.art === "PROTOKOLL" && daten.gewaehrleistung !== null;
   const fristJahre = daten.gewaehrleistung?.typ === "BAUWERK_5_JAHRE" ? 5 : 2;
@@ -195,6 +215,8 @@ export async function erstelleDokument(args: {
       handwerkerId,
       art: daten.art,
       nummer,
+      version,
+      ersetztId: istNachtrag ? vorher.id : null,
       transkript,
       kundeName: daten.kunde.name,
       kundeAdresse: daten.kunde.adresse,
@@ -239,6 +261,7 @@ export async function erstelleDokument(args: {
     datum,
     gewaehrleistungAblauf: istProtokoll ? ablauf : undefined,
     wordDateiname: dateiname,
+    version,
   });
   await sendeMail(handwerker.email, mail.betreff, mail.html, [
     { filename: dateiname, content: word, contentType: WORD_MIME },
@@ -251,17 +274,25 @@ export async function erstelleDokument(args: {
 
   // Bestätigung auf WhatsApp
   const kunde = daten.kunde.name ?? "deinen Auftrag";
+  const bezeichnung = daten.art === "ANGEBOT" ? "Angebot" : "Protokoll";
   const anzahlMaterial = summe.positionen.filter((p) => p.kategorie === "MATERIAL").length;
+
   const zeilen = [
-    `✅ ${daten.art === "ANGEBOT" ? "Angebot" : "Protokoll"} ${nummer} für *${kunde}* ist fertig`,
-    `📎 Word-Datei per E-Mail an ${handwerker.email}`,
+    istNachtrag
+      ? `✅ ${bezeichnung} ${nummer} aktualisiert (Fassung ${version}) — ${summe.positionen.length} Positionen`
+      : `✅ ${bezeichnung} ${nummer} für *${kunde}* ist fertig`,
+    `📎 Neue Word-Datei per E-Mail an ${handwerker.email}`,
     summe.vollstaendig
       ? `Gesamt: ${euro(summe.brutto)} brutto`
-      : `✏️ Preise trägst du in der Word-Datei ein`,
+      : `✏️ Fehlende Preise kannst du mir einfach durchsagen — ich rechne und schicke die Datei neu.`,
   ];
-  if (anzahlMaterial > 0) zeilen.push(`📦 ${anzahlMaterial} Materialposten vorgeschlagen — bitte prüfen`);
+  if (!istNachtrag && anzahlMaterial > 0) {
+    zeilen.push(`📦 ${anzahlMaterial} Materialposten vorgeschlagen — bitte prüfen`);
+  }
   if (istProtokoll) zeilen.push(`Gewährleistung: ${fristJahre} Jahre — ich erinnere dich vor Ablauf.`);
 
   await sendeWhatsAppText(vonNummer, zeilen.join("\n"));
-  console.log(`✅ ${daten.art} ${nummer} für ${handwerker.firma} erstellt (${dokument.id}).`);
+  console.log(
+    `✅ ${daten.art} ${nummer}${version > 1 ? ` (Fassung ${version})` : ""} für ${handwerker.firma} erstellt (${dokument.id}).`,
+  );
 }

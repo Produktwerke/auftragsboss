@@ -58,22 +58,31 @@ function positionsTabelle(summe: Angebotssumme): string {
   const leistungen = summe.positionen.filter((p) => p.kategorie !== "MATERIAL");
   const material = summe.positionen.filter((p) => p.kategorie === "MATERIAL");
 
+  const summenZelle = "padding:6px 10px;text-align:right;white-space:nowrap;";
+
+  /** Zwischensummenzeile eines Blocks. Ohne vollständige Preise bleibt sie leer. */
+  const zwischensumme = (beschriftung: string, teil: typeof summe.leistungen) =>
+    `<tr>
+      <td colspan="4" style="${summenZelle}color:#666;font-weight:600;">${escapeHtml(beschriftung)}</td>
+      <td style="${summenZelle}color:#666;font-weight:600;">${teil.vollstaendig ? euro(teil.netto) : leer}</td>
+    </tr>`;
+
   const zeilen = [
-    ...(material.length > 0 ? [abschnitt("Leistungen")] : []),
+    ...(material.length > 0 ? [abschnitt("Arbeitsaufwand")] : []),
     ...leistungen.map(zeile),
     ...(material.length > 0
       ? [
+          zwischensumme("Zwischensumme Arbeitsaufwand", summe.leistungen),
           abschnitt(
             material.some((p) => p.vorschlag)
               ? "Material  (Vorschlag – bitte prüfen und Mengen ergänzen)"
               : "Material",
           ),
           ...material.map(zeile),
+          zwischensumme("Zwischensumme Material", summe.material),
         ]
       : []),
   ].join("");
-
-  const summenZelle = "padding:6px 10px;text-align:right;white-space:nowrap;";
 
   // Solange nicht alle Preise stehen, ist eine ausgerechnete Summe irreführend —
   // dann zeigen wir durchgehend Platzhalter.
@@ -189,6 +198,14 @@ export function dokumentMail(args: {
     : `${kopfSymbol} ${titel} ${nummer}${zusatz}: ${kunde} — ${summe.positionen.length} Positionen`;
 
   // Der Word-Anhang ist das eigentliche Arbeitsdokument — deshalb ganz oben.
+  // Der Zwischenstand steht bewusst NUR hier, nicht im Kundendokument.
+  const zwischenstand =
+    !summe.vollstaendig && summe.bereitsBepreist > 0
+      ? `<br><br><strong>Zwischenstand:</strong> ${euro(summe.bereitsBepreist)} netto aus
+         ${summe.positionen.length - summe.anzahlOffen} von ${summe.positionen.length} Positionen.
+         ${summe.anzahlOffen} warten noch auf Preis oder Menge.`
+      : "";
+
   const anhangKasten = wordDateiname
     ? box(
         `<strong>📎 ${escapeHtml(wordDateiname)}</strong><br>
@@ -197,11 +214,10 @@ export function dokumentMail(args: {
          } bei Bedarf anpassen, dann als PDF speichern und an den Kunden schicken.
          ${
            !summe.vollstaendig && istAngebot
-             ? `<br><span style="color:#666;font-size:13px;">Die Preisspalten sind leer gelassen —
-                Summen bildest du nach dem Ausfüllen. Tipp: häufige Positionen dauerhaft in
-                <code>preisliste.json</code> hinterlegen, dann füllt das System sie künftig selbst aus.</span>`
+             ? `<br><span style="color:#666;font-size:13px;">Schneller geht's per Sprachnachricht:
+                Preise und Mengen einfach durchsagen — ich rechne und schicke die Datei neu.</span>`
              : ""
-         }`,
+         }${zwischenstand}`,
         "#eaf2fb",
       )
     : "";

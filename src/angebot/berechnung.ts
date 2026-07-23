@@ -15,8 +15,20 @@ export interface BerechnetePosition extends Position {
   offen: boolean; // true = Preis wird vom Handwerker noch eingetragen
 }
 
+/** Zwischensumme eines Blocks (Arbeitsaufwand bzw. Material). */
+export interface Teilsumme {
+  netto: number;
+  /** true, wenn jede Position dieses Blocks berechenbar ist. */
+  vollstaendig: boolean;
+  anzahl: number;
+}
+
 export interface Angebotssumme {
   positionen: BerechnetePosition[];
+  /** Getrennte Zwischensummen — Arbeitsaufwand und Material kalkuliert der
+   *  Handwerker unterschiedlich und will sie im Angebot getrennt sehen. */
+  leistungen: Teilsumme;
+  material: Teilsumme;
   netto: number;
   mwstSatz: number;
   mwstBetrag: number;
@@ -27,6 +39,9 @@ export interface Angebotssumme {
   /** true, wenn GAR KEIN Preis gesetzt ist — der Regelfall beim Diktat im Auto.
    *  Dann wird die Summenzeile als reiner Platzhalter dargestellt. */
   ohnePreise: boolean;
+  /** Summe der bereits bepreisten Positionen — Zwischenstand für den
+   *  Handwerker, erscheint NICHT im Kundendokument. */
+  bereitsBepreist: number;
   gueltigBis: Date;
 }
 
@@ -50,8 +65,17 @@ export function berechneAngebot(
     };
   });
 
-  const nettoCent = berechnet.reduce((s, p) => s + Math.round((p.gesamt ?? 0) * 100), 0);
-  const netto = centGenau(nettoCent / 100);
+  // In Cent aufsummieren, damit sich keine Fließkomma-Reste aufaddieren
+  const teilsumme = (auswahl: BerechnetePosition[]): Teilsumme => ({
+    netto: centGenau(auswahl.reduce((s, p) => s + Math.round((p.gesamt ?? 0) * 100), 0) / 100),
+    vollstaendig: auswahl.length > 0 && auswahl.every((p) => !p.offen),
+    anzahl: auswahl.length,
+  });
+
+  const leistungen = teilsumme(berechnet.filter((p) => p.kategorie !== "MATERIAL"));
+  const material = teilsumme(berechnet.filter((p) => p.kategorie === "MATERIAL"));
+
+  const netto = centGenau(leistungen.netto + material.netto);
   const mwstSatz = preisliste.konditionen.mwstSatz;
   const mwstBetrag = centGenau((netto * mwstSatz) / 100);
 
@@ -62,6 +86,8 @@ export function berechneAngebot(
 
   return {
     positionen: berechnet,
+    leistungen,
+    material,
     netto,
     mwstSatz,
     mwstBetrag,
@@ -69,6 +95,7 @@ export function berechneAngebot(
     anzahlOffen,
     vollstaendig: anzahlOffen === 0 && berechnet.length > 0,
     ohnePreise: berechnet.length > 0 && berechnet.every((p) => p.einzelpreis === null),
+    bereitsBepreist: netto,
     gueltigBis,
   };
 }

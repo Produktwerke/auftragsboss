@@ -7,6 +7,8 @@
 // Leere Preiszellen sind Absicht: der Handwerker klickt in Word hinein und
 // tippt den Betrag. Sind Preise bekannt (diktiert oder aus der Preisliste),
 // stehen sie bereits drin.
+import { writeFileSync } from "node:fs";
+import { basename } from "node:path";
 import {
   AlignmentType,
   BorderStyle,
@@ -125,16 +127,41 @@ function positionsTabelle(summe: Angebotssumme): Table {
     ),
   });
 
-  // Leistungen und Material getrennt ausweisen — Materialvorschläge sollen
-  // bewusst als solche erkennbar sein, nicht stillschweigend mitlaufen.
+  // Arbeitsaufwand und Material getrennt ausweisen — beides wird
+  // unterschiedlich kalkuliert und gehört im Angebot getrennt summiert.
   const leistungen = summe.positionen.filter((p) => p.kategorie !== "MATERIAL");
   const material = summe.positionen.filter((p) => p.kategorie === "MATERIAL");
+
+  /** Zwischensummenzeile eines Blocks. Ohne vollständige Preise bleibt sie leer. */
+  const zwischensumme = (beschriftung: string, teil: typeof summe.leistungen): TableRow =>
+    new TableRow({
+      children: [
+        zelle({ text: beschriftung, spalten: 4, rechts: true, fett: true, farbe: GRAU }),
+        zelle({
+          text: teil.vollstaendig ? euro(teil.netto) : "",
+          rechts: true,
+          fett: true,
+          farbe: GRAU,
+        }),
+      ],
+    });
+
+  const leistungsBlock: TableRow[] = [
+    ...(material.length > 0 ? [abschnittsZeile("Arbeitsaufwand")] : []),
+    ...leistungen.map(positionsZeile),
+    ...(material.length > 0 ? [zwischensumme("Zwischensumme Arbeitsaufwand", summe.leistungen)] : []),
+  ];
+
   // Bewusst nur "Material": Das Dokument geht am Ende an den Kunden, ein
   // Hinweis wie "Vorschlag – bitte prüfen" gehört dort nicht hin. Dass es
   // sich um Vorschläge handelt, steht in der E-Mail an den Handwerker.
   const materialBlock: TableRow[] =
     material.length > 0
-      ? [abschnittsZeile("Material"), ...material.map(positionsZeile)]
+      ? [
+          abschnittsZeile("Material"),
+          ...material.map(positionsZeile),
+          zwischensumme("Zwischensumme Material", summe.material),
+        ]
       : [];
 
   // Summen nur ausweisen, wenn wirklich alle Preise stehen — sonst leer
@@ -164,13 +191,7 @@ function positionsTabelle(summe: Angebotssumme): Table {
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     columnWidths: [600, 4600, 1400, 1600, 1600],
-    rows: [
-      kopf,
-      ...(materialBlock.length > 0 ? [abschnittsZeile("Leistungen")] : []),
-      ...leistungen.map(positionsZeile),
-      ...materialBlock,
-      ...summenZeilen,
-    ],
+    rows: [kopf, ...leistungsBlock, ...materialBlock, ...summenZeilen],
   });
 }
 
@@ -283,6 +304,27 @@ export async function erzeugeAngebotWord(args: {
   });
 
   return Packer.toBuffer(doc);
+}
+
+/**
+ * Schreibt die Word-Datei und weicht auf einen alternativen Namen aus, wenn
+ * die Datei gerade in Word geöffnet ist (Windows sperrt sie dann).
+ * Gibt den tatsächlich verwendeten Pfad zurück.
+ */
+export function schreibeWordDatei(pfad: string, inhalt: Buffer): string {
+  try {
+    writeFileSync(pfad, inhalt);
+    return pfad;
+  } catch (err) {
+    const gesperrt =
+      err instanceof Error && /EBUSY|EPERM|EACCES/.test((err as NodeJS.ErrnoException).code ?? "");
+    if (!gesperrt) throw err;
+
+    const ausweich = pfad.replace(/\.docx$/i, `_${Date.now()}.docx`);
+    writeFileSync(ausweich, inhalt);
+    console.log(`ℹ️  Datei war in Word geöffnet — gespeichert als ${basename(ausweich)}`);
+    return ausweich;
+  }
 }
 
 /** Dateiname für den Anhang, z.B. "Angebot_ANG-2026-0001_Familie-Baer.docx" */

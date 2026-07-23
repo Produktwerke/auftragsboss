@@ -4,12 +4,12 @@
 // erspart — Positionen ergänzen und Preise nachreichen per Sprache.
 //
 // Aufruf: npm run test:nachtrag
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { strukturiereDialog, type DialogNachricht } from "./ai/structure.js";
 import { ladePreisliste } from "./preisliste.js";
 import { berechneAngebot, euro, mengeMitEinheit } from "./angebot/berechnung.js";
-import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
+import { erzeugeAngebotWord, schreibeWordDatei, wordDateiname } from "./angebot/word.js";
 
 const ERSTES_DIKTAT =
   "Familie Bär, Rotberg 18. Wohnzimmer tapezieren, ca. 45 Quadratmeter, " +
@@ -41,12 +41,25 @@ function zeigePositionen(summe: ReturnType<typeof berechneAngebot>): void {
     console.log(`${String(p.nummer).padStart(2)}. ${p.beschreibung}`);
     console.log(`    ${menge} ×${einzel}  =${gesamt}`);
   }
+  const teil = (t: { netto: number; vollstaendig: boolean }) =>
+    t.vollstaendig ? euro(t.netto) : LEER;
   const wert = (b: number) => (summe.vollstaendig ? euro(b) : LEER);
+
   console.log(linie());
+  if (summe.material.anzahl > 0) {
+    console.log(`${"Zwischensumme Arbeitsaufwand".padEnd(38)}${teil(summe.leistungen).padStart(15)}`);
+    console.log(`${"Zwischensumme Material".padEnd(38)}${teil(summe.material).padStart(15)}`);
+  }
   console.log(`${"Nettosumme".padEnd(38)}${wert(summe.netto).padStart(15)}`);
   console.log(`${`zzgl. ${summe.mwstSatz} % MwSt.`.padEnd(38)}${wert(summe.mwstBetrag).padStart(15)}`);
   console.log(`${"GESAMT (brutto)".padEnd(38)}${wert(summe.brutto).padStart(15)}`);
   console.log(linie());
+  if (!summe.vollstaendig && summe.bereitsBepreist > 0) {
+    console.log(
+      `Zwischenstand (nur für dich): ${euro(summe.bereitsBepreist)} netto aus ` +
+        `${summe.positionen.length - summe.anzahlOffen} von ${summe.positionen.length} Positionen.`,
+    );
+  }
 }
 
 async function main(): Promise<void> {
@@ -109,8 +122,10 @@ async function main(): Promise<void> {
   });
   const ordner = resolve("demo-ausgabe");
   mkdirSync(ordner, { recursive: true });
-  const pfad = resolve(ordner, wordDateiname(zweiteFassung.art, nummer, zweiteFassung.kunde.name));
-  writeFileSync(pfad, word);
+  const pfad = schreibeWordDatei(
+    resolve(ordner, wordDateiname(zweiteFassung.art, nummer, zweiteFassung.kunde.name)),
+    word,
+  );
   console.log(`\n📎 Aktualisierte Word-Datei:\n   ${pfad}`);
 
   const fehler = pruefungen.filter((p) => !p.ok).length;

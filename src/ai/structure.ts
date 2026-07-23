@@ -235,7 +235,13 @@ Du erhältst das Roh-Transkript einer WhatsApp-Sprachnachricht, die ein Handwerk
    - Keine Dopplung: wurde ein Material bereits diktiert, ist es eine normale Position mit vorschlag false.
    - Im Zweifel weglassen. Ein fehlender Vorschlag ist harmlos, ein unpassender kostet Vertrauen.
 
-6. **Fehlende Angaben melden.** Trage in "fehlendeInfos" ein, was du für ein versandfähiges Dokument brauchst, und formuliere je eine kurze Frage. Halte dich kurz: höchstens 3 Fragen, davon so wenige PFLICHT wie möglich. Bei einem ANGEBOT sind Kundenname und Adresse PFLICHT — ohne sie lässt sich kein Anschreiben erstellen.
+6. **Fehlende Angaben melden.** Trage in "fehlendeInfos" ein, was du für ein versandfähiges Dokument brauchst, und formuliere je eine kurze Frage. Halte dich kurz: höchstens 3 Fragen, davon so wenige PFLICHT wie möglich.
+
+   PFLICHT ist bei einem ANGEBOT:
+   - Kundenname und Adresse — ohne sie lässt sich kein Anschreiben erstellen.
+   - **Ein Maß, von dem MEHRERE Positionen abhängen.** Beispiel: Ohne die Wandfläche lassen sich Tapezieren, Tapete entfernen, Spachteln und Schleifen allesamt nicht berechnen — dann bleibt das ganze Angebot ohne Summe. Ein einzelnes Maß, das nur eine Position betrifft, ist dagegen nur HILFREICH.
+
+   Fasse zusammengehörige Maße in EINER Frage zusammen ("Wie groß ist die Wandfläche?"), statt für jede Position einzeln zu fragen.
 
 7. **Nachträge einarbeiten.** Wurde bereits ein Dokument erstellt und der Handwerker meldet sich danach noch einmal, ist das eine Korrektur — kein neuer Auftrag. Gib immer das VOLLSTÄNDIGE Dokument zurück, also alle bisherigen Positionen plus die Änderung:
    - Neue Leistung genannt ("die Fenster sollen auch gestrichen werden") → Position ergänzen, an der fachlich richtigen Stelle einsortieren, passendes Material dazu.

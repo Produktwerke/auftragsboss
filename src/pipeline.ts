@@ -20,6 +20,7 @@ import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
 import { ladePreisliste } from "./preisliste.js";
 import { dokumentMail } from "./email/templates.js";
 import { sendeMail, WORD_MIME } from "./email/send.js";
+import { bearbeitenLink, erzeugeToken, kundenLink } from "./web/tokens.js";
 import {
   MAX_RUNDEN,
   alsDialog,
@@ -217,6 +218,8 @@ export async function erstelleDokument(args: {
       nummer,
       version,
       ersetztId: istNachtrag ? vorher.id : null,
+      bearbeitenToken: erzeugeToken(),
+      kundenToken: erzeugeToken(),
       transkript,
       kundeName: daten.kunde.name,
       kundeAdresse: daten.kunde.adresse,
@@ -262,6 +265,8 @@ export async function erstelleDokument(args: {
     gewaehrleistungAblauf: istProtokoll ? ablauf : undefined,
     wordDateiname: dateiname,
     version,
+    bearbeitenUrl: bearbeitenLink(dokument.bearbeitenToken),
+    kundenUrl: kundenLink(dokument.kundenToken),
   });
   await sendeMail(handwerker.email, mail.betreff, mail.html, [
     { filename: dateiname, content: word, contentType: WORD_MIME },
@@ -281,10 +286,13 @@ export async function erstelleDokument(args: {
     istNachtrag
       ? `✅ ${bezeichnung} ${nummer} aktualisiert (Fassung ${version}) — ${summe.positionen.length} Positionen`
       : `✅ ${bezeichnung} ${nummer} für *${kunde}* ist fertig`,
-    `📎 Neue Word-Datei per E-Mail an ${handwerker.email}`,
+    ``,
+    `👉 ${bearbeitenLink(dokument.bearbeitenToken)}`,
+    `Dort Preise eintragen, Positionen anpassen und an den Kunden schicken.`,
+    ``,
     summe.vollstaendig
       ? `Gesamt: ${euro(summe.brutto)} brutto`
-      : `✏️ Fehlende Preise kannst du mir einfach durchsagen — ich rechne und schicke die Datei neu.`,
+      : `✏️ Preise kannst du auch einfach durchsagen — ich rechne und aktualisiere.`,
   ];
   if (!istNachtrag && anzahlMaterial > 0) {
     zeilen.push(`📦 ${anzahlMaterial} Materialposten vorgeschlagen — bitte prüfen`);

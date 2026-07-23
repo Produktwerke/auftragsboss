@@ -174,6 +174,8 @@ export function dokumentMail(args: {
   gewaehrleistungAblauf?: Date;
   wordDateiname?: string;
   version?: number;
+  bearbeitenUrl?: string;
+  kundenUrl?: string;
 }): { betreff: string; html: string } {
   const {
     daten,
@@ -185,6 +187,8 @@ export function dokumentMail(args: {
     gewaehrleistungAblauf,
     wordDateiname,
     version = 1,
+    bearbeitenUrl,
+    kundenUrl,
   } = args;
   const istNachtrag = version > 1;
   const istAngebot = daten.art === "ANGEBOT";
@@ -205,6 +209,31 @@ export function dokumentMail(args: {
          ${summe.positionen.length - summe.anzahlOffen} von ${summe.positionen.length} Positionen.
          ${summe.anzahlOffen} warten noch auf Preis oder Menge.`
       : "";
+
+  // Der Link ist ab jetzt der Hauptweg — bequemer als die Word-Datei zu
+  // bearbeiten, und der Kunde kann von dort aus direkt annehmen.
+  const linkKasten = bearbeitenUrl
+    ? `<div style="background:#0b5cad;color:#ffffff;border-radius:8px;padding:20px;margin:16px 0;">
+         <div style="font-size:15px;font-weight:600;margin-bottom:10px;">
+           ${istAngebot ? "Angebot" : "Protokoll"} online bearbeiten
+         </div>
+         <div style="font-size:14px;margin-bottom:14px;opacity:.9;">
+           Preise eintragen, Positionen anpassen, Summen rechnen automatisch mit —
+           danach als PDF oder Word exportieren.
+         </div>
+         <a href="${bearbeitenUrl}" style="display:inline-block;background:#ffffff;color:#0b5cad;
+            text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:600;">
+           Jetzt bearbeiten →
+         </a>
+         ${
+           kundenUrl && istAngebot
+             ? `<div style="font-size:12px;margin-top:14px;opacity:.85;">
+                  Link für den Kunden (mit Annehmen-Knopf) findest du im Editor.
+                </div>`
+             : ""
+         }
+       </div>`
+    : "";
 
   const anhangKasten = wordDateiname
     ? box(
@@ -265,6 +294,7 @@ export function dokumentMail(args: {
         : "✅ Dein Protokoll ist fertig"
   }</h2>
   ${nachtragKasten}
+  ${linkKasten}
   ${anhangKasten}
   ${rueckfragen}
 

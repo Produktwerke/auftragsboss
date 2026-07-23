@@ -65,6 +65,24 @@ model Dokument {
   version  Int     @default(1)
   ersetztId String? // Dokument-ID der vorherigen Fassung
 
+  // Zwei getrennte Links, beide ohne Login (Zufallstoken).
+  //   bearbeitenToken → der Handwerker, darf ändern und exportieren
+  //   kundenToken     → der Kunde, sieht nur und kann annehmen
+  bearbeitenToken String @unique
+  kundenToken     String @unique
+
+  // Annahme durch den Kunden. Ein Klick auf "Annehmen" ist ein Vertrags-
+  // schluss, deshalb wird der Vorgang beweissicher festgehalten und das
+  // Dokument danach eingefroren (Änderungen erzeugen eine neue Fassung).
+  angenommenAm   DateTime?
+  angenommenVon  String? // Name, den der Kunde angegeben hat
+  angenommenIp   String?
+  eingefroren    Boolean   @default(false)
+
+  // Rückfragen des Kunden über die Angebotsseite
+  kundenRueckfrage   String?
+  kundenRueckfrageAm DateTime?
+
   // Rohdaten — bewusst aufbewahrt (Nachvollziehbarkeit / Streitfall)
   whatsappMediaId String?
   transkript      String // Whisper-Rohtranskript, unverändert
@@ -98,6 +116,7 @@ model Dokument {
   @@index([handwerkerId, datum])
   @@index([art])
   @@index([nummer])
+  @@index([angenommenAm])
 }
 
 // Gewährleistungs-Tracking nach § 634a BGB — nur für Protokolle:

@@ -14,6 +14,7 @@ import { PrismaClient } from "@prisma/client";
 import type { DokumentDaten } from "./ai/structure.js";
 import { berechneAngebot } from "./angebot/berechnung.js";
 import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
+import { bearbeitenLink, erzeugeToken, kundenLink } from "./web/tokens.js";
 import { ladePreisliste } from "./preisliste.js";
 import { dokumentMail, gewaehrleistungsErinnerung } from "./email/templates.js";
 
@@ -186,6 +187,8 @@ async function main(): Promise<void> {
       handwerkerId: handwerker.id,
       art: DEMO_DATEN.art,
       nummer,
+      bearbeitenToken: erzeugeToken(),
+      kundenToken: erzeugeToken(),
       transkript: TRANSKRIPT,
       kundeName: DEMO_DATEN.kunde.name,
       kundeAdresse: DEMO_DATEN.kunde.adresse,
@@ -227,6 +230,8 @@ async function main(): Promise<void> {
     nummer,
     datum,
     wordDateiname: docxName,
+    bearbeitenUrl: bearbeitenLink(dokument.bearbeitenToken),
+    kundenUrl: kundenLink(dokument.kundenToken),
   });
   const p1 = schreibeHtml("1-angebot-mail.html", mail.html);
 

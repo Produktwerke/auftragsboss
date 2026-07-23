@@ -22,6 +22,15 @@ const PreislistenSchema = z.object({
     email: z.string().default(""),
     gewerk: z.string().default(""),
     ustIdNr: z.string().default(""),
+    /** Pfad zur Logodatei (PNG/JPG), relativ zum Projektordner. Leer = kein Logo. */
+    logo: z.string().default(""),
+    /** Akzentfarbe für Briefkopf und Tabellenkopf, als Hex ohne #. */
+    farbe: z
+      .string()
+      .regex(/^[0-9a-fA-F]{6}$/, "sechsstelliger Hex-Wert ohne #, z.B. 0B5CAD")
+      .default("0B5CAD"),
+    /** Bankverbindung für die Fußzeile (optional). */
+    bank: z.string().default(""),
   }),
   konditionen: z.object({
     // 0 = kein Stundensatz hinterlegt → Stundenpositionen bleiben Platzhalter

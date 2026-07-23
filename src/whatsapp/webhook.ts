@@ -10,7 +10,7 @@
 // damit nur Meta den Endpoint füttern kann.
 import type { FastifyInstance } from "fastify";
 import { whatsappConfig } from "../config.js";
-import { verarbeiteSprachnachricht } from "../pipeline.js";
+import { verarbeiteNachricht } from "../pipeline.js";
 
 // Minimale Typen für den Ausschnitt des Meta-Payloads, den wir brauchen
 interface WhatsAppMessage {
@@ -18,6 +18,7 @@ interface WhatsAppMessage {
   id: string;
   type: string;
   audio?: { id: string; mime_type: string };
+  text?: { body: string };
 }
 
 interface WebhookBody {
@@ -47,27 +48,23 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     const messages =
       body.entry?.flatMap((e) => e.changes ?? []).flatMap((c) => c.value?.messages ?? []) ?? [];
 
+    // Sprache UND Text sind gleichwertige Eingaben — Rückfragen darf der
+    // Handwerker so beantworten, wie es ihm im Moment leichter fällt.
     for (const msg of messages) {
-      if (msg.type === "audio" && msg.audio) {
-        // Fire-and-forget mit eigenem Error-Handling — ein Fehler in einer
-        // Nachricht darf die anderen nicht blockieren.
-        verarbeiteSprachnachricht({
-          vonNummer: msg.from,
-          mediaId: msg.audio.id,
-        }).catch((err) => {
-          app.log.error({ err, von: msg.from }, "Pipeline-Fehler");
-        });
-      } else if (msg.type === "text") {
-        app.log.info({ von: msg.from }, "Textnachricht empfangen — Hinweis gesendet");
-        // Nutzer sanft in den Voice-Flow lenken
-        import("./send.js").then(({ sendeWhatsAppText }) =>
-          sendeWhatsAppText(
-            msg.from,
-            "🎙️ Schick mir einfach eine *Sprachnachricht* mit den Auftragsdetails — " +
-              "ich mache daraus ein fertiges Protokoll und schicke es dir per E-Mail.",
-          ),
-        );
-      }
+      const eingabe =
+        msg.type === "audio" && msg.audio
+          ? { vonNummer: msg.from, mediaId: msg.audio.id }
+          : msg.type === "text" && msg.text
+            ? { vonNummer: msg.from, text: msg.text.body }
+            : null;
+
+      if (!eingabe) continue;
+
+      // Fire-and-forget mit eigenem Error-Handling — ein Fehler in einer
+      // Nachricht darf die anderen nicht blockieren.
+      verarbeiteNachricht(eingabe).catch((err) => {
+        app.log.error({ err, von: msg.from }, "Pipeline-Fehler");
+      });
     }
   });
 }

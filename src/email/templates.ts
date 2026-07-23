@@ -29,8 +29,11 @@ function positionsTabelle(summe: Angebotssumme): string {
   const kopfStil = "padding:8px 10px;background:#0b5cad;color:#ffffff;text-align:left;font-size:13px;";
   const leer = `<span style="color:#aab0b6;letter-spacing:1px;">${PLATZHALTER}</span>`;
 
-  const zeilen = summe.positionen
-    .map((p) => {
+  const abschnitt = (text: string) =>
+    `<tr><td colspan="5" style="padding:10px 10px 6px;background:#eef1f4;color:#666;
+      font-weight:600;font-size:13px;">${escapeHtml(text)}</td></tr>`;
+
+  const zeile = (p: (typeof summe.positionen)[number]) => {
       const preisZelle = p.einzelpreis !== null ? euro(p.einzelpreis) : leer;
       const gesamtZelle = p.gesamt !== null ? `<strong>${euro(p.gesamt)}</strong>` : leer;
       const mengeZelle =
@@ -48,8 +51,27 @@ function positionsTabelle(summe: Angebotssumme): string {
         <td style="${zellStil}text-align:right;white-space:nowrap;">${preisZelle}</td>
         <td style="${zellStil}text-align:right;white-space:nowrap;">${gesamtZelle}</td>
       </tr>`;
-    })
-    .join("");
+  };
+
+  // Leistungen und Material getrennt — Materialvorschläge sollen sichtbar
+  // als solche erkennbar sein, nicht stillschweigend mitlaufen.
+  const leistungen = summe.positionen.filter((p) => p.kategorie !== "MATERIAL");
+  const material = summe.positionen.filter((p) => p.kategorie === "MATERIAL");
+
+  const zeilen = [
+    ...(material.length > 0 ? [abschnitt("Leistungen")] : []),
+    ...leistungen.map(zeile),
+    ...(material.length > 0
+      ? [
+          abschnitt(
+            material.some((p) => p.vorschlag)
+              ? "Material  (Vorschlag – bitte prüfen und Mengen ergänzen)"
+              : "Material",
+          ),
+          ...material.map(zeile),
+        ]
+      : []),
+  ].join("");
 
   const summenZelle = "padding:6px 10px;text-align:right;white-space:nowrap;";
 

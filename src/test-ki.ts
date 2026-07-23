@@ -75,7 +75,14 @@ async function main(): Promise<void> {
 
   const LEER = "________ €";
 
+  let letzteKategorie = "";
   for (const p of summe.positionen) {
+    if (p.kategorie !== letzteKategorie) {
+      letzteKategorie = p.kategorie;
+      const ueberschrift =
+        p.kategorie === "MATERIAL" ? "── MATERIAL (Vorschlag — bitte prüfen)" : "── LEISTUNGEN";
+      console.log(`\n${ueberschrift}`);
+    }
     const menge = (p.menge !== null || p.einheit === "pauschal"
       ? mengeMitEinheit(p.menge, p.einheit)
       : `____ ${p.einheit ?? ""}`
@@ -86,6 +93,7 @@ async function main(): Promise<void> {
     console.log(`${String(p.nummer).padStart(2)}. ${p.beschreibung}${p.mengeUnsicher ? " ≈" : ""}`);
     console.log(`    ${menge} ×${einzel}  =${gesamt}${quelle}`);
   }
+  console.log("");
 
   const wert = (betrag: number) => (summe.vollstaendig ? euro(betrag) : LEER);
   console.log(linie());
@@ -118,6 +126,22 @@ async function main(): Promise<void> {
   console.log(`📐 Aufmaß:         ${d.aufmassNotizen ?? "—"}`);
   console.log(`⚠️  Besonderheiten: ${d.besonderheiten ?? "—"}`);
   console.log(`📅 Folgetermin:    ${d.folgetermin ?? "—"}`);
+
+  if (d.fehlendeInfos.length > 0) {
+    console.log("\n" + linie("═"));
+    console.log("💬 RÜCKFRAGEN, DIE PER WHATSAPP GESTELLT WÜRDEN");
+    console.log(linie("═"));
+    for (const f of d.fehlendeInfos) {
+      const marke = f.wichtigkeit === "PFLICHT" ? "❗" : "·";
+      console.log(`   ${marke} ${f.frage}   (${f.feld}, ${f.wichtigkeit.toLowerCase()})`);
+    }
+    const pflicht = d.fehlendeInfos.filter((f) => f.wichtigkeit === "PFLICHT").length;
+    console.log(
+      pflicht > 0
+        ? `\n   → ${pflicht} Pflichtangabe(n) fehlen: Der Dialog bliebe offen und würde nachfragen.`
+        : "\n   → Keine Pflichtangabe fehlt: Das Dokument würde sofort erstellt.",
+    );
+  }
 
   if (d.rueckfragen.length > 0) {
     console.log("\n" + linie("═"));

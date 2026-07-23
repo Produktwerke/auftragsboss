@@ -29,6 +29,41 @@ const TRANSKRIPT =
   "Balkontüren, 1,70 Meter breit die Türen. An den Wänden Löcher zumachen, " +
   "Kabelkanäle zuspachteln, ein bisschen schleifen und das wars eigentlich.";
 
+type Einheit = DokumentDaten["positionen"][number]["einheit"];
+
+/** Kurzschreibweise: diktierte Leistung. */
+const L = (
+  beschreibung: string,
+  menge: number | null,
+  einheit: Einheit,
+  mengeUnsicher = false,
+): DokumentDaten["positionen"][number] => ({
+  kategorie: "LEISTUNG",
+  vorschlag: false,
+  beschreibung,
+  menge,
+  einheit,
+  einzelpreis: null,
+  preisquelle: "UNBEKANNT",
+  mengeUnsicher,
+});
+
+/** Kurzschreibweise: von der KI ergänztes Material. */
+const M = (
+  beschreibung: string,
+  menge: number | null,
+  einheit: Einheit,
+): DokumentDaten["positionen"][number] => ({
+  kategorie: "MATERIAL",
+  vorschlag: true,
+  beschreibung,
+  menge,
+  einheit,
+  einzelpreis: null,
+  preisquelle: "UNBEKANNT",
+  mengeUnsicher: false,
+});
+
 // Genau das, was Claude aus dem Transkript machen würde —
 // hier fest hinterlegt, damit kein API-Key nötig ist.
 const DEMO_DATEN: DokumentDaten = {
@@ -37,63 +72,23 @@ const DEMO_DATEN: DokumentDaten = {
   gewerk: "Malerei",
   objekt: "Wohnzimmer, ca. 45 m² Deckenfläche, Deckenhöhe 2,50 m",
   // Regelfall: im Auto diktiert, keine Preise genannt → alle Preise offen.
+  // Leistungen zuerst, danach die Materialvorschläge der KI.
   positionen: [
-    {
-      beschreibung: "Alte Tapete entfernen und Untergrund reinigen",
-      menge: 45,
-      einheit: "m2",
-      einzelpreis: null,
-      preisquelle: "UNBEKANNT",
-      mengeUnsicher: false,
-    },
-    {
-      beschreibung: "Deckenflächen spachteln",
-      menge: 45,
-      einheit: "m2",
-      einzelpreis: null,
-      preisquelle: "UNBEKANNT",
-      mengeUnsicher: false,
-    },
-    {
-      beschreibung: "Schleifarbeiten",
-      menge: 45,
-      einheit: "m2",
-      einzelpreis: null,
-      preisquelle: "UNBEKANNT",
-      mengeUnsicher: true,
-    },
-    {
-      beschreibung: "Malervlies an der Decke anbringen",
-      menge: 45,
-      einheit: "m2",
-      einzelpreis: null,
-      preisquelle: "UNBEKANNT",
-      mengeUnsicher: false,
-    },
-    {
-      beschreibung: "Wohnzimmer tapezieren (Tapete nach Wahl des Kunden)",
-      menge: null, // Wandfläche nicht berechenbar — Wandmaße fehlen im Diktat
-      einheit: "m2",
-      einzelpreis: null,
-      preisquelle: "UNBEKANNT",
-      mengeUnsicher: false,
-    },
-    {
-      beschreibung: "Löcher und Risse in den Wänden verschließen",
-      menge: null,
-      einheit: "Stk",
-      einzelpreis: null,
-      preisquelle: "UNBEKANNT",
-      mengeUnsicher: false,
-    },
-    {
-      beschreibung: "Kabelkanäle verspachteln",
-      menge: null,
-      einheit: "lfm",
-      einzelpreis: null,
-      preisquelle: "UNBEKANNT",
-      mengeUnsicher: false,
-    },
+    L("Alte Tapete entfernen und Untergrund reinigen", 45, "m2"),
+    L("Deckenflächen spachteln", 45, "m2"),
+    L("Schleifarbeiten", 45, "m2", true),
+    L("Malervlies an der Decke anbringen", 45, "m2"),
+    L("Wohnzimmer tapezieren (Tapete nach Wahl des Kunden)", null, "m2"),
+    L("Löcher und Risse in den Wänden verschließen", null, "Stk"),
+    L("Kabelkanäle verspachteln", null, "lfm"),
+    // Material — von der KI ergänzt, nicht diktiert
+    M("Tapete (Auswahl durch Kunden)", null, "m2"),
+    M("Tapetenkleister", null, null),
+    M("Malervlies", 45, "m2"),
+    M("Vlieskleber", null, null),
+    M("Spachtelmasse", null, null),
+    M("Schleifpapier / Schleifgitter", null, null),
+    M("Abdeckfolie und Kreppband", null, null),
   ],
   aufmassNotizen:
     "Wohnzimmer ca. 45 m² Grundfläche, Deckenhöhe 2,50 m. 5 Fenster, davon 3 Balkontüren " +
@@ -114,6 +109,13 @@ Mustermann Malerbetrieb GmbH`,
     "Wandfläche fürs Tapezieren fehlt — bitte Raummaße ergänzen (Fenster und Balkontüren abziehen).",
     "Anzahl der zu schließenden Löcher und laufende Meter Kabelkanal wurden nicht genannt.",
     "Deckenfläche für die Schleifarbeiten wurde aus der Raumfläche übernommen — bitte prüfen.",
+  ],
+  fehlendeInfos: [
+    {
+      feld: "Wandfläche",
+      frage: "Wie groß ist die Wandfläche zum Tapezieren (ohne Fenster und Türen)?",
+      wichtigkeit: "HILFREICH",
+    },
   ],
   gewaehrleistung: null, // Angebot → noch keine Gewährleistung
 };

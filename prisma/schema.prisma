@@ -21,6 +21,32 @@ model Handwerker {
   gewerk         String?
   erstelltAm     DateTime   @default(now())
   dokumente      Dokument[]
+  vorgaenge      Vorgang[]
+}
+
+// Ein laufender WhatsApp-Dialog. Bleibt offen, solange die KI noch
+// Pflichtangaben vermisst — dann stellt sie Rückfragen, die der Handwerker
+// per Sprache oder Text beantwortet. Abgeschlossen wird durch:
+//   • Vollständigkeit    • Stichwort ("weiter", "später", "fertig")
+//   • maximale Rundenzahl • Zeitablauf (Inaktivität)
+model Vorgang {
+  id           String     @id @default(cuid())
+  handwerkerId String
+  handwerker   Handwerker @relation(fields: [handwerkerId], references: [id])
+
+  status String @default("OFFEN") // "OFFEN" | "ABGESCHLOSSEN"
+  runde  Int    @default(0) // Anzahl bereits gestellter Rückfrage-Runden
+
+  // JSON: [{ rolle: "handwerker"|"assistent", text, art, zeit }]
+  nachrichtenJson String @default("[]")
+
+  dokumentId String? // gesetzt, sobald das Dokument erzeugt wurde
+
+  begonnenAm       DateTime @default(now())
+  letzteAktivitaet DateTime @default(now())
+
+  @@index([handwerkerId, status])
+  @@index([status, letzteAktivitaet])
 }
 
 // Ein Dokument aus einem Diktat — Angebot ODER Protokoll.

@@ -95,6 +95,24 @@ function positionsZeile(p: BerechnetePosition): TableRow {
   });
 }
 
+/** Zwischenüberschrift innerhalb der Tabelle, z.B. "Material". */
+function abschnittsZeile(text: string): TableRow {
+  return new TableRow({
+    children: [
+      new TableCell({
+        columnSpan: 5,
+        shading: { fill: "EEF1F4" },
+        margins: { top: 120, bottom: 80, left: 100, right: 100 },
+        children: [
+          new Paragraph({
+            children: [new TextRun({ text, bold: true, size: 18, color: GRAU })],
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
 function positionsTabelle(summe: Angebotssumme): Table {
   const kopf = new TableRow({
     tableHeader: true,
@@ -108,6 +126,22 @@ function positionsTabelle(summe: Angebotssumme): Table {
       }),
     ),
   });
+
+  // Leistungen und Material getrennt ausweisen — Materialvorschläge sollen
+  // bewusst als solche erkennbar sein, nicht stillschweigend mitlaufen.
+  const leistungen = summe.positionen.filter((p) => p.kategorie !== "MATERIAL");
+  const material = summe.positionen.filter((p) => p.kategorie === "MATERIAL");
+  const materialBlock: TableRow[] =
+    material.length > 0
+      ? [
+          abschnittsZeile(
+            material.some((p) => p.vorschlag)
+              ? "Material  (Vorschlag – bitte prüfen und Mengen ergänzen)"
+              : "Material",
+          ),
+          ...material.map(positionsZeile),
+        ]
+      : [];
 
   // Summen nur ausweisen, wenn wirklich alle Preise stehen — sonst leer
   const betrag = (wert: number) => (summe.vollstaendig ? euro(wert) : "");
@@ -136,7 +170,13 @@ function positionsTabelle(summe: Angebotssumme): Table {
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     columnWidths: [600, 4600, 1400, 1600, 1600],
-    rows: [kopf, ...summe.positionen.map(positionsZeile), ...summenZeilen],
+    rows: [
+      kopf,
+      ...(materialBlock.length > 0 ? [abschnittsZeile("Leistungen")] : []),
+      ...leistungen.map(positionsZeile),
+      ...materialBlock,
+      ...summenZeilen,
+    ],
   });
 }
 

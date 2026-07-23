@@ -19,6 +19,13 @@ model Handwerker {
   firma          String
   email          String // Zieladresse für die fertigen Dokumente
   gewerk         String?
+
+  // Betriebsprofil — jeder Betrieb hinterlegt sein eigenes Logo und seine
+  // Farbe. Wird später über die Einrichtungsseite hochgeladen; solange das
+  // Feld leer ist, greift der Eintrag aus preisliste.json (Einzelbetrieb).
+  logoDatei String? // Dateiname im uploads-Ordner, z.B. "logo_abc123.jpg"
+  farbe     String? // Akzentfarbe als Hex ohne #, z.B. "0B5CAD"
+
   erstelltAm     DateTime   @default(now())
   dokumente      Dokument[]
   vorgaenge      Vorgang[]

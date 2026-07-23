@@ -13,7 +13,9 @@ import {
   AlignmentType,
   BorderStyle,
   Document,
+  Footer,
   HeadingLevel,
+  ImageRun,
   Packer,
   Paragraph,
   Table,
@@ -22,13 +24,19 @@ import {
   TextRun,
   WidthType,
 } from "docx";
+import { ladeLogo } from "../betrieb/logo.js";
 import type { DokumentDaten } from "../ai/structure.js";
 import type { Angebotssumme, BerechnetePosition } from "./berechnung.js";
 import { euro, mengeMitEinheit } from "./berechnung.js";
 import type { Preisliste } from "../preisliste.js";
 
-const AKZENT = "0B5CAD";
 const GRAU = "666666";
+const OHNE_RAHMEN = {
+  top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+} as const;
 
 const datumDE = (d: Date) =>
   d.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" });
@@ -51,14 +59,15 @@ function zelle(opts: {
   farbe?: string;
   hintergrund?: string;
   spalten?: number;
-  obenLinie?: boolean;
+  /** Farbe der oberen Trennlinie; ohne Angabe keine Linie. */
+  obenLinie?: string;
 }): TableCell {
   return new TableCell({
     columnSpan: opts.spalten,
     shading: opts.hintergrund ? { fill: opts.hintergrund } : undefined,
     margins: { top: 80, bottom: 80, left: 100, right: 100 },
     borders: opts.obenLinie
-      ? { top: { style: BorderStyle.SINGLE, size: 12, color: AKZENT } }
+      ? { top: { style: BorderStyle.SINGLE, size: 12, color: opts.obenLinie } }
       : undefined,
     children: [
       new Paragraph({
@@ -113,7 +122,7 @@ function abschnittsZeile(text: string): TableRow {
   });
 }
 
-function positionsTabelle(summe: Angebotssumme): Table {
+function positionsTabelle(summe: Angebotssumme, akzent: string): Table {
   const kopf = new TableRow({
     tableHeader: true,
     children: (["Pos.", "Leistung", "Menge", "Einzelpreis", "Gesamt"] as const).map((t, i) =>
@@ -121,7 +130,7 @@ function positionsTabelle(summe: Angebotssumme): Table {
         text: t,
         fett: true,
         farbe: "FFFFFF",
-        hintergrund: AKZENT,
+        hintergrund: akzent,
         rechts: i !== 1,
       }),
     ),
@@ -182,8 +191,8 @@ function positionsTabelle(summe: Angebotssumme): Table {
     }),
     new TableRow({
       children: [
-        zelle({ text: "Gesamtbetrag", spalten: 4, rechts: true, fett: true, obenLinie: true }),
-        zelle({ text: betrag(summe.brutto), rechts: true, fett: true, farbe: AKZENT, obenLinie: true }),
+        zelle({ text: "Gesamtbetrag", spalten: 4, rechts: true, fett: true, obenLinie: akzent }),
+        zelle({ text: betrag(summe.brutto), rechts: true, fett: true, farbe: akzent, obenLinie: akzent }),
       ],
     }),
   ];
@@ -204,6 +213,8 @@ export async function erzeugeAngebotWord(args: {
 }): Promise<Buffer> {
   const { daten, summe, preisliste, nummer, datum } = args;
   const b = preisliste.betrieb;
+  const akzent = /^[0-9a-fA-F]{6}$/.test(b.farbe) ? b.farbe.toUpperCase() : "0B5CAD";
+  const logo = ladeLogo(b.logo);
   const istAngebot = daten.art === "ANGEBOT";
   const titel = istAngebot ? "Angebot" : "Arbeitsprotokoll";
 
@@ -211,17 +222,79 @@ export async function erzeugeAngebotWord(args: {
     .filter(Boolean)
     .join("  ·  ");
 
-  const kinder: (Paragraph | Table)[] = [
-    // ── Briefkopf ─────────────────────────────────────────
+  // Briefkopf: Firmendaten links, Logo rechts. Ohne Logo nimmt der Textblock
+  // die volle Breite — dann sieht der Kopf aus wie zuvor.
+  const firmenBlock = [
     new Paragraph({
       spacing: { after: 40 },
-      children: [new TextRun({ text: b.firma, bold: true, size: 28, color: AKZENT })],
+      children: [new TextRun({ text: b.firma, bold: true, size: 28, color: akzent })],
     }),
     new Paragraph({
-      spacing: { after: 400 },
-      border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: AKZENT } },
       children: [new TextRun({ text: adresszeile, size: 16, color: GRAU })],
     }),
+  ];
+
+  const briefkopf: (Paragraph | Table)[] = logo
+    ? [
+        new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          columnWidths: [6800, 3000],
+          borders: {
+            top: OHNE_RAHMEN.top,
+            bottom: OHNE_RAHMEN.bottom,
+            left: OHNE_RAHMEN.left,
+            right: OHNE_RAHMEN.right,
+            insideHorizontal: OHNE_RAHMEN.top,
+            insideVertical: OHNE_RAHMEN.left,
+          },
+          rows: [
+            new TableRow({
+              children: [
+                new TableCell({
+                  borders: OHNE_RAHMEN,
+                  verticalAlign: "center",
+                  margins: { top: 0, bottom: 0, left: 0, right: 0 },
+                  children: firmenBlock,
+                }),
+                new TableCell({
+                  borders: OHNE_RAHMEN,
+                  verticalAlign: "center",
+                  margins: { top: 0, bottom: 0, left: 0, right: 0 },
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.RIGHT,
+                      children: [
+                        new ImageRun({
+                          data: logo.daten,
+                          type: logo.typ === "jpg" ? "jpg" : logo.typ,
+                          transformation: { width: logo.breite, height: logo.hoehe },
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+          ],
+        }),
+        new Paragraph({
+          spacing: { before: 120, after: 400 },
+          border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: akzent } },
+          children: [],
+        }),
+      ]
+    : [
+        ...firmenBlock.slice(0, 1),
+        new Paragraph({
+          spacing: { after: 400 },
+          border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: akzent } },
+          children: [new TextRun({ text: adresszeile, size: 16, color: GRAU })],
+        }),
+      ];
+
+  const kinder: (Paragraph | Table)[] = [
+    // ── Briefkopf ─────────────────────────────────────────
+    ...briefkopf,
 
     // ── Empfänger ─────────────────────────────────────────
     ...(daten.kunde.name
@@ -263,7 +336,7 @@ export async function erzeugeAngebotWord(args: {
     new Paragraph({ spacing: { after: 200 }, children: [] }),
 
     // ── Positionen ────────────────────────────────────────
-    positionsTabelle(summe),
+    positionsTabelle(summe, akzent),
     new Paragraph({ spacing: { after: 280 }, children: [] }),
 
     // ── Schlusstext ───────────────────────────────────────
@@ -288,6 +361,15 @@ export async function erzeugeAngebotWord(args: {
     );
   }
 
+  // Fußzeile mit Firmen- und Bankdaten, falls hinterlegt
+  const fusstext = [
+    [b.firma, b.strasse, `${b.plz} ${b.ort}`.trim()].filter(Boolean).join(", "),
+    b.ustIdNr ? `USt-IdNr.: ${b.ustIdNr}` : "",
+    b.bank ? `Bank: ${b.bank}` : "",
+  ]
+    .filter(Boolean)
+    .join("   ·   ");
+
   const doc = new Document({
     creator: b.firma,
     title: `${titel} ${nummer}`,
@@ -298,6 +380,17 @@ export async function erzeugeAngebotWord(args: {
     sections: [
       {
         properties: { page: { margin: { top: 1000, bottom: 1000, left: 1100, right: 1100 } } },
+        footers: {
+          default: new Footer({
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                border: { top: { style: BorderStyle.SINGLE, size: 4, color: "DDDDDD" } },
+                children: [new TextRun({ text: fusstext, size: 14, color: GRAU })],
+              }),
+            ],
+          }),
+        },
         children: kinder,
       },
     ],

@@ -29,3 +29,4 @@ export function basisUrl(): string {
 
 export const bearbeitenLink = (token: string): string => `${basisUrl()}/a/${token}`;
 export const kundenLink = (token: string): string => `${basisUrl()}/k/${token}`;
+export const einstellungenLink = (token: string): string => `${basisUrl()}/einstellungen/${token}`;

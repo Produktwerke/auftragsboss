@@ -20,7 +20,8 @@ import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
 import { ladePreisliste } from "./preisliste.js";
 import { dokumentMail } from "./email/templates.js";
 import { sendeMail, WORD_MIME } from "./email/send.js";
-import { bearbeitenLink, erzeugeToken, kundenLink } from "./web/tokens.js";
+import { bearbeitenLink, einstellungenLink, erzeugeToken, kundenLink } from "./web/tokens.js";
+import { effektivePreisliste, einstellungenTokenBereit } from "./betrieb/betriebsdaten.js";
 import {
   MAX_RUNDEN,
   alsDialog,
@@ -28,6 +29,16 @@ import {
   holeNachtragsVorgang,
   holeOffenenVorgang,
 } from "./dialog.js";
+
+/** Erkennt, ob eine Nachricht nach den Betriebseinstellungen fragt. Bewusst
+ *  tolerant (kein Zauberwort) — deckt die üblichen Formulierungen ab. */
+function willEinstellungen(text: string): boolean {
+  const t = text.toLowerCase();
+  if (t.length > 60) return false; // ein Diktat ist kein Einstellungswunsch
+  return /(einstellung|einricht|profil|stammdaten|mein logo|logo (ändern|hochladen| hoch)|(meine |unsere )?adresse ändern|briefkopf)/.test(
+    t,
+  );
+}
 
 export const prisma = new PrismaClient();
 
@@ -74,6 +85,29 @@ export async function verarbeiteNachricht(args: {
       "👋 Diese Nummer ist noch nicht registriert. Melde dich beim Angebotsblitz-Team, um deinen Betrieb freizuschalten.",
     );
     return;
+  }
+
+  // Weg 3: Fragt der Handwerker nach seinen Einstellungen (Logo, Adresse …),
+  // schicken wir direkt den persönlichen Link — kein exaktes Stichwort nötig.
+  if (text && willEinstellungen(text)) {
+    const token = await einstellungenTokenBereit(prisma, handwerker);
+    await sendeWhatsAppText(
+      vonNummer,
+      `⚙️ Hier stellst du Logo, Adresse und Standardtexte ein und siehst deine bisherigen Angebote:\n${einstellungenLink(token)}`,
+    );
+    return;
+  }
+
+  // Weg 1: Beim allerersten Auftrag begrüßen und einmalig auf die Einrichtung
+  // hinweisen — damit Logo und Adresse gleich auf dem ersten Angebot stehen.
+  const istErsterAuftrag = (await prisma.dokument.count({ where: { handwerkerId: handwerker.id } })) === 0;
+  if (istErsterAuftrag && !(await prisma.vorgang.findFirst({ where: { handwerkerId: handwerker.id } }))) {
+    const token = await einstellungenTokenBereit(prisma, handwerker);
+    await sendeWhatsAppText(
+      vonNummer,
+      `👋 Willkommen bei Angebotsblitz, ${handwerker.name}!\n\nDamit dein Logo und deine Adresse gleich auf dem Angebot stehen, richte einmal deinen Betrieb ein:\n${einstellungenLink(token)}\n\nDanach einfach eine Sprachnachricht mit den Auftragsdetails schicken — ich mache ein fertiges Angebot daraus. 🎙️`,
+    );
+    // Kein return: Wir verarbeiten die eigentliche Nachricht gleich weiter.
   }
 
   try {
@@ -189,8 +223,21 @@ export async function erstelleDokument(args: {
   const { vorgang, handwerkerId, vonNummer, daten, preisliste } = args;
 
   const handwerker = await prisma.handwerker.findUniqueOrThrow({ where: { id: handwerkerId } });
+  // Betriebsdaten des Handwerkers (Logo, Adresse, Farbe) über die Vorgaben
+  // legen — sie erscheinen so auf Word/PDF und in der E-Mail.
+  const eff = effektivePreisliste(handwerker, preisliste);
   const datum = new Date();
-  const summe = berechneAngebot(daten.positionen, preisliste, datum);
+  const summe = berechneAngebot(daten.positionen, eff, datum);
+
+  // Standardtexte des Betriebs einweben: fehlt ein Anschreiben, nimm die
+  // Vorgabe; der feste Schlusstext (z.B. Haftungshinweis) wird angehängt.
+  if (!daten.einleitung?.trim() && handwerker.standardEinleitung?.trim()) {
+    daten.einleitung = handwerker.standardEinleitung.trim();
+  }
+  if (handwerker.standardSchlusstext?.trim()) {
+    const bestehend = daten.schlusstext?.trim();
+    daten.schlusstext = (bestehend ? bestehend + "\n\n" : "") + handwerker.standardSchlusstext.trim();
+  }
 
   // Nachtrag? Dann Nummer behalten und die Fassung hochzählen. Die alte
   // Fassung bleibt im Archiv stehen — nachvollziehbar, was wann galt.
@@ -254,12 +301,12 @@ export async function erstelleDokument(args: {
   });
 
   // Word-Datei + E-Mail
-  const word = await erzeugeAngebotWord({ daten, summe, preisliste, nummer, datum });
+  const word = await erzeugeAngebotWord({ daten, summe, preisliste: eff, nummer, datum });
   const dateiname = wordDateiname(daten.art, nummer, daten.kunde.name);
   const mail = dokumentMail({
     daten,
     summe,
-    preisliste,
+    preisliste: eff,
     transkript,
     nummer,
     datum,
@@ -299,6 +346,11 @@ export async function erstelleDokument(args: {
     zeilen.push(`📦 ${anzahlMaterial} Materialposten vorgeschlagen — bitte prüfen`);
   }
   if (istProtokoll) zeilen.push(`Gewährleistung: ${fristJahre} Jahre — ich erinnere dich vor Ablauf.`);
+
+  // Weg 2: Der Zugang zu Einstellungen & Angebotsübersicht steht unauffällig
+  // unter jedem Angebot — so ist er immer auffindbar, ohne aufdringlich zu sein.
+  const einstToken = await einstellungenTokenBereit(prisma, handwerker);
+  zeilen.push(``, `⚙️ Betriebsdaten, Logo & alle Angebote: ${einstellungenLink(einstToken)}`);
 
   await sendeWhatsAppText(vonNummer, zeilen.join("\n"));
   console.log(

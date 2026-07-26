@@ -14,6 +14,9 @@ prisma/*.db-journal
 # Demo-Ausgabe (generierte E-Mail-Vorschauen)
 demo-ausgabe/
 
+# Hochgeladene Betriebslogos — gehören nicht ins Repo (echte Betriebsdaten)
+uploads/
+
 # Test-Audiodateien und Transkripte (enthalten evtl. echte Kundendaten)
 transkript.txt
 *.opus

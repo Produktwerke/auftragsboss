@@ -47,7 +47,13 @@ vs. **Protokoll** (nach getaner Arbeit, mit Gewährleistungs-Tracking § 634a BG
   `dialog.ts` ist nur Notfallnetz bei KI-Ausfall.
 - **Word/PDF = Kundendokument, E-Mail = für den Handwerker.** Arbeitsnotizen
   (Aufmaß, "bitte prüfen") stehen nur in der E-Mail, nie im Kundendokument.
-- **Kein Login.** Identität = WhatsApp-Nummer (Betrieb) bzw. Zufallstoken (Editor).
+- **Kein Passwort.** Identität = WhatsApp-Nummer (Betrieb) bzw. Zufallstoken
+  (Editor, Einstellungen). Auch der "Login" zur Einstellungsseite ist nur ein
+  persönlicher Zufallslink (`einstellungenToken`) — kein Passwort, keine Hürde.
+- **Betriebsdaten liegen am Handwerker, nicht mehr fest in preisliste.json.**
+  `betrieb/betriebsdaten.ts` legt die Handwerker-Werte (Logo, Adresse, Farbe,
+  Standardtexte) über die Vorgaben aus `preisliste.json`. Jeder Betrieb pflegt
+  sein eigenes Profil über die Einstellungsseite; die JSON ist nur noch Vorgabe.
 
 ## Projektstruktur (`src/`)
 
@@ -66,9 +72,12 @@ vs. **Protokoll** (nach getaner Arbeit, mit Gewährleistungs-Tracking § 634a BG
 | | `angebot/word.ts` | .docx-Erzeugung (Briefkopf, Logo, Tabelle) |
 | | `angebot/pdf.ts` | PDF via pdfkit (gleiches Layout wie Word) |
 | Betrieb | `betrieb/logo.ts` | Logo laden, Maße aus Header, in Rahmen einpassen |
+| | `betrieb/betriebsdaten.ts` | Handwerker-Stammdaten über preisliste.json legen; einstellungenToken |
+| | `betrieb/logoUpload.ts` | Hochgeladenes Logo (Base64) prüfen + in uploads/ speichern |
 | E-Mail | `email/templates.ts` / `send.ts` | HTML-Mail (dark-mode-fest) + SMTP-Versand |
 | Web-Editor | `web/editorSeite.ts` | Bearbeitungsseite (HTML+JS, kein Framework) |
-| | `web/routes.ts` | GET /a/:token, PUT speichern, export.word/pdf |
+| | `web/einstellungenSeite.ts` | Betriebseinstellungen: Logo, Adresse, Standardtexte, Angebotsübersicht |
+| | `web/routes.ts` | GET /a/:token, PUT speichern, export.word/pdf, /einstellungen/:token |
 | | `web/devServer.ts` | Editor-Vorschau ohne Keys (`npm run dev:editor`) |
 | | `web/tokens.ts` / `dokumentDaten.ts` | Tokens + DB↔Editor-Konvertierung |
 | Jobs | `jobs/warrantyReminders.ts` | Täglich: Gewährleistungs-Erinnerungen |
@@ -109,6 +118,9 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 - ✅ Nachtrag per Sprachnachricht (Positionen/Preise ergänzen ohne Word)
 - ✅ Word- + PDF-Export mit Logo, Betriebsfarbe, Zwischensummen je Kategorie
 - ✅ Web-Editor: vorbefüllt, Live-Summen, eigene Kategorien, mobil getestet
+- ✅ Einstellungsseite (passwortloser Link): Logo-Upload, Betriebsdaten, Farbe,
+  Standardtexte (Haftungshinweis), Angebotsübersicht; Daten fließen ins Angebot.
+  Link-Wege: Erstkontakt-Begrüßung, Zeile unter jedem Angebot, Stichworterkennung.
 - ✅ Gewährleistungs-Tracking + Erinnerungs-Cron
 
 **Bewusst NICHT im MVP** (Basis liegt im Code bereit, nachrüstbar):
@@ -120,7 +132,10 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
   dauert Tage). README hat die Anleitung.
 - `X-Hub-Signature-256`-Prüfung im Webhook (Sicherheit, TODO im Code)
 - Hosting/Server, PostgreSQL, DSGVO (AV-Verträge OpenAI/Anthropic)
-- Logo mit transparentem Hintergrund (aktuelles `Logo.jpg` hat grauen Grund)
+- Selbst-Registrierung: aktuell legt das Team den Handwerker an (whatsappNummer);
+  unbekannte Nummern werden abgewiesen. Der Erstkontakt-Willkommensgruß greift
+  erst, sobald der Betrieb im System ist. (Logo lädt jeder Betrieb selbst hoch —
+  das alte graue `Logo.jpg` ist nur noch Demo-Vorgabe in preisliste.json.)
 
 ## Arbeitskonventionen
 

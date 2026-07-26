@@ -26,8 +26,10 @@ export function editorSeite(args: {
   dokument: Dokument;
   handwerker: Handwerker;
   preisliste: Preisliste;
+  /** Link zurück zu den Betriebseinstellungen inkl. Angebotsübersicht. */
+  einstellungenUrl?: string;
 }): string {
-  const { dokument, preisliste } = args;
+  const { dokument, preisliste, einstellungenUrl } = args;
   const b = preisliste.betrieb;
   const akzent = `#${/^[0-9a-fA-F]{6}$/.test(b.farbe) ? b.farbe : "0B5CAD"}`;
   const logo = ladeLogo(b.logo);
@@ -68,6 +70,9 @@ export function editorSeite(args: {
   body { margin:0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
          background:#eef0f3; color:#1a1a1a; line-height:1.5; }
   .rahmen { max-width: 860px; margin: 0 auto; padding: 16px; }
+  .zurueck { display:inline-block; margin-bottom:12px; color:var(--akzent); text-decoration:none;
+             font-size:14px; font-weight:600; }
+  .zurueck:hover { text-decoration:underline; }
   .karte { background:#fff; border-radius:12px; padding:22px; margin-bottom:16px;
            box-shadow:0 1px 4px rgba(0,0,0,.08); }
   .kopf { display:flex; justify-content:space-between; align-items:center; gap:16px;
@@ -129,6 +134,12 @@ export function editorSeite(args: {
 </head>
 <body>
 <div class="rahmen">
+
+  ${
+    einstellungenUrl
+      ? `<a class="zurueck" href="${escapeHtml(einstellungenUrl)}">← Zurück zu Einstellungen &amp; allen Angeboten</a>`
+      : ""
+  }
 
   ${
     startDaten.angenommen

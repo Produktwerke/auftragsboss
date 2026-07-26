@@ -10,21 +10,40 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Der registrierte Handwerksbetrieb. Identifikation NUR über die
-// WhatsApp-Nummer — kein Login, kein Passwort (Kernprinzip!).
+// Der registrierte Handwerksbetrieb. Identifikation im WhatsApp-Alltag NUR
+// über die Nummer — kein Passwort (Kernprinzip!). Für die Einstellungsseite
+// (Logo, Adresse, Standardtexte, Angebotsübersicht) gibt es einen persönlichen
+// Zufallslink: der einstellungenToken. Wer den Link hat, ist eingeloggt —
+// derselbe passwortlose Ansatz wie bei den Dokument-Links.
 model Handwerker {
   id             String     @id @default(cuid())
   whatsappNummer String     @unique // E.164, z.B. "4917612345678"
-  name           String
+  name           String // Inhaber / Ansprechpartner
   firma          String
   email          String // Zieladresse für die fertigen Dokumente
   gewerk         String?
 
-  // Betriebsprofil — jeder Betrieb hinterlegt sein eigenes Logo und seine
-  // Farbe. Wird später über die Einrichtungsseite hochgeladen; solange das
-  // Feld leer ist, greift der Eintrag aus preisliste.json (Einzelbetrieb).
-  logoDatei String? // Dateiname im uploads-Ordner, z.B. "logo_abc123.jpg"
+  // Betriebsprofil — jeder Betrieb hinterlegt seine eigenen Stammdaten über
+  // die Einstellungsseite. Solange ein Feld leer ist, greift der Eintrag aus
+  // preisliste.json als Vorgabe (Einzelbetrieb im Test).
+  logoDatei String? // Pfad im uploads-Ordner, z.B. "uploads/logo_abc123.png"
   farbe     String? // Akzentfarbe als Hex ohne #, z.B. "0B5CAD"
+  strasse   String? // Straße und Hausnummer (Briefkopf)
+  plz       String?
+  ort       String?
+  telefon   String?
+  ustIdNr   String? // für die Fußzeile
+  bank      String? // Bankverbindung für die Fußzeile
+
+  // Standardtexte, die der Betrieb auf jedem Angebot haben möchte —
+  // z.B. eine feste Grußformel oder ein Haftungs-/Gewährleistungshinweis.
+  standardEinleitung  String? // Vorgabe-Anschreiben, falls die KI keins bildet
+  standardSchlusstext String? // wird an den Schlusstext jedes Angebots angehängt
+
+  // Persönlicher, passwortloser Zugang zur Einstellungsseite. Nullable, damit
+  // Bestandsdatensätze ohne Migration bestehen bleiben — der Token wird beim
+  // ersten Bedarf erzeugt (siehe betrieb/betriebsdaten.ts).
+  einstellungenToken String? @unique
 
   erstelltAm     DateTime   @default(now())
   dokumente      Dokument[]

@@ -316,9 +316,18 @@ export async function erstelleDokument(args: {
     bearbeitenUrl: bearbeitenLink(dokument.bearbeitenToken),
     kundenUrl: kundenLink(dokument.kundenToken),
   });
-  await sendeMail(handwerker.email, mail.betreff, mail.html, [
-    { filename: dateiname, content: word, contentType: WORD_MIME },
-  ]);
+  // Die E-Mail ist nicht kritisch — die WhatsApp-Antwort mit dem Editor-Link
+  // ist das Wichtigere. Fehlt SMTP (z.B. im Test) oder schlägt der Versand
+  // fehl, läuft der Rest trotzdem durch, statt den ganzen Vorgang abzubrechen.
+  try {
+    await sendeMail(handwerker.email, mail.betreff, mail.html, [
+      { filename: dateiname, content: word, contentType: WORD_MIME },
+    ]);
+  } catch (err) {
+    console.warn(
+      `⚠️  E-Mail an ${handwerker.email} nicht versendet (${err instanceof Error ? err.message : err}) — WhatsApp-Antwort folgt trotzdem.`,
+    );
+  }
 
   await prisma.vorgang.update({
     where: { id: vorgang.id },

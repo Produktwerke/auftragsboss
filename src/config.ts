@@ -26,7 +26,13 @@ function lade<T extends z.ZodType>(name: string, schema: T): () => z.infer<T> {
 
 export const serverConfig = lade(
   "Server",
-  z.object({ PORT: z.coerce.number().default(3000) }),
+  z.object({
+    PORT: z.coerce.number().default(3000),
+    // Lauschadresse. Standard: NUR localhost — sicher fürs lokale Testen
+    // (auch mit Tunnel, der ja auf demselben Rechner läuft). Fürs Hosting
+    // HOST=0.0.0.0 in der .env setzen, damit der Server von außen erreichbar ist.
+    HOST: z.string().default("127.0.0.1"),
+  }),
 );
 
 // Nur OpenAI — für die Transkription (Whisper). Bewusst getrennt, damit
@@ -52,6 +58,14 @@ export const whatsappConfig = lade(
     WHATSAPP_ACCESS_TOKEN: z.string().min(10),
     WHATSAPP_PHONE_NUMBER_ID: z.string().min(5),
     WHATSAPP_VERIFY_TOKEN: z.string().min(8),
+    // Graph-API-Version — konfigurierbar, damit man ohne Codeänderung auf die
+    // im Meta-Dashboard aktuelle Version wechseln kann. Standard: eine aktuelle
+    // Version; im Dashboard siehst du, welche deine App nutzt (z.B. v25.0) und
+    // kannst sie hier per .env angleichen.
+    GRAPH_API_VERSION: z
+      .string()
+      .regex(/^v\d+\.\d+$/, "Format wie v23.0")
+      .default("v23.0"),
   }),
 );
 

@@ -17,6 +17,9 @@ demo-ausgabe/
 # Hochgeladene Betriebslogos — gehören nicht ins Repo (echte Betriebsdaten)
 uploads/
 
+# Tunnel-Programm (portable, wird bei Bedarf geladen) — kein Repo-Inhalt
+cloudflared.exe
+
 # Test-Audiodateien und Transkripte (enthalten evtl. echte Kundendaten)
 transkript.txt
 *.opus

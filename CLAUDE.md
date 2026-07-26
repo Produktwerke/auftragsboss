@@ -122,15 +122,31 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
   Standardtexte (Haftungshinweis), Angebotsübersicht; Daten fließen ins Angebot.
   Link-Wege: Erstkontakt-Begrüßung, Zeile unter jedem Angebot, Stichworterkennung.
 - ✅ Gewährleistungs-Tracking + Erinnerungs-Cron
+- ✅ **Live über Meta WhatsApp getestet (26.07.2026):** echte Sprachnachricht →
+  Angebot → WhatsApp-Antwort mit Link, komplett durchgelaufen (Test-Nummer +
+  cloudflared-Tunnel). Auch Material-Vorschläge und Nachtrag (Fassung 2) bestätigt.
 
 **Bewusst NICHT im MVP** (Basis liegt im Code bereit, nachrüstbar):
 - ⏸️ Kundenansicht mit „Annehmen"-Knopf (`kundenToken` + DB-Felder existieren,
   Seite `/k/:token` fehlt) — von Dirk aus MVP herausgenommen
 
-**Noch nie im Echtbetrieb gelaufen (offene Schritte für Produktion):**
-- Meta WhatsApp Business einrichten (der zeitliche Engpass — Firmenverifizierung
-  dauert Tage). README hat die Anleitung.
-- `X-Hub-Signature-256`-Prüfung im Webhook (Sicherheit, TODO im Code)
+**Offene Schritte für den Echtbetrieb:**
+- Meta WhatsApp: Test läuft (siehe oben). Was für den lokalen Test nötig war:
+  öffentliche https-Adresse via **cloudflared** (`.\cloudflared.exe tunnel --url
+  http://localhost:3000`, portable exe, gitignored); Webhook-Callback = Tunnel +
+  `/webhook/whatsapp`, Verify-Token `angebotsblitz-2026`; `messages` abonnieren;
+  **und die App per `POST /{WABA_ID}/subscribed_apps` mit dem WABA verbinden** —
+  sonst kommen echte Nachrichten NICHT an (Test-Button funktioniert trotzdem).
+  Empfänger-Handynummer muss auf der Positivliste stehen (Schritt 1 „Ausprobieren").
+  **Test-Token gilt nur 24 h** → für Dauerbetrieb Systembenutzer-Token nötig.
+  Beim Test die eigene Nummer als Betrieb registrieren: `tsx src/registriere-nummer.ts 49…`.
+  Fürs echte Live-Gehen: eigene deutsche Nummer + Firmenverifizierung.
+- `X-Hub-Signature-256`-Prüfung im Webhook — **nächster Härtungsschritt** vor
+  Dauerbetrieb; braucht das Meta App Secret (App-Einstellungen → Grundlegendes).
+- `HOST` (Standard `127.0.0.1`, nur localhost) und `GRAPH_API_VERSION` (Standard
+  `v23.0`) sind jetzt per .env konfigurierbar; fürs Hosting `HOST=0.0.0.0`.
+- E-Mail-Versand ist unkritisch: schlägt SMTP fehl, läuft der Rest trotzdem
+  (WhatsApp-Antwort + Angebot), nur die E-Mail entfällt.
 - Hosting/Server, PostgreSQL, DSGVO (AV-Verträge OpenAI/Anthropic)
 - Selbst-Registrierung: aktuell legt das Team den Handwerker an (whatsappNummer);
   unbekannte Nummern werden abgewiesen. Der Erstkontakt-Willkommensgruß greift

@@ -17,11 +17,11 @@ await app.register(editorRoutes);
 starteGewaehrleistungsJob();
 starteVorgangTimeoutJob();
 
-const port = serverConfig().PORT;
+const { PORT, HOST } = serverConfig();
 
 try {
-  await app.listen({ port, host: "0.0.0.0" });
-  console.log(`🚀 VoiceProtokoll Guard läuft auf Port ${port}`);
+  await app.listen({ port: PORT, host: HOST });
+  console.log(`🚀 VoiceProtokoll Guard läuft auf ${HOST}:${PORT}`);
 } catch (err) {
   app.log.error(err);
   process.exit(1);

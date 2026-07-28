@@ -72,11 +72,11 @@ export function einstellungenSeite(args: {
       : dokumente
           .map(
             (d) => `<tr>
-        <td><a href="${bearbeitenLink(d.bearbeitenToken)}">${escapeHtml(d.nummer)}</a>${d.version > 1 ? ` <span class="fassung">Fassung ${d.version}</span>` : ""}</td>
-        <td>${d.art === "ANGEBOT" ? "Angebot" : "Protokoll"}</td>
-        <td>${escapeHtml(d.kundeName ?? "—")}</td>
-        <td>${datumDE(d.datum)}</td>
-        <td class="r">${d.vollstaendig ? euro(d.brutto) : '<span class="offen">offen</span>'}</td>
+        <td class="c-num" data-label="Nummer"><a href="${bearbeitenLink(d.bearbeitenToken)}">${escapeHtml(d.nummer)}</a>${d.version > 1 ? ` <span class="fassung">Fassung ${d.version}</span>` : ""}</td>
+        <td data-label="Art">${d.art === "ANGEBOT" ? "Angebot" : "Protokoll"}</td>
+        <td data-label="Kunde">${escapeHtml(d.kundeName ?? "—")}</td>
+        <td data-label="Datum">${datumDE(d.datum)}</td>
+        <td class="r" data-label="Betrag">${d.vollstaendig ? euro(d.brutto) : '<span class="offen">offen</span>'}</td>
       </tr>`,
           )
           .join("");
@@ -135,7 +135,18 @@ export function einstellungenSeite(args: {
   .aktionen { position:sticky; bottom:0; background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 -2px 10px rgba(0,0,0,.08);
               display:flex; align-items:center; gap:12px; }
   .status { font-size:13px; color:#2e7d32; margin-left:auto; }
-  @media (max-width:640px){ .zwei{grid-template-columns:1fr;} .karte{padding:15px;} }
+  @media (max-width:640px){
+    .zwei{grid-template-columns:1fr;}
+    .karte{padding:15px;}
+    /* Angebotsübersicht: gestapelte Karten statt Quer-Scrollen */
+    .tab-scroll{ overflow-x:visible; }
+    table{ min-width:0; }
+    thead{ display:none; }
+    tbody tr{ display:block; border:1px solid #e3e7ea; border-radius:9px; padding:6px 12px 8px; margin-bottom:10px; }
+    tbody td[data-label]{ display:flex; justify-content:space-between; gap:12px; border:none; padding:5px 0; text-align:right; }
+    tbody td[data-label]::before{ content:attr(data-label); color:#777; font-size:12px; font-weight:600; text-align:left; flex:0 0 auto; }
+    tbody td.c-num{ border-bottom:1px solid #eef1f3; padding-bottom:6px; margin-bottom:2px; font-size:15px; }
+  }
 </style>
 </head>
 <body>

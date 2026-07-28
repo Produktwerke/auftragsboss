@@ -69,6 +69,7 @@ vs. **Protokoll** (nach getaner Arbeit, mit Gewährleistungs-Tracking § 634a BG
 | Pipeline | `pipeline.ts` | Kern: Nachricht → Dialog → Dokument erzeugen; Feedback/Einstellungs-Stichworte |
 | | `dialog.ts` | Vorgangs-Verwaltung, Nachtrag, Notfall-Wortliste |
 | | `feedback.ts` | Tolerante Feedback-Erkennung für den WhatsApp-Weg |
+| | `empfehlung.ts` | Empfehlungsprogramm: Einladungscode je Betrieb, „ab 3. Angebot" |
 | Angebot | `angebot/berechnung.ts` | Summen, Blöcke/Kategorien, Zwischensummen |
 | | `angebot/word.ts` | .docx-Erzeugung (Briefkopf, Logo, Tabelle) |
 | | `angebot/pdf.ts` | PDF via pdfkit (gleiches Layout wie Word) |
@@ -79,7 +80,8 @@ vs. **Protokoll** (nach getaner Arbeit, mit Gewährleistungs-Tracking § 634a BG
 | Web-Editor | `web/editorSeite.ts` | Bearbeitungsseite (HTML+JS, kein Framework) |
 | | `web/einstellungenSeite.ts` | Betriebseinstellungen: Logo, Adresse, Standardtexte, Angebotsübersicht, Feedback-Box |
 | | `web/adminSeite.ts` | Interne Lern-Auswertung: KI-Original vs. finales Angebot (nur mit ADMIN_TOKEN) |
-| | `web/routes.ts` | Editor, Einstellungen, Logo/Feedback-API, `/admin/:token` |
+| | `web/einladungSeite.ts` | Empfehlungs-Landingpage `/einladung/:code` (Kollege trägt sich als Lead ein) |
+| | `web/routes.ts` | Editor, Einstellungen, Logo/Feedback-API, `/admin/:token`, `/einladung/:code` |
 | | `web/devServer.ts` | Editor-Vorschau ohne Keys (`npm run dev:editor`) |
 | | `web/tokens.ts` / `dokumentDaten.ts` | Tokens + DB↔Editor-Konvertierung |
 | Jobs | `jobs/warrantyReminders.ts` | Täglich: Gewährleistungs-Erinnerungen |
@@ -87,8 +89,9 @@ vs. **Protokoll** (nach getaner Arbeit, mit Gewährleistungs-Tracking § 634a BG
 
 **Datenbank:** Prisma + SQLite (`prisma/schema.prisma`). Modelle: `Handwerker`,
 `Dokument` (Angebot/Protokoll; `kiOriginalJson` = KI-Momentaufnahme für die
-Lern-Auswertung), `Gewaehrleistung`, `Vorgang` (laufender Dialog), `Feedback`.
-Für Produktion `provider` auf `postgresql` umstellen.
+Lern-Auswertung), `Gewaehrleistung`, `Vorgang` (laufender Dialog), `Feedback`,
+`Empfehlung` (geworbene Kollegen-Leads). Für Produktion `provider` auf
+`postgresql` umstellen.
 
 ## Befehle
 
@@ -133,6 +136,9 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 - ✅ **Feedback** über Einstellungsseite UND WhatsApp-Stichwort (Tabelle `Feedback`).
 - ✅ **Lern-Auswertung** `/admin/<ADMIN_TOKEN>`: KI-Original vs. finales Angebot,
   Bearbeitungsquote — nur mit geheimem Token erreichbar (echte Kundendaten!).
+- ✅ **Empfehlungsprogramm**: persönlicher Einladungslink, Landingpage +
+  Lead-Erfassung (`Empfehlung`), WhatsApp-Aufforderung nach dem 3. Angebot.
+  Offen bleibt nur die Einlösung des Gratis-Monats (braucht Abo/Abrechnung).
 
 **Bewusst NICHT im MVP** (Basis liegt im Code bereit, nachrüstbar):
 - ⏸️ Kundenansicht mit „Annehmen"-Knopf (`kundenToken` + DB-Felder existieren,
@@ -183,7 +189,10 @@ deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
 
 ## Nächste Ideen (Roadmap)
 
-- **#2 Empfehlungsprogramm:** nach dem 3. Angebot einen Kollegen einladen, beide
-  1 Monat gratis. Braucht zuerst ein **Preis-/Abomodell** (das „gratis" bezieht
-  sich darauf). Mechanik (Einladungslink, Zählung, wer-warb-wen) dann bauen.
+- **Preismodell:** Denkstand 3 Stufen **49 / 99 / 199 €**, Kontingente 20/80/200
+  Angebote/Monat, Logo/Export in allen Stufen, erste 3 Angebote gratis. Marge
+  ~90 % (API ~5 Cent/Angebot). Noch offen: Name, echte Zahlungsbereitschaft testen.
+- **#2 Empfehlungsprogramm — Mechanik gebaut.** Offen: **Abo/Abrechnung**
+  (z. B. Stripe), damit der „1 Monat gratis" wirklich eingelöst wird, plus
+  Aktivierung der Leads (heute manuell durch das Team, Status OFFEN→AKTIVIERT).
 - **Härtung vor Dauerbetrieb:** `X-Hub-Signature-256` + Systembenutzer-Token.

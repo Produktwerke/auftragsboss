@@ -45,9 +45,29 @@ model Handwerker {
   // ersten Bedarf erzeugt (siehe betrieb/betriebsdaten.ts).
   einstellungenToken String? @unique
 
+  // Gesetzt, wenn der Handwerker per WhatsApp „Feedback" gesagt hat und wir auf
+  // seine nächste Nachricht warten. Nur kurz gültig (siehe pipeline.ts).
+  feedbackWartetSeit DateTime?
+
   erstelltAm     DateTime   @default(now())
   dokumente      Dokument[]
   vorgaenge      Vorgang[]
+  feedback       Feedback[]
+}
+
+// Rückmeldungen der Handwerker — über die Einstellungsseite (quelle "WEB")
+// oder per WhatsApp (quelle "WHATSAPP"). Bewusst schlicht: Text + Herkunft.
+model Feedback {
+  id           String     @id @default(cuid())
+  handwerkerId String
+  handwerker   Handwerker @relation(fields: [handwerkerId], references: [id])
+
+  text   String
+  quelle String // "WEB" | "WHATSAPP"
+
+  erstelltAm DateTime @default(now())
+
+  @@index([handwerkerId, erstelltAm])
 }
 
 // Ein laufender WhatsApp-Dialog. Bleibt offen, solange die KI noch

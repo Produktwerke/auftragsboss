@@ -22,6 +22,7 @@ import { dokumentMail } from "./email/templates.js";
 import { sendeMail, WORD_MIME } from "./email/send.js";
 import { bearbeitenLink, einstellungenLink, erzeugeToken, kundenLink } from "./web/tokens.js";
 import { effektivePreisliste, einstellungenTokenBereit } from "./betrieb/betriebsdaten.js";
+import { willFeedback, extrahiereFeedback, FEEDBACK_FENSTER_MINUTEN } from "./feedback.js";
 import {
   MAX_RUNDEN,
   alsDialog,
@@ -85,6 +86,41 @@ export async function verarbeiteNachricht(args: {
       "👋 Diese Nummer ist noch nicht registriert. Melde dich beim Angebotsblitz-Team, um deinen Betrieb freizuschalten.",
     );
     return;
+  }
+
+  // Feedback per WhatsApp. (a) Warten wir schon auf eine Rückmeldung, ist DIESE
+  // Nachricht das Feedback. (b) Sonst prüfen, ob eine Feedback-Absicht vorliegt.
+  if (text) {
+    const wartetSeit = handwerker.feedbackWartetSeit;
+    const imFenster =
+      wartetSeit !== null && Date.now() - wartetSeit.getTime() < FEEDBACK_FENSTER_MINUTEN * 60_000;
+    if (imFenster) {
+      await prisma.feedback.create({
+        data: { handwerkerId: handwerker.id, text: text.trim(), quelle: "WHATSAPP" },
+      });
+      await prisma.handwerker.update({ where: { id: handwerker.id }, data: { feedbackWartetSeit: null } });
+      await sendeWhatsAppText(vonNummer, "🙏 Danke für deine Rückmeldung — ist notiert!");
+      return;
+    }
+    if (willFeedback(text)) {
+      const direkt = extrahiereFeedback(text);
+      if (direkt.length >= 15) {
+        await prisma.feedback.create({
+          data: { handwerkerId: handwerker.id, text: direkt, quelle: "WHATSAPP" },
+        });
+        await sendeWhatsAppText(vonNummer, "🙏 Danke für deine Rückmeldung — ist notiert!");
+      } else {
+        await prisma.handwerker.update({
+          where: { id: handwerker.id },
+          data: { feedbackWartetSeit: new Date() },
+        });
+        await sendeWhatsAppText(
+          vonNummer,
+          "Gern! 💬 Schreib mir einfach in der nächsten Nachricht, was dir auffällt, fehlt oder gefällt.",
+        );
+      }
+      return;
+    }
   }
 
   // Weg 3: Fragt der Handwerker nach seinen Einstellungen (Logo, Adresse …),

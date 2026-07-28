@@ -279,6 +279,25 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       }
     },
   );
+
+  // ── Feedback von der Einstellungsseite ────────────────
+  app.post<{ Params: { token: string }; Body: { text?: string } }>(
+    "/api/einstellungen/:token/feedback",
+    async (req, reply) => {
+      const handwerker = await prisma.handwerker.findUnique({
+        where: { einstellungenToken: req.params.token },
+      });
+      if (!handwerker) return reply.code(404).send({ fehler: "nicht gefunden" });
+
+      const text = (req.body.text ?? "").trim();
+      if (text.length < 3) return reply.code(400).send({ fehler: "leer" });
+
+      await prisma.feedback.create({
+        data: { handwerkerId: handwerker.id, text, quelle: "WEB" },
+      });
+      return reply.send({ ok: true });
+    },
+  );
 }
 
 function dateiname(art: string, nummer: string, endung: string): string {

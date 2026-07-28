@@ -235,6 +235,17 @@ export function einstellungenSeite(args: {
     </div>
   </div>
 
+  <!-- Feedback ans Team -->
+  <div class="karte">
+    <h2>Feedback ans Angebotsblitz-Team</h2>
+    <p class="hint">Was fehlt, was nervt, was gefällt? Wir lesen jede Rückmeldung — sie hilft uns, Angebotsblitz besser zu machen.</p>
+    <textarea id="feedbackText" placeholder="Deine Nachricht an uns …"></textarea>
+    <div style="margin-top:10px; display:flex; align-items:center; gap:12px;">
+      <button class="btn prim" id="feedbackSenden" style="width:auto;">Absenden</button>
+      <span class="status" id="feedbackStatus"></span>
+    </div>
+  </div>
+
   <div class="aktionen">
     <span style="font-size:14px;color:#555;">Änderungen werden automatisch gespeichert.</span>
     <span class="status" id="status"></span>
@@ -321,6 +332,19 @@ function zeigeLogo(dataUrl){
     entfernenBtn.style.display="none";
   }
 }
+
+// ── Feedback absenden ─────────────────────────────────
+document.getElementById("feedbackSenden").addEventListener("click", async () => {
+  const t = document.getElementById("feedbackText").value.trim();
+  if (t.length < 3) { setStatus("feedbackStatus","Bitte kurz etwas schreiben","#b7791f"); return; }
+  setStatus("feedbackStatus","Wird gesendet …","#b7791f");
+  try {
+    const r = await fetch("/api/einstellungen/"+TOKEN+"/feedback",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:t})});
+    if(!r.ok) throw 0;
+    document.getElementById("feedbackText").value="";
+    setStatus("feedbackStatus","✓ Danke für dein Feedback!","#2e7d32");
+  } catch(e){ setStatus("feedbackStatus","Senden fehlgeschlagen","#c0392b"); }
+});
 
 aktualisiereVorschau();
 </script>

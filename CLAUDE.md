@@ -66,8 +66,9 @@ vs. **Protokoll** (nach getaner Arbeit, mit Gewährleistungs-Tracking § 634a BG
 | | `whatsapp/media.ts` / `send.ts` | Audio-Download / Text senden |
 | KI | `ai/transcribe.ts` | Doppelte Transkription (Whisper + gpt-4o) |
 | | `ai/structure.ts` | **Claude Fable 5**, Structured Outputs (Zod), Systemprompt |
-| Pipeline | `pipeline.ts` | Kern: Nachricht → Dialog → Dokument erzeugen |
+| Pipeline | `pipeline.ts` | Kern: Nachricht → Dialog → Dokument erzeugen; Feedback/Einstellungs-Stichworte |
 | | `dialog.ts` | Vorgangs-Verwaltung, Nachtrag, Notfall-Wortliste |
+| | `feedback.ts` | Tolerante Feedback-Erkennung für den WhatsApp-Weg |
 | Angebot | `angebot/berechnung.ts` | Summen, Blöcke/Kategorien, Zwischensummen |
 | | `angebot/word.ts` | .docx-Erzeugung (Briefkopf, Logo, Tabelle) |
 | | `angebot/pdf.ts` | PDF via pdfkit (gleiches Layout wie Word) |
@@ -76,15 +77,17 @@ vs. **Protokoll** (nach getaner Arbeit, mit Gewährleistungs-Tracking § 634a BG
 | | `betrieb/logoUpload.ts` | Hochgeladenes Logo (Base64) prüfen + in uploads/ speichern |
 | E-Mail | `email/templates.ts` / `send.ts` | HTML-Mail (dark-mode-fest) + SMTP-Versand |
 | Web-Editor | `web/editorSeite.ts` | Bearbeitungsseite (HTML+JS, kein Framework) |
-| | `web/einstellungenSeite.ts` | Betriebseinstellungen: Logo, Adresse, Standardtexte, Angebotsübersicht |
-| | `web/routes.ts` | GET /a/:token, PUT speichern, export.word/pdf, /einstellungen/:token |
+| | `web/einstellungenSeite.ts` | Betriebseinstellungen: Logo, Adresse, Standardtexte, Angebotsübersicht, Feedback-Box |
+| | `web/adminSeite.ts` | Interne Lern-Auswertung: KI-Original vs. finales Angebot (nur mit ADMIN_TOKEN) |
+| | `web/routes.ts` | Editor, Einstellungen, Logo/Feedback-API, `/admin/:token` |
 | | `web/devServer.ts` | Editor-Vorschau ohne Keys (`npm run dev:editor`) |
 | | `web/tokens.ts` / `dokumentDaten.ts` | Tokens + DB↔Editor-Konvertierung |
 | Jobs | `jobs/warrantyReminders.ts` | Täglich: Gewährleistungs-Erinnerungen |
 | | `jobs/vorgangTimeout.ts` | Alle 5 Min: offene Vorgänge nach 20 Min abschließen |
 
 **Datenbank:** Prisma + SQLite (`prisma/schema.prisma`). Modelle: `Handwerker`,
-`Dokument` (Angebot/Protokoll), `Gewaehrleistung`, `Vorgang` (laufender Dialog).
+`Dokument` (Angebot/Protokoll; `kiOriginalJson` = KI-Momentaufnahme für die
+Lern-Auswertung), `Gewaehrleistung`, `Vorgang` (laufender Dialog), `Feedback`.
 Für Produktion `provider` auf `postgresql` umstellen.
 
 ## Befehle
@@ -125,6 +128,11 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 - ✅ **Live über Meta WhatsApp getestet (26.07.2026):** echte Sprachnachricht →
   Angebot → WhatsApp-Antwort mit Link, komplett durchgelaufen (Test-Nummer +
   cloudflared-Tunnel). Auch Material-Vorschläge und Nachtrag (Fassung 2) bestätigt.
+- ✅ Web-Editor + Einstellungsseite **mobil-tauglich** (Positionen/Angebote als
+  gestapelte Karten, kein Quer-Scrollen; Desktop unverändert).
+- ✅ **Feedback** über Einstellungsseite UND WhatsApp-Stichwort (Tabelle `Feedback`).
+- ✅ **Lern-Auswertung** `/admin/<ADMIN_TOKEN>`: KI-Original vs. finales Angebot,
+  Bearbeitungsquote — nur mit geheimem Token erreichbar (echte Kundendaten!).
 
 **Bewusst NICHT im MVP** (Basis liegt im Code bereit, nachrüstbar):
 - ⏸️ Kundenansicht mit „Annehmen"-Knopf (`kundenToken` + DB-Felder existieren,
@@ -167,5 +175,15 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 `.env` (nicht in Git). Für die KI-Tests reichen `ANTHROPIC_API_KEY` (Claude,
 `sk-ant-…`) und `OPENAI_API_KEY` (Whisper, `sk-proj-…`). WhatsApp + SMTP erst
-für den Echtbetrieb. Hinweis: Dirks ursprüngliche Claude-Organisation wurde
-versehentlich gelöscht — läuft jetzt über eine neue Organisation.
+für den Echtbetrieb. Optional: `ADMIN_TOKEN` (langer Zufallswert) schaltet die
+Lern-Auswertung `/admin/<TOKEN>` frei; ohne ihn ist sie aus (404). `HOST`
+(Standard localhost) und `GRAPH_API_VERSION` (Standard v23.0) sind konfigurierbar.
+Hinweis: Dirks ursprüngliche Claude-Organisation war nur wegen fehlendem Guthaben
+deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
+
+## Nächste Ideen (Roadmap)
+
+- **#2 Empfehlungsprogramm:** nach dem 3. Angebot einen Kollegen einladen, beide
+  1 Monat gratis. Braucht zuerst ein **Preis-/Abomodell** (das „gratis" bezieht
+  sich darauf). Mechanik (Einladungslink, Zählung, wer-warb-wen) dann bauen.
+- **Härtung vor Dauerbetrieb:** `X-Hub-Signature-256` + Systembenutzer-Token.

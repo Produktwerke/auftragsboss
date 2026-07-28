@@ -140,7 +140,10 @@ model Dokument {
   kundenNummer   String? // interne Kundennummer des Betriebs, frei editierbar
   gewerk         String?
   objekt         String?
-  positionenJson String // JSON: berechnete Positionen inkl. Preise
+  positionenJson String // JSON: berechnete Positionen inkl. Preise (editierbar)
+  // Momentaufnahme dessen, was die KI ANFANGS erkannt hat — wird nie geändert.
+  // Vergleich mit dem finalen Stand zeigt, wo die KI danebenlag ("Lernen").
+  kiOriginalJson String? // JSON: { positionen, kunde{}, objekt, einleitung, schlusstext }
   aufmassNotizen String?
   besonderheiten String?
   folgetermin    String?

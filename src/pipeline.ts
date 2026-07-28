@@ -310,6 +310,14 @@ export async function erstelleDokument(args: {
       gewerk: daten.gewerk,
       objekt: daten.objekt,
       positionenJson: JSON.stringify(summe.positionen),
+      // KI-Original festhalten (unveränderlich) — Basis für die Lern-Auswertung.
+      kiOriginalJson: JSON.stringify({
+        positionen: summe.positionen,
+        kunde: { name: daten.kunde.name, strasse: daten.kunde.strasse, plzOrt: daten.kunde.plzOrt },
+        objekt: daten.objekt,
+        einleitung: daten.einleitung,
+        schlusstext: daten.schlusstext,
+      }),
       aufmassNotizen: daten.aufmassNotizen,
       besonderheiten: daten.besonderheiten,
       folgetermin: daten.folgetermin,

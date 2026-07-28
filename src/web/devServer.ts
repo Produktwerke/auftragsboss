@@ -8,7 +8,7 @@ import Fastify from "fastify";
 import { prisma } from "../pipeline.js";
 import { ladePreisliste } from "../preisliste.js";
 import { editorRoutes } from "./routes.js";
-import { bearbeitenLink, einstellungenLink, erzeugeToken, kundenLink } from "./tokens.js";
+import { basisUrl, bearbeitenLink, einstellungenLink, erzeugeToken, kundenLink } from "./tokens.js";
 import { einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
 
 async function stelleDemoDokumentBereit(): Promise<{ bearbeiten: string; kunde: string; einstellungen: string }> {
@@ -54,6 +54,13 @@ async function stelleDemoDokumentBereit(): Promise<{ bearbeiten: string; kunde: 
       gewerk: "Malerei",
       objekt: "Wohnzimmer, ca. 45 m²",
       positionenJson: JSON.stringify(positionen),
+      kiOriginalJson: JSON.stringify({
+        positionen,
+        kunde: { name: "Familie Bär", strasse: "Rotberg 18", plzOrt: "12345 Musterstadt" },
+        objekt: "Wohnzimmer, ca. 45 m²",
+        einleitung: "",
+        schlusstext: "",
+      }),
       einleitung:
         "Sehr geehrte Familie Bär,\n\nvielen Dank für das freundliche Gespräch. Gerne unterbreiten wir Ihnen unser Angebot für die Malerarbeiten in Ihrem Wohnzimmer.",
       schlusstext:
@@ -78,6 +85,9 @@ function M(beschreibung: string, menge: number | null, einheit: string) {
 }
 
 async function main(): Promise<void> {
+  // Für die Vorschau einen festen Demo-Admin-Token setzen (in Produktion via .env).
+  process.env.ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? "admin-demo-token";
+
   const app = Fastify({ logger: false });
   await app.register(editorRoutes);
 
@@ -91,7 +101,8 @@ async function main(): Promise<void> {
   console.log(linie);
   console.log(`\n  Angebots-Editor:\n  ${bearbeitenLink(tokens.bearbeiten)}\n`);
   console.log(`  Einstellungen:\n  ${einstellungenLink(tokens.einstellungen)}\n`);
-  console.log(`  Kundenansicht: ${kundenLink(tokens.kunde)}`);
+  console.log(`  Kundenansicht: ${kundenLink(tokens.kunde)}\n`);
+  console.log(`  Lern-Auswertung (Admin):\n  ${basisUrl()}/admin/${process.env.ADMIN_TOKEN}`);
   console.log("\n  Beenden mit Strg+C");
   console.log(linie + "\n");
 }

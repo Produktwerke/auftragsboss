@@ -13,6 +13,7 @@ import { erzeugeAngebotWord, wordDateiname } from "../angebot/word.js";
 import { erzeugeAngebotPdf } from "../angebot/pdf.js";
 import { editorSeite } from "./editorSeite.js";
 import { einstellungenSeite, type DokUebersicht } from "./einstellungenSeite.js";
+import { adminSeite } from "./adminSeite.js";
 import { dokumentZuDaten, editorZuPositionen, type EditorPosition } from "./dokumentDaten.js";
 import { effektivePreisliste, einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
 import { einstellungenLink } from "./tokens.js";
@@ -298,6 +299,20 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       return reply.send({ ok: true });
     },
   );
+
+  // ── Interne Lern-Auswertung (nur mit gesetztem ADMIN_TOKEN) ─
+  // Ohne ADMIN_TOKEN in der .env ist die Seite komplett aus (404).
+  app.get<{ Params: { token: string } }>("/admin/:token", async (req, reply) => {
+    const admin = process.env.ADMIN_TOKEN;
+    if (!admin || admin.length < 8 || req.params.token !== admin) {
+      return reply.code(404).type("text/html").send(nichtGefunden());
+    }
+    const dokumente = await prisma.dokument.findMany({
+      orderBy: { erstelltAm: "desc" },
+      take: 50,
+    });
+    return reply.type("text/html; charset=utf-8").send(adminSeite({ dokumente }));
+  });
 }
 
 function dateiname(art: string, nummer: string, endung: string): string {

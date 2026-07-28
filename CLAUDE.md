@@ -139,6 +139,10 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 - ✅ **Empfehlungsprogramm**: persönlicher Einladungslink, Landingpage +
   Lead-Erfassung (`Empfehlung`), WhatsApp-Aufforderung nach dem 3. Angebot.
   Offen bleibt nur die Einlösung des Gratis-Monats (braucht Abo/Abrechnung).
+- ✅ **Sicherheits-Härtung**: Webhook-Signaturprüfung (`X-Hub-Signature-256`,
+  greift bei gesetztem `WHATSAPP_APP_SECRET`; getestet 200/401/401) + dauerhafter
+  **Systembenutzer-Token** (kein 24-h-Ablauf mehr). Beides in der (gitignored)
+  `.env` aktiv, Token per Graph-API verifiziert (200).
 
 **Bewusst NICHT im MVP** (Basis liegt im Code bereit, nachrüstbar):
 - ⏸️ Kundenansicht mit „Annehmen"-Knopf (`kundenToken` + DB-Felder existieren,
@@ -152,11 +156,12 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
   **und die App per `POST /{WABA_ID}/subscribed_apps` mit dem WABA verbinden** —
   sonst kommen echte Nachrichten NICHT an (Test-Button funktioniert trotzdem).
   Empfänger-Handynummer muss auf der Positivliste stehen (Schritt 1 „Ausprobieren").
-  **Test-Token gilt nur 24 h** → für Dauerbetrieb Systembenutzer-Token nötig.
+  Der 24-h-Test-Token ist inzwischen durch einen **dauerhaften Systembenutzer-
+  Token** ersetzt (business.facebook.com → Systembenutzer, App + WABA zuweisen,
+  Scopes `whatsapp_business_messaging`+`whatsapp_business_management`, Ablauf „Nie").
   Beim Test die eigene Nummer als Betrieb registrieren: `tsx src/registriere-nummer.ts 49…`.
   Fürs echte Live-Gehen: eigene deutsche Nummer + Firmenverifizierung.
-- `X-Hub-Signature-256`-Prüfung im Webhook — **nächster Härtungsschritt** vor
-  Dauerbetrieb; braucht das Meta App Secret (App-Einstellungen → Grundlegendes).
+- ✅ `X-Hub-Signature-256`-Prüfung + Dauer-Token erledigt (siehe „Fertig").
 - `HOST` (Standard `127.0.0.1`, nur localhost) und `GRAPH_API_VERSION` (Standard
   `v23.0`) sind jetzt per .env konfigurierbar; fürs Hosting `HOST=0.0.0.0`.
 - E-Mail-Versand ist unkritisch: schlägt SMTP fehl, läuft der Rest trotzdem
@@ -195,4 +200,6 @@ deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
 - **#2 Empfehlungsprogramm — Mechanik gebaut.** Offen: **Abo/Abrechnung**
   (z. B. Stripe), damit der „1 Monat gratis" wirklich eingelöst wird, plus
   Aktivierung der Leads (heute manuell durch das Team, Status OFFEN→AKTIVIERT).
-- **Härtung vor Dauerbetrieb:** `X-Hub-Signature-256` + Systembenutzer-Token.
+- **Härtung:** ✅ erledigt (`X-Hub-Signature-256` + Systembenutzer-Token).
+  Verbleibend für Produktion: Hosting/Domain (statt Tunnel), PostgreSQL, DSGVO,
+  eigene deutsche Nummer + Firmenverifizierung, Selbst-Registrierung.

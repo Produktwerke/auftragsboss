@@ -129,6 +129,34 @@ export function editorSeite(args: {
     .aktionen .zeile1 { gap:8px; }
     .btn { padding:10px 13px; font-size:14px; flex:1; }
     .status { flex-basis:100%; margin-left:0; text-align:right; }
+
+    /* Positionstabelle: auf dem Handy gestapelte Karten statt Quer-Scrollen */
+    .tab-scroll { overflow-x:visible; margin:8px 0 0; padding:0; }
+    table { min-width:0; }
+    thead { display:none; }
+    #zeilen tr.abschnitt td { display:block; }
+    #zeilen tr.hinzu td { display:block; border-bottom:none; padding:6px 0; }
+    #zeilen tr.zwsumme { display:block; }
+    #zeilen tr.zwsumme td { display:flex; justify-content:space-between; border-bottom:none; }
+    /* echte Positionszeilen als Karte */
+    #zeilen tr:not(.abschnitt):not(.hinzu):not(.zwsumme){
+      display:block; background:#fff; border:1px solid #e3e7ea; border-radius:9px;
+      padding:6px 10px 10px; margin:0 0 10px;
+    }
+    #zeilen tr:not(.abschnitt):not(.hinzu):not(.zwsumme) td{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      border-bottom:none; padding:6px 0; text-align:left;
+    }
+    #zeilen td[data-label]::before{
+      content:attr(data-label); color:#777; font-size:12px; font-weight:600; flex:0 0 auto;
+    }
+    #zeilen td.c-beschr{ display:block; padding-top:2px; }
+    #zeilen td.c-beschr::before{ display:block; margin-bottom:4px; }
+    #zeilen td.c-beschr input{ width:100%; }
+    #zeilen td .pos-menge, #zeilen td .pos-einheit, #zeilen td .pos-preis{ width:auto; flex:0 0 58%; }
+    #zeilen td.zeilensumme{ font-size:15px; font-weight:600; }
+    #zeilen td.c-del{ justify-content:flex-end; padding-top:0; }
+    #zeilen td.c-del .loeschen{ font-size:24px; }
   }
 </style>
 </head>
@@ -255,12 +283,12 @@ function render(){
       const g = zeilensumme(p);
       const tr = document.createElement('tr');
       tr.innerHTML =
-        '<td><input value="'+esc(p.beschreibung)+'" oninput="setF('+i+',\\'beschreibung\\',this.value)"></td>'+
-        '<td class="r"><input class="pos-menge r" inputmode="decimal" value="'+(p.menge??'')+'" oninput="setNum('+i+',\\'menge\\',this.value,this)"></td>'+
-        '<td>'+einheitSelect(i,p.einheit)+'</td>'+
-        '<td class="r"><input class="pos-preis r" inputmode="decimal" value="'+(p.einzelpreis??'')+'" placeholder="___" oninput="setNum('+i+',\\'einzelpreis\\',this.value,this)"></td>'+
-        '<td class="r zeilensumme">'+(g==null?OFFEN:euro(g))+'</td>'+
-        '<td><button class="loeschen" title="Zeile löschen" onclick="loeschen('+i+')">×</button></td>';
+        '<td class="c-beschr" data-label="Leistung"><input value="'+esc(p.beschreibung)+'" oninput="setF('+i+',\\'beschreibung\\',this.value)"></td>'+
+        '<td class="r" data-label="Menge"><input class="pos-menge r" inputmode="decimal" value="'+(p.menge??'')+'" oninput="setNum('+i+',\\'menge\\',this.value,this)"></td>'+
+        '<td data-label="Einheit">'+einheitSelect(i,p.einheit)+'</td>'+
+        '<td class="r" data-label="Einzelpreis"><input class="pos-preis r" inputmode="decimal" value="'+(p.einzelpreis??'')+'" placeholder="___" oninput="setNum('+i+',\\'einzelpreis\\',this.value,this)"></td>'+
+        '<td class="r zeilensumme" data-label="Gesamt">'+(g==null?OFFEN:euro(g))+'</td>'+
+        '<td class="c-del"><button class="loeschen" title="Zeile löschen" onclick="loeschen('+i+')">×</button></td>';
       tbody.appendChild(tr);
     });
     // "+ Position hinzufügen" direkt unter dem jeweiligen Abschnitt

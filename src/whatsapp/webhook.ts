@@ -6,9 +6,12 @@
 // wird der Webhook erneut zugestellt. Deshalb: sofort 200 senden, Pipeline
 // asynchron weiterlaufen lassen.
 //
-// TODO (vor Produktion): X-Hub-Signature-256 gegen das App-Secret prüfen,
-// damit nur Meta den Endpoint füttern kann.
-import type { FastifyInstance } from "fastify";
+// Sicherheit: Ist WHATSAPP_APP_SECRET gesetzt, wird jede POST-Anfrage über den
+// Header X-Hub-Signature-256 gegen das App-Secret geprüft — so kann nur Meta
+// den Endpoint füttern. Ohne Secret läuft es (mit Warnung) ungeprüft weiter,
+// damit der Testbetrieb nicht blockiert.
+import crypto from "node:crypto";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { whatsappConfig } from "../config.js";
 import { verarbeiteNachricht } from "../pipeline.js";
 
@@ -29,7 +32,32 @@ interface WebhookBody {
   }>;
 }
 
+/**
+ * Prüft die Meta-Signatur: HMAC-SHA256 über den ROHEN Body mit dem App-Secret,
+ * verglichen mit dem Header `sha256=…`. Zeitkonstanter Vergleich gegen
+ * Timing-Angriffe.
+ */
+export function signaturGueltig(secret: string, roh: Buffer | undefined, signatur: string | undefined): boolean {
+  if (!roh || !signatur || !signatur.startsWith("sha256=")) return false;
+  const erwartet = "sha256=" + crypto.createHmac("sha256", secret).update(roh).digest("hex");
+  const a = Buffer.from(signatur);
+  const b = Buffer.from(erwartet);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
+  // Den rohen Body byte-genau aufbewahren (für die Signaturprüfung) und dabei
+  // wie gewohnt als JSON parsen. Scoped auf diese Routen.
+  app.addContentTypeParser("application/json", { parseAs: "buffer" }, (req, body, done) => {
+    (req as FastifyRequest & { rawBody?: Buffer }).rawBody = body as Buffer;
+    try {
+      const text = (body as Buffer).toString("utf8");
+      done(null, text.length ? JSON.parse(text) : {});
+    } catch (err) {
+      done(err as Error);
+    }
+  });
+
   // ── Verifizierungs-Handshake ──────────────────────────────
   app.get("/webhook/whatsapp", async (req, reply) => {
     const q = req.query as Record<string, string>;
@@ -41,6 +69,19 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
 
   // ── Eingehende Nachrichten ────────────────────────────────
   app.post("/webhook/whatsapp", async (req, reply) => {
+    // Signatur prüfen, sofern ein App-Secret hinterlegt ist.
+    const appSecret = process.env.WHATSAPP_APP_SECRET;
+    if (appSecret) {
+      const signatur = req.headers["x-hub-signature-256"] as string | undefined;
+      const roh = (req as FastifyRequest & { rawBody?: Buffer }).rawBody;
+      if (!signaturGueltig(appSecret, roh, signatur)) {
+        app.log.warn("Webhook mit ungültiger Signatur abgelehnt.");
+        return reply.code(401).send({ fehler: "ungültige Signatur" });
+      }
+    } else {
+      app.log.warn("WHATSAPP_APP_SECRET nicht gesetzt — Webhook-Signatur wird NICHT geprüft.");
+    }
+
     // Sofort bestätigen — Verarbeitung läuft asynchron weiter
     reply.code(200).send({ status: "ok" });
 

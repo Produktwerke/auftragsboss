@@ -8,10 +8,16 @@ import Fastify from "fastify";
 import { prisma } from "../pipeline.js";
 import { ladePreisliste } from "../preisliste.js";
 import { editorRoutes } from "./routes.js";
-import { basisUrl, bearbeitenLink, einstellungenLink, erzeugeToken, kundenLink } from "./tokens.js";
+import { basisUrl, bearbeitenLink, einstellungenLink, erzeugeToken, kundenLink, werbeLink } from "./tokens.js";
 import { einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
+import { werbeCodeBereit } from "../empfehlung.js";
 
-async function stelleDemoDokumentBereit(): Promise<{ bearbeiten: string; kunde: string; einstellungen: string }> {
+async function stelleDemoDokumentBereit(): Promise<{
+  bearbeiten: string;
+  kunde: string;
+  einstellungen: string;
+  werbe: string;
+}> {
   const preisliste = ladePreisliste();
   const b = preisliste.betrieb;
 
@@ -27,9 +33,11 @@ async function stelleDemoDokumentBereit(): Promise<{ bearbeiten: string; kunde: 
     },
   });
   const einstellungen = await einstellungenTokenBereit(prisma, handwerker);
+  const werbe = await werbeCodeBereit(prisma, handwerker);
 
   const vorhanden = await prisma.dokument.findFirst({ orderBy: { datum: "desc" } });
-  if (vorhanden) return { bearbeiten: vorhanden.bearbeitenToken, kunde: vorhanden.kundenToken, einstellungen };
+  if (vorhanden)
+    return { bearbeiten: vorhanden.bearbeitenToken, kunde: vorhanden.kundenToken, einstellungen, werbe };
 
   const positionen = [
     L("Alte Tapete entfernen", 45, "m2"),
@@ -74,7 +82,7 @@ async function stelleDemoDokumentBereit(): Promise<{ bearbeiten: string; kunde: 
       gueltigBis: new Date(Date.now() + 30 * 864e5),
     },
   });
-  return { bearbeiten: dok.bearbeitenToken, kunde: dok.kundenToken, einstellungen };
+  return { bearbeiten: dok.bearbeitenToken, kunde: dok.kundenToken, einstellungen, werbe };
 }
 
 function L(beschreibung: string, menge: number | null, einheit: string) {
@@ -102,7 +110,8 @@ async function main(): Promise<void> {
   console.log(`\n  Angebots-Editor:\n  ${bearbeitenLink(tokens.bearbeiten)}\n`);
   console.log(`  Einstellungen:\n  ${einstellungenLink(tokens.einstellungen)}\n`);
   console.log(`  Kundenansicht: ${kundenLink(tokens.kunde)}\n`);
-  console.log(`  Lern-Auswertung (Admin):\n  ${basisUrl()}/admin/${process.env.ADMIN_TOKEN}`);
+  console.log(`  Lern-Auswertung (Admin):\n  ${basisUrl()}/admin/${process.env.ADMIN_TOKEN}\n`);
+  console.log(`  Einladung (Empfehlung):\n  ${werbeLink(tokens.werbe)}`);
   console.log("\n  Beenden mit Strg+C");
   console.log(linie + "\n");
 }

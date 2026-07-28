@@ -14,6 +14,7 @@ import { erzeugeAngebotPdf } from "../angebot/pdf.js";
 import { editorSeite } from "./editorSeite.js";
 import { einstellungenSeite, type DokUebersicht } from "./einstellungenSeite.js";
 import { adminSeite } from "./adminSeite.js";
+import { einladungSeite } from "./einladungSeite.js";
 import { dokumentZuDaten, editorZuPositionen, type EditorPosition } from "./dokumentDaten.js";
 import { effektivePreisliste, einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
 import { einstellungenLink } from "./tokens.js";
@@ -313,6 +314,37 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     });
     return reply.type("text/html; charset=utf-8").send(adminSeite({ dokumente }));
   });
+
+  // ── Empfehlung: Einladungs-Landingpage ────────────────
+  app.get<{ Params: { code: string } }>("/einladung/:code", async (req, reply) => {
+    const werber = await prisma.handwerker.findUnique({ where: { werbeCode: req.params.code } });
+    if (!werber) return reply.code(404).type("text/html").send(nichtGefunden());
+    return reply
+      .type("text/html; charset=utf-8")
+      .send(einladungSeite({ code: req.params.code, werberFirma: werber.firma }));
+  });
+
+  // ── Empfehlung: Kollege trägt sich als Lead ein ───────
+  app.post<{ Params: { code: string }; Body: { firma?: string; name?: string; nummer?: string; email?: string } }>(
+    "/api/einladung/:code",
+    async (req, reply) => {
+      const werber = await prisma.handwerker.findUnique({ where: { werbeCode: req.params.code } });
+      if (!werber) return reply.code(404).send({ fehler: "nicht gefunden" });
+
+      const firma = (req.body.firma ?? "").trim();
+      const name = (req.body.name ?? "").trim();
+      const nummer = (req.body.nummer ?? "").replace(/\D/g, ""); // nur Ziffern
+      const email = (req.body.email ?? "").trim() || null;
+      if (firma.length < 2 || name.length < 2 || nummer.length < 6) {
+        return reply.code(400).send({ fehler: "unvollständig" });
+      }
+
+      await prisma.empfehlung.create({
+        data: { werberId: werber.id, firma, name, whatsappNummer: nummer, email },
+      });
+      return reply.send({ ok: true });
+    },
+  );
 }
 
 function dateiname(art: string, nummer: string, endung: string): string {

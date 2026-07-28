@@ -20,9 +20,10 @@ import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
 import { ladePreisliste } from "./preisliste.js";
 import { dokumentMail } from "./email/templates.js";
 import { sendeMail, WORD_MIME } from "./email/send.js";
-import { bearbeitenLink, einstellungenLink, erzeugeToken, kundenLink } from "./web/tokens.js";
+import { bearbeitenLink, einstellungenLink, erzeugeToken, kundenLink, werbeLink } from "./web/tokens.js";
 import { effektivePreisliste, einstellungenTokenBereit } from "./betrieb/betriebsdaten.js";
 import { willFeedback, extrahiereFeedback, FEEDBACK_FENSTER_MINUTEN } from "./feedback.js";
+import { werbeCodeBereit, EMPFEHLUNG_AB_ANGEBOT } from "./empfehlung.js";
 import {
   MAX_RUNDEN,
   alsDialog,
@@ -406,6 +407,21 @@ export async function erstelleDokument(args: {
   zeilen.push(``, `⚙️ Betriebsdaten, Logo & alle Angebote: ${einstellungenLink(einstToken)}`);
 
   await sendeWhatsAppText(vonNummer, zeilen.join("\n"));
+
+  // Nach dem 3. Angebot einmalig zum Weiterempfehlen einladen (nur Erstfassungen).
+  if (!handwerker.empfehlungGenudgt && !istNachtrag) {
+    const anzahl = await prisma.dokument.count({ where: { handwerkerId, version: 1 } });
+    if (anzahl >= EMPFEHLUNG_AB_ANGEBOT) {
+      const code = await werbeCodeBereit(prisma, handwerker);
+      await prisma.handwerker.update({ where: { id: handwerkerId }, data: { empfehlungGenudgt: true } });
+      await sendeWhatsAppText(
+        vonNummer,
+        `🎉 Schon ${anzahl} Angebote mit Angebotsblitz! Kennst du Kollegen, die auch ständig Angebote schreiben?\n\n` +
+          `Lade sie ein — *ihr bekommt beide 1 Monat gratis*:\n${werbeLink(code)}`,
+      );
+    }
+  }
+
   console.log(
     `✅ ${daten.art} ${nummer}${version > 1 ? ` (Fassung ${version})` : ""} für ${handwerker.firma} erstellt (${dokument.id}).`,
   );

@@ -49,10 +49,37 @@ model Handwerker {
   // seine nächste Nachricht warten. Nur kurz gültig (siehe pipeline.ts).
   feedbackWartetSeit DateTime?
 
-  erstelltAm     DateTime   @default(now())
-  dokumente      Dokument[]
-  vorgaenge      Vorgang[]
-  feedback       Feedback[]
+  // Empfehlungsprogramm ("Freundschaftswerbung"). werbeCode = persönlicher
+  // Einladungslink. freimonate = verdiente Gratis-Monate (bei Abo einzulösen).
+  werbeCode         String?  @unique
+  empfehlungGenudgt Boolean  @default(false) // schon zum Einladen aufgefordert?
+  freimonate        Int      @default(0)
+
+  erstelltAm   DateTime     @default(now())
+  dokumente    Dokument[]
+  vorgaenge    Vorgang[]
+  feedback     Feedback[]
+  empfehlungen Empfehlung[] // von diesem Betrieb geworbene Kollegen (Leads)
+}
+
+// Eine Empfehlung: Ein Betrieb wirbt einen Kollegen. Erst als Lead erfasst
+// (Kontaktdaten); Freischaltung + Gutschrift der Gratis-Monate erfolgt beim
+// Aktivieren durch das Team (status OFFEN → AKTIVIERT).
+model Empfehlung {
+  id       String     @id @default(cuid())
+  werberId String
+  werber   Handwerker @relation(fields: [werberId], references: [id])
+
+  firma          String
+  name           String
+  whatsappNummer String
+  email          String?
+
+  status     String   @default("OFFEN") // "OFFEN" | "AKTIVIERT"
+  erstelltAm DateTime @default(now())
+
+  @@index([werberId])
+  @@index([status])
 }
 
 // Rückmeldungen der Handwerker — über die Einstellungsseite (quelle "WEB")

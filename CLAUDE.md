@@ -146,9 +146,10 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
   **Systembenutzer-Token** (kein 24-h-Ablauf mehr). Beides in der (gitignored)
   `.env` aktiv, Token per Graph-API verifiziert (200).
 
-**Bewusst NICHT im MVP** (Basis liegt im Code bereit, nachrüstbar):
-- ⏸️ Kundenansicht mit „Annehmen"-Knopf (`kundenToken` + DB-Felder existieren,
-  Seite `/k/:token` fehlt) — von Dirk aus MVP herausgenommen
+**Bewusst NICHT gebaut:**
+- ❌ Kundenansicht mit „Annehmen"-Knopf — **endgültig gestrichen**. Grund: Ein
+  Klick-Vertragsschluss würde Dirk rechtlich verpflichten, die Annahme beweissicher
+  zu dokumentieren; das will er nicht. (`kundenToken` + DB-Felder bleiben ungenutzt.)
 
 **Offene Schritte für den Echtbetrieb:**
 - Meta WhatsApp: Test läuft (siehe oben). Was für den lokalen Test nötig war:
@@ -196,9 +197,18 @@ deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
 
 ## Nächste Ideen (Roadmap)
 
-- **Preismodell:** Denkstand 3 Stufen **49 / 99 / 199 €**, Kontingente 20/80/200
-  Angebote/Monat, Logo/Export in allen Stufen, erste 3 Angebote gratis. Marge
-  ~90 % (API ~5 Cent/Angebot). Noch offen: Name, echte Zahlungsbereitschaft testen.
+- **Name entschieden: AuftragsBoss** (Domain AuftragsBoss.de). Alle kundensichtbaren
+  Texte umbenannt; interner Ordner bleibt `voiceprotokoll-guard`.
+- **Preismodell:** 3 Stufen **49 / 99 / 199 €**, Kontingente 20/80/200 Angebote/Monat,
+  Logo/Export in allen Stufen, erste 3 Angebote gratis, **keine Einrichtungsgebühr**.
+  Marge ~90 % (API ~5 Cent/Angebot). Noch offen: echte Zahlungsbereitschaft testen.
+- **Landingpage** unter `marketing/landingpage.html` (eigenständige HTML, dunkler
+  Industrie-Look Anthrazit + Signalgelb). Platzhalter: Video, Telefonnummer, QR,
+  App-Screenshots. Auch als Artifact veröffentlicht — Repo-Datei und Artifact getrennt pflegen.
+- **„Direkt testen"-Ablauf (geplant, noch nicht gebaut):** wa.me-Link auf der Seite →
+  Handwerker schickt Sprachnachricht → Gratis-Test-Angebot. Spam-Schutz ohne Hürde:
+  WhatsApp filtert schon (echtes Konto nötig), dazu Gratis-Kontingent pro Nummer,
+  Tempo-Limit und Tages-Gesamtdeckel mit Not-Aus.
 - **#2 Empfehlungsprogramm — Mechanik gebaut.** Offen: **Abo/Abrechnung**
   (z. B. Stripe), damit der „1 Monat gratis" wirklich eingelöst wird, plus
   Aktivierung der Leads (heute manuell durch das Team, Status OFFEN→AKTIVIERT).

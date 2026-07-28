@@ -1,4 +1,4 @@
-# Angebotsblitz — Projektgedächtnis
+# AuftragsBoss — Projektgedächtnis
 
 > Diese Datei wird beim Start automatisch gelesen. Sie fasst zusammen, was
 > das Projekt ist, wie es aufgebaut ist und was fertig bzw. offen ist — damit
@@ -13,7 +13,9 @@ Handwerker wirklich kalkulieren), nachfragen statt raten.
 
 ## Was das Produkt ist
 
-**Angebotsblitz** — der Handwerker diktiert nach dem Kundentermin im Auto eine
+**AuftragsBoss** (Domain: AuftragsBoss.de; früher „Angebotsblitz" genannt — der
+Projektordner heißt aus historischen Gründen noch `voiceprotokoll-guard`).
+Der Handwerker diktiert nach dem Kundentermin im Auto eine
 **WhatsApp-Sprachnachricht**, das System erzeugt daraus ein **fertiges Angebot**.
 Kein App-Download, kein Login. Das ist der Kernvorteil gegenüber dem Vorbild
 `buridans.com` (analysiert zu Sessionbeginn): die verlangen eine Android-App +

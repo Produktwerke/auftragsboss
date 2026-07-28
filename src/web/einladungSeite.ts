@@ -14,7 +14,7 @@ export function einladungSeite(args: { code: string; werberFirma: string }): str
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Einladung zu Angebotsblitz</title>
+<title>Einladung zu AuftragsBoss</title>
 <style>
   :root { --akzent:${akzent}; }
   * { box-sizing:border-box; }
@@ -43,7 +43,7 @@ export function einladungSeite(args: { code: string; werberFirma: string }): str
 </head>
 <body>
 <div class="rahmen">
-  <div class="marke">Angebotsblitz</div>
+  <div class="marke">AuftragsBoss</div>
 
   <div class="karte" id="karte">
     <div class="gruss"><strong>${escapeHtml(werberFirma)}</strong> lädt dich ein zu</div>

@@ -105,7 +105,7 @@ async function main(): Promise<void> {
 
   const linie = "─".repeat(64);
   console.log("\n" + linie);
-  console.log("  ANGEBOTSBLITZ — Editor-Vorschau läuft");
+  console.log("  AUFTRAGSBOSS — Editor-Vorschau läuft");
   console.log(linie);
   console.log(`\n  Angebots-Editor:\n  ${bearbeitenLink(tokens.bearbeiten)}\n`);
   console.log(`  Einstellungen:\n  ${einstellungenLink(tokens.einstellungen)}\n`);

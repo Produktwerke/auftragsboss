@@ -354,6 +354,6 @@ function dateiname(art: string, nummer: string, endung: string): string {
 function nichtGefunden(): string {
   return `<!doctype html><meta charset="utf-8"><title>Nicht gefunden</title>
     <body style="font-family:sans-serif;text-align:center;padding:60px;color:#555;">
-    <h1 style="color:#0b5cad;">Angebotsblitz</h1>
+    <h1 style="color:#0b5cad;">AuftragsBoss</h1>
     <p>Dieser Link ist ungültig oder abgelaufen.</p></body>`;
 }

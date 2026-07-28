@@ -86,7 +86,7 @@ export function einstellungenSeite(args: {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Betriebseinstellungen — Angebotsblitz</title>
+<title>Betriebseinstellungen — AuftragsBoss</title>
 <style>
   :root { --akzent: ${akzent}; }
   * { box-sizing: border-box; }
@@ -237,8 +237,8 @@ export function einstellungenSeite(args: {
 
   <!-- Feedback ans Team -->
   <div class="karte">
-    <h2>Feedback ans Angebotsblitz-Team</h2>
-    <p class="hint">Was fehlt, was nervt, was gefällt? Wir lesen jede Rückmeldung — sie hilft uns, Angebotsblitz besser zu machen.</p>
+    <h2>Feedback ans AuftragsBoss-Team</h2>
+    <p class="hint">Was fehlt, was nervt, was gefällt? Wir lesen jede Rückmeldung — sie hilft uns, AuftragsBoss besser zu machen.</p>
     <textarea id="feedbackText" placeholder="Deine Nachricht an uns …"></textarea>
     <div style="margin-top:10px; display:flex; align-items:center; gap:12px;">
       <button class="btn prim" id="feedbackSenden" style="width:auto;">Absenden</button>

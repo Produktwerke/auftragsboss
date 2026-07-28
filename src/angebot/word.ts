@@ -364,7 +364,7 @@ export async function erzeugeAngebotWord(args: {
   const doc = new Document({
     creator: b.firma,
     title: `${titel} ${nummer}`,
-    description: `Erstellt mit Angebotsblitz aus einer Sprachnachricht`,
+    description: `Erstellt mit AuftragsBoss aus einer Sprachnachricht`,
     styles: {
       default: { document: { run: { font: "Calibri", size: 20 } } },
     },

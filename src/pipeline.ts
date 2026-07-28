@@ -84,7 +84,7 @@ export async function verarbeiteNachricht(args: {
   if (!handwerker) {
     await sendeWhatsAppText(
       vonNummer,
-      "👋 Diese Nummer ist noch nicht registriert. Melde dich beim Angebotsblitz-Team, um deinen Betrieb freizuschalten.",
+      "👋 Diese Nummer ist noch nicht registriert. Melde dich beim AuftragsBoss-Team, um deinen Betrieb freizuschalten.",
     );
     return;
   }
@@ -142,7 +142,7 @@ export async function verarbeiteNachricht(args: {
     const token = await einstellungenTokenBereit(prisma, handwerker);
     await sendeWhatsAppText(
       vonNummer,
-      `👋 Willkommen bei Angebotsblitz, ${handwerker.name}!\n\nDamit dein Logo und deine Adresse gleich auf dem Angebot stehen, richte einmal deinen Betrieb ein:\n${einstellungenLink(token)}\n\nDanach einfach eine Sprachnachricht mit den Auftragsdetails schicken — ich mache ein fertiges Angebot daraus. 🎙️`,
+      `👋 Willkommen bei AuftragsBoss, ${handwerker.name}!\n\nDamit dein Logo und deine Adresse gleich auf dem Angebot stehen, richte einmal deinen Betrieb ein:\n${einstellungenLink(token)}\n\nDanach einfach eine Sprachnachricht mit den Auftragsdetails schicken — ich mache ein fertiges Angebot daraus. 🎙️`,
     );
     // Kein return: Wir verarbeiten die eigentliche Nachricht gleich weiter.
   }
@@ -416,7 +416,7 @@ export async function erstelleDokument(args: {
       await prisma.handwerker.update({ where: { id: handwerkerId }, data: { empfehlungGenudgt: true } });
       await sendeWhatsAppText(
         vonNummer,
-        `🎉 Schon ${anzahl} Angebote mit Angebotsblitz! Kennst du Kollegen, die auch ständig Angebote schreiben?\n\n` +
+        `🎉 Schon ${anzahl} Angebote mit AuftragsBoss! Kennst du Kollegen, die auch ständig Angebote schreiben?\n\n` +
           `Lade sie ein — *ihr bekommt beide 1 Monat gratis*:\n${werbeLink(code)}`,
       );
     }

@@ -216,7 +216,7 @@ function materialHinweis(gewerk: string): string {
 }
 
 function systemPrompt(preisliste: Preisliste): string {
-  return `Du bist das Backend von "Angebotsblitz", einem Diktier-Tool für deutsche Handwerksbetriebe.
+  return `Du bist das Backend von "AuftragsBoss", einem Diktier-Tool für deutsche Handwerksbetriebe.
 
 Du erhältst das Roh-Transkript einer WhatsApp-Sprachnachricht, die ein Handwerker direkt nach einem Kundentermin im Auto diktiert hat. Transkripte sind umgangssprachlich, ungeordnet, enthalten Füllwörter, Dialekt-Reste und vor allem TRANSKRIPTIONSFEHLER bei Fachbegriffen.
 

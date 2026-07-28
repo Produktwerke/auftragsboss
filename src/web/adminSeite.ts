@@ -88,7 +88,7 @@ export function adminSeite(args: { dokumente: Dokument[] }): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Angebotsblitz — Lern-Auswertung</title>
+<title>AuftragsBoss — Lern-Auswertung</title>
 <style>
   * { box-sizing:border-box; }
   body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:#eef0f3; color:#1a1a1a; line-height:1.5; }

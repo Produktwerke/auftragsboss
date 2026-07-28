@@ -321,7 +321,7 @@ export function dokumentMail(args: {
   </details>
 
   <hr style="border:none;border-top:1px solid #ddd;margin:24px 0;">
-  <p style="color:#999;font-size:12px;">Angebotsblitz · Diktiert per WhatsApp, archiviert für immer.</p>
+  <p style="color:#999;font-size:12px;">AuftragsBoss · Diktiert per WhatsApp, archiviert für immer.</p>
 </div>`;
 
   return { betreff, html };

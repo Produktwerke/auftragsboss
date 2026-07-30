@@ -24,6 +24,8 @@ import { bearbeitenLink, einstellungenLink, erzeugeToken, kundenLink, werbeLink 
 import { effektivePreisliste, einstellungenTokenBereit } from "./betrieb/betriebsdaten.js";
 import { willFeedback, extrahiereFeedback, FEEDBACK_FENSTER_MINUTEN } from "./feedback.js";
 import { werbeCodeBereit, EMPFEHLUNG_AB_ANGEBOT } from "./empfehlung.js";
+import { starteTestFuerNeueNummer, testNachrichtBlockiert } from "./direkttest.js";
+import { direkttestConfig } from "./config.js";
 import {
   MAX_RUNDEN,
   alsDialog,
@@ -80,18 +82,44 @@ export async function verarbeiteNachricht(args: {
   const { vonNummer, mediaId, text } = args;
 
   // 1. Absender kennen wir? (Kein Login — die Nummer IST die Identität)
-  const handwerker = await prisma.handwerker.findUnique({ where: { whatsappNummer: vonNummer } });
+  let handwerker = await prisma.handwerker.findUnique({ where: { whatsappNummer: vonNummer } });
+
+  // Unbekannte Nummer: Ist die Test-Funktion an, wird daraus ein automatisches
+  // Test-Konto ("Direkt testen" von der Landingpage). Sonst die gewohnte
+  // Abweisung (die Ablehnungsnachricht kommt aus starteTestFuerNeueNummer).
   if (!handwerker) {
-    await sendeWhatsAppText(
-      vonNummer,
-      "👋 Diese Nummer ist noch nicht registriert. Melde dich beim AuftragsBoss-Team, um deinen Betrieb freizuschalten.",
-    );
-    return;
+    const start = await starteTestFuerNeueNummer(prisma, vonNummer);
+    if ("ablehnung" in start) {
+      await sendeWhatsAppText(vonNummer, start.ablehnung);
+      return;
+    }
+    handwerker = start.handwerker;
+  }
+
+  // Test-Konten: vor JEDER Nachricht die Grenzen prüfen (Kostenschutz). Beim
+  // ersten Kontakt einmal begrüßen und dann normal weiterverarbeiten — schickt
+  // der Interessent gleich einen Auftrag, entsteht sofort ein Beispiel-Angebot.
+  if (handwerker.istTest) {
+    const blockiert = await testNachrichtBlockiert(prisma, handwerker);
+    if (blockiert) {
+      await sendeWhatsAppText(vonNummer, blockiert);
+      return;
+    }
+    // handwerker.testNachrichten trägt hier noch den Stand VOR dieser Nachricht:
+    // 0 = allererste Nachricht dieser Nummer → einmal begrüßen.
+    if (handwerker.testNachrichten === 0) {
+      await sendeWhatsAppText(
+        vonNummer,
+        `👋 Willkommen beim AuftragsBoss-Test!\n\nSprich einfach eine kurze *Sprachnachricht*: Kunde, Adresse und was gemacht werden soll. Ich mache in Sekunden ein fertiges Angebot draus.\n\nDu hast ${direkttestConfig().DIREKTTEST_GRATIS_ANGEBOTE} Gratis-Tests frei. 🎙️`,
+      );
+      // kein return — die eigentliche Nachricht wird gleich weiterverarbeitet
+    }
   }
 
   // Feedback per WhatsApp. (a) Warten wir schon auf eine Rückmeldung, ist DIESE
   // Nachricht das Feedback. (b) Sonst prüfen, ob eine Feedback-Absicht vorliegt.
-  if (text) {
+  // (Test-Konten bleiben bewusst außen vor — sie sollen nur das Angebot erleben.)
+  if (text && !handwerker.istTest) {
     const wartetSeit = handwerker.feedbackWartetSeit;
     const imFenster =
       wartetSeit !== null && Date.now() - wartetSeit.getTime() < FEEDBACK_FENSTER_MINUTEN * 60_000;
@@ -126,7 +154,7 @@ export async function verarbeiteNachricht(args: {
 
   // Weg 3: Fragt der Handwerker nach seinen Einstellungen (Logo, Adresse …),
   // schicken wir direkt den persönlichen Link — kein exaktes Stichwort nötig.
-  if (text && willEinstellungen(text)) {
+  if (text && !handwerker.istTest && willEinstellungen(text)) {
     const token = await einstellungenTokenBereit(prisma, handwerker);
     await sendeWhatsAppText(
       vonNummer,
@@ -138,7 +166,11 @@ export async function verarbeiteNachricht(args: {
   // Weg 1: Beim allerersten Auftrag begrüßen und einmalig auf die Einrichtung
   // hinweisen — damit Logo und Adresse gleich auf dem ersten Angebot stehen.
   const istErsterAuftrag = (await prisma.dokument.count({ where: { handwerkerId: handwerker.id } })) === 0;
-  if (istErsterAuftrag && !(await prisma.vorgang.findFirst({ where: { handwerkerId: handwerker.id } }))) {
+  if (
+    !handwerker.istTest &&
+    istErsterAuftrag &&
+    !(await prisma.vorgang.findFirst({ where: { handwerkerId: handwerker.id } }))
+  ) {
     const token = await einstellungenTokenBereit(prisma, handwerker);
     await sendeWhatsAppText(
       vonNummer,
@@ -364,14 +396,17 @@ export async function erstelleDokument(args: {
   // Die E-Mail ist nicht kritisch — die WhatsApp-Antwort mit dem Editor-Link
   // ist das Wichtigere. Fehlt SMTP (z.B. im Test) oder schlägt der Versand
   // fehl, läuft der Rest trotzdem durch, statt den ganzen Vorgang abzubrechen.
-  try {
-    await sendeMail(handwerker.email, mail.betreff, mail.html, [
-      { filename: dateiname, content: word, contentType: WORD_MIME },
-    ]);
-  } catch (err) {
-    console.warn(
-      `⚠️  E-Mail an ${handwerker.email} nicht versendet (${err instanceof Error ? err.message : err}) — WhatsApp-Antwort folgt trotzdem.`,
-    );
+  // Test-Konten haben keine Adresse — dann entfällt die E-Mail ganz.
+  if (handwerker.email) {
+    try {
+      await sendeMail(handwerker.email, mail.betreff, mail.html, [
+        { filename: dateiname, content: word, contentType: WORD_MIME },
+      ]);
+    } catch (err) {
+      console.warn(
+        `⚠️  E-Mail an ${handwerker.email} nicht versendet (${err instanceof Error ? err.message : err}) — WhatsApp-Antwort folgt trotzdem.`,
+      );
+    }
   }
 
   await prisma.vorgang.update({
@@ -401,15 +436,26 @@ export async function erstelleDokument(args: {
   }
   if (istProtokoll) zeilen.push(`Gewährleistung: ${fristJahre} Jahre — ich erinnere dich vor Ablauf.`);
 
-  // Weg 2: Der Zugang zu Einstellungen & Angebotsübersicht steht unauffällig
-  // unter jedem Angebot — so ist er immer auffindbar, ohne aufdringlich zu sein.
-  const einstToken = await einstellungenTokenBereit(prisma, handwerker);
-  zeilen.push(``, `⚙️ Betriebsdaten, Logo & alle Angebote: ${einstellungenLink(einstToken)}`);
+  if (handwerker.istTest) {
+    // Test-Interessent: kein Einstellungslink, sondern ein kurzer Hinweis, dass
+    // dasselbe mit seinem eigenen Briefkopf entsteht — und dass er alles ändern kann.
+    zeilen.push(
+      ``,
+      `👆 Das war ein Test. Öffne den Link oben: dort kannst du jede Position, Menge und jeden Preis anpassen.`,
+      `Mit *deinem* Logo, deiner Adresse und deinen Preisen sieht das Angebot genauso professionell aus.`,
+    );
+  } else {
+    // Weg 2: Der Zugang zu Einstellungen & Angebotsübersicht steht unauffällig
+    // unter jedem Angebot — so ist er immer auffindbar, ohne aufdringlich zu sein.
+    const einstToken = await einstellungenTokenBereit(prisma, handwerker);
+    zeilen.push(``, `⚙️ Betriebsdaten, Logo & alle Angebote: ${einstellungenLink(einstToken)}`);
+  }
 
   await sendeWhatsAppText(vonNummer, zeilen.join("\n"));
 
-  // Nach dem 3. Angebot einmalig zum Weiterempfehlen einladen (nur Erstfassungen).
-  if (!handwerker.empfehlungGenudgt && !istNachtrag) {
+  // Nach dem 3. Angebot einmalig zum Weiterempfehlen einladen (nur Erstfassungen;
+  // Test-Konten sind hier ausgenommen).
+  if (!handwerker.istTest && !handwerker.empfehlungGenudgt && !istNachtrag) {
     const anzahl = await prisma.dokument.count({ where: { handwerkerId, version: 1 } });
     if (anzahl >= EMPFEHLUNG_AB_ANGEBOT) {
       const code = await werbeCodeBereit(prisma, handwerker);

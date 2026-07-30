@@ -55,6 +55,13 @@ model Handwerker {
   empfehlungGenudgt Boolean  @default(false) // schon zum Einladen aufgefordert?
   freimonate        Int      @default(0)
 
+  // Test-Funktion "Direkt testen": Schickt ein Interessent von der Landingpage
+  // aus eine Sprachnachricht, wird seine (unbekannte) Nummer automatisch zu
+  // einem Test-Konto. istTest trennt es von echten Kunden; testNachrichten
+  // zählt die verarbeiteten Nachrichten als Kostenschutz (siehe direkttest.ts).
+  istTest         Boolean @default(false)
+  testNachrichten Int     @default(0)
+
   erstelltAm   DateTime     @default(now())
   dokumente    Dokument[]
   vorgaenge    Vorgang[]

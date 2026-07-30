@@ -69,6 +69,29 @@ export const whatsappConfig = lade(
   }),
 );
 
+// Test-Funktion "Direkt testen": Steuert, ob unbekannte Nummern von der
+// Landingpage aus ein kostenloses Beispiel-Angebot bekommen — und die Grenzen
+// dagegen. Alle Werte haben Vorgaben, damit ohne .env-Eintrag nichts anläuft
+// (DIREKTTEST_AKTIV standardmäßig aus). Details siehe direkttest.ts.
+export const direkttestConfig = lade(
+  "Direkt-Test",
+  z.object({
+    // Not-Aus. Nur "true"/"1"/"ja"/"on" schaltet die Funktion an — sonst aus.
+    DIREKTTEST_AKTIV: z
+      .string()
+      .default("false")
+      .transform((v) => ["true", "1", "ja", "on"].includes(v.trim().toLowerCase())),
+    // Gratis-Angebote pro Nummer (fertige Test-Angebote), danach Einladung zur Anmeldung.
+    DIREKTTEST_GRATIS_ANGEBOTE: z.coerce.number().int().min(0).default(2),
+    // Harte Obergrenze verarbeiteter Nachrichten pro Nummer (fängt Dauer-Kauderwelsch ab).
+    DIREKTTEST_MAX_NACHRICHTEN: z.coerce.number().int().min(1).default(12),
+    // Tages-Gesamtdeckel über alle Nummern (Kostenobergrenze).
+    DIREKTTEST_MAX_PRO_TAG: z.coerce.number().int().min(1).default(80),
+    // Mindestabstand zwischen zwei Nachrichten derselben Nummer, in Sekunden.
+    DIREKTTEST_MIN_ABSTAND_SEKUNDEN: z.coerce.number().int().min(0).default(3),
+  }),
+);
+
 export const emailConfig = lade(
   "E-Mail (SMTP)",
   z.object({

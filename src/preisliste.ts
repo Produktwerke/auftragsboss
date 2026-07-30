@@ -8,7 +8,11 @@ import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { z } from "zod";
 
-export const EINHEITEN = ["m2", "lfm", "Stk", "Std", "pauschal"] as const;
+// "pauschal" bleibt am Ende (Sonderfall: keine Menge nötig). Neben den
+// Klassikern nun auch Mengen für Material wie Kleber/Lösemittel (Liter, kg,
+// Sack, Gebinde, Rolle). Eine eigene Einheit tippt der Handwerker im Editor
+// direkt ein ("Andere…") — dafür muss sie NICHT in dieser Liste stehen.
+export const EINHEITEN = ["m2", "lfm", "Stk", "Std", "l", "kg", "Sack", "Gebinde", "Rolle", "pauschal"] as const;
 export type Einheit = (typeof EINHEITEN)[number];
 
 const PreislistenSchema = z.object({

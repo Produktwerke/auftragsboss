@@ -20,6 +20,8 @@ import { effektivePreisliste, einstellungenTokenBereit } from "../betrieb/betrie
 import { einstellungenLink } from "./tokens.js";
 import { ladeLogo } from "../betrieb/logo.js";
 import { speichereLogo, entferneLogo, LogoFehler } from "../betrieb/logoUpload.js";
+import { smtpKonfiguriert } from "../config.js";
+import { sendeMail, WORD_MIME } from "../email/send.js";
 
 interface SpeicherKoerper {
   kundeName?: string;
@@ -167,6 +169,109 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
           `attachment; filename="${wordDateiname(dokument.art, dokument.nummer, dokument.kundeName)}"`,
         )
         .send(word);
+    },
+  );
+
+  // ── E-Mail-Einstellung des Betriebs (aus dem Editor) ──
+  // Speichert die E-Mail-Adresse und/oder den "auch als E-Mail senden"-Haken.
+  app.put<{ Params: { token: string }; Body: { email?: string; aktiv?: boolean } }>(
+    "/api/a/:token/mail-einstellung",
+    async (req, reply) => {
+      const dokument = await prisma.dokument.findUnique({
+        where: { bearbeitenToken: req.params.token },
+      });
+      if (!dokument) return reply.code(404).send({ fehler: "nicht gefunden" });
+      const handwerker = await prisma.handwerker.findUniqueOrThrow({
+        where: { id: dokument.handwerkerId },
+      });
+
+      const daten: { email?: string; mailStandard?: boolean } = {};
+      if (typeof req.body.email === "string") {
+        const e = req.body.email.trim();
+        if (e && !/^.+@.+\..+$/.test(e)) {
+          return reply.code(400).send({ fehler: "ungültige E-Mail-Adresse" });
+        }
+        if (e) daten.email = e; // leere Eingabe nicht übernehmen (E-Mail ist Pflichtfeld)
+      }
+      if (typeof req.body.aktiv === "boolean") daten.mailStandard = req.body.aktiv;
+
+      const akt = Object.keys(daten).length
+        ? await prisma.handwerker.update({ where: { id: handwerker.id }, data: daten })
+        : handwerker;
+      return reply.send({ ok: true, email: akt.email, aktiv: akt.mailStandard });
+    },
+  );
+
+  // ── Datei per E-Mail an den Betrieb senden ────────────
+  // Erzeugt PDF/Word wie beim Export und schickt es an die hinterlegte Adresse.
+  app.post<{ Params: { token: string; format: string } }>(
+    "/api/a/:token/mail.:format",
+    async (req, reply) => {
+      const dokument = await prisma.dokument.findUnique({
+        where: { bearbeitenToken: req.params.token },
+      });
+      if (!dokument) return reply.code(404).send({ fehler: "nicht gefunden" });
+      const handwerker = await prisma.handwerker.findUniqueOrThrow({
+        where: { id: dokument.handwerkerId },
+      });
+
+      // SMTP muss eingerichtet sein — sonst würde emailConfig() den Server
+      // beenden. Deshalb hier höflich ablehnen statt abzustürzen.
+      if (!smtpKonfiguriert()) {
+        return reply.code(400).send({ fehler: "E-Mail-Versand ist noch nicht eingerichtet (SMTP fehlt)." });
+      }
+      if (!handwerker.email?.trim()) {
+        return reply.code(400).send({ fehler: "keine E-Mail-Adresse hinterlegt" });
+      }
+
+      const preisliste = effektivePreisliste(handwerker, ladePreisliste());
+      const daten = dokumentZuDaten(dokument);
+      const summe = berechneAngebot(daten.positionen, preisliste, dokument.datum);
+      const istPdf = req.params.format === "pdf";
+
+      let anhangName: string;
+      let inhalt: Buffer;
+      let mime: string;
+      if (istPdf) {
+        inhalt = await erzeugeAngebotPdf({
+          daten,
+          summe,
+          preisliste,
+          nummer: dokument.nummer,
+          datum: dokument.datum,
+          kundenNummer: dokument.kundenNummer,
+        });
+        anhangName = dateiname(dokument.art, dokument.nummer, "pdf");
+        mime = "application/pdf";
+      } else {
+        inhalt = await erzeugeAngebotWord({
+          daten,
+          summe,
+          preisliste,
+          nummer: dokument.nummer,
+          datum: dokument.datum,
+          kundenNummer: dokument.kundenNummer,
+        });
+        anhangName = wordDateiname(dokument.art, dokument.nummer, dokument.kundeName);
+        mime = WORD_MIME;
+      }
+
+      const bezeichnung = dokument.art === "ANGEBOT" ? "Angebot" : "Protokoll";
+      const fuer = dokument.kundeName ? ` für ${dokument.kundeName}` : "";
+      const betreff = `${bezeichnung} ${dokument.nummer}${fuer}`;
+      const html =
+        `<p>Hallo,</p><p>im Anhang findest du dein ${bezeichnung} <b>${dokument.nummer}</b>${fuer} ` +
+        `als ${istPdf ? "PDF" : "Word-Datei"}.</p><p>— AuftragsBoss</p>`;
+
+      try {
+        await sendeMail(handwerker.email, betreff, html, [
+          { filename: anhangName, content: inhalt, contentType: mime },
+        ]);
+      } catch (err) {
+        app.log.error({ err }, "Mailversand aus dem Editor fehlgeschlagen");
+        return reply.code(502).send({ fehler: "E-Mail konnte nicht versendet werden." });
+      }
+      return reply.send({ ok: true });
     },
   );
 

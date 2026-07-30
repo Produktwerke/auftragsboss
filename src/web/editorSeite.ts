@@ -9,6 +9,7 @@
 // Build-Schritt, kein Framework, lädt auch auf einem alten Handy schnell.
 import type { Dokument, Handwerker } from "@prisma/client";
 import type { Preisliste } from "../preisliste.js";
+import { EINHEITEN } from "../preisliste.js";
 import type { EingabePosition } from "../angebot/berechnung.js";
 import { ladeLogo } from "../betrieb/logo.js";
 
@@ -20,8 +21,6 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-const EINHEITEN = ["m2", "lfm", "Stk", "Std", "pauschal"] as const;
-
 export function editorSeite(args: {
   dokument: Dokument;
   handwerker: Handwerker;
@@ -29,7 +28,7 @@ export function editorSeite(args: {
   /** Link zurück zu den Betriebseinstellungen inkl. Angebotsübersicht. */
   einstellungenUrl?: string;
 }): string {
-  const { dokument, preisliste, einstellungenUrl } = args;
+  const { dokument, preisliste, einstellungenUrl, handwerker } = args;
   const b = preisliste.betrieb;
   const akzent = `#${/^[0-9a-fA-F]{6}$/.test(b.farbe) ? b.farbe : "0B5CAD"}`;
   const logo = ladeLogo(b.logo);
@@ -85,6 +84,21 @@ export function editorSeite(args: {
          border-radius:7px; font-size:15px; font-family:inherit; background:#fff; }
   textarea { min-height:80px; resize:vertical; }
   input:focus, textarea:focus, select:focus { outline:2px solid var(--akzent); border-color:var(--akzent); }
+  /* Positionsbeschreibung: einzeiliges Textfeld, das mit dem Inhalt mitwächst
+     statt abzuschneiden. */
+  textarea.pos-beschr { min-height:0; height:auto; padding:6px 7px; font-size:14px;
+         line-height:1.35; resize:none; overflow:hidden; display:block; }
+  .pos-einheit-custom { display:block; width:100%; max-width:180px; margin-top:4px; }
+  /* E-Mail-Versand unter den Export-Knöpfen */
+  .mail-zeile { margin-top:12px; border-top:1px solid #eceff2; padding-top:12px; }
+  .mail-zeile label.chk { display:flex; align-items:center; gap:8px; font-size:14px;
+         font-weight:600; color:#444; margin:0; cursor:pointer; }
+  .mail-zeile label.chk input { width:auto; }
+  .mail-eingabe { margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .mail-eingabe input { width:auto; flex:1; min-width:180px; max-width:320px; }
+  .mail-aendern { background:none; border:none; color:var(--akzent); font-size:13px;
+         cursor:pointer; text-decoration:underline; padding:0; }
+  .mail-status { font-size:13px; margin-top:6px; }
   .zwei { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .drei { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
   .tab-scroll { overflow-x:auto; margin:8px -6px 0; padding:0 6px; }
@@ -157,6 +171,10 @@ export function editorSeite(args: {
     #zeilen td.zeilensumme{ font-size:15px; font-weight:600; }
     #zeilen td.c-del{ justify-content:flex-end; padding-top:0; }
     #zeilen td.c-del .loeschen{ font-size:24px; }
+    /* Eigene Einheit ("Andere…"): Freitextfeld auf eigene Zeile, volle Breite,
+       damit es auf dem Handy nicht überläuft. */
+    #zeilen td.c-einheit{ flex-wrap:wrap; }
+    #zeilen td.c-einheit .pos-einheit-custom{ flex:1 0 100%; width:100%; max-width:none; margin-top:6px; }
   }
 </style>
 </head>
@@ -236,6 +254,16 @@ export function editorSeite(args: {
       <button class="btn" onclick="exportieren('word')">Word</button>
       <span class="status" id="status"></span>
     </div>
+    <div class="mail-zeile">
+      <label class="chk"><input type="checkbox" id="mailChk" onchange="mailHakenGeaendert()">
+        <span id="mailChkText">Datei auch als E-Mail senden</span></label>
+      <button class="mail-aendern" id="mailAendern" type="button" onclick="mailEingabeZeigen()" style="display:none;">E-Mail-Adresse ändern</button>
+      <div class="mail-eingabe" id="mailEingabe" style="display:none;">
+        <input id="mailAdresse" type="email" inputmode="email" placeholder="deine@firma.de">
+        <button class="btn" onclick="mailSpeichern()">Speichern</button>
+      </div>
+      <div class="mail-status" id="mailStatus"></div>
+    </div>
   </div>
 
 </div>
@@ -243,6 +271,10 @@ export function editorSeite(args: {
 <script>
 const START = ${JSON.stringify(startDaten)};
 const EINHEITEN = ${JSON.stringify(EINHEITEN)};
+const MAIL = ${JSON.stringify({ email: handwerker.email ?? "", standard: handwerker.mailStandard })};
+// Sprechende Beschriftung im Dropdown; gespeichert wird der kurze Code.
+const EINHEIT_LABEL = {m2:'m²', lfm:'lfm', Stk:'Stk.', Std:'Std.', l:'Liter', kg:'kg', Sack:'Sack', Gebinde:'Gebinde', Rolle:'Rolle', pauschal:'pauschal'};
+const einheitLabel = e => EINHEIT_LABEL[e] || e;
 let positionen = START.positionen.map(p => ({
   kategorie: p.kategorie, beschreibung: p.beschreibung,
   menge: p.menge, einheit: p.einheit, einzelpreis: p.einzelpreis
@@ -283,9 +315,9 @@ function render(){
       const g = zeilensumme(p);
       const tr = document.createElement('tr');
       tr.innerHTML =
-        '<td class="c-beschr" data-label="Leistung"><input value="'+esc(p.beschreibung)+'" oninput="setF('+i+',\\'beschreibung\\',this.value)"></td>'+
+        '<td class="c-beschr" data-label="Leistung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this)">'+esc(p.beschreibung)+'</textarea></td>'+
         '<td class="r" data-label="Menge"><input class="pos-menge r" inputmode="decimal" value="'+(p.menge??'')+'" oninput="setNum('+i+',\\'menge\\',this.value,this)"></td>'+
-        '<td data-label="Einheit">'+einheitSelect(i,p.einheit)+'</td>'+
+        '<td class="c-einheit" data-label="Einheit">'+einheitZelle(i,p.einheit)+'</td>'+
         '<td class="r" data-label="Einzelpreis"><input class="pos-preis r" inputmode="decimal" value="'+(p.einzelpreis??'')+'" placeholder="___" oninput="setNum('+i+',\\'einzelpreis\\',this.value,this)"></td>'+
         '<td class="r zeilensumme" data-label="Gesamt">'+(g==null?OFFEN:euro(g))+'</td>'+
         '<td class="c-del"><button class="loeschen" title="Zeile löschen" onclick="loeschen('+i+')">×</button></td>';
@@ -297,15 +329,60 @@ function render(){
     trNeu.innerHTML = '<td colspan="6"><button class="neu" onclick="neuePosition(\\''+escJs(kat)+'\\')">+ Position'+(mehrere?' unter „'+esc(katName(kat))+'“':'')+' hinzufügen</button></td>';
     tbody.appendChild(trNeu);
   }
+  // Beschreibungs-Textfelder an ihren Inhalt anpassen (mitwachsen).
+  tbody.querySelectorAll('textarea.pos-beschr').forEach(autoWachs);
   summen();
 }
 
-function einheitSelect(i,wert){
-  let s = '<select class="pos-einheit" onchange="setF('+i+',\\'einheit\\',this.value)">';
+/** Textfeld auf seinen Inhalt einstellen — wächst mit, statt abzuschneiden. */
+function autoWachs(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+
+/** Einheiten-Zelle: Dropdown mit sprechenden Labels + Option „Andere…" für
+ *  eine eigene Einheit (Freitext). Ist die aktuelle Einheit nicht in der Liste,
+ *  wird „Andere…" vorgewählt und das Freitextfeld gefüllt. */
+function einheitZelle(i,wert){
+  const bekannt = EINHEITEN.includes(wert);
+  const custom = !bekannt && wert!=null && wert!=='';
+  let s = '<select class="pos-einheit" onchange="einheitWahl('+i+',this)">';
   for(const e of EINHEITEN){
-    s += '<option value="'+e+'"'+(e===wert?' selected':'')+'>'+e+'</option>';
+    s += '<option value="'+esc(e)+'"'+((e===wert)?' selected':'')+'>'+esc(einheitLabel(e))+'</option>';
   }
-  return s+'</select>';
+  s += '<option value="__custom__"'+(custom?' selected':'')+'>Andere…</option>';
+  s += '</select>';
+  s += '<input class="pos-einheit-custom" placeholder="z. B. Eimer" value="'+(custom?esc(wert):'')+
+       '" style="'+(custom?'':'display:none;')+'" oninput="setEinheitCustom('+i+',this.value,this)">';
+  return s;
+}
+
+/** Auswahl im Einheiten-Dropdown. „Andere…" blendet das Freitextfeld ein
+ *  (ohne Neuaufbau, damit der Fokus nicht springt); jede andere Wahl setzt die
+ *  Einheit direkt. */
+function einheitWahl(i,sel){
+  const inp = sel.closest('td').querySelector('.pos-einheit-custom');
+  if(sel.value==='__custom__'){
+    inp.style.display='';
+    positionen[i].einheit = inp.value.trim();
+    zeileNeuRechnen(i,sel);
+    inp.focus();
+  } else {
+    positionen[i].einheit = sel.value;
+    render(); markiereGeaendert();
+  }
+}
+
+/** Freitext-Einheit tippen — NICHT neu rendern (sonst Fokusverlust), nur die
+ *  betroffene Zeilensumme und die Summen aktualisieren. */
+function setEinheitCustom(i,wert,el){
+  positionen[i].einheit = wert.trim();
+  zeileNeuRechnen(i,el);
+}
+
+/** Zeilensumme der Zeile i neu berechnen und Summen unten auffrischen. */
+function zeileNeuRechnen(i,el){
+  const g = zeilensumme(positionen[i]);
+  const zelle = el.closest('tr').querySelector('.zeilensumme');
+  if(zelle) zelle.innerHTML = g==null?OFFEN:euro(g);
+  summen(); markiereGeaendert();
 }
 
 function summen(){
@@ -402,9 +479,73 @@ function val(id){ return document.getElementById(id).value; }
 
 async function exportieren(format){
   await speichern();
+  // Ist der Haken gesetzt, die Datei zusätzlich per E-Mail an den Betrieb senden.
+  if(document.getElementById('mailChk').checked){
+    if(!MAIL.email){
+      mailStatus('Bitte zuerst deine E-Mail-Adresse eintragen und speichern.', '#c0392b');
+      mailEingabeZeigen();
+      return; // ohne Adresse kein Versand — und auch kein Download, damit der Hinweis auffällt
+    }
+    try{
+      const r = await fetch('/api/a/'+START.token+'/mail.'+format,{method:'POST'});
+      const j = await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(j.fehler||'Versand fehlgeschlagen');
+      mailStatus('📧 Auch per E-Mail an '+MAIL.email+' gesendet.', '#2e7d32');
+    }catch(e){
+      mailStatus('E-Mail nicht gesendet: '+e.message, '#c0392b');
+    }
+  }
   window.location.href='/api/a/'+START.token+'/export.'+format;
 }
 
+// ── E-Mail-Versand-Bereich ────────────────────────────────
+function mailStatus(text,farbe){
+  const s=document.getElementById('mailStatus'); s.textContent=text; s.style.color=farbe||'#555';
+}
+function mailLabelAktualisieren(){
+  document.getElementById('mailChkText').textContent =
+    MAIL.email ? 'Datei auch als E-Mail an '+MAIL.email+' senden' : 'Datei auch als E-Mail senden';
+  document.getElementById('mailAendern').style.display = MAIL.email ? '' : 'none';
+}
+function mailEingabeZeigen(){
+  document.getElementById('mailAdresse').value = MAIL.email||'';
+  document.getElementById('mailEingabe').style.display='';
+  document.getElementById('mailAdresse').focus();
+}
+async function mailEinstellungSpeichern(patch){
+  // Schreibt E-Mail und/oder Haken-Zustand an den Betrieb.
+  const r = await fetch('/api/a/'+START.token+'/mail-einstellung',{
+    method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(patch)
+  });
+  if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j.fehler||'Speichern fehlgeschlagen'); }
+  const j = await r.json();
+  MAIL.email = j.email||'';
+  return j;
+}
+async function mailHakenGeaendert(){
+  const an = document.getElementById('mailChk').checked;
+  if(an && !MAIL.email){ mailEingabeZeigen(); }
+  try{ await mailEinstellungSpeichern({aktiv:an}); }
+  catch(e){ mailStatus(e.message,'#c0392b'); }
+}
+async function mailSpeichern(){
+  const email=document.getElementById('mailAdresse').value.trim();
+  if(!/^.+@.+\\..+$/.test(email)){ mailStatus('Bitte eine gültige E-Mail-Adresse eintragen.','#c0392b'); return; }
+  try{
+    await mailEinstellungSpeichern({email, aktiv:document.getElementById('mailChk').checked});
+    document.getElementById('mailEingabe').style.display='none';
+    mailLabelAktualisieren();
+    mailStatus('✓ E-Mail gespeichert.','#2e7d32');
+  }catch(e){ mailStatus(e.message,'#c0392b'); }
+}
+function mailInit(){
+  document.getElementById('mailChk').checked = !!MAIL.standard;
+  mailLabelAktualisieren();
+  // Haken gesetzt, aber noch keine Adresse? Direkt Eingabe anbieten.
+  if(MAIL.standard && !MAIL.email) mailEingabeZeigen();
+}
+
+mailInit();
 render();
 </script>
 </body>

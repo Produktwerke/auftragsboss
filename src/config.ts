@@ -102,3 +102,18 @@ export const emailConfig = lade(
     SMTP_FROM: z.string(),
   }),
 );
+
+/**
+ * Prüft, OB SMTP hinterlegt ist — ohne bei Fehlen den Server zu beenden
+ * (anders als emailConfig(), das hart abbricht). So kann der Editor den
+ * "auch als E-Mail senden"-Weg sauber mit einer Meldung ablehnen, statt
+ * den Prozess mitzureißen.
+ */
+export function smtpKonfiguriert(): boolean {
+  return Boolean(
+    process.env.SMTP_HOST?.trim() &&
+      process.env.SMTP_USER?.trim() &&
+      process.env.SMTP_PASS?.trim() &&
+      process.env.SMTP_FROM?.trim(),
+  );
+}

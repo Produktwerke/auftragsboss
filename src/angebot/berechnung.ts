@@ -12,7 +12,12 @@ import type { Preisliste } from "../preisliste.js";
 // Die KI kennt nur LEISTUNG und MATERIAL — der Handwerker darf im Editor
 // aber eigene Hauptkategorien anlegen ("Gerüst", "Entsorgung", …). Deshalb
 // ist die Kategorie ab hier ein freier Text, nicht mehr das enge Enum.
-export type EingabePosition = Omit<Position, "kategorie"> & { kategorie: string };
+// Ebenso die Einheit: Die KI wählt aus EINHEITEN, im Editor darf der
+// Handwerker aber eine eigene eintippen ("Andere…", z.B. "Eimer").
+export type EingabePosition = Omit<Position, "kategorie" | "einheit"> & {
+  kategorie: string;
+  einheit: string | null;
+};
 
 /** Anzeigename einer Kategorie — die KI-Codes bekommen sprechende Titel. */
 export function kategorieName(kategorie: string): string {
@@ -156,6 +161,7 @@ export function mengeMitEinheit(menge: number | null, einheit: string | null): s
     lfm: "lfm",
     Stk: "Stk.",
     Std: "Std.",
+    l: "Liter",
     pauschal: "pauschal",
   };
   return einheit ? `${zahl} ${beschriftung[einheit] ?? einheit}` : zahl;

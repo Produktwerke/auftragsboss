@@ -32,7 +32,7 @@ export interface EditorPosition {
   kategorie: string; // frei — der Handwerker darf eigene Kategorien anlegen
   beschreibung: string;
   menge: number | null;
-  einheit: Position["einheit"];
+  einheit: string | null; // aus der Liste ODER eigene Einheit ("Andere…")
   einzelpreis: number | null;
 }
 

@@ -72,6 +72,7 @@ vs. **Protokoll** (nach getaner Arbeit, mit Gewährleistungs-Tracking § 634a BG
 | | `dialog.ts` | Vorgangs-Verwaltung, Nachtrag, Notfall-Wortliste |
 | | `feedback.ts` | Tolerante Feedback-Erkennung für den WhatsApp-Weg |
 | | `empfehlung.ts` | Empfehlungsprogramm: Einladungscode je Betrieb, „ab 3. Angebot" |
+| | `direkttest.ts` | „Direkt testen": unbekannte Nummer → Test-Konto + mehrschichtiger Missbrauchsschutz |
 | Angebot | `angebot/berechnung.ts` | Summen, Blöcke/Kategorien, Zwischensummen |
 | | `angebot/word.ts` | .docx-Erzeugung (Briefkopf, Logo, Tabelle) |
 | | `angebot/pdf.ts` | PDF via pdfkit (gleiches Layout wie Word) |
@@ -141,6 +142,18 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 - ✅ **Empfehlungsprogramm**: persönlicher Einladungslink, Landingpage +
   Lead-Erfassung (`Empfehlung`), WhatsApp-Aufforderung nach dem 3. Angebot.
   Offen bleibt nur die Einlösung des Gratis-Monats (braucht Abo/Abrechnung).
+- ✅ **„Direkt testen"** (`src/direkttest.ts`, scharf geschaltet): Schickt eine
+  UNBEKANNTE Nummer eine Nachricht, wird sie zum Test-Konto (`Handwerker.istTest`)
+  statt abgewiesen — Sprachnachricht → Beispiel-Angebot im Muster-Briefkopf, ohne
+  Anmeldung. Test-Konten sind von echten Betrieben getrennt (keine E-Mail, kein
+  Einstellungslink, keine Empfehlung). Missbrauchsschutz mehrschichtig, alles per
+  `.env`: Not-Aus `DIREKTTEST_AKTIV`, Gratis-Kontingent pro Nummer (2), Nachrichten-
+  Deckel pro Nummer (12), Tages-Gesamtdeckel (80), Tempo-Limit (3s). Grundschutz ist
+  WhatsApp selbst (echtes Konto nötig). Kontingent + Nachrichten-Deckel liegen pro
+  Nummer in der DB (persistent); Tages-Deckel + Tempo laufen im Arbeitsspeicher.
+  Grenzen automatisch getestet. **Offen fürs echte Öffentlich-Testen:** eigene
+  verifizierte Produktionsnummer — die Meta-Test-Nummer nimmt nur gelistete
+  Absender an, taugt also nicht für fremde Interessenten.
 - ✅ **Sicherheits-Härtung**: Webhook-Signaturprüfung (`X-Hub-Signature-256`,
   greift bei gesetztem `WHATSAPP_APP_SECRET`; getestet 200/401/401) + dauerhafter
   **Systembenutzer-Token** (kein 24-h-Ablauf mehr). Beides in der (gitignored)
@@ -205,10 +218,9 @@ deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
 - **Landingpage** unter `marketing/landingpage.html` (eigenständige HTML, dunkler
   Industrie-Look Anthrazit + Signalgelb). Platzhalter: Video, Telefonnummer, QR,
   App-Screenshots. Auch als Artifact veröffentlicht — Repo-Datei und Artifact getrennt pflegen.
-- **„Direkt testen"-Ablauf (geplant, noch nicht gebaut):** wa.me-Link auf der Seite →
-  Handwerker schickt Sprachnachricht → Gratis-Test-Angebot. Spam-Schutz ohne Hürde:
-  WhatsApp filtert schon (echtes Konto nötig), dazu Gratis-Kontingent pro Nummer,
-  Tempo-Limit und Tages-Gesamtdeckel mit Not-Aus.
+- **„Direkt testen"-Ablauf — ✅ gebaut** (`src/direkttest.ts`, scharf, siehe „Fertig").
+  Offen bleibt nur das Verdrahten auf der Landingpage (wa.me-Link/QR, braucht die
+  Produktionsnummer) und die eigene verifizierte Nummer fürs echte Öffentlich-Testen.
 - **#2 Empfehlungsprogramm — Mechanik gebaut.** Offen: **Abo/Abrechnung**
   (z. B. Stripe), damit der „1 Monat gratis" wirklich eingelöst wird, plus
   Aktivierung der Leads (heute manuell durch das Team, Status OFFEN→AKTIVIERT).

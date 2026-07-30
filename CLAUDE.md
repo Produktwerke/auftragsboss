@@ -84,7 +84,7 @@ vs. **Protokoll** (nach getaner Arbeit, mit Gewährleistungs-Tracking § 634a BG
 | | `web/einstellungenSeite.ts` | Betriebseinstellungen: Logo, Adresse, Standardtexte, Angebotsübersicht, Feedback-Box |
 | | `web/adminSeite.ts` | Interne Lern-Auswertung: KI-Original vs. finales Angebot (nur mit ADMIN_TOKEN) |
 | | `web/einladungSeite.ts` | Empfehlungs-Landingpage `/einladung/:code` (Kollege trägt sich als Lead ein) |
-| | `web/routes.ts` | Editor, Einstellungen, Logo/Feedback-API, `/admin/:token`, `/einladung/:code` |
+| | `web/routes.ts` | Editor, Einstellungen, Logo/Feedback-API, Mail-Versand (`mail-einstellung`, `mail.:format`), `/admin/:token`, `/einladung/:code` |
 | | `web/devServer.ts` | Editor-Vorschau ohne Keys (`npm run dev:editor`) |
 | | `web/tokens.ts` / `dokumentDaten.ts` | Tokens + DB↔Editor-Konvertierung |
 | Jobs | `jobs/warrantyReminders.ts` | Täglich: Gewährleistungs-Erinnerungen |
@@ -127,6 +127,13 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 - ✅ Nachtrag per Sprachnachricht (Positionen/Preise ergänzen ohne Word)
 - ✅ Word- + PDF-Export mit Logo, Betriebsfarbe, Zwischensummen je Kategorie
 - ✅ Web-Editor: vorbefüllt, Live-Summen, eigene Kategorien, mobil getestet
+- ✅ **Editor-Verbesserungen (aus Live-Test):** Positionsbeschreibung wächst mit
+  (mehrzeilig, kein Überlauf); mehr Einheiten (Liter, kg, Sack, Gebinde, Rolle)
+  plus „Andere…" mit Freitext für eine eigene Einheit (im Editor als `string`
+  entkoppelt vom KI-Enum, wandert 1:1 in PDF/Word); Haken „Datei auch als E-Mail
+  senden" unter PDF/Word — merkt sich Zustand (`Handwerker.mailStandard`) und
+  E-Mail-Adresse, schickt PDF/Word an die hinterlegte Adresse. `smtpKonfiguriert()`
+  prüft SMTP ohne den Server zu beenden. Mailversand live bestätigt (IONOS).
 - ✅ Einstellungsseite (passwortloser Link): Logo-Upload, Betriebsdaten, Farbe,
   Standardtexte (Haftungshinweis), Angebotsübersicht; Daten fließen ins Angebot.
   Link-Wege: Erstkontakt-Begrüßung, Zeile unter jedem Angebot, Stichworterkennung.

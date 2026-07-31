@@ -224,9 +224,15 @@ deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
 - **Preismodell:** 3 Stufen **49 / 99 / 199 €**, Kontingente 20/80/200 Angebote/Monat,
   Logo/Export in allen Stufen, erste 3 Angebote gratis, **keine Einrichtungsgebühr**.
   Marge ~90 % (API ~5 Cent/Angebot). Noch offen: echte Zahlungsbereitschaft testen.
-- **Landingpage** unter `marketing/landingpage.html` (eigenständige HTML, dunkler
-  Industrie-Look Anthrazit + Signalgelb). Platzhalter: Video, Telefonnummer, QR,
-  App-Screenshots. Auch als Artifact veröffentlicht — Repo-Datei und Artifact getrennt pflegen.
+- **Landingpage** unter `marketing/` (deploybare Seite: `index.html` + `fonts/` +
+  `auftragsboss-logo.png` + `impressum.html` + `datenschutz.html`). Dunkler Industrie-Look
+  Anthrazit + Signalgelb; eigenes Logo als Favicon/Marke; Hausschriften **Inter + Space Mono**
+  DSGVO-sicher self-hosted (kein Google-CDN). Impressum/Datenschutz auf DAG Deutsche Automotive
+  GmbH. Wird bei **IONOS-Webhosting** unter **auftragsboss.de** hochgeladen (Domain war reine
+  Zusatz-Domain ohne Webspace → Webhosting Plus dazugebucht 31.07.2026).
+  Platzhalter noch offen: Video, echte Telefonnummer im `wa.me`-CTA (`+4915123456789` ist Dummy,
+  bis Produktionsnummer da), QR, App-Screenshots. Auch als Artifact veröffentlicht (Vorschau) —
+  Repo-Datei und Artifact getrennt pflegen.
 - **„Direkt testen"-Ablauf — ✅ gebaut** (`src/direkttest.ts`, scharf, siehe „Fertig").
   Offen bleibt nur das Verdrahten auf der Landingpage (wa.me-Link/QR, braucht die
   Produktionsnummer) und die eigene verifizierte Nummer fürs echte Öffentlich-Testen.

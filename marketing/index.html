@@ -44,9 +44,13 @@
   .brand b{color:var(--signal);}
   .nav{display:flex;gap:24px;align-items:center;font-size:14px;font-weight:600;}
   .nav a{color:var(--muted);text-decoration:none;} .nav a:hover{color:var(--ink);}
-  .nav .btn-mini{background:var(--signal);color:var(--signal-ink);padding:9px 16px;border-radius:var(--r);font-weight:800;}
+  .nav .btn-mini{background:var(--signal);color:var(--signal-ink);padding:9px 16px;border-radius:var(--r);font-weight:800;white-space:nowrap;}
   .nav .btn-mini:hover{filter:brightness(1.06);color:var(--signal-ink);}
-  @media (max-width:720px){ .nav a:not(.btn-mini){display:none;} }
+  @media (max-width:720px){
+    /* Auf dem Handy den Kopf aufgeräumt lassen: nur Logo + Schriftzug,
+       kein Nav/Button (die Test-CTAs kommen weiter unten mehrfach). */
+    .nav{display:none;}
+  }
 
   /* Hero */
   .hero{position:relative;padding:56px 0 30px;}

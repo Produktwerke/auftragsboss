@@ -175,7 +175,9 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 - Meta WhatsApp: Test läuft (siehe oben). Was für den lokalen Test nötig war:
   öffentliche https-Adresse via **cloudflared** (`.\cloudflared.exe tunnel --url
   http://localhost:3000`, portable exe, gitignored); Webhook-Callback = Tunnel +
-  `/webhook/whatsapp`, Verify-Token `angebotsblitz-2026`; `messages` abonnieren;
+  `/webhook/whatsapp`, Verify-Token aus der `.env` (`WHATSAPP_VERIFY_TOKEN` — nach
+  dem versehentlichen Leak am 30.07.2026 rotiert; NIE den Klartext hier ablegen);
+  `messages` abonnieren;
   **und die App per `POST /{WABA_ID}/subscribed_apps` mit dem WABA verbinden** —
   sonst kommen echte Nachrichten NICHT an (Test-Button funktioniert trotzdem).
   Empfänger-Handynummer muss auf der Positivliste stehen (Schritt 1 „Ausprobieren").

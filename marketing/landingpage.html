@@ -4,7 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AuftragsBoss · Angebote per Sprachnachricht</title>
+<link rel="icon" type="image/png" href="auftragsboss-logo.png">
+<link rel="apple-touch-icon" href="auftragsboss-logo.png">
 <style>
+  /* Hausschriften, DSGVO-sicher selbst gehostet (kein Google-CDN). OFL-Lizenz. */
+  @font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/inter-latin-400-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/inter-latin-500-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/inter-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-style:normal;font-weight:800;font-display:swap;src:url('fonts/inter-latin-800-normal.woff2') format('woff2');}
+  @font-face{font-family:'Space Mono';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/space-mono-latin-400-normal.woff2') format('woff2');}
+  @font-face{font-family:'Space Mono';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/space-mono-latin-700-normal.woff2') format('woff2');}
   :root{
     --bg:#0E0F12; --bg2:#15171C; --bg3:#1B1E24; --bg4:#22262E;
     --steel:#2C313A; --steel2:#3C424D; --hair:#23272E;
@@ -12,8 +21,8 @@
     --signal:#FFC426; --signal-deep:#E4A600; --signal-ink:#1A1400;
     --wa:#25A366;
     --r:7px; --r-lg:11px;
-    --font:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
-    --mono:ui-monospace,"Cascadia Mono","Consolas","Roboto Mono",monospace;
+    --font:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    --mono:"Space Mono",ui-monospace,"Cascadia Mono","Consolas","Roboto Mono",monospace;
     --hazard:repeating-linear-gradient(45deg,var(--signal) 0 15px,#0E0F12 15px 30px);
   }
   *{box-sizing:border-box;}
@@ -30,8 +39,8 @@
     border-bottom:1px solid var(--hair);position:sticky;top:0;background:rgba(14,15,18,.82);
     backdrop-filter:blur(10px);z-index:50;}
   .brand{display:flex;align-items:center;gap:11px;font-weight:800;font-size:19px;letter-spacing:.01em;}
-  .brand .mark{width:30px;height:30px;border-radius:6px;background:var(--signal);color:var(--signal-ink);
-    display:grid;place-items:center;font-size:17px;font-weight:900;box-shadow:0 0 0 1px rgba(0,0,0,.4),0 4px 14px rgba(255,196,38,.25);}
+  .brand .mark{width:32px;height:32px;border-radius:7px;object-fit:cover;display:block;
+    box-shadow:0 0 0 1px rgba(0,0,0,.4),0 4px 14px rgba(255,196,38,.25);}
   .brand b{color:var(--signal);}
   .nav{display:flex;gap:24px;align-items:center;font-size:14px;font-weight:600;}
   .nav a{color:var(--muted);text-decoration:none;} .nav a:hover{color:var(--ink);}
@@ -155,7 +164,8 @@
   /* WhatsApp-Screen */
   .s-wa{background:#0b141a;}
   .wa-top{background:#1f2c34;padding:24px 11px 8px;display:flex;align-items:center;gap:8px;color:#e9edef;}
-  .wa-top .av{width:25px;height:25px;border-radius:50%;background:var(--signal);color:var(--signal-ink);display:grid;place-items:center;font-weight:900;font-size:12px;flex:0 0 auto;}
+  .wa-top .av{width:25px;height:25px;border-radius:50%;overflow:hidden;flex:0 0 auto;}
+  .wa-top .av img{width:100%;height:100%;object-fit:cover;display:block;}
   .wa-top b{font-size:12px;} .wa-top small{font-size:8.5px;color:#8696a0;display:block;}
   .wa-body{flex:1;padding:11px 9px;display:flex;flex-direction:column;gap:8px;}
   .bub{max-width:86%;padding:7px 9px;border-radius:9px;font-size:10px;line-height:1.5;color:#e9edef;}
@@ -260,8 +270,8 @@
 <body>
 
 <header>
-  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding:0;width:100%;max-width:1120px;">
-    <div class="brand"><span class="mark">⚡</span><span>AUFTRAGS<b>BOSS</b></span></div>
+  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding:0 22px;width:100%;max-width:1120px;">
+    <div class="brand"><img class="mark" src="auftragsboss-logo.png" alt="AuftragsBoss Logo" width="32" height="32"><span>AUFTRAGS<b>BOSS</b></span></div>
     <nav class="nav">
       <a href="#warum">Warum</a><a href="#so">So geht's</a><a href="#preise">Preise</a>
       <a class="btn-mini" href="#testen">Kostenlos testen</a>
@@ -369,7 +379,7 @@
     <div class="shots">
       <div class="pcol">
         <div class="phone"><div class="screen s-wa">
-          <div class="wa-top"><div class="av">⚡</div><div><b>AuftragsBoss</b><small>online</small></div></div>
+          <div class="wa-top"><div class="av"><img src="auftragsboss-logo.png" alt=""></div><div><b>AuftragsBoss</b><small>online</small></div></div>
           <div class="wa-body">
             <div class="bub out"><div class="wave"><span>🎙️</span><div class="bars"></div><span>0:14</span></div></div>
             <div class="bub in">✅ Angebot <b>ANG-2026-0002</b> für Herrn Schmidt ist fertig.<br><span class="lk">auftragsboss.de/a/uqhg</span></div>
@@ -492,7 +502,7 @@
   </div>
 
   <footer>
-    <span>⚡ <b>AUFTRAGSBOSS</b> · Angebote per Sprachnachricht</span>
+    <span><img src="auftragsboss-logo.png" alt="" style="width:18px;height:18px;border-radius:4px;object-fit:cover;vertical-align:-4px;margin-right:3px;"><b>AUFTRAGSBOSS</b> · Angebote per Sprachnachricht</span>
     <span>AuftragsBoss.de</span>
   </footer>
 </div>

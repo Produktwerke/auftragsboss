@@ -236,6 +236,18 @@ deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
 - **„Direkt testen"-Ablauf — ✅ gebaut** (`src/direkttest.ts`, scharf, siehe „Fertig").
   Offen bleibt nur das Verdrahten auf der Landingpage (wa.me-Link/QR, braucht die
   Produktionsnummer) und die eigene verifizierte Nummer fürs echte Öffentlich-Testen.
+- **Go-Live-Stand (01.08.2026):**
+  - ✅ **Website live** unter **auftragsboss.de** (IONOS-Webhosting Plus, Vertrag 113188648,
+    SSL aktiv). Deploy = Inhalt von `marketing/` in den Webroot-Ordner `public` hochladen.
+  - ✅ **Meta-Firmenverifizierung eingereicht** (DAG Deutsche Automotive GmbH) — Prüfung läuft,
+    **bis ~48 Std. (ca. 02.08.2026)**. Use-Case „Ein WhatsApp-Unternehmenskonto einrichten".
+    (Portfolio = DAG; „AuftragsBoss" wird später nur der WhatsApp-Anzeigename.)
+  - ⏳ **Danach:** eigene Telefonnummer (am besten eSIM/Prepaid-Mobilnummer, +49, noch nie bei
+    WhatsApp) hinzufügen + bestätigen → Anzeigename „AuftragsBoss" → Zahlungsmethode →
+    Nummer in `.env` (`WHATSAPP_PHONE_NUMBER_ID`) und in den `wa.me`-CTA der Landingpage.
+  - ⚠️ **Großer offener Punkt:** Das **Backend läuft nur lokal** (PC + cloudflared-Tunnel). Für
+    24/7 braucht es echtes Server-Hosting (IONOS-Webhosting kann nur die statische Seite, keinen
+    Node-Server) — plus PostgreSQL + DSGVO-Erweiterung der Datenschutzerklärung (KI-Verarbeitung).
 - **#2 Empfehlungsprogramm — Mechanik gebaut.** Offen: **Abo/Abrechnung**
   (z. B. Stripe), damit der „1 Monat gratis" wirklich eingelöst wird, plus
   Aktivierung der Leads (heute manuell durch das Team, Status OFFEN→AKTIVIERT).

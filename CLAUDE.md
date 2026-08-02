@@ -245,11 +245,19 @@ deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
   - ⏳ **Danach:** eigene Telefonnummer (am besten eSIM/Prepaid-Mobilnummer, +49, noch nie bei
     WhatsApp) hinzufügen + bestätigen → Anzeigename „AuftragsBoss" → Zahlungsmethode →
     Nummer in `.env` (`WHATSAPP_PHONE_NUMBER_ID`) und in den `wa.me`-CTA der Landingpage.
-  - 🔧 **Backend-Hosting in Arbeit (02.08.2026):** IONOS **VPS** (Linux, Ubuntu 24.04, Standort
-    Deutschland, VPS S+ 2 GB RAM, ~1→4 €/Monat) bestellt. Ziel: Node-Server 24/7 statt PC+Tunnel,
-    stabile HTTPS-Adresse **`api.auftragsboss.de`** via **Caddy** (kostenloses Let's-Encrypt-SSL),
-    DB bleibt vorerst SQLite. Schritte: SSH-Login → Node 24 → App per SFTP → `.env` auf Server →
-    Prisma/DB → **pm2** (Dauerbetrieb) → DNS A-Record + Caddy → Webhook auf api.auftragsboss.de.
+  - ✅ **Backend-Hosting LIVE (02.08.2026):** IONOS **VPS** (Ubuntu 24.04, Deutschland, VPS S+
+    2 GB RAM), **IP `87.106.165.151`**, root-Login per SSH/Passwort. Node 24 installiert.
+    - App liegt in **`/root/app`**, läuft per **pm2** (Name `auftragsboss`, Skript `start:prod`
+      = `tsx src/server.ts`), Autostart nach Reboot aktiv (`systemctl enable pm2-root`).
+    - **Caddy** als Reverse-Proxy: `api.auftragsboss.de` → `127.0.0.1:3000`, HTTPS via
+      Let's Encrypt automatisch (Caddyfile in `/etc/caddy/Caddyfile`). Von außen 200/403 bestätigt.
+    - `.env` liegt auf dem Server (per scp, an mir vorbei), `BASE_URL=https://api.auftragsboss.de`.
+      DB = SQLite `prisma/dev.db` (per `prisma db push` angelegt). `uploads/` angelegt.
+    - **Deploy-Weg** (kein GitHub): lokal `tar` vom Quellcode (ohne `node_modules`/`.env`/db),
+      per `scp` hoch, `npm install` + `prisma db push`, dann `pm2 restart auftragsboss`.
+    - **Cloudflared-Tunnel wird nicht mehr gebraucht** (war nur für den lokalen Test).
+    - ⏳ Offen: Meta-Webhook-Callback auf **`https://api.auftragsboss.de/webhook/whatsapp`**
+      umstellen (Verify-Token aus `.env`); Produktionsnummer nach Firmenverifizierung hinzufügen.
   - ⏳ **TODO nach VPS:** **tägliches DB-Backup** selbst bauen (kleiner Cron-Job, der die SQLite
     `dev.db` + `uploads/` sichert, rotierende Kopien; bewusst KEIN teures Acronis-Paket gebucht).
   - ⚠️ **Weiterhin offen:** PostgreSQL (statt SQLite) + DSGVO-Erweiterung der Datenschutzerklärung

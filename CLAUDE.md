@@ -118,7 +118,7 @@ Tools — in PowerShell voranstellen:
 **Prisma-Client sperrt sich**, wenn ein Server läuft — vor `prisma generate`
 laufende `dev:editor`/`dev`-Tasks stoppen.
 
-## Stand (Juli 2026)
+## Stand (August 2026)
 
 **Fertig und getestet:**
 - ✅ Sprachnachricht → Angebot (echte Pipeline mit Dirks Testaudio verifiziert)
@@ -239,12 +239,14 @@ deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
 - **Go-Live-Stand (01.08.2026):**
   - ✅ **Website live** unter **auftragsboss.de** (IONOS-Webhosting Plus, Vertrag 113188648,
     SSL aktiv). Deploy = Inhalt von `marketing/` in den Webroot-Ordner `public` hochladen.
-  - ✅ **Meta-Firmenverifizierung eingereicht** (DAG Deutsche Automotive GmbH) — Prüfung läuft,
-    **bis ~48 Std. (ca. 02.08.2026)**. Use-Case „Ein WhatsApp-Unternehmenskonto einrichten".
-    (Portfolio = DAG; „AuftragsBoss" wird später nur der WhatsApp-Anzeigename.)
-  - ⏳ **Danach:** eigene Telefonnummer (am besten eSIM/Prepaid-Mobilnummer, +49, noch nie bei
-    WhatsApp) hinzufügen + bestätigen → Anzeigename „AuftragsBoss" → Zahlungsmethode →
-    Nummer in `.env` (`WHATSAPP_PHONE_NUMBER_ID`) und in den `wa.me`-CTA der Landingpage.
+  - ⏳ **Meta-Firmenverifizierung LÄUFT** (DAG Deutsche Automotive GmbH; Unternehmensart
+    **„Privatunternehmen"/GmbH**). Erster Antrag hatte ein Ausweis-Problem → am **02.08.2026 neu
+    gestartet**, dauert ~48 Std. **Solange sie läuft, ist das Hinzufügen der Produktionsnummer
+    gesperrt** (im „WhatsApp-Manager → Nummer hinzufügen" ist das Land-Feld gesperrt).
+  - ✅ **Servicenummer bereit:** eSIM **+49 174 936 4823** eingerichtet, wartet auf die Verifizierung.
+    Sobald durch: Nummer bei Meta hinzufügen (Anzeigename „AuftragsBoss") + Zahlungsmethode →
+    Phone-Number-ID in Server-`.env` (`WHATSAPP_PHONE_NUMBER_ID`) → `pm2 restart auftragsboss` →
+    `wa.me`-CTA + angezeigte Nummer + QR auf der Landingpage setzen (aktuell Platzhalter `+4915123456789`).
   - ✅ **Backend-Hosting LIVE (02.08.2026):** IONOS **VPS** (Ubuntu 24.04, Deutschland, VPS S+
     2 GB RAM), **IP `87.106.165.151`**, root-Login per SSH/Passwort. Node 24 installiert.
     - App liegt in **`/root/app`**, läuft per **pm2** (Name `auftragsboss`, Skript `start:prod`
@@ -256,8 +258,27 @@ deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
     - **Deploy-Weg** (kein GitHub): lokal `tar` vom Quellcode (ohne `node_modules`/`.env`/db),
       per `scp` hoch, `npm install` + `prisma db push`, dann `pm2 restart auftragsboss`.
     - **Cloudflared-Tunnel wird nicht mehr gebraucht** (war nur für den lokalen Test).
-    - ⏳ Offen: Meta-Webhook-Callback auf **`https://api.auftragsboss.de/webhook/whatsapp`**
-      umstellen (Verify-Token aus `.env`); Produktionsnummer nach Firmenverifizierung hinzufügen.
+    - ✅ **Meta-Webhook** auf `https://api.auftragsboss.de/webhook/whatsapp` umgestellt (Verify-Token
+      aus `.env`), Handshake bestätigt. **Dry-Run mit der US-Test-Nummer über den Produktionsserver
+      erfolgreich** (Sprache → Angebot → Editor speichern/PDF/Word/E-Mail — alles auf dem VPS).
+    - **REDEPLOY bei Code-Änderung** (2 Zeilen, beide im PC-Fenster `PS C:\…>`): lokal neu tarpacken
+      (Quellcode ohne `node_modules`/`.env`/db → `scratchpad/deploy.tar.gz`), dann
+      `scp …\deploy.tar.gz root@87.106.165.151:/root/` und
+      `ssh root@87.106.165.151 "tar xzf /root/deploy.tar.gz -C /root/app && pm2 restart auftragsboss"`.
+      Merkregel: `PS C:\…>` = PC (scp/ssh), `root@ubuntu:~#` = Server (Linux-Befehle) — nicht vertauschen!
+    - **Server-Kommandos:** `pm2 status` / `pm2 logs auftragsboss` (Live-Log, Strg+C beendet) /
+      `pm2 restart auftragsboss`. `.env` am Server ändern → danach `pm2 restart`.
+    - **Test-Konten zurücksetzen** (Kontingent frei): per `ssh … npx prisma db execute --stdin` je ein
+      `DELETE FROM Dokument|Vorgang|Handwerker WHERE …istTest=1`. Betrifft nur Test-Konten.
+    - **Feinschliff aus dem Dry-Run (02.08.2026, deployt):** (1) Sprachnachricht wird SOFORT kurz
+      bestätigt („🎙️ Hab ich! …") vor Transkription. (2) **Serielle Verarbeitung pro Nummer** —
+      schnell aufeinanderfolgende Sprachnachrichten erzeugen nicht mehr zwei Angebote, die zweite wird
+      als Nachtrag erkannt. (3) Test-Kontingent zählt nur eigenständige Angebote (`version=1`), Nachträge
+      sind frei; Kontingent auf **5**, Nachrichten-Deckel auf **20** (Server-`.env`). (4) **Kein
+      Fremd-Logo** mehr: ohne eigenes Logo zeigt der Editor „Ihr Logo"-Platzhalter, Kunden-PDF/Word
+      bleiben schlicht. (5) **Privatadresse entfernt** (Platzhalter jetzt „Musterstraße 5").
+    - ⏳ Offene Editor-Idee: PLZ automatisch aus Ort+Straße ergänzen (braucht einen Adress-Lookup-Dienst,
+      z. B. OpenPLZ/Nominatim EU-gehostet; Ort allein reicht nicht — viele PLZ pro Stadt).
   - ⏳ **TODO nach VPS:** **tägliches DB-Backup** selbst bauen (kleiner Cron-Job, der die SQLite
     `dev.db` + `uploads/` sichert, rotierende Kopien; bewusst KEIN teures Acronis-Paket gebucht).
   - ⚠️ **Weiterhin offen:** PostgreSQL (statt SQLite) + DSGVO-Erweiterung der Datenschutzerklärung

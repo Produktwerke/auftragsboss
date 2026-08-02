@@ -103,8 +103,13 @@ export async function testNachrichtBlockiert(
     return `Du hast das Test-Limit dieser Nummer erreicht. ${KONTAKT}`;
   }
 
-  // Gratis-Kontingent: fertige Test-Angebote pro Nummer (DB, persistent).
-  const fertige = await prisma.dokument.count({ where: { handwerkerId: handwerker.id } });
+  // Gratis-Kontingent: nur EIGENSTÄNDIGE Test-Angebote pro Nummer zählen
+  // (version === 1). Nachträge/Verbesserungen am selben Angebot (version > 1)
+  // zählen NICHT — so kann ein Interessent ruhig ein paar Schleifen drehen, bis
+  // ein Angebot passt, ohne dass jede Sprachnachricht ein Kontingent verbraucht.
+  const fertige = await prisma.dokument.count({
+    where: { handwerkerId: handwerker.id, version: 1 },
+  });
   if (fertige >= cfg.DIREKTTEST_GRATIS_ANGEBOTE) {
     return (
       `🎉 Das waren deine ${cfg.DIREKTTEST_GRATIS_ANGEBOTE} Gratis-Test-Angebote — ` +

@@ -187,6 +187,10 @@ export async function verarbeiteNachricht(args: {
     let zweitfassung: string | undefined;
     let art: "sprache" | "text";
     if (mediaId) {
+      // Sprachnachricht sofort kurz bestätigen — Transkription + KI brauchen ein
+      // paar Sekunden; so weiß der Absender, dass im Hintergrund schon gearbeitet
+      // wird, und wartet nicht auf eine scheinbar stumme Leitung.
+      await sendeWhatsAppText(vonNummer, "🎙️ Hab ich! Ich erstelle dein Angebot – einen kurzen Moment …");
       const t = await transkribiereAudio(await ladeAudio(mediaId));
       inhalt = t.haupttext;
       zweitfassung = t.varianten[1];
@@ -279,6 +283,32 @@ export async function verarbeiteNachricht(args: {
     );
     throw err;
   }
+}
+
+// ── Serielle Verarbeitung pro Nummer ──────────────────────────────────
+// Der Webhook ruft die Verarbeitung "fire-and-forget" auf. Kämen zwei
+// Sprachnachrichten DERSELBEN Nummer dicht hintereinander, liefen sie PARALLEL
+// und jede legte einen eigenen Vorgang (= ein eigenes Angebot) an — der Kunde
+// bekäme zwei getrennte Angebote, obwohl er nur eins meinte. Deshalb: pro Nummer
+// eine Warteschlange. Nachricht 2 wartet, bis Nachricht 1 fertig ist, und wird
+// dann korrekt als Nachtrag zum selben Angebot erkannt (siehe holeNachtragsVorgang).
+const laufendeVerarbeitung = new Map<string, Promise<unknown>>();
+
+export function verarbeiteNachrichtSeriell(args: {
+  vonNummer: string;
+  mediaId?: string;
+  text?: string;
+}): Promise<void> {
+  const key = args.vonNummer;
+  const vorher = laufendeVerarbeitung.get(key) ?? Promise.resolve();
+  const lauf = vorher.catch(() => {}).then(() => verarbeiteNachricht(args));
+  laufendeVerarbeitung.set(key, lauf);
+  // Aufräumen, sobald diese Nachricht durch ist (Fehler hier ignorieren — der
+  // Aufrufer im Webhook behandelt Fehler des zurückgegebenen Promise selbst).
+  lauf.catch(() => {}).finally(() => {
+    if (laufendeVerarbeitung.get(key) === lauf) laufendeVerarbeitung.delete(key);
+  });
+  return lauf;
 }
 
 /** Erzeugt Word-Datei, E-Mail und Archiv-Eintrag und schließt den Vorgang. */

@@ -13,7 +13,7 @@
 import crypto from "node:crypto";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { whatsappConfig } from "../config.js";
-import { verarbeiteNachricht } from "../pipeline.js";
+import { verarbeiteNachrichtSeriell } from "../pipeline.js";
 
 // Minimale Typen für den Ausschnitt des Meta-Payloads, den wir brauchen
 interface WhatsAppMessage {
@@ -102,8 +102,10 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       if (!eingabe) continue;
 
       // Fire-and-forget mit eigenem Error-Handling — ein Fehler in einer
-      // Nachricht darf die anderen nicht blockieren.
-      verarbeiteNachricht(eingabe).catch((err) => {
+      // Nachricht darf die anderen nicht blockieren. Serielle Verarbeitung pro
+      // Nummer verhindert, dass schnell aufeinanderfolgende Sprachnachrichten
+      // je ein eigenes Angebot erzeugen (siehe pipeline.ts).
+      verarbeiteNachrichtSeriell(eingabe).catch((err) => {
         app.log.error({ err, von: msg.from }, "Pipeline-Fehler");
       });
     }

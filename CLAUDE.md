@@ -245,9 +245,15 @@ deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
   - ⏳ **Danach:** eigene Telefonnummer (am besten eSIM/Prepaid-Mobilnummer, +49, noch nie bei
     WhatsApp) hinzufügen + bestätigen → Anzeigename „AuftragsBoss" → Zahlungsmethode →
     Nummer in `.env` (`WHATSAPP_PHONE_NUMBER_ID`) und in den `wa.me`-CTA der Landingpage.
-  - ⚠️ **Großer offener Punkt:** Das **Backend läuft nur lokal** (PC + cloudflared-Tunnel). Für
-    24/7 braucht es echtes Server-Hosting (IONOS-Webhosting kann nur die statische Seite, keinen
-    Node-Server) — plus PostgreSQL + DSGVO-Erweiterung der Datenschutzerklärung (KI-Verarbeitung).
+  - 🔧 **Backend-Hosting in Arbeit (02.08.2026):** IONOS **VPS** (Linux, Ubuntu 24.04, Standort
+    Deutschland, VPS S+ 2 GB RAM, ~1→4 €/Monat) bestellt. Ziel: Node-Server 24/7 statt PC+Tunnel,
+    stabile HTTPS-Adresse **`api.auftragsboss.de`** via **Caddy** (kostenloses Let's-Encrypt-SSL),
+    DB bleibt vorerst SQLite. Schritte: SSH-Login → Node 24 → App per SFTP → `.env` auf Server →
+    Prisma/DB → **pm2** (Dauerbetrieb) → DNS A-Record + Caddy → Webhook auf api.auftragsboss.de.
+  - ⏳ **TODO nach VPS:** **tägliches DB-Backup** selbst bauen (kleiner Cron-Job, der die SQLite
+    `dev.db` + `uploads/` sichert, rotierende Kopien; bewusst KEIN teures Acronis-Paket gebucht).
+  - ⚠️ **Weiterhin offen:** PostgreSQL (statt SQLite) + DSGVO-Erweiterung der Datenschutzerklärung
+    (KI-Verarbeitung der Sprachdaten via OpenAI/Anthropic).
 - **#2 Empfehlungsprogramm — Mechanik gebaut.** Offen: **Abo/Abrechnung**
   (z. B. Stripe), damit der „1 Monat gratis" wirklich eingelöst wird, plus
   Aktivierung der Leads (heute manuell durch das Team, Status OFFEN→AKTIVIERT).

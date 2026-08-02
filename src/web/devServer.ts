@@ -56,7 +56,7 @@ async function stelleDemoDokumentBereit(): Promise<{
       kundenToken: erzeugeToken(),
       transkript: "Demo",
       kundeName: "Familie Bär",
-      kundeStrasse: "Rotberg 18",
+      kundeStrasse: "Musterstraße 5",
       kundePlzOrt: "12345 Musterstadt",
       kundenNummer: "K-1042",
       gewerk: "Malerei",
@@ -64,7 +64,7 @@ async function stelleDemoDokumentBereit(): Promise<{
       positionenJson: JSON.stringify(positionen),
       kiOriginalJson: JSON.stringify({
         positionen,
-        kunde: { name: "Familie Bär", strasse: "Rotberg 18", plzOrt: "12345 Musterstadt" },
+        kunde: { name: "Familie Bär", strasse: "Musterstraße 5", plzOrt: "12345 Musterstadt" },
         objekt: "Wohnzimmer, ca. 45 m²",
         einleitung: "",
         schlusstext: "",

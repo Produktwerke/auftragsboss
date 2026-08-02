@@ -79,6 +79,12 @@ export function editorSeite(args: {
   .kopf .firma { font-size:20px; font-weight:700; color:var(--akzent); }
   .kopf .adr { font-size:12px; color:#666; margin-top:2px; }
   .kopf img { max-height:64px; max-width:180px; }
+  /* Platzhalter, solange der Betrieb kein eigenes Logo hochgeladen hat — macht
+     klar: "hier kommt nach der Anmeldung dein Logo hin". Erscheint NUR im
+     Editor, nicht im fertigen Kunden-Dokument (PDF/Word). */
+  .kopf .logo-platzhalter { min-width:120px; height:56px; border:2px dashed #cfd4da;
+         border-radius:8px; display:flex; align-items:center; justify-content:center;
+         color:#9aa1a8; font-size:13px; font-weight:600; }
   label { display:block; font-size:13px; color:#555; margin:12px 0 4px; font-weight:600; }
   input, textarea, select { width:100%; padding:9px 11px; border:1px solid #cfd4da;
          border-radius:7px; font-size:15px; font-family:inherit; background:#fff; }
@@ -200,7 +206,7 @@ export function editorSeite(args: {
         <div class="firma">${escapeHtml(b.firma)}</div>
         <div class="adr">${escapeHtml([b.strasse, `${b.plz} ${b.ort}`.trim(), b.telefon].filter(Boolean).join(" · "))}</div>
       </div>
-      ${logo ? `<img src="${logo.dataUrl}" alt="Logo">` : ""}
+      ${logo ? `<img src="${logo.dataUrl}" alt="Logo">` : `<div class="logo-platzhalter">Ihr Logo</div>`}
     </div>
 
     <div class="zwei">
@@ -208,7 +214,7 @@ export function editorSeite(args: {
       <div><label>Kundennummer</label><input id="kundenNummer" value="${escapeHtml(startDaten.kundenNummer)}" placeholder="optional"></div>
     </div>
     <div class="zwei">
-      <div><label>Straße und Hausnummer</label><input id="kundeStrasse" value="${escapeHtml(startDaten.kundeStrasse)}" placeholder="z. B. Rotberg 18"></div>
+      <div><label>Straße und Hausnummer</label><input id="kundeStrasse" value="${escapeHtml(startDaten.kundeStrasse)}" placeholder="z. B. Musterstraße 5"></div>
       <div><label>PLZ und Ort</label><input id="kundePlzOrt" value="${escapeHtml(startDaten.kundePlzOrt)}" placeholder="z. B. 12345 Musterstadt"></div>
     </div>
     <div class="zwei">

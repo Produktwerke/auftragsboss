@@ -31,11 +31,11 @@ const NOTFALL_FAELLE: { text: string; erwartet: boolean; warum: string }[] = [
     warum: "'weiter' mitten im Diktat — darf NICHT abbrechen",
   },
   {
-    text: "Die Adresse ist Rotberg 18, den Rest mache ich später fertig",
+    text: "Die Adresse ist Musterstraße 5, den Rest mache ich später fertig",
     erwartet: false,
     warum: "'später' als Inhalt, nicht als Befehl",
   },
-  { text: "Rotberg 18", erwartet: false, warum: "echte Antwort auf eine Rückfrage" },
+  { text: "Musterstraße 5", erwartet: false, warum: "echte Antwort auf eine Rückfrage" },
   { text: "45 Quadratmeter", erwartet: false, warum: "Mengenangabe" },
 ];
 
@@ -55,7 +55,7 @@ console.log(linie("═"));
 console.log("(Diese Fälle prüfst du mit echtem Anthropic-Key über: npm run test:ki)\n");
 
 const SZENARIEN: { antwort: string; erwartet: string; grund: string }[] = [
-  { antwort: "Rotberg 18", erwartet: "ABSCHLIESSEN", grund: "Pflichtangabe geliefert" },
+  { antwort: "Musterstraße 5", erwartet: "ABSCHLIESSEN", grund: "Pflichtangabe geliefert" },
   { antwort: "Die Adresse schick ich dir nachher", erwartet: "ABSCHLIESSEN", grund: "vertagt" },
   { antwort: "Muss ich nochmal nachmessen", erwartet: "ABSCHLIESSEN", grund: "vertagt" },
   { antwort: "Keine Ahnung, steht noch nicht fest", erwartet: "ABSCHLIESSEN", grund: "weiß es nicht" },

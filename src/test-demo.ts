@@ -24,7 +24,7 @@ const AUSGABE_ORDNER = resolve("demo-ausgabe");
 const BETRIEB_WHATSAPP = "4917612345678";
 
 const TRANSKRIPT =
-  "So, ich war gerade bei Familie Bär, Rotberg 18. Wohnzimmer tapezieren, ca. 45 " +
+  "So, ich war gerade bei Familie Bär, Musterstraße 5. Wohnzimmer tapezieren, ca. 45 " +
   "Quadratmeter, Deckenhöhe 2,50. Tapete nach Wahl. Decken spachteln, vorher Tapete " +
   "runter machen, Malervlies an die Decke. Wohnzimmer hat 5 Fenster, davon sind 3 " +
   "Balkontüren, 1,70 Meter breit die Türen. An den Wänden Löcher zumachen, " +
@@ -69,7 +69,7 @@ const M = (
 // hier fest hinterlegt, damit kein API-Key nötig ist.
 const DEMO_DATEN: DokumentDaten = {
   art: "ANGEBOT",
-  kunde: { name: "Familie Bär", strasse: "Rotberg 18", plzOrt: "12345 Musterstadt" },
+  kunde: { name: "Familie Bär", strasse: "Musterstraße 5", plzOrt: "12345 Musterstadt" },
   gewerk: "Malerei",
   objekt: "Wohnzimmer, ca. 45 m² Deckenfläche, Deckenhöhe 2,50 m",
   // Regelfall: im Auto diktiert, keine Preise genannt → alle Preise offen.

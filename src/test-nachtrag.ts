@@ -12,7 +12,7 @@ import { berechneAngebot, euro, mengeMitEinheit } from "./angebot/berechnung.js"
 import { erzeugeAngebotWord, schreibeWordDatei, wordDateiname } from "./angebot/word.js";
 
 const ERSTES_DIKTAT =
-  "Familie Bär, Rotberg 18. Wohnzimmer tapezieren, ca. 45 Quadratmeter, " +
+  "Familie Bär, Musterstraße 5. Wohnzimmer tapezieren, ca. 45 Quadratmeter, " +
   "Deckenhöhe 2,50. Vorher die alte Tapete runter machen, Decke spachteln, " +
   "Malervlies an die Decke, an den Wänden Löcher zumachen und ein bisschen schleifen.";
 

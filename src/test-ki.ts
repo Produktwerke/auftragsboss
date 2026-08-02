@@ -17,7 +17,7 @@ import { berechneAngebot, euro, mengeMitEinheit } from "./angebot/berechnung.js"
 import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
 
 const BEISPIEL_DIKTAT = `
-So, ich war gerade bei Familie Bär, Rotberg 18. Wohnzimmer tapezieren,
+So, ich war gerade bei Familie Bär, Musterstraße 5. Wohnzimmer tapezieren,
 ca. 45 Quadratmeter, Deckenhöhe 2,50. Tapete nach Wahl. Decken spachteln,
 vorher Tapete runter machen, Malervlies an die Decke. Wohnzimmer hat 5 Fenster,
 davon sind 3 Balkontüren, 1,70 Meter breit die Türen. An den Wänden Löcher

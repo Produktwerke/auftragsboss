@@ -69,7 +69,7 @@ export const DokumentSchema = z.object({
     strasse: z
       .string()
       .nullable()
-      .describe("Straße und Hausnummer, z.B. 'Rotberg 18'. null wenn nicht genannt."),
+      .describe("Straße und Hausnummer, z.B. 'Musterstraße 5'. null wenn nicht genannt."),
     plzOrt: z
       .string()
       .nullable()
@@ -227,7 +227,7 @@ Du erhältst das Roh-Transkript einer WhatsApp-Sprachnachricht, die ein Handwerk
 2. **Mehrere Fassungen zusammenführen.** Eine Sprachnachricht wird von zwei verschiedenen Spracherkennungen unabhängig transkribiert; beide Fassungen bekommst du. Sie stammen von DERSELBEN Aufnahme — es sind keine zwei Aufträge.
    - **Nimm den vollständigen Inhalt beider Fassungen.** Die Systeme lassen unterschiedliche Stellen weg. Ein Arbeitsschritt, der nur in einer Fassung steht (z.B. "vorher Tapete runter machen"), wurde tatsächlich gesagt und gehört ins Angebot. Ein weggelassener Arbeitsschritt kostet den Handwerker Geld.
    - **Bei Widersprüchen entscheide fachlich.** Steht in einer Fassung "Balkontüren" und in der anderen "Balkontiere", ist "Balkontüren" richtig.
-   - **Namen und Orte weichen oft ab** ("Familie Bär" / "Familie Behr", "Rotberg" / "Rodeberg"). Wähle die plausiblere Schreibweise und weise in "rueckfragen" darauf hin, dass die Schreibweise zu prüfen ist.
+   - **Namen und Orte weichen oft ab** ("Familie Bär" / "Familie Behr", "Bergstraße" / "Bergerstraße"). Wähle die plausiblere Schreibweise und weise in "rueckfragen" darauf hin, dass die Schreibweise zu prüfen ist.
    - **Zähle nichts doppelt.** Dieselbe Leistung in beiden Fassungen ist EINE Position.
 
 3. **Dokumentart erkennen.** Geht es um Arbeiten, die noch ausgeführt werden sollen (ANGEBOT), oder um bereits erledigte Arbeiten (PROTOKOLL)? Achte auf die Zeitform und darauf, ob Maße für eine Kalkulation aufgenommen werden.

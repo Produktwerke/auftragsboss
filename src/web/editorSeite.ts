@@ -115,9 +115,10 @@ export function editorSeite(args: {
   td input, td select { padding:6px 7px; font-size:14px; }
   .pos-menge { width:70px; } .pos-einheit { width:82px; } .pos-preis { width:92px; }
   .zeilensumme { font-weight:600; white-space:nowrap; font-size:14px; }
-  /* Kategorie-Überschriften (Material, Arbeitsaufwand, eigene) in der Akzent-
-     farbe — auch im Desktop-Editor, damit es zum Handy passt. */
-  tr.abschnitt td { background:var(--akzent); font-weight:700; color:#fff; font-size:13px; padding:9px 10px; }
+  /* Kategorie-Kopfzeile in der Akzentfarbe: Kategoriename groß, die Spalten-
+     überschriften (Menge/Einheit/…) etwas kleiner, alles in EINER Zeile. */
+  tr.abschnitt td { background:var(--akzent); color:#fff; font-weight:600; font-size:12px; padding:8px 8px; vertical-align:middle; }
+  tr.abschnitt td.k-name { font-weight:700; font-size:15px; }
   tr.zwsumme td { color:#666; font-weight:600; font-size:13px; background:#fafbfc; }
   tr.hinzu td { border-bottom:none; padding:6px; }
   .neu { background:#f2f5f8; border:1px dashed #b8c0c8; color:#444; border-radius:7px;
@@ -173,13 +174,16 @@ export function editorSeite(args: {
     #postab tr.abschnitt {
       display:block; position:sticky; top:0; z-index:5;
     }
-    #postab tr.abschnitt td {
+    /* Auf dem Handy nur den Kategoriename als Banner; die Spaltenüberschriften
+       ausblenden (die Positions-Karten haben eigene Feldlabels). */
+    #postab tr.abschnitt td.k-sp { display:none; }
+    #postab tr.abschnitt td.k-name {
       display:block; background:var(--akzent); color:#fff; font-weight:700;
       font-size:15px; padding:11px 12px; border-radius:8px;
       box-shadow:0 1px 3px rgba(0,0,0,.15);
       transition:font-size .12s ease, padding .12s ease, box-shadow .12s ease, letter-spacing .12s ease;
     }
-    #postab tr.abschnitt td.klebt {
+    #postab tr.abschnitt td.k-name.klebt {
       font-size:19px; padding:16px 14px; letter-spacing:.4px;
       border-radius:0 0 10px 10px; box-shadow:0 6px 16px rgba(0,0,0,.28);
     }
@@ -259,12 +263,7 @@ export function editorSeite(args: {
   <div class="karte">
     <label style="margin-top:0;">Positionen</label>
     <div class="tab-scroll">
-    <table id="postab">
-      <thead><tr>
-        <th>Leistung</th><th class="r">Menge</th><th>Einheit</th>
-        <th class="r">Einzelpreis</th><th class="r">Gesamt</th><th></th>
-      </tr></thead>
-    </table>
+    <table id="postab"></table>
     </div>
 
     <div class="kat-neu">
@@ -346,12 +345,19 @@ function render(){
   for(const kat of kats){
     const tbody = document.createElement('tbody');
     tbody.className = 'kat-gruppe';
-    if(mehrere){
-      const tr = document.createElement('tr');
-      tr.className='abschnitt';
-      tr.innerHTML = '<td colspan="6">'+esc(katName(kat))+'</td>';
-      tbody.appendChild(tr);
-    }
+    // Kategorie-Kopfzeile: Name + Spaltenüberschriften in EINER blauen Zeile
+    // (keine separate „Leistung"-Zeile mehr). Auf dem Handy werden die Spalten-
+    // labels ausgeblendet, dort bleibt nur der Kategoriename als Banner.
+    const trK = document.createElement('tr');
+    trK.className='abschnitt';
+    trK.innerHTML =
+      '<td class="k-name">'+esc(katName(kat))+'</td>'+
+      '<td class="r k-sp">Menge</td>'+
+      '<td class="k-sp">Einheit</td>'+
+      '<td class="r k-sp">Einzelpreis</td>'+
+      '<td class="r k-sp">Gesamt</td>'+
+      '<td class="k-sp"></td>';
+    tbody.appendChild(trK);
     positionen.forEach((p,i)=>{
       if(p.kategorie!==kat) return;
       const g = zeilensumme(p);
@@ -386,7 +392,7 @@ function render(){
 let stickyGeplant = false;
 function stickyAktualisieren(){
   stickyGeplant = false;
-  const kopfzeilen = document.querySelectorAll('#postab tr.abschnitt td');
+  const kopfzeilen = document.querySelectorAll('#postab tr.abschnitt td.k-name');
   if(!window.matchMedia('(max-width:640px)').matches){
     kopfzeilen.forEach(td=>td.classList.remove('klebt'));
     return;
@@ -435,6 +441,8 @@ function einheitWahl(i,sel){
     inp.focus();
   } else {
     positionen[i].einheit = sel.value;
+    // „pauschal" = eine Einheit: Menge automatisch auf 1 setzen.
+    if(sel.value==='pauschal') positionen[i].menge = 1;
     render(); markiereGeaendert();
   }
 }

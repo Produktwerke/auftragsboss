@@ -51,11 +51,19 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-/** Marken-Kopfbanner (dunkler Streifen mit Wortmarke). */
+/** Marken-Kopfbanner (dunkler Streifen mit Logo + Wortmarke). Als Tabelle
+ *  gebaut, damit Outlook das Padding zuverlässig darstellt. */
 const kopfBanner = `
-  <div style="background:${ANTHRA};padding:16px 24px;">
-    <span style="font-size:20px;font-weight:800;letter-spacing:.3px;color:#ffffff;${FONT};">AUFTRAGS<span style="color:${SIGNAL};">BOSS</span></span>
-  </div>`;
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${ANTHRA};">
+    <tr><td style="padding:22px 28px;">
+      <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+        <td style="padding-right:12px;vertical-align:middle;">
+          <img src="cid:${LOGO_CID}" alt="" width="34" height="34" style="display:block;border-radius:7px;">
+        </td>
+        <td style="vertical-align:middle;font-size:22px;font-weight:800;letter-spacing:.4px;color:#ffffff;${FONT};">AUFTRAGS<span style="color:${SIGNAL};">BOSS</span></td>
+      </tr></table>
+    </td></tr>
+  </table>`;
 
 /** Signatur (heller Fuß mit Logo und Kontaktdaten des Anbieters). */
 const signatur = `
@@ -293,10 +301,11 @@ export function dokumentMail(args: {
            Preise eintragen, Positionen anpassen, die Summen rechnen automatisch mit.
            Danach als PDF oder Word exportieren.
          </div>
-         <a href="${bearbeitenUrl}" style="display:inline-block;background:${SIGNAL};color:${ANTHRA};
-            text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:700;font-size:14px;">
-           Jetzt bearbeiten →
-         </a>
+         <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+           <td align="center" bgcolor="${SIGNAL}" style="background:${SIGNAL};border-radius:8px;padding:14px 28px;">
+             <a href="${bearbeitenUrl}" style="color:${ANTHRA};text-decoration:none;font-weight:700;font-size:15px;${FONT};">Jetzt bearbeiten →</a>
+           </td>
+         </tr></table>
        </div>`
     : "";
 
@@ -380,6 +389,35 @@ export function dokumentMail(args: {
   </div>
 </div>`;
 
+  return { betreff, html };
+}
+
+/** Gebrandete, aber kurze Mail für den Editor-Versand („Datei auch als E-Mail
+ *  senden"). Gleicher Look wie die automatische Mail (Banner + Signatur mit
+ *  Logo), aber nur ein kurzer Text — hier geht es um die exportierte Datei im
+ *  Anhang, nicht um ein neues „Angebot ist fertig". Braucht denselben
+ *  Logo-Anhang (logoAnhang()) wie die anderen Mails. */
+export function dateiMail(args: {
+  art: string;
+  nummer: string;
+  kunde?: string | null;
+  format: "pdf" | "word";
+}): { betreff: string; html: string } {
+  const bezeichnung = args.art === "ANGEBOT" ? "Angebot" : "Protokoll";
+  const fuer = args.kunde ? ` für ${args.kunde}` : "";
+  const betreff = `${bezeichnung} ${args.nummer}${fuer}`;
+  const formatLabel = args.format === "pdf" ? "PDF" : "Word-Datei";
+  const html = `
+<div style="${RAHMEN}">
+  ${kopfBanner}
+  <div style="padding:24px;">
+    <h2 style="font-size:21px;color:${INK};margin:4px 0 2px;font-weight:800;">${bezeichnung} ${escapeHtml(args.nummer)}</h2>
+    <div style="height:3px;width:44px;background:${SIGNAL};border-radius:2px;margin:0 0 14px;"></div>
+    <p style="font-size:14px;color:${INK};margin:0 0 6px;">Hallo,</p>
+    <p style="font-size:14px;color:${INK};margin:0;">im Anhang findest du dein ${bezeichnung} <strong>${escapeHtml(args.nummer)}</strong>${escapeHtml(fuer)} als ${formatLabel}.</p>
+    ${signatur}
+  </div>
+</div>`;
   return { betreff, html };
 }
 

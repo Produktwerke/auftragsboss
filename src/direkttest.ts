@@ -71,7 +71,7 @@ export async function starteTestFuerNeueNummer(
   if (tagesStand() >= cfg.DIREKTTEST_MAX_PRO_TAG) {
     return {
       ablehnung:
-        "🙏 Unser kostenloser Test ist heute sehr gefragt und für heute ausgebucht. Probier es morgen noch einmal — oder melde dich direkt beim AuftragsBoss-Team.",
+        "🙏 Unser kostenloser Test ist heute sehr gefragt und für heute ausgebucht. Probier es morgen noch einmal, oder melde dich direkt beim AuftragsBoss-Team.",
     };
   }
 
@@ -112,14 +112,14 @@ export async function testNachrichtBlockiert(
   });
   if (fertige >= cfg.DIREKTTEST_GRATIS_ANGEBOTE) {
     return (
-      `🎉 Das waren deine ${cfg.DIREKTTEST_GRATIS_ANGEBOTE} Gratis-Test-Angebote — ` +
-      `stark, dass du AuftragsBoss ausprobiert hast! Wenn du damit richtig arbeiten willst: ${KONTAKT}`
+      `🎉 Das waren deine ${cfg.DIREKTTEST_GRATIS_ANGEBOTE} Gratis-Test-Angebote. ` +
+      `Stark, dass du AuftragsBoss ausprobiert hast! Wenn du damit richtig arbeiten willst: ${KONTAKT}`
     );
   }
 
   // Tages-Gesamtdeckel (Arbeitsspeicher).
   if (tagesStand() >= cfg.DIREKTTEST_MAX_PRO_TAG) {
-    return "🙏 Unser kostenloser Test ist heute ausgebucht. Probier es morgen noch einmal — oder melde dich beim AuftragsBoss-Team.";
+    return "🙏 Unser kostenloser Test ist heute ausgebucht. Probier es morgen noch einmal, oder melde dich beim AuftragsBoss-Team.";
   }
 
   // Tempo-Limit ZULETZT (Arbeitsspeicher) — so gewinnen die aussagekräftigen
@@ -128,7 +128,7 @@ export async function testNachrichtBlockiert(
   const jetzt = Date.now();
   const vorher = letzteNachricht.get(handwerker.whatsappNummer);
   if (vorher !== undefined && jetzt - vorher < cfg.DIREKTTEST_MIN_ABSTAND_SEKUNDEN * 1000) {
-    return "⏳ Einen Moment bitte — deine vorige Nachricht wird noch verarbeitet. Schick die nächste in ein paar Sekunden.";
+    return "⏳ Einen Moment bitte, deine vorige Nachricht wird noch verarbeitet. Schick die nächste in ein paar Sekunden.";
   }
 
   // Alles frei → Zähler fortschreiben.

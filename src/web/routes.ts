@@ -22,6 +22,7 @@ import { ladeLogo } from "../betrieb/logo.js";
 import { speichereLogo, entferneLogo, LogoFehler } from "../betrieb/logoUpload.js";
 import { smtpKonfiguriert } from "../config.js";
 import { sendeMail, WORD_MIME } from "../email/send.js";
+import { dateiMail, logoAnhang } from "../email/templates.js";
 
 interface SpeicherKoerper {
   kundeName?: string;
@@ -68,10 +69,14 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     const preisliste = effektivePreisliste(handwerker, ladePreisliste());
 
     // Rückweg zu den Einstellungen (dort liegt auch die Angebotsübersicht).
-    const einstToken = await einstellungenTokenBereit(prisma, handwerker);
+    // Test-Konten haben KEINE Einstellungsseite und keine Angebotsübersicht —
+    // für sie entfällt der Zurück-Link ganz.
+    const einstellungenUrl = handwerker.istTest
+      ? undefined
+      : einstellungenLink(await einstellungenTokenBereit(prisma, handwerker));
 
     return reply.type("text/html; charset=utf-8").send(
-      editorSeite({ dokument, handwerker, preisliste, einstellungenUrl: einstellungenLink(einstToken) }),
+      editorSeite({ dokument, handwerker, preisliste, einstellungenUrl }),
     );
   });
 
@@ -256,16 +261,19 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
         mime = WORD_MIME;
       }
 
-      const bezeichnung = dokument.art === "ANGEBOT" ? "Angebot" : "Protokoll";
-      const fuer = dokument.kundeName ? ` für ${dokument.kundeName}` : "";
-      const betreff = `${bezeichnung} ${dokument.nummer}${fuer}`;
-      const html =
-        `<p>Hallo,</p><p>im Anhang findest du dein ${bezeichnung} <b>${dokument.nummer}</b>${fuer} ` +
-        `als ${istPdf ? "PDF" : "Word-Datei"}.</p><p>Dein AuftragsBoss</p>`;
+      // Gebrandete Mail im AuftragsBoss-Look (Banner + Signatur mit Logo),
+      // gleiches Design wie die automatische Mail — nur kurzer Text.
+      const { betreff, html } = dateiMail({
+        art: dokument.art,
+        nummer: dokument.nummer,
+        kunde: dokument.kundeName,
+        format: istPdf ? "pdf" : "word",
+      });
 
       try {
         await sendeMail(handwerker.email, betreff, html, [
           { filename: anhangName, content: inhalt, contentType: mime },
+          logoAnhang(),
         ]);
       } catch (err) {
         app.log.error({ err }, "Mailversand aus dem Editor fehlgeschlagen");

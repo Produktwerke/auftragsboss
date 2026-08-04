@@ -115,7 +115,9 @@ export function editorSeite(args: {
   td input, td select { padding:6px 7px; font-size:14px; }
   .pos-menge { width:70px; } .pos-einheit { width:82px; } .pos-preis { width:92px; }
   .zeilensumme { font-weight:600; white-space:nowrap; font-size:14px; }
-  tr.abschnitt td { background:#f2f5f8; font-weight:700; color:#555; font-size:13px; padding:9px 8px; }
+  /* Kategorie-Überschriften (Material, Arbeitsaufwand, eigene) in der Akzent-
+     farbe — auch im Desktop-Editor, damit es zum Handy passt. */
+  tr.abschnitt td { background:var(--akzent); font-weight:700; color:#fff; font-size:13px; padding:9px 10px; }
   tr.zwsumme td { color:#666; font-weight:600; font-size:13px; background:#fafbfc; }
   tr.hinzu td { border-bottom:none; padding:6px; }
   .neu { background:#f2f5f8; border:1px dashed #b8c0c8; color:#444; border-radius:7px;

@@ -128,7 +128,7 @@ export async function verarbeiteNachricht(args: {
         data: { handwerkerId: handwerker.id, text: text.trim(), quelle: "WHATSAPP" },
       });
       await prisma.handwerker.update({ where: { id: handwerker.id }, data: { feedbackWartetSeit: null } });
-      await sendeWhatsAppText(vonNummer, "🙏 Danke für deine Rückmeldung — ist notiert!");
+      await sendeWhatsAppText(vonNummer, "🙏 Danke für deine Rückmeldung, ist notiert!");
       return;
     }
     if (willFeedback(text)) {
@@ -137,7 +137,7 @@ export async function verarbeiteNachricht(args: {
         await prisma.feedback.create({
           data: { handwerkerId: handwerker.id, text: direkt, quelle: "WHATSAPP" },
         });
-        await sendeWhatsAppText(vonNummer, "🙏 Danke für deine Rückmeldung — ist notiert!");
+        await sendeWhatsAppText(vonNummer, "🙏 Danke für deine Rückmeldung, ist notiert!");
       } else {
         await prisma.handwerker.update({
           where: { id: handwerker.id },
@@ -174,7 +174,7 @@ export async function verarbeiteNachricht(args: {
     const token = await einstellungenTokenBereit(prisma, handwerker);
     await sendeWhatsAppText(
       vonNummer,
-      `👋 Willkommen bei AuftragsBoss, ${handwerker.name}!\n\nDamit dein Logo und deine Adresse gleich auf dem Angebot stehen, richte einmal deinen Betrieb ein:\n${einstellungenLink(token)}\n\nDanach einfach eine Sprachnachricht mit den Auftragsdetails schicken — ich mache ein fertiges Angebot daraus. 🎙️`,
+      `👋 Willkommen bei AuftragsBoss, ${handwerker.name}!\n\nDamit dein Logo und deine Adresse gleich auf dem Angebot stehen, richte einmal deinen Betrieb ein:\n${einstellungenLink(token)}\n\nDanach einfach eine Sprachnachricht mit den Auftragsdetails schicken, ich mache ein fertiges Angebot daraus. 🎙️`,
     );
     // Kein return: Wir verarbeiten die eigentliche Nachricht gleich weiter.
   }
@@ -190,7 +190,7 @@ export async function verarbeiteNachricht(args: {
       // Sprachnachricht sofort kurz bestätigen — Transkription + KI brauchen ein
       // paar Sekunden; so weiß der Absender, dass im Hintergrund schon gearbeitet
       // wird, und wartet nicht auf eine scheinbar stumme Leitung.
-      await sendeWhatsAppText(vonNummer, "🎙️ Hab ich! Ich erstelle dein Angebot – einen kurzen Moment …");
+      await sendeWhatsAppText(vonNummer, "🎙️ Hab' ich! Ich erstelle dein Angebot, einen kurzen Moment …");
       const t = await transkribiereAudio(await ladeAudio(mediaId));
       inhalt = t.haupttext;
       zweitfassung = t.varianten[1];
@@ -216,7 +216,7 @@ export async function verarbeiteNachricht(args: {
     if (!vorgang && inhalt.length < 20) {
       await sendeWhatsAppText(
         vonNummer,
-        "🎙️ Schick mir eine *Sprachnachricht* mit den Auftragsdetails — Kunde, Adresse, was gemacht werden soll. Ich mache ein fertiges Angebot daraus.",
+        "🎙️ Schick mir eine *Sprachnachricht* mit den Auftragsdetails: Kunde, Adresse, was gemacht werden soll. Ich mache ein fertiges Angebot daraus.",
       );
       return;
     }
@@ -237,7 +237,7 @@ export async function verarbeiteNachricht(args: {
     const preisliste = ladePreisliste();
     const dialog = alsDialog(vorgang);
     if (dialog.length === 0) {
-      await sendeWhatsAppText(vonNummer, "🎙️ Mir fehlt noch der Auftrag — diktier mir kurz, worum es geht.");
+      await sendeWhatsAppText(vonNummer, "🎙️ Mir fehlt noch der Auftrag, diktier mir kurz, worum es geht.");
       return;
     }
     const daten = await strukturiereDialog(dialog, preisliste);
@@ -283,7 +283,7 @@ export async function verarbeiteNachricht(args: {
     console.error("Pipeline-Fehler:", err);
     await sendeWhatsAppText(
       vonNummer,
-      "⚠️ Da ist etwas schiefgelaufen — deine Nachricht konnte nicht verarbeitet werden. Bitte versuche es in ein paar Minuten noch einmal.",
+      "⚠️ Da ist etwas schiefgelaufen, deine Nachricht konnte nicht verarbeitet werden. Bitte versuche es in ein paar Minuten noch einmal.",
     );
     throw err;
   }
@@ -427,11 +427,12 @@ export async function erstelleDokument(args: {
     bearbeitenUrl: bearbeitenLink(dokument.bearbeitenToken),
     kundenUrl: kundenLink(dokument.kundenToken),
   });
-  // Die E-Mail ist nicht kritisch — die WhatsApp-Antwort mit dem Editor-Link
-  // ist das Wichtigere. Fehlt SMTP (z.B. im Test) oder schlägt der Versand
-  // fehl, läuft der Rest trotzdem durch, statt den ganzen Vorgang abzubrechen.
-  // Test-Konten haben keine Adresse — dann entfällt die E-Mail ganz.
-  if (handwerker.email) {
+  // E-Mail NUR, wenn der Betrieb das ausdrücklich will: Haken „auch als E-Mail
+  // senden" (gespeichert in mailStandard). Ohne Haken keine ungefragte Mail, der
+  // Editor-Link in der WhatsApp-Antwort reicht. Fehlt SMTP oder schlägt der
+  // Versand fehl, läuft der Rest trotzdem durch. Test-Konten haben ohnehin weder
+  // Adresse noch Haken.
+  if (handwerker.email && handwerker.mailStandard) {
     try {
       await sendeMail(handwerker.email, mail.betreff, mail.html, [
         { filename: dateiname, content: word, contentType: WORD_MIME },
@@ -459,7 +460,7 @@ export async function erstelleDokument(args: {
 
   const zeilen = [
     istNachtrag
-      ? `✅ ${bezeichnung} ${nummer} aktualisiert (Fassung ${version}) — ${summe.positionen.length} Positionen`
+      ? `✅ ${bezeichnung} ${nummer} aktualisiert (Fassung ${version}), ${summe.positionen.length} Positionen`
       : `✅ ${bezeichnung} ${nummer} für *${kunde}* ist fertig`,
     ``,
     `👉 ${bearbeitenLink(dokument.bearbeitenToken)}`,
@@ -467,12 +468,12 @@ export async function erstelleDokument(args: {
     ``,
     summe.vollstaendig
       ? `Gesamt: ${euro(summe.brutto)} brutto`
-      : `✏️ Preise kannst du auch einfach durchsagen — ich rechne und aktualisiere.`,
+      : `✏️ Preise kannst du auch einfach durchsagen, ich rechne und aktualisiere.`,
   ];
   if (!istNachtrag && anzahlMaterial > 0) {
-    zeilen.push(`📦 ${anzahlMaterial} Materialposten vorgeschlagen — bitte prüfen`);
+    zeilen.push(`📦 ${anzahlMaterial} Materialposten vorgeschlagen, bitte prüfen`);
   }
-  if (istProtokoll) zeilen.push(`Gewährleistung: ${fristJahre} Jahre — ich erinnere dich vor Ablauf.`);
+  if (istProtokoll) zeilen.push(`Gewährleistung: ${fristJahre} Jahre, ich erinnere dich vor Ablauf.`);
 
   if (handwerker.istTest) {
     // Test-Interessent: kein Einstellungslink, sondern ein kurzer Hinweis, dass
@@ -480,7 +481,7 @@ export async function erstelleDokument(args: {
     zeilen.push(
       ``,
       `👆 Das war ein Test. Öffne den Link oben: dort kannst du jede Position, Menge und jeden Preis anpassen.`,
-      `Mit *deinem* Logo, deiner Adresse und deinen Preisen sieht das Angebot genauso professionell aus.`,
+      `Als AuftragsBoss-Nutzer hinterlegst du einmal dein Logo, deine Adresse und deine Preise, dann trägt AuftragsBoss sie automatisch in jedes Angebot ein.`,
     );
   } else {
     // Weg 2: Der Zugang zu Einstellungen & Angebotsübersicht steht unauffällig
@@ -501,7 +502,7 @@ export async function erstelleDokument(args: {
       await sendeWhatsAppText(
         vonNummer,
         `🎉 Schon ${anzahl} Angebote mit AuftragsBoss! Kennst du Kollegen, die auch ständig Angebote schreiben?\n\n` +
-          `Lade sie ein — *ihr bekommt beide 1 Monat gratis*:\n${werbeLink(code)}`,
+          `Lade sie ein, *ihr bekommt beide 1 Monat gratis*:\n${werbeLink(code)}`,
       );
     }
   }

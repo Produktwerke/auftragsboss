@@ -253,7 +253,11 @@ export async function verarbeiteNachricht(args: {
     if (nachfragen) {
       const frageText = daten.dialog.nachricht.trim();
       await sendeWhatsAppText(vonNummer, frageText);
-      await prisma.vorgang.update({
+      // updateMany statt update: Zwischen dem Laden des Vorgangs und hier liegt
+      // der (mehrere Sekunden dauernde) KI-Aufruf. Wird der Vorgang in dieser
+      // Zeit entfernt (z.B. Test-Konto zurückgesetzt), darf das kein Fehler
+      // sein — updateMany trifft dann einfach 0 Zeilen, statt P2025 zu werfen.
+      await prisma.vorgang.updateMany({
         where: { id: vorgang.id },
         data: {
           runde: vorgang.runde + 1,
@@ -439,7 +443,10 @@ export async function erstelleDokument(args: {
     }
   }
 
-  await prisma.vorgang.update({
+  // updateMany statt update aus demselben Grund wie oben: Der Vorgang kann
+  // während Dokument-Erstellung/E-Mail-Versand entfernt worden sein. Dann soll
+  // der Abschluss-Vermerk still ins Leere laufen statt zu scheitern.
+  await prisma.vorgang.updateMany({
     where: { id: vorgang.id },
     data: { status: "ABGESCHLOSSEN", dokumentId: dokument.id },
   });

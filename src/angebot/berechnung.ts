@@ -79,7 +79,19 @@ export function berechneAngebot(
   preisliste: Preisliste,
   ab: Date = new Date(),
 ): Angebotssumme {
-  const berechnet: BerechnetePosition[] = positionen.map((p, i) => {
+  // Anzeige-Reihenfolge festlegen: MATERIAL zuerst, dann LEISTUNG (Arbeits-
+  // aufwand), danach eigene Kategorien in ihrer ursprünglichen Reihenfolge. So
+  // steht im gesamten Angebot (Editor, PDF, Word) das Material vor dem Arbeits-
+  // aufwand. Stabil sortiert (Index als Zweitkriterium), damit die Reihenfolge
+  // innerhalb einer Kategorie erhalten bleibt. Weil wir hier sortieren, werden
+  // auch die Positionsnummern (Pos. 1, 2, …) in der Anzeige-Reihenfolge vergeben.
+  const kategorieRang = (k: string): number => (k === "MATERIAL" ? 0 : k === "LEISTUNG" ? 1 : 2);
+  const sortiert = positionen
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => kategorieRang(a.p.kategorie) - kategorieRang(b.p.kategorie) || a.i - b.i)
+    .map((x) => x.p);
+
+  const berechnet: BerechnetePosition[] = sortiert.map((p, i) => {
     // "pauschal" braucht keine Menge — der Einzelpreis ist der Gesamtpreis.
     const menge = p.einheit === "pauschal" ? (p.menge ?? 1) : p.menge;
     const berechenbar = menge !== null && p.einzelpreis !== null;
@@ -153,7 +165,10 @@ export const euro = (betrag: number): string =>
 
 /** Menge samt Einheit in lesbarer Form, z.B. "45 m²" oder "6 Std." */
 export function mengeMitEinheit(menge: number | null, einheit: string | null): string {
-  if (menge === null && einheit === "pauschal") return "pauschal";
+  // Pauschale immer schlicht als "pauschal" ausweisen — die Stückzahl 1 ist nur
+  // intern für die Berechnung (Einzelpreis = Gesamtpreis) und würde als
+  // "1 pauschal" im Kundendokument nur verwirren.
+  if (einheit === "pauschal") return "pauschal";
   if (menge === null) return "—";
   const zahl = menge.toLocaleString("de-DE", { maximumFractionDigits: 2 });
   const beschriftung: Record<string, string> = {

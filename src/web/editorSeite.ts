@@ -152,35 +152,58 @@ export function editorSeite(args: {
 
     /* Positionstabelle: auf dem Handy gestapelte Karten statt Quer-Scrollen */
     .tab-scroll { overflow-x:visible; margin:8px 0 0; padding:0; }
-    table { min-width:0; }
+    /* Tabelle auf dem Handy als Block-Layout — damit die Zeilen als Karten
+       stapeln UND die klebenden Überschriften funktionieren: position:sticky
+       braucht einen umschließenden Block. Jede Kategorie ist ein eigener
+       <tbody> (display:block) und damit ein eigener Klebe-Bereich — so schiebt
+       die nächste Überschrift die vorige beim Weiterscrollen sauber hinaus. */
+    table { display:block; min-width:0; }
     thead { display:none; }
-    #zeilen tr.abschnitt td { display:block; }
-    #zeilen tr.hinzu td { display:block; border-bottom:none; padding:6px 0; }
-    #zeilen tr.zwsumme { display:block; }
-    #zeilen tr.zwsumme td { display:flex; justify-content:space-between; border-bottom:none; }
+    #postab tbody { display:block; }
+    /* Kategorie-Überschriften (Material, Arbeitsaufwand, eigene) bleiben beim
+       Hochscrollen am oberen Rand kleben und werden im Moment des Klebens
+       größer und prominenter — so weiß der Handwerker immer, in welcher
+       Kategorie er sich befindet. Mehrere gestapelte Sticky-Überschriften
+       schieben sich von selbst gegenseitig hinaus (das macht position:sticky). */
+    #postab tr.abschnitt {
+      display:block; position:sticky; top:0; z-index:5;
+    }
+    #postab tr.abschnitt td {
+      display:block; background:var(--akzent); color:#fff; font-weight:700;
+      font-size:15px; padding:11px 12px; border-radius:8px;
+      box-shadow:0 1px 3px rgba(0,0,0,.15);
+      transition:font-size .12s ease, padding .12s ease, box-shadow .12s ease, letter-spacing .12s ease;
+    }
+    #postab tr.abschnitt td.klebt {
+      font-size:19px; padding:16px 14px; letter-spacing:.4px;
+      border-radius:0 0 10px 10px; box-shadow:0 6px 16px rgba(0,0,0,.28);
+    }
+    #postab tr.hinzu td { display:block; border-bottom:none; padding:6px 0; }
+    #postab tr.zwsumme { display:block; }
+    #postab tr.zwsumme td { display:flex; justify-content:space-between; border-bottom:none; }
     /* echte Positionszeilen als Karte */
-    #zeilen tr:not(.abschnitt):not(.hinzu):not(.zwsumme){
+    #postab tr:not(.abschnitt):not(.hinzu):not(.zwsumme){
       display:block; background:#fff; border:1px solid #e3e7ea; border-radius:9px;
       padding:6px 10px 10px; margin:0 0 10px;
     }
-    #zeilen tr:not(.abschnitt):not(.hinzu):not(.zwsumme) td{
+    #postab tr:not(.abschnitt):not(.hinzu):not(.zwsumme) td{
       display:flex; align-items:center; justify-content:space-between; gap:12px;
       border-bottom:none; padding:6px 0; text-align:left;
     }
-    #zeilen td[data-label]::before{
+    #postab td[data-label]::before{
       content:attr(data-label); color:#777; font-size:12px; font-weight:600; flex:0 0 auto;
     }
-    #zeilen td.c-beschr{ display:block; padding-top:2px; }
-    #zeilen td.c-beschr::before{ display:block; margin-bottom:4px; }
-    #zeilen td.c-beschr input{ width:100%; }
-    #zeilen td .pos-menge, #zeilen td .pos-einheit, #zeilen td .pos-preis{ width:auto; flex:0 0 58%; }
-    #zeilen td.zeilensumme{ font-size:15px; font-weight:600; }
-    #zeilen td.c-del{ justify-content:flex-end; padding-top:0; }
-    #zeilen td.c-del .loeschen{ font-size:24px; }
+    #postab td.c-beschr{ display:block; padding-top:2px; }
+    #postab td.c-beschr::before{ display:block; margin-bottom:4px; }
+    #postab td.c-beschr input{ width:100%; }
+    #postab td .pos-menge, #postab td .pos-einheit, #postab td .pos-preis{ width:auto; flex:0 0 58%; }
+    #postab td.zeilensumme{ font-size:15px; font-weight:600; }
+    #postab td.c-del{ justify-content:flex-end; padding-top:0; }
+    #postab td.c-del .loeschen{ font-size:24px; }
     /* Eigene Einheit ("Andere…"): Freitextfeld auf eigene Zeile, volle Breite,
        damit es auf dem Handy nicht überläuft. */
-    #zeilen td.c-einheit{ flex-wrap:wrap; }
-    #zeilen td.c-einheit .pos-einheit-custom{ flex:1 0 100%; width:100%; max-width:none; margin-top:6px; }
+    #postab td.c-einheit{ flex-wrap:wrap; }
+    #postab td.c-einheit .pos-einheit-custom{ flex:1 0 100%; width:100%; max-width:none; margin-top:6px; }
   }
 </style>
 </head>
@@ -231,12 +254,11 @@ export function editorSeite(args: {
   <div class="karte">
     <label style="margin-top:0;">Positionen</label>
     <div class="tab-scroll">
-    <table>
+    <table id="postab">
       <thead><tr>
         <th>Leistung</th><th class="r">Menge</th><th>Einheit</th>
         <th class="r">Einzelpreis</th><th class="r">Gesamt</th><th></th>
       </tr></thead>
-      <tbody id="zeilen"></tbody>
     </table>
     </div>
 
@@ -296,20 +318,29 @@ function zeilensumme(p){
   return Math.round(menge*p.einzelpreis*100)/100;
 }
 
-/** Kategorien in der Reihenfolge ihres ersten Auftretens. */
+/** Kategorien in Anzeige-Reihenfolge: Material zuerst, dann Arbeitsaufwand,
+ *  danach eigene Kategorien in der Reihenfolge ihres ersten Auftretens.
+ *  (Gleiche Logik wie im Backend, damit Editor und PDF/Word übereinstimmen.) */
 function kategorien(){
   const reihe = [];
   for(const p of positionen){ if(!reihe.includes(p.kategorie)) reihe.push(p.kategorie); }
-  return reihe;
+  const rang = k => k==='MATERIAL' ? 0 : (k==='LEISTUNG' ? 1 : 2);
+  const orig = reihe.slice();
+  return reihe.sort((a,b)=> rang(a)-rang(b) || orig.indexOf(a)-orig.indexOf(b));
 }
 
 function render(){
-  const tbody = document.getElementById('zeilen');
-  tbody.innerHTML = '';
+  const tabelle = document.getElementById('postab');
+  // Jede Kategorie bekommt ihren EIGENEN <tbody> — so ist jede Kategorie ihr
+  // eigener Klebe-Bereich: die Überschrift der nächsten Kategorie schiebt die
+  // vorige beim Scrollen sauber hinaus (statt sich nur zu überlagern).
+  tabelle.querySelectorAll('tbody').forEach(tb=>tb.remove());
   const kats = kategorien();
   const mehrere = kats.length > 1;
 
   for(const kat of kats){
+    const tbody = document.createElement('tbody');
+    tbody.className = 'kat-gruppe';
     if(mehrere){
       const tr = document.createElement('tr');
       tr.className='abschnitt';
@@ -334,11 +365,38 @@ function render(){
     trNeu.className='hinzu';
     trNeu.innerHTML = '<td colspan="6"><button class="neu" onclick="neuePosition(\\''+escJs(kat)+'\\')">+ Position'+(mehrere?' unter „'+esc(katName(kat))+'“':'')+' hinzufügen</button></td>';
     tbody.appendChild(trNeu);
+    tabelle.appendChild(tbody);
   }
   // Beschreibungs-Textfelder an ihren Inhalt anpassen (mitwachsen).
-  tbody.querySelectorAll('textarea.pos-beschr').forEach(autoWachs);
+  tabelle.querySelectorAll('textarea.pos-beschr').forEach(autoWachs);
   summen();
+  stickyAktualisieren();
 }
+
+// ── Klebende Kategorie-Überschriften (nur Handy) ──────────
+// Markiert die aktuell an der Oberkante klebende Überschrift mit der Klasse
+// „klebt", die sie im CSS größer/prominenter macht. Erkennung rein über die
+// Position: Die unterste Überschrift, deren Oberkante bereits am oberen
+// Bildrand (top <= 1) angekommen ist, klebt gerade.
+let stickyGeplant = false;
+function stickyAktualisieren(){
+  stickyGeplant = false;
+  const kopfzeilen = document.querySelectorAll('#postab tr.abschnitt td');
+  if(!window.matchMedia('(max-width:640px)').matches){
+    kopfzeilen.forEach(td=>td.classList.remove('klebt'));
+    return;
+  }
+  let aktiv = null;
+  kopfzeilen.forEach(td=>{ if(td.getBoundingClientRect().top <= 1) aktiv = td; });
+  kopfzeilen.forEach(td=>td.classList.toggle('klebt', td===aktiv));
+}
+function stickyAnstossen(){
+  if(stickyGeplant) return;
+  stickyGeplant = true;
+  requestAnimationFrame(stickyAktualisieren);
+}
+window.addEventListener('scroll', stickyAnstossen, {passive:true});
+window.addEventListener('resize', stickyAnstossen);
 
 /** Textfeld auf seinen Inhalt einstellen — wächst mit, statt abzuschneiden. */
 function autoWachs(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
@@ -437,7 +495,11 @@ function neuePosition(kat){
   // Hinter der letzten Position derselben Kategorie einfügen
   let letzte = -1;
   positionen.forEach((p,i)=>{ if(p.kategorie===kat) letzte=i; });
-  const neue = {kategorie:kat,beschreibung:'',menge:null,einheit:'m2',einzelpreis:null};
+  // Arbeitsaufwand startet als Pauschale (Stückzahl 1) — der Handwerker trägt
+  // nur den Preis ein. Material/eigene Kategorien starten neutral mit m².
+  const istLeistung = kat==='LEISTUNG';
+  const neue = {kategorie:kat,beschreibung:'',
+    menge:istLeistung?1:null, einheit:istLeistung?'pauschal':'m2', einzelpreis:null};
   if(letzte>=0) positionen.splice(letzte+1,0,neue); else positionen.push(neue);
   render(); markiereGeaendert();
 }

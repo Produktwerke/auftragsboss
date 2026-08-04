@@ -127,6 +127,17 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 - ✅ Nachtrag per Sprachnachricht (Positionen/Preise ergänzen ohne Word)
 - ✅ Word- + PDF-Export mit Logo, Betriebsfarbe, Zwischensummen je Kategorie
 - ✅ Web-Editor: vorbefüllt, Live-Summen, eigene Kategorien, mobil getestet
+- ✅ **Angebots-Feinschliff (04.08.2026):** (a) **Material steht vor Arbeitsaufwand** —
+  zentral in `angebot/berechnung.ts` sortiert (MATERIAL→LEISTUNG→eigene, stabil), Positions-
+  nummern folgen der Anzeige-Reihenfolge; Editor `kategorien()` spiegelt dieselbe Ordnung, damit
+  Editor/PDF/Word/Nummerierung übereinstimmen. (b) **Arbeitsleistungen sind standardmäßig
+  Pauschale (Menge 1)** — KI-Prompt + Schema in `ai/structure.ts` (m²/Stk/Std nur bei ausdrücklich
+  diktierter Menge; keine aus Raummaßen abgeleiteten m² mehr für Leistungen); neue Leistungs-Position
+  im Editor startet ebenfalls `pauschal`/1; `mengeMitEinheit` zeigt Pauschale schlicht als „pauschal".
+  (c) **Klebende Kategorie-Überschriften auf dem Handy** — jede Kategorie ist ein eigener `<tbody>`
+  (eigener Klebe-Bereich); die Überschrift bleibt oben kleben, wird per `.klebt` größer/prominenter
+  (Signalfarbe), und die nächste schiebt die vorige hinaus. JS `stickyAktualisieren()` togglet `.klebt`
+  über `getBoundingClientRect().top<=1`; nur im Handy-Media-Query (`#postab`, max-width:640px).
 - ✅ **Editor-Verbesserungen (aus Live-Test):** Positionsbeschreibung wächst mit
   (mehrzeilig, kein Überlauf); mehr Einheiten (Liter, kg, Sack, Gebinde, Rolle)
   plus „Andere…" mit Freitext für eine eigene Einheit (im Editor als `string`

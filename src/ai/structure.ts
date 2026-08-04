@@ -34,11 +34,18 @@ export const PositionSchema = z.object({
   menge: z
     .number()
     .nullable()
-    .describe("Zahlenwert der Menge, z.B. 45 für '45 Quadratmeter'. null, wenn im Diktat keine Menge genannt wurde."),
+    .describe(
+      "Zahlenwert der Menge, z.B. 45 für '45 Quadratmeter'. Bei pauschalen Arbeitsleistungen 1. " +
+        "null, wenn keine Menge genannt wurde und die Einheit nicht pauschal ist.",
+    ),
   einheit: z
     .enum(EINHEITEN)
     .nullable()
-    .describe("m2 (Fläche), lfm (laufender Meter), Stk (Stück), Std (Stunden) oder pauschal. null wenn unklar."),
+    .describe(
+      "m2 (Fläche), lfm (laufender Meter), Stk (Stück), Std (Stunden) oder pauschal. Für Arbeitsleistungen " +
+        "(kategorie LEISTUNG) ist 'pauschal' der Standard — m²/Stk/Std nur, wenn ausdrücklich für genau diese " +
+        "Leistung diktiert. Bei MATERIAL die fachlich passende Einheit. null nur, wenn wirklich unklar.",
+    ),
   einzelpreis: z
     .number()
     .nullable()
@@ -234,7 +241,7 @@ Du erhältst das Roh-Transkript einer WhatsApp-Sprachnachricht, die ein Handwerk
 
 4. **Positionen sauber trennen.** Jede Leistung wird eine eigene Position mit Menge und Einheit. Ordne sie in der Reihenfolge, in der ein Fachmann sie ausführen würde (z.B. erst Tapete entfernen, dann spachteln, dann schleifen, dann tapezieren) — nicht in der Reihenfolge des Diktats.
 
-5. **Mengen ableiten, aber ehrlich kennzeichnen.** Wenn eine Menge nur indirekt genannt wurde (z.B. Raumfläche für Deckenarbeiten), darfst du sie übernehmen und setzt "mengeUnsicher": true. Rechne keine komplizierten Wandflächen aus, wenn die nötigen Maße fehlen — dann Menge null und ein Eintrag in "rueckfragen".
+5. **Arbeitsleistungen sind standardmäßig eine Pauschale.** Jede Position mit kategorie LEISTUNG bekommt einheit "pauschal" und menge 1 — ES SEI DENN, für genau diese Leistung wurde ausdrücklich eine Menge samt Einheit diktiert (z.B. "45 Quadratmeter Decke streichen", "6 Stunden", "12 laufende Meter Sockelleiste"). Nur dann übernimm die genannte Menge und Einheit. Leite für Arbeitsleistungen NIEMALS Quadratmeter, Stück o.ä. aus Raummaßen ab — der Handwerker kalkuliert die Leistung als Ganzes und trägt einen Pauschalpreis ein. Alle Maße aus dem Diktat gehören nach "aufmassNotizen", nicht in die Positionsmenge. Bei pauschalen Leistungen bleibt "mengeUnsicher" false.
 
 5. **Material ergänzen — als sichtbaren Vorschlag.** Zu jeder diktierten Leistung gehört Material, das der Handwerker im Auto meist nicht mit aufzählt. Ergänze es als Positionen mit kategorie "MATERIAL" und vorschlag true. Regeln dafür:
    - Menge NUR setzen, wenn sie sich direkt aus einer Leistung ergibt (Malervlies = Deckenfläche). Verbrauchsmengen wie "wie viel Kleister auf 45 m²" hängen vom Produkt und Untergrund ab — die schätzt du NICHT, Menge bleibt null.

@@ -132,7 +132,10 @@ export function editorSeite(args: {
   .loeschen { background:none; border:none; color:#c0392b; font-size:20px; cursor:pointer;
               padding:0 4px; line-height:1; }
   .loeschen:hover { color:#e74c3c; }
-  .aktionen { position:sticky; bottom:0; background:#fff; border-radius:12px; padding:14px 16px;
+  /* z-index über den klebenden Kategorie-Überschriften (z-index:5), damit die
+     Überschriften beim Scrollen HINTER dieser unteren Leiste verschwinden,
+     nicht darüber. */
+  .aktionen { position:sticky; bottom:0; z-index:20; background:#fff; border-radius:12px; padding:14px 16px;
               box-shadow:0 -2px 10px rgba(0,0,0,.08); }
   .aktionen .zeile1 { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
   .dl-label { font-size:14px; font-weight:600; color:#555; }

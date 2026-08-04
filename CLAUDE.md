@@ -120,6 +120,41 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 04.08.2026 — alles live auf VPS + Website:**
+> - **E-Mail komplett überarbeitet** (`email/templates.ts`): EINE einheitliche Vorlage (`dokumentMail`)
+>   für alle Mails — Anthrazit-Kopfbanner mit Logo, Outlook-fester Tabellen-Button „Jetzt bearbeiten",
+>   Vorschau, „Vor dem Versand prüfen", Signatur mit Logo. **Logo als CID-Anhang**
+>   (`src/assets/auftragsboss-logo-mail.png`, `logoAnhang()`) → sichtbar ohne „Bilder anzeigen".
+>   **E-Mail nur noch bei gesetztem Haken `mailStandard`** (kein ungefragter Auto-Versand mehr); der
+>   Editor-Versand nutzt dieselbe volle Vorlage (`anhangFormat` pdf/word steuert nur den Anhang-Hinweis).
+>   Frühere kurze `dateiMail` wieder entfernt.
+> - **Keine Gedankenstriche** in Nutzertexten (E-Mail + WhatsApp); die KI ist im Systemprompt
+>   (`ai/structure.ts`) angewiesen, keine zu erzeugen.
+> - **Editor:** Kategorie-Kopfzeile trägt Name + Spaltenlabels in EINER blauen Zeile (keine separate
+>   „Leistung"-Zeile; Name größer, weight 700; `td.k-name`/`td.k-sp`); Einheit „pauschal" setzt Menge
+>   automatisch auf 1; Zurück-Link zu Einstellungen für Test-Konten entfernt.
+> - **WhatsApp-Erstkontakt** (Test + Betrieb) enthält den **KI-Ersthinweis** (EU AI Act):
+>   „AuftragsBoss ist ein KI-gestützter Dienst …".
+> - **Datenschutz / AI Act:** `marketing/datenschutz.html` ergänzt — 6: KI-Kennzeichnung; 6.1: zwei
+>   Transkriptionsmodelle DESSELBEN Anbieters (OpenAI, kein zweiter Anbieter), Original-Audio nur im
+>   Arbeitsspeicher, nicht dauerhaft gespeichert; 6.3: Anbieterfristen (OpenAI/Anthropic); **6.4 NEU**
+>   interne Qualitätsauswertung (Art. 6 f, Widerspruch, kein Trainings-Transfer); **6.5 NEU** keine
+>   Biometrie/Stimmerkennung, keine Art.-22-Entscheidung. Passend im Code: **`kiOriginalJson`
+>   datensparsam** (nur Positionen, keine Namen/Anschriften/Freitexte); **Admin-Lernauswertung
+>   `/admin/<TOKEN>` zeigt keine Kundennamen mehr** (nur Gewerk/Datum + Positionen).
+> - **Rechtstexte + Website live** (IONOS `public`): `datenschutz.html` (Vollfassung) + `impressum.html`
+>   (Tel. **+49 174 936 4823**, **kontakt@auftragsboss.de**). „Kostenlos testen"-Button oben rechts
+>   entfernt. Kontakt-Adresse bewusst `kontakt@auftragsboss.de` (nicht deutsche-automotive.de) —
+>   Postfach/Weiterleitung bei IONOS einrichten.
+> - **Tägliches DB-Backup LIVE** (`scripts/backup.sh` → Cron 03:15 auf dem VPS, `/root/backups`, 14 Tage,
+>   DB via sqlite3 `.backup` + `uploads/`). **Offen: Kopie außer Haus** (Backups liegen nur auf dem VPS
+>   → Memory-Notiz `offsite-backup-todo`).
+> - **Robustheit:** `prisma.vorgang.update` → `updateMany` (kein P2025-Absturz mehr, wenn ein Vorgang
+>   während der Verarbeitung wegfällt, z. B. Test-Konto-Reset).
+> - ⏳ **Extern offen:** Meta-Firmenverifizierung → dann Produktionsnummer **+49 174 936 4823**
+>   einbinden. **Nächste große Themen:** Selbst-Registrierung, Stripe/Abo (schaltet u. a. den
+>   Empfehlungs-Gratis-Monat frei), PostgreSQL, Offsite-Backup.
+
 **Fertig und getestet:**
 - ✅ Sprachnachricht → Angebot (echte Pipeline mit Dirks Testaudio verifiziert)
 - ✅ Doppelte Transkription, Zusammenführung, Hörfehler-Korrektur
@@ -156,7 +191,8 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
   gestapelte Karten, kein Quer-Scrollen; Desktop unverändert).
 - ✅ **Feedback** über Einstellungsseite UND WhatsApp-Stichwort (Tabelle `Feedback`).
 - ✅ **Lern-Auswertung** `/admin/<ADMIN_TOKEN>`: KI-Original vs. finales Angebot,
-  Bearbeitungsquote — nur mit geheimem Token erreichbar (echte Kundendaten!).
+  Bearbeitungsquote — nur mit geheimem Token erreichbar. **Datensparsam** (seit 04.08.2026):
+  nur Positionen, keine Kundennamen/Anschriften (`kiOriginalJson` = nur Positionen).
 - ✅ **Empfehlungsprogramm**: persönlicher Einladungslink, Landingpage +
   Lead-Erfassung (`Empfehlung`), WhatsApp-Aufforderung nach dem 3. Angebot.
   Offen bleibt nur die Einlösung des Gratis-Monats (braucht Abo/Abrechnung).

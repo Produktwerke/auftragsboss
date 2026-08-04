@@ -259,6 +259,9 @@
      geltenden Datenschutzinformationen und Nutzungsbedingungen dieser Anbieter.</p>
 
   <h2 id="a6">6. KI-gestützte Transkription und Strukturierung</h2>
+  <p>AuftragsBoss ist ein KI-gestützter Dienst. Sprach- und Textnachrichten werden automatisiert
+     verarbeitet, um daraus ein Angebot oder Protokoll zu erstellen; auf den Einsatz von KI wird
+     bereits bei der ersten Interaktion über WhatsApp hingewiesen.</p>
   <h3>6.1 Transkription durch OpenAI</h3>
   <p>Zur Umwandlung von Sprachnachrichten in Text übermitteln wir die hierfür erforderlichen Audio-
      oder Nachrichteninhalte an einen API-Dienst von OpenAI. Vertragspartner für Kunden mit Sitz im
@@ -268,6 +271,13 @@
      sowie technische Begleitdaten, soweit dies für die Ausführung der API-Anfrage erforderlich ist.
      Zweck ist ausschließlich die Umwandlung der gesprochenen Angaben in Text und die Bereitstellung
      der Transkription für die nachfolgende Angebotserstellung.</p>
+  <p>Die Sprachnachricht wird dabei von zwei Transkriptionsmodellen <strong>desselben Anbieters</strong>
+     (OpenAI: „whisper-1" und „gpt-4o-transcribe") verarbeitet, um Erkennungslücken auszugleichen; ein
+     weiterer externer Transkriptionsanbieter wird nicht eingesetzt.</p>
+  <p>Die ursprüngliche Sprachnachricht wird bei uns nur <strong>vorübergehend im Arbeitsspeicher</strong>
+     verarbeitet und nach der Transkription <strong>nicht dauerhaft gespeichert</strong>. Dauerhaft
+     gespeichert werden das erzeugte Transkript und die daraus strukturierten Angebotsdaten zusammen mit
+     dem jeweiligen Vorgang (siehe Abschnitt 13).</p>
   <h3>6.2 Strukturierung durch Anthropic („Claude")</h3>
   <p>Die Transkription oder unmittelbar übermittelte Textnachricht wird anschließend über die
      kommerzielle API von Anthropic PBC, USA, mit dem Modell „Claude" verarbeitet. Zweck ist die
@@ -288,9 +298,36 @@
      zum Training oder zur Verbesserung der generativen Modelle der Anbieter verwendet. Vertraglich
      oder gesetzlich erforderliche Verarbeitungen, insbesondere zur Sicherheit, Missbrauchsbekämpfung
      oder Erfüllung rechtlicher Pflichten, bleiben unberührt.</p>
+  <p>Zu den Aufbewahrungsregeln der Anbieter: Für den Audio-Transkriptionsendpunkt von OpenAI wird
+     derzeit keine reguläre Inhaltsaufbewahrung ausgewiesen; andere OpenAI-Funktionen können Inhalte
+     begrenzt (bis zu 30 Tage) zu Sicherheits- und Missbrauchszwecken speichern. Anthropic löscht
+     API-Ein- und -Ausgaben standardmäßig innerhalb von 30 Tagen, sofern keine abweichende Vereinbarung
+     oder gesetzliche Ausnahme greift. Diese Anbieterfristen sind von unseren eigenen Speicherfristen
+     (Abschnitt 13) getrennt zu betrachten.</p>
   <p>Die KI-Ausgabe dient als Arbeitsgrundlage. Der Handwerksbetrieb kann und soll das erzeugte Angebot
      oder Protokoll im Web-Editor prüfen, ändern und vervollständigen, bevor es verwendet oder an einen
      Endkunden versendet wird.</p>
+  <h3>6.4 Interne Qualitätsauswertung</h3>
+  <p>Um die Erkennungs- und Strukturierungsqualität des Dienstes zu verbessern, vergleichen wir intern
+     die von der KI ursprünglich vorgeschlagenen <strong>Positionen</strong> mit der vom Handwerksbetrieb
+     geprüften und korrigierten Endfassung (z. B. „45 m² statt 40 m²"). Für diese Auswertung werden
+     bewusst <strong>nur die Positions- und Korrekturdaten</strong> herangezogen; direkte Identifikatoren
+     wie Kundenname, Anschrift und Anschreiben-Freitexte werden in die Auswertungs-Momentaufnahme nicht
+     übernommen. Der Zugriff auf diese interne Auswertung ist auf einen geheimen, nur dem Team bekannten
+     Zugang beschränkt.</p>
+  <p>Rechtsgrundlage ist unser berechtigtes Interesse an der Verbesserung und Qualitätssicherung des
+     Dienstes (Art. 6 Abs. 1 lit. f DSGVO). Für diese Auswertung werden <strong>keine personenbezogenen
+     Verbesserungsdaten an OpenAI oder Anthropic zum Training von deren Modellen übermittelt</strong>. Sie
+     können dieser Verarbeitung aus Gründen Ihrer besonderen Situation jederzeit widersprechen (Art. 21
+     DSGVO); wenden Sie sich dazu an die in Abschnitt 15 genannten Kontaktdaten.</p>
+  <h3>6.5 Keine biometrische Auswertung, keine automatisierte Entscheidung</h3>
+  <p>Die Sprachaufnahmen werden ausschließlich zur Umwandlung gesprochener Inhalte in Text verarbeitet.
+     Eine Identifizierung anhand der Stimme, die Erstellung eines Stimmprofils, eine Emotionserkennung
+     oder eine sonstige biometrische Auswertung findet <strong>nicht</strong> statt.</p>
+  <p>Die KI trifft <strong>keine rechtlich verbindlichen Entscheidungen</strong> über Endkunden. Das
+     erzeugte Angebot oder Protokoll ist ein Entwurf, der vom Handwerksbetrieb geprüft, geändert und
+     freigegeben wird. Eine ausschließlich automatisierte Entscheidung im Sinne von Art. 22 DSGVO
+     findet nicht statt.</p>
 
   <h2 id="a7">7. Angebotserstellung, Speicherung und Web-Editor</h2>
   <h3>7.1 Erstellung und Speicherung</h3>

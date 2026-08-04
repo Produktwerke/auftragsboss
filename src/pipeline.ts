@@ -110,7 +110,8 @@ export async function verarbeiteNachricht(args: {
     if (handwerker.testNachrichten === 0) {
       await sendeWhatsAppText(
         vonNummer,
-        `👋 Willkommen beim AuftragsBoss-Test!\n\nSprich einfach eine kurze *Sprachnachricht*: Kunde, Adresse und was gemacht werden soll. Ich mache in Sekunden ein fertiges Angebot draus.\n\nDu hast ${direkttestConfig().DIREKTTEST_GRATIS_ANGEBOTE} Gratis-Tests frei. 🎙️`,
+        `🤖 AuftragsBoss ist ein KI-gestützter Dienst. Deine Sprach- oder Textnachricht wird automatisiert verarbeitet, um daraus ein Angebot zu erstellen.\n\n` +
+          `👋 Willkommen beim AuftragsBoss-Test!\n\nSprich einfach eine kurze *Sprachnachricht*: Kunde, Adresse und was gemacht werden soll. Ich mache in Sekunden ein fertiges Angebot draus.\n\nDu hast ${direkttestConfig().DIREKTTEST_GRATIS_ANGEBOTE} Gratis-Tests frei. 🎙️`,
       );
       // kein return — die eigentliche Nachricht wird gleich weiterverarbeitet
     }
@@ -174,7 +175,8 @@ export async function verarbeiteNachricht(args: {
     const token = await einstellungenTokenBereit(prisma, handwerker);
     await sendeWhatsAppText(
       vonNummer,
-      `👋 Willkommen bei AuftragsBoss, ${handwerker.name}!\n\nDamit dein Logo und deine Adresse gleich auf dem Angebot stehen, richte einmal deinen Betrieb ein:\n${einstellungenLink(token)}\n\nDanach einfach eine Sprachnachricht mit den Auftragsdetails schicken, ich mache ein fertiges Angebot daraus. 🎙️`,
+      `🤖 AuftragsBoss ist ein KI-gestützter Dienst. Deine Sprach- oder Textnachricht wird automatisiert verarbeitet, um daraus ein Angebot oder Protokoll zu erstellen.\n\n` +
+        `👋 Willkommen bei AuftragsBoss, ${handwerker.name}!\n\nDamit dein Logo und deine Adresse gleich auf dem Angebot stehen, richte einmal deinen Betrieb ein:\n${einstellungenLink(token)}\n\nDanach einfach eine Sprachnachricht mit den Auftragsdetails schicken, ich mache ein fertiges Angebot daraus. 🎙️`,
     );
     // Kein return: Wir verarbeiten die eigentliche Nachricht gleich weiter.
   }
@@ -377,13 +379,12 @@ export async function erstelleDokument(args: {
       gewerk: daten.gewerk,
       objekt: daten.objekt,
       positionenJson: JSON.stringify(summe.positionen),
-      // KI-Original festhalten (unveränderlich) — Basis für die Lern-Auswertung.
+      // KI-Original festhalten (unveränderlich) — Basis für die interne
+      // Qualitätsauswertung. DATENSPARSAM: nur die Positionen, KEINE direkten
+      // Identifikatoren (Kundenname, Anschrift, Anschreiben-Freitexte). So
+      // vergleicht die Auswertung nur abstrakte Korrekturen (z.B. 40 m² -> 45 m²).
       kiOriginalJson: JSON.stringify({
         positionen: summe.positionen,
-        kunde: { name: daten.kunde.name, strasse: daten.kunde.strasse, plzOrt: daten.kunde.plzOrt },
-        objekt: daten.objekt,
-        einleitung: daten.einleitung,
-        schlusstext: daten.schlusstext,
       }),
       aufmassNotizen: daten.aufmassNotizen,
       besonderheiten: daten.besonderheiten,

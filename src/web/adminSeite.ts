@@ -4,8 +4,9 @@
 // der Handwerker im Editor DARAUS gemacht hat. So sieht das Team auf einen
 // Blick, wo die KI oft danebenliegt — die Grundlage zum Nachschärfen.
 //
-// Achtung: enthält echte Kundendaten. Zugang bleibt streng auf den Admin-Link
-// beschränkt; für den Echtbetrieb aggregiert/anonymisiert weiterdenken.
+// Datensparsam: gezeigt werden NUR die Positionen (KI-Original vs. final),
+// keine Kundennamen, Anschriften oder Anschreiben-Freitexte. Zugang bleibt
+// dennoch streng auf den geheimen Admin-Link beschränkt.
 import type { Dokument } from "@prisma/client";
 
 interface Pos {
@@ -17,10 +18,6 @@ interface Pos {
 }
 interface Snapshot {
   positionen: Pos[];
-  kunde: { name: string | null; strasse: string | null; plzOrt: string | null };
-  objekt: string | null;
-  einleitung: string;
-  schlusstext: string;
 }
 
 function escapeHtml(s: string): string {
@@ -58,13 +55,12 @@ export function adminSeite(args: { dokumente: Dokument[] }): string {
     .map((e) => {
       const d = e.d;
       const orig = e.orig!;
-      const textGeaendert = orig.einleitung !== d.einleitung || orig.schlusstext !== d.schlusstext;
       return `
     <div class="dok">
       <div class="dok-kopf">
         <div>
           <span class="nr">${escapeHtml(d.nummer)}${d.version > 1 ? ` <span class="fassung">Fassung ${d.version}</span>` : ""}</span>
-          <span class="meta">${escapeHtml(d.kundeName ?? "—")}${d.gewerk ? " · " + escapeHtml(d.gewerk) : ""} · ${datumDE(d.datum)}</span>
+          <span class="meta">${d.gewerk ? escapeHtml(d.gewerk) + " · " : ""}${datumDE(d.datum)}</span>
         </div>
         <span class="badge ${e.geaendert ? "b-edit" : "b-gleich"}">${e.geaendert ? "bearbeitet" : "unverändert"}</span>
       </div>
@@ -78,7 +74,6 @@ export function adminSeite(args: { dokumente: Dokument[] }): string {
           ${posListe(e.finalPos)}
         </div>
       </div>
-      ${textGeaendert ? `<div class="hinweis">✎ Anschreiben/Schlusstext wurde geändert</div>` : ""}
     </div>`;
     })
     .join("");
@@ -122,7 +117,7 @@ export function adminSeite(args: { dokumente: Dokument[] }): string {
 <body>
 <div class="rahmen">
   <h1>Lern-Auswertung</h1>
-  <p class="unter">KI-Original gegenüber dem, was der Handwerker daraus gemacht hat. Nur intern — enthält echte Kundendaten.</p>
+  <p class="unter">KI-Original gegenüber dem, was der Handwerker daraus gemacht hat. Nur intern; ohne Kundennamen und Anschriften, nur Positionen.</p>
 
   <div class="kennz">
     <div class="kachel"><div class="wert">${eintraege.length}</div><div class="lab">Angebote mit KI-Original</div></div>

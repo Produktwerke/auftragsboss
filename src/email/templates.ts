@@ -244,6 +244,8 @@ export function dokumentMail(args: {
   datum: Date;
   gewaehrleistungAblauf?: Date;
   wordDateiname?: string;
+  /** Format des Anhangs — steuert nur den Hinweistext ("PDF" vs "Word-Datei"). */
+  anhangFormat?: "pdf" | "word";
   version?: number;
   bearbeitenUrl?: string;
   kundenUrl?: string;
@@ -256,6 +258,7 @@ export function dokumentMail(args: {
     datum,
     gewaehrleistungAblauf,
     wordDateiname,
+    anhangFormat = "word",
     version = 1,
     bearbeitenUrl,
   } = args;
@@ -309,14 +312,19 @@ export function dokumentMail(args: {
        </div>`
     : "";
 
+  const istPdfAnhang = anhangFormat === "pdf";
   const anhangKasten = wordDateiname
     ? box(
         `<strong style="color:${INK};">📎 ${escapeHtml(wordDateiname)}</strong><br>
-         Word-Datei im Anhang. Dort ${
-           summe.vollstaendig ? "prüfen und" : "die Preise eintragen,"
-         } bei Bedarf anpassen, dann als PDF speichern und an den Kunden schicken.
          ${
-           !summe.vollstaendig && istAngebot
+           istPdfAnhang
+             ? "PDF im Anhang, fertig zum Weiterleiten an den Kunden."
+             : `Word-Datei im Anhang. Dort ${
+                 summe.vollstaendig ? "prüfen und" : "die Preise eintragen,"
+               } bei Bedarf anpassen, dann als PDF speichern und an den Kunden schicken.`
+         }
+         ${
+           !summe.vollstaendig && istAngebot && !istPdfAnhang
              ? `<br><span style="color:${MUTED};font-size:13px;">Schneller geht's per Sprachnachricht:
                 Preise und Mengen einfach durchsagen, ich rechne und schicke die Datei neu.</span>`
              : ""
@@ -389,35 +397,6 @@ export function dokumentMail(args: {
   </div>
 </div>`;
 
-  return { betreff, html };
-}
-
-/** Gebrandete, aber kurze Mail für den Editor-Versand („Datei auch als E-Mail
- *  senden"). Gleicher Look wie die automatische Mail (Banner + Signatur mit
- *  Logo), aber nur ein kurzer Text — hier geht es um die exportierte Datei im
- *  Anhang, nicht um ein neues „Angebot ist fertig". Braucht denselben
- *  Logo-Anhang (logoAnhang()) wie die anderen Mails. */
-export function dateiMail(args: {
-  art: string;
-  nummer: string;
-  kunde?: string | null;
-  format: "pdf" | "word";
-}): { betreff: string; html: string } {
-  const bezeichnung = args.art === "ANGEBOT" ? "Angebot" : "Protokoll";
-  const fuer = args.kunde ? ` für ${args.kunde}` : "";
-  const betreff = `${bezeichnung} ${args.nummer}${fuer}`;
-  const formatLabel = args.format === "pdf" ? "PDF" : "Word-Datei";
-  const html = `
-<div style="${RAHMEN}">
-  ${kopfBanner}
-  <div style="padding:24px;">
-    <h2 style="font-size:21px;color:${INK};margin:4px 0 2px;font-weight:800;">${bezeichnung} ${escapeHtml(args.nummer)}</h2>
-    <div style="height:3px;width:44px;background:${SIGNAL};border-radius:2px;margin:0 0 14px;"></div>
-    <p style="font-size:14px;color:${INK};margin:0 0 6px;">Hallo,</p>
-    <p style="font-size:14px;color:${INK};margin:0;">im Anhang findest du dein ${bezeichnung} <strong>${escapeHtml(args.nummer)}</strong>${escapeHtml(fuer)} als ${formatLabel}.</p>
-    ${signatur}
-  </div>
-</div>`;
   return { betreff, html };
 }
 

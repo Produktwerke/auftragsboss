@@ -17,12 +17,12 @@ import { adminSeite } from "./adminSeite.js";
 import { einladungSeite } from "./einladungSeite.js";
 import { dokumentZuDaten, editorZuPositionen, type EditorPosition } from "./dokumentDaten.js";
 import { effektivePreisliste, einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
-import { einstellungenLink } from "./tokens.js";
+import { bearbeitenLink, einstellungenLink } from "./tokens.js";
 import { ladeLogo } from "../betrieb/logo.js";
 import { speichereLogo, entferneLogo, LogoFehler } from "../betrieb/logoUpload.js";
 import { smtpKonfiguriert } from "../config.js";
 import { sendeMail, WORD_MIME } from "../email/send.js";
-import { dateiMail, logoAnhang } from "../email/templates.js";
+import { dokumentMail, logoAnhang } from "../email/templates.js";
 
 interface SpeicherKoerper {
   kundeName?: string;
@@ -261,13 +261,19 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
         mime = WORD_MIME;
       }
 
-      // Gebrandete Mail im AuftragsBoss-Look (Banner + Signatur mit Logo),
-      // gleiches Design wie die automatische Mail — nur kurzer Text.
-      const { betreff, html } = dateiMail({
-        art: dokument.art,
+      // Volle AuftragsBoss-Vorlage — exakt dasselbe Design wie die automatische
+      // Mail (Banner, "Online bearbeiten"-Button, Vorschau, Signatur mit Logo).
+      // Der Anhang-Hinweis passt sich an PDF/Word an.
+      const { betreff, html } = dokumentMail({
+        daten,
+        summe,
+        preisliste,
         nummer: dokument.nummer,
-        kunde: dokument.kundeName,
-        format: istPdf ? "pdf" : "word",
+        datum: dokument.datum,
+        version: dokument.version,
+        bearbeitenUrl: bearbeitenLink(dokument.bearbeitenToken),
+        wordDateiname: anhangName,
+        anhangFormat: istPdf ? "pdf" : "word",
       });
 
       try {

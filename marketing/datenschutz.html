@@ -14,18 +14,39 @@
   body{margin:0;background:var(--bg);color:var(--ink);line-height:1.65;
        font-family:'Inter',"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
        -webkit-font-smoothing:antialiased;}
-  .wrap{max-width:760px;margin:0 auto;padding:0 22px 90px;}
+  .wrap{max-width:780px;margin:0 auto;padding:0 22px 90px;}
   header{display:flex;align-items:center;gap:11px;padding:22px 0;border-bottom:1px solid var(--hair);}
   header img{width:32px;height:32px;border-radius:7px;display:block;}
   header .brand{font-weight:800;font-size:19px;letter-spacing:.01em;}
   header .brand b{color:var(--signal);}
-  h1{font-size:30px;margin:34px 0 26px;font-weight:800;}
-  h2{font-size:16px;margin:28px 0 6px;color:var(--ink);font-weight:700;}
-  p,li{color:var(--muted);margin:6px 0;}
-  ul{margin:6px 0;padding-left:20px;}
-  address{font-style:normal;color:var(--ink);margin:4px 0;}
+  h1{font-size:30px;margin:34px 0 6px;font-weight:800;}
+  .sub{color:var(--muted);margin:0 0 20px;font-size:15px;}
+  h2{font-size:17px;margin:34px 0 8px;color:var(--ink);font-weight:700;scroll-margin-top:16px;}
+  h3{font-size:14px;margin:18px 0 4px;color:var(--ink);font-weight:700;}
+  p,li{color:var(--muted);margin:8px 0;}
+  ul{margin:8px 0;padding-left:20px;}
+  address{font-style:normal;color:var(--ink);margin:4px 0;line-height:1.7;}
   a{color:var(--signal);word-break:break-word;}
-  .stand{color:#6B7079;font-size:13px;margin-top:24px;}
+  /* Verantwortlicher-Block */
+  .box{background:#14161A;border:1px solid var(--hair);border-radius:10px;padding:16px 18px;margin:16px 0;}
+  /* Inhaltsverzeichnis */
+  .toc{background:#14161A;border:1px solid var(--hair);border-radius:10px;padding:14px 20px;margin:18px 0 8px;}
+  .toc .t{font-weight:700;color:var(--ink);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;}
+  .toc ol{margin:0;padding-left:22px;}
+  .toc li{margin:3px 0;}
+  .toc a{color:var(--muted);text-decoration:none;}
+  .toc a:hover{color:var(--signal);}
+  /* Hervorgehobene Rechte (Widerspruch / Widerruf) */
+  .hebung{background:rgba(255,196,38,.06);border:1px solid #33301c;border-left:3px solid var(--signal);
+          border-radius:8px;padding:12px 16px;margin:12px 0;}
+  .hebung b{color:var(--ink);}
+  /* Empfänger-Tabelle */
+  .tab-scroll{overflow-x:auto;margin:12px 0;}
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:520px;}
+  th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--hair);}
+  th{color:var(--ink);font-weight:700;background:#14161A;}
+  td{color:var(--muted);}
+  .stand{color:#6B7079;font-size:13px;margin-top:26px;}
   .back{display:inline-block;margin-top:12px;color:var(--muted);text-decoration:none;font-size:14px;}
   .back:hover{color:var(--ink);}
 </style>
@@ -37,66 +58,477 @@
     <span class="brand">AUFTRAGS<b>BOSS</b></span>
   </header>
 
-  <h1>Datenschutzerklärung</h1>
+  <h1>Datenschutzerklärung für AuftragsBoss</h1>
+  <p class="sub">(nachfolgend „Datenschutzerklärung")</p>
 
-  <h2>1. Verantwortlicher</h2>
-  <address>
-    DAG Deutsche Automotive GmbH<br>
-    Augsburger Straße 746, 70329 Stuttgart<br>
-    E-Mail: <a href="mailto:kontakt@deutsche-automotive.de">kontakt@deutsche-automotive.de</a>
-  </address>
-  <p>AuftragsBoss ist ein Angebot der DAG Deutsche Automotive GmbH.</p>
+  <div class="toc">
+    <div class="t">Inhaltsverzeichnis</div>
+    <ol>
+      <li><a href="#a1">Geltungsbereich, Anbieter und datenschutzrechtliche Rollen</a></li>
+      <li><a href="#a2">Gegenstand des Datenschutzes, betroffene Personen, Datenkategorien und Rechtsgrundlagen</a></li>
+      <li><a href="#a3">Server-Logdaten</a></li>
+      <li><a href="#a4">Kontaktaufnahme per E-Mail</a></li>
+      <li><a href="#a5">Nutzung von AuftragsBoss über WhatsApp</a></li>
+      <li><a href="#a6">KI-gestützte Transkription und Strukturierung</a></li>
+      <li><a href="#a7">Angebotserstellung, Speicherung und Web-Editor</a></li>
+      <li><a href="#a8">Versand von Angeboten und Protokollen per E-Mail</a></li>
+      <li><a href="#a9">Kostenloser Test „Direkt testen"</a></li>
+      <li><a href="#a10">Website, Cookies, Tracking und Schriftarten</a></li>
+      <li><a href="#a11">Empfänger und Auftragsverarbeiter</a></li>
+      <li><a href="#a12">Datenübermittlungen in Drittländer</a></li>
+      <li><a href="#a13">Speicherdauer und Löschung</a></li>
+      <li><a href="#a14">Rechte betroffener Personen</a></li>
+      <li><a href="#a15">Kontakt und Beschwerderecht bei der Aufsichtsbehörde</a></li>
+      <li><a href="#a16">Datensicherheit</a></li>
+      <li><a href="#a17">Änderungen dieser Datenschutzerklärung</a></li>
+    </ol>
+  </div>
 
-  <h2>2. Hosting</h2>
-  <p>Diese Website wird bei der IONOS SE, Elgendorfer Straße 57, 56410 Montabaur, gehostet.
-     IONOS verarbeitet in unserem Auftrag Server-Logfiles, die technisch für den Betrieb und die
-     Sicherheit der Website erforderlich sind. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO
-     (berechtigtes Interesse an einem sicheren und störungsfreien Betrieb). Mit IONOS besteht ein
-     Vertrag zur Auftragsverarbeitung (Art. 28 DSGVO).</p>
+  <div class="box">
+    <strong>Verantwortlicher Anbieter</strong>
+    <address>
+      DAG Deutsche Automotive GmbH<br>
+      Augsburger Straße 746, 70329 Stuttgart, Deutschland<br>
+      Geschäftsführer: Dirk Beer<br>
+      Amtsgericht Stuttgart, HRB 736071<br>
+      USt-IdNr.: DE275851108<br>
+      E-Mail: <a href="mailto:kontakt@deutsche-automotive.de">kontakt@deutsche-automotive.de</a><br>
+      Website: auftragsboss.de · Anwendung: api.auftragsboss.de
+    </address>
+  </div>
 
-  <h2>3. Server-Logfiles</h2>
-  <p>Beim Aufruf dieser Website werden automatisch Informationen im Server-Logfile gespeichert,
-     die Ihr Browser übermittelt, insbesondere:</p>
+  <p>Diese Datenschutzerklärung informiert über die Verarbeitung personenbezogener Daten bei der
+     Nutzung der Website auftragsboss.de, der zugehörigen Anwendungs- und Serverbereiche, insbesondere
+     api.auftragsboss.de, der Kommunikation über WhatsApp sowie der Funktionen zur Erstellung,
+     Bearbeitung, Speicherung und Übermittlung von Angeboten und Protokollen. Sie gilt für
+     Handwerksbetriebe und deren Beschäftigte, Website-Besucher, Kommunikationspartner sowie für
+     Personen, deren Daten durch einen Handwerksbetrieb in AuftragsBoss verarbeitet werden.</p>
+  <p>Personenbezogene Daten werden ausschließlich im Rahmen der anwendbaren Datenschutzvorschriften
+     verarbeitet, insbesondere der Datenschutz-Grundverordnung der Europäischen Union („DSGVO"), des
+     Bundesdatenschutzgesetzes („BDSG") und weiterer einschlägiger Vorschriften.</p>
+
+  <h2 id="a1">1. Geltungsbereich, Anbieter und datenschutzrechtliche Rollen</h2>
+  <h3>1.1 Anbieter und Verantwortlicher</h3>
+  <p>Verantwortlicher im Sinne von Art. 4 Nr. 7 DSGVO für den Betrieb der öffentlich zugänglichen
+     Website, die Verwaltung der Daten der nutzenden Handwerksbetriebe, die eigene Vertrags- und
+     Kundenkommunikation sowie die technischen Betriebs- und Sicherheitsdaten ist:</p>
+  <p>DAG Deutsche Automotive GmbH, Augsburger Straße 746, 70329 Stuttgart, Deutschland.
+     Geschäftsführer: Dirk Beer. Amtsgericht Stuttgart, HRB 736071. USt-IdNr.: DE275851108.
+     Kontakt: kontakt@deutsche-automotive.de.</p>
+  <h3>1.2 AuftragsBoss als Auftragsverarbeiter für Endkundendaten</h3>
+  <p>Handwerksbetriebe nutzen AuftragsBoss, um aus Sprach- oder Textnachrichten Angebote oder
+     Protokolle für ihre eigenen Auftraggeber und Kunden zu erstellen. Soweit dabei personenbezogene
+     Daten dieser Endkunden verarbeitet werden, insbesondere Name, Anschrift, Objektangaben oder
+     Leistungsbeschreibungen, ist grundsätzlich der jeweilige Handwerksbetrieb der datenschutzrechtlich
+     Verantwortliche.</p>
+  <p>Die DAG Deutsche Automotive GmbH verarbeitet diese Daten insoweit im Auftrag des Handwerksbetriebs
+     als Auftragsverarbeiter gemäß Art. 28 DSGVO. Die Verarbeitung erfolgt nach den dokumentierten
+     Weisungen des Handwerksbetriebs und auf Grundlage einer Vereinbarung zur Auftragsverarbeitung
+     („AVV"), die für die Nutzung von AuftragsBoss bereitgestellt wird. Der Handwerksbetrieb bleibt
+     insbesondere dafür verantwortlich, dass für die Erhebung, Übermittlung und weitere Verarbeitung
+     der Endkundendaten eine gültige Rechtsgrundlage besteht und die betroffenen Personen ordnungsgemäß
+     informiert werden.</p>
+  <p>Soweit AuftragsBoss Daten für eigene Zwecke verarbeitet, insbesondere zur Vertragsabwicklung mit
+     dem Handwerksbetrieb, zur Abrechnung, zur Sicherheit des Dienstes oder zur Bearbeitung eigener
+     Anfragen, handelt die DAG Deutsche Automotive GmbH als Verantwortliche.</p>
+
+  <h2 id="a2">2. Gegenstand des Datenschutzes, betroffene Personen, Datenkategorien und Rechtsgrundlagen</h2>
+  <h3>2.1 Personenbezogene Daten</h3>
+  <p>Personenbezogene Daten sind alle Informationen, die sich auf eine identifizierte oder
+     identifizierbare natürliche Person beziehen. Hierzu gehören beispielsweise Name, Anschrift,
+     Telefonnummer, E-Mail-Adresse, IP-Adresse sowie Inhalte, aus denen sich ein Bezug zu einer
+     bestimmten Person ergibt.</p>
+  <h3>2.2 Betroffene Personen</h3>
+  <p>Im Zusammenhang mit AuftragsBoss können insbesondere Daten der folgenden Personengruppen
+     verarbeitet werden:</p>
   <ul>
-    <li>IP-Adresse</li>
-    <li>Datum und Uhrzeit des Zugriffs</li>
-    <li>aufgerufene Seite/Datei</li>
-    <li>Browsertyp und -version, Betriebssystem</li>
-    <li>Referrer-URL</li>
+    <li>Inhaber, Geschäftsführer, Beschäftigte und sonstige Nutzer eines Handwerksbetriebs;</li>
+    <li>Endkunden, Auftraggeber, Ansprechpartner oder Bewohner, deren Daten in Sprach- oder
+       Textnachrichten, Angeboten oder Protokollen enthalten sind;</li>
+    <li>Besucher der Website und des Web-Editors;</li>
+    <li>Personen, die per E-Mail oder über andere bereitgestellte Kommunikationswege mit uns Kontakt
+       aufnehmen.</li>
   </ul>
-  <p>Diese Daten werden nicht mit anderen Datenquellen zusammengeführt und nach kurzer Zeit
-     gelöscht, soweit keine gesetzlichen Aufbewahrungspflichten bestehen.</p>
+  <h3>2.3 Verarbeitete Datenkategorien</h3>
+  <p>Je nach Nutzung können insbesondere folgende Daten verarbeitet werden:</p>
+  <ul>
+    <li>Kontaktdaten des Handwerksbetriebs, insbesondere Telefonnummer, Name, Firma, E-Mail-Adresse und
+       Betriebsanschrift;</li>
+    <li>vom Handwerksbetrieb freiwillig hinterlegte Unternehmens- und Angebotsdaten, insbesondere Logo,
+       eigene Preise, Standardtexte und sonstige Einstellungen;</li>
+    <li>Inhalte der über WhatsApp übermittelten Sprach- und Textnachrichten sowie daraus erzeugte
+       Transkripte und strukturierte Daten;</li>
+    <li>Endkundendaten, insbesondere Name und Anschrift des Auftraggebers sowie Objekt-, Leistungs-,
+       Mengen- und sonstige auftragsbezogene Angaben;</li>
+    <li>Angebote und Protokolle einschließlich Positionen, Mengen, Arbeits- und Materialangaben, Preise,
+       Zwischensummen und Dateiexporte;</li>
+    <li>Zugangs- und Zuordnungsdaten, insbesondere Telefonnummern, technische Kontokennungen und
+       persönliche Zugriffstoken für den Web-Editor;</li>
+    <li>Kommunikationsdaten, insbesondere Inhalt und Zeitpunkt von E-Mails oder sonstigen Anfragen;</li>
+    <li>Technische Nutzungs- und Serverdaten, insbesondere IP-Adresse, Zeitpunkt, aufgerufene Seite oder
+       Datei, Browser, Betriebssystem, Referrer und technische Statusinformationen.</li>
+  </ul>
+  <h3>2.4 Zwecke und Rechtsgrundlagen</h3>
+  <p>Wir verarbeiten personenbezogene Daten nur, wenn eine Rechtsgrundlage besteht. Für die eigenen
+     Verarbeitungsvorgänge von AuftragsBoss kommen insbesondere folgende Rechtsgrundlagen in Betracht:</p>
+  <ul>
+    <li><b>Vertragserfüllung und vorvertragliche Maßnahmen, Art. 6 Abs. 1 lit. b DSGVO:</b>
+       Bereitstellung und Durchführung des Dienstes, Einrichtung und Verwaltung der Nutzung, Erstellung
+       und Übermittlung von Angeboten oder Protokollen, Bearbeitung von Änderungen und Nachträgen sowie
+       Durchführung des kostenlosen Tests.</li>
+    <li><b>Erfüllung rechtlicher Verpflichtungen, Art. 6 Abs. 1 lit. c DSGVO:</b> Erfüllung handels-,
+       steuer-, aufsichts- oder sonstiger gesetzlicher Aufbewahrungs- und Nachweispflichten.</li>
+    <li><b>Berechtigte Interessen, Art. 6 Abs. 1 lit. f DSGVO:</b> Sicherer und stabiler Betrieb der
+       Website und Anwendung, Missbrauchsverhinderung, Fehleranalyse, Schutz unserer Systeme,
+       Bearbeitung allgemeiner Anfragen und Wahrung oder Abwehr rechtlicher Ansprüche.</li>
+    <li><b>Auftragsverarbeitung, Art. 28 DSGVO:</b> Verarbeitung von Endkundendaten im Auftrag des
+       jeweiligen Handwerksbetriebs. Die Rechtsgrundlage gegenüber dem Endkunden wird vom
+       Handwerksbetrieb festgelegt und verantwortet.</li>
+  </ul>
 
-  <h2>4. Cookies und Tracking</h2>
-  <p>Diese Website setzt keine Cookies zu Analyse- oder Marketingzwecken und bindet keine
-     Tracking- oder Analysedienste ein. Die verwendeten Schriftarten werden lokal von unserem
-     Server ausgeliefert; es werden keine externen Schriftdienste (z. B. Google Fonts) aufgerufen.</p>
+  <h2 id="a3">3. Server-Logdaten</h2>
+  <p>Beim Aufruf von auftragsboss.de, api.auftragsboss.de oder einer sonstigen zu AuftragsBoss
+     gehörenden Webseite verarbeitet der Server technisch bedingt Informationen über den Zugriff.
+     Hierzu können insbesondere gehören:</p>
+  <ul>
+    <li>IP-Adresse des anfragenden Endgeräts;</li>
+    <li>Name und Adresse der aufgerufenen Seite oder Datei;</li>
+    <li>Datum und Uhrzeit des Zugriffs;</li>
+    <li>übertragene Datenmenge und technischer Antwortstatus;</li>
+    <li>Referrer-URL, soweit vom Browser übermittelt;</li>
+    <li>Browsertyp, Browserversion und verwendetes Betriebssystem.</li>
+  </ul>
+  <p>Die Verarbeitung erfolgt, um die Website und die Anwendung bereitzustellen, die technische
+     Funktionsfähigkeit zu gewährleisten, Angriffe und Missbrauch zu erkennen sowie die Sicherheit
+     unserer informationstechnischen Systeme zu schützen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f
+     DSGVO. Unser berechtigtes Interesse liegt im sicheren, stabilen und ordnungsgemäßen Betrieb von
+     AuftragsBoss.</p>
+  <p>Logdaten werden nur so lange gespeichert, wie dies für den Betrieb, die Fehleranalyse und die
+     Sicherheitszwecke erforderlich ist. Eine längere Speicherung erfolgt nur, wenn ein konkreter
+     Sicherheitsvorfall untersucht werden muss, gesetzliche Pflichten bestehen oder die Daten zur
+     Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen benötigt werden.</p>
 
-  <h2>5. Kontaktaufnahme über WhatsApp</h2>
-  <p>Über die Schaltfläche „Auf WhatsApp testen" werden Sie zu WhatsApp weitergeleitet. Wenn Sie
-     uns über WhatsApp kontaktieren, verarbeiten wir die von Ihnen übermittelten Daten (z. B.
-     Telefonnummer sowie Inhalt Ihrer Nachricht bzw. Sprachnachricht), um Ihre Anfrage zu
-     bearbeiten und ein Angebot zu erstellen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO
-     (Durchführung vorvertraglicher Maßnahmen). WhatsApp ist ein Dienst der Meta Platforms Ireland
-     Ltd.; bei der Nutzung werden Daten an WhatsApp/Meta übertragen, ggf. auch in Drittländer.
-     Einzelheiten: <a href="https://www.whatsapp.com/legal/privacy-policy-eea" target="_blank" rel="noopener">whatsapp.com/legal/privacy-policy-eea</a>.</p>
+  <h2 id="a4">4. Kontaktaufnahme per E-Mail</h2>
+  <p>Bei einer Kontaktaufnahme per E-Mail verarbeiten wir die von der anfragenden Person übermittelten
+     Daten. Dies können insbesondere Name, E-Mail-Adresse, Firma, Telefonnummer, Inhalt der Nachricht,
+     übermittelte Dokumente sowie technische Versand- und Empfangsdaten sein.</p>
+  <p>Die Verarbeitung erfolgt zur Entgegennahme und Bearbeitung der Anfrage. Bezieht sich die Anfrage
+     auf die Anbahnung oder Durchführung eines Vertrags, ist Art. 6 Abs. 1 lit. b DSGVO die
+     Rechtsgrundlage. Bei allgemeinen Anfragen beruht die Verarbeitung auf Art. 6 Abs. 1 lit. f DSGVO.
+     Unser berechtigtes Interesse besteht in der sachgerechten Bearbeitung freiwillig an uns
+     gerichteter Kommunikation.</p>
+  <p>Die Daten werden gelöscht, sobald die Anfrage abschließend bearbeitet ist und keine gesetzlichen
+     Aufbewahrungspflichten oder sonstigen berechtigten Gründe für eine weitere Speicherung bestehen.</p>
+  <p>E-Mail-Kommunikation kann trotz eingesetzter Schutzmaßnahmen Risiken aufweisen. Besonders
+     vertrauliche Informationen sollten daher nur über angemessen geschützte Übertragungswege versendet
+     werden.</p>
 
-  <h2>6. Ihre Rechte</h2>
-  <p>Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17),
-     Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) sowie Widerspruch
-     gegen die Verarbeitung (Art. 21 DSGVO). Wenden Sie sich hierzu an die oben genannten
-     Kontaktdaten.</p>
+  <h2 id="a5">5. Nutzung von AuftragsBoss über WhatsApp</h2>
+  <h3>5.1 Ablauf und Zwecke</h3>
+  <p>AuftragsBoss kann ohne App-Download und ohne klassischen Login über WhatsApp genutzt werden. Der
+     Handwerker sendet eine Sprach- oder Textnachricht an die für AuftragsBoss eingerichtete
+     WhatsApp-Nummer. Die Telefonnummer dient zugleich der Zuordnung zum jeweiligen Nutzungskonto und
+     zu den hinterlegten Einstellungen.</p>
+  <p>Die Nachricht wird empfangen, technisch verarbeitet und anschließend zur Transkription und
+     Strukturierung weitergeleitet. Aus den Angaben wird ein Angebot oder Protokoll erstellt. Fehlen
+     erforderliche Angaben, kann AuftragsBoss automatisiert eine Rückfrage per WhatsApp senden.
+     Änderungen und Nachträge können ebenfalls per Sprach- oder Textnachricht übermittelt werden.</p>
+  <h3>5.2 Verarbeitete Daten</h3>
+  <p>Im Rahmen der WhatsApp-Nutzung verarbeiten wir insbesondere:</p>
+  <ul>
+    <li>Telefonnummer und technische WhatsApp-Kennungen des Absenders;</li>
+    <li>Name und Profilangaben, soweit diese über WhatsApp übermittelt oder für die Zuordnung benötigt
+       werden;</li>
+    <li>Inhalt und Zeitpunkt der Sprach- oder Textnachricht;</li>
+    <li>die in der Nachricht genannten Daten des Handwerksbetriebs und seiner Endkunden;</li>
+    <li>Daten über Zustellung, Status und technische Verarbeitung der Nachricht;</li>
+    <li>Antworten, Rückfragen, Änderungswünsche und Nachträge.</li>
+  </ul>
+  <h3>5.3 Dienstleister Meta</h3>
+  <p>Für den Empfang und Versand von Nachrichten nutzen wir die WhatsApp Business Cloud API. Anbieter
+     für Nutzer im Europäischen Wirtschaftsraum ist Meta Platforms Ireland Limited, Irland. Meta
+     verarbeitet die für die technische Bereitstellung der WhatsApp-Kommunikation erforderlichen Daten
+     nach den anwendbaren Vertrags- und Datenschutzbedingungen. Soweit Meta Daten in unserem Auftrag
+     verarbeitet, gelten die Vereinbarungen zur Auftragsverarbeitung und die entsprechenden
+     Datenverarbeitungsbedingungen von Meta.</p>
+  <p>Die Verarbeitung durch uns erfolgt zur Anbahnung und Durchführung des Nutzungsvertrags auf
+     Grundlage von Art. 6 Abs. 1 lit. b DSGVO. Technische Sicherheits- und Missbrauchsdaten können
+     zusätzlich auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO verarbeitet werden.</p>
+  <p>Die Nutzung von WhatsApp ist für die Nutzung des beschriebenen WhatsApp-Ablaufs erforderlich.
+     Informationen über weitere Verarbeitungen durch Meta und WhatsApp ergeben sich aus den jeweils
+     geltenden Datenschutzinformationen und Nutzungsbedingungen dieser Anbieter.</p>
 
-  <h2>7. Beschwerderecht bei der Aufsichtsbehörde</h2>
-  <p>Sie haben das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren. Für uns
-     zuständig ist der Landesbeauftragte für den Datenschutz und die Informationsfreiheit
-     Baden-Württemberg.</p>
+  <h2 id="a6">6. KI-gestützte Transkription und Strukturierung</h2>
+  <h3>6.1 Transkription durch OpenAI</h3>
+  <p>Zur Umwandlung von Sprachnachrichten in Text übermitteln wir die hierfür erforderlichen Audio-
+     oder Nachrichteninhalte an einen API-Dienst von OpenAI. Vertragspartner für Kunden mit Sitz im
+     Europäischen Wirtschaftsraum ist grundsätzlich OpenAI Ireland Ltd.; im Rahmen der technischen
+     Leistungserbringung können OpenAI OpCo, LLC und weitere Unterauftragsverarbeiter einbezogen sein.</p>
+  <p>Verarbeitet werden insbesondere der Inhalt der Sprachaufnahme, die daraus erzeugte Transkription
+     sowie technische Begleitdaten, soweit dies für die Ausführung der API-Anfrage erforderlich ist.
+     Zweck ist ausschließlich die Umwandlung der gesprochenen Angaben in Text und die Bereitstellung
+     der Transkription für die nachfolgende Angebotserstellung.</p>
+  <h3>6.2 Strukturierung durch Anthropic („Claude")</h3>
+  <p>Die Transkription oder unmittelbar übermittelte Textnachricht wird anschließend über die
+     kommerzielle API von Anthropic PBC, USA, mit dem Modell „Claude" verarbeitet. Zweck ist die
+     Strukturierung der Angaben in die für ein Angebot oder Protokoll benötigten Datenfelder,
+     beispielsweise Kunde, Anschrift, Objekt, einzelne Positionen, Mengen, Arbeitsaufwand, Material
+     und Zwischensummen.</p>
+  <p>AuftragsBoss erfindet keine Preise. Preise werden nur übernommen, wenn sie in der Nachricht
+     ausdrücklich genannt wurden oder bereits vom Handwerksbetrieb in seinen eigenen Einstellungen
+     hinterlegt sind. Nicht vorliegende Preisangaben bleiben leer und müssen vom Handwerksbetrieb
+     ergänzt oder geprüft werden.</p>
+  <h3>6.3 Rechtsgrundlage, Auftragsverarbeitung und Modelltraining</h3>
+  <p>Soweit wir gegenüber dem Handwerksbetrieb als Verantwortliche handeln, ist Rechtsgrundlage für die
+     KI-Verarbeitung Art. 6 Abs. 1 lit. b DSGVO. Bei Endkundendaten erfolgt die Verarbeitung als
+     Auftragsverarbeiter nach Art. 28 DSGVO auf Weisung des Handwerksbetriebs.</p>
+  <p>Mit OpenAI und Anthropic bestehen Vereinbarungen zur Auftragsverarbeitung beziehungsweise
+     entsprechende vertragliche Datenschutzregelungen. Nach den für die verwendeten kommerziellen
+     API-Dienste geltenden Bedingungen werden die übermittelten Ein- und Ausgaben standardmäßig nicht
+     zum Training oder zur Verbesserung der generativen Modelle der Anbieter verwendet. Vertraglich
+     oder gesetzlich erforderliche Verarbeitungen, insbesondere zur Sicherheit, Missbrauchsbekämpfung
+     oder Erfüllung rechtlicher Pflichten, bleiben unberührt.</p>
+  <p>Die KI-Ausgabe dient als Arbeitsgrundlage. Der Handwerksbetrieb kann und soll das erzeugte Angebot
+     oder Protokoll im Web-Editor prüfen, ändern und vervollständigen, bevor es verwendet oder an einen
+     Endkunden versendet wird.</p>
 
-  <h2>8. SSL-/TLS-Verschlüsselung</h2>
-  <p>Diese Seite nutzt aus Sicherheitsgründen und zum Schutz der Übertragung eine SSL- bzw.
-     TLS-Verschlüsselung.</p>
+  <h2 id="a7">7. Angebotserstellung, Speicherung und Web-Editor</h2>
+  <h3>7.1 Erstellung und Speicherung</h3>
+  <p>Die strukturierten Angaben werden auf den Anwendungsservern von AuftragsBoss zu einem Angebot oder
+     Protokoll verarbeitet. Gespeichert werden die für die Dienstleistung erforderlichen Kontodaten des
+     Handwerksbetriebs, seine Einstellungen sowie die erstellten Angebote und Protokolle einschließlich
+     Endkundendaten und Nachrichteninhalten.</p>
+  <p>Website und Anwendungsserver werden bei IONOS SE betrieben. Nach den für AuftragsBoss gewählten
+     Hosting-Einstellungen erfolgt die Speicherung in Rechenzentren in Deutschland.</p>
+  <h3>7.2 Persönlicher Zugriff ohne Passwort</h3>
+  <p>Die Bearbeitung erfolgt über einen persönlichen, zufällig erzeugten Link mit Zugriffstoken. Ein
+     klassischer Benutzername-und-Passwort-Login ist nicht erforderlich. Das Token dient der Zuordnung
+     und Berechtigungsprüfung und ist technisch wie ein Zugangsschlüssel zu behandeln.</p>
+  <p>Personen, die Zugriff auf den Link erhalten, können abhängig von der bereitgestellten Funktion auf
+     die damit verknüpften Inhalte zugreifen. Nutzer müssen den Link daher vertraulich behandeln, nicht
+     unkontrolliert weitergeben und bei einem vermuteten Verlust oder Missbrauch unverzüglich Kontakt
+     mit uns aufnehmen.</p>
+  <h3>7.3 Bearbeitung und Dateiexport</h3>
+  <p>Im Web-Editor kann der Handwerksbetrieb insbesondere Kunden- und Objektdaten, Positionen, Mengen,
+     Texte, Materialangaben und Preise prüfen und verändern. Anschließend können die Inhalte als Word-
+     oder PDF-Datei erzeugt und heruntergeladen oder per E-Mail versandt werden.</p>
+  <p>Die Verarbeitung dient der Durchführung des Nutzungsvertrags und beruht, soweit wir Verantwortliche
+     sind, auf Art. 6 Abs. 1 lit. b DSGVO. Bei Endkundendaten handeln wir auf Weisung des
+     Handwerksbetriebs als Auftragsverarbeiter.</p>
 
-  <p class="stand">Stand: Juli 2026</p>
+  <h2 id="a8">8. Versand von Angeboten und Protokollen per E-Mail</h2>
+  <p>Auf Wunsch des Handwerksbetriebs kann AuftragsBoss das erstellte Angebot oder Protokoll als Word-
+     und/oder PDF-Datei an die im Nutzungskonto hinterlegte E-Mail-Adresse versenden. Hierbei werden
+     insbesondere Empfängeradresse, Betreff, Nachrichtentext, Versandzeitpunkt und die angehängten
+     Dateien verarbeitet.</p>
+  <p>Der Versand erfolgt über SMTP-Dienste der IONOS SE. Die Verbindung zwischen AuftragsBoss und dem
+     SMTP-Server wird verschlüsselt aufgebaut. Ob eine E-Mail auf ihrem gesamten Transportweg bis zum
+     Empfänger durchgehend verschlüsselt übertragen wird, hängt auch von den beteiligten Mailservern
+     und den Einstellungen des Empfängers ab.</p>
+  <p>Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO. IONOS verarbeitet die für den Versand
+     erforderlichen Daten als Auftragsverarbeiter auf Grundlage der vertraglichen Datenschutzregelungen.</p>
+
+  <h2 id="a9">9. Kostenloser Test „Direkt testen"</h2>
+  <p>Über die Funktion „Direkt testen" kann eine noch nicht registrierte Telefonnummer AuftragsBoss für
+     die Erstellung eines Beispiel-Angebots verwenden. Bei der ersten Nachricht wird automatisiert ein
+     Testkonto angelegt und der Telefonnummer zugeordnet. Verarbeitet werden insbesondere die
+     Telefonnummer, die übermittelte Nachricht, die daraus erzeugten Inhalte, technische Nutzungsdaten
+     und Daten zur Einhaltung der vorgesehenen Missbrauchs- und Nutzungslimits.</p>
+  <p>Die Verarbeitung erfolgt zur Durchführung vorvertraglicher Maßnahmen und zur Bereitstellung des
+     gewünschten Tests auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO. Maßnahmen zur Vermeidung
+     automatisierter oder missbräuchlicher Nutzung beruhen zusätzlich auf Art. 6 Abs. 1 lit. f DSGVO.
+     Unser berechtigtes Interesse liegt im Schutz des Dienstes und der verfügbaren Ressourcen.</p>
+  <p>Testkonten und die zugehörigen Daten werden auf Anfrage gelöscht, soweit keine gesetzlichen
+     Pflichten oder berechtigten Gründe entgegenstehen. Im Übrigen erfolgt die Löschung, wenn der
+     Testzweck weggefallen ist und die Daten für eine weitere Vertragsanbahnung, Sicherheitsprüfung
+     oder Rechtsverteidigung nicht mehr erforderlich sind.</p>
+
+  <h2 id="a10">10. Website, Cookies, Tracking und Schriftarten</h2>
+  <h3>10.1 Hosting der Website</h3>
+  <p>Die öffentlich zugängliche Landingpage wird bei IONOS SE im Rahmen eines Webhosting-Angebots in
+     Deutschland betrieben. Die dabei anfallenden Server-Logdaten werden entsprechend Abschnitt 3
+     verarbeitet.</p>
+  <h3>10.2 Keine Analyse- oder Marketing-Cookies und kein Tracking</h3>
+  <p>Auf der öffentlich zugänglichen Website setzen wir keine Analyse- oder Marketing-Cookies ein. Es
+     findet kein Nutzertracking, keine Reichweitenanalyse, kein Retargeting und keine werbliche
+     Profilbildung statt. Insbesondere werden keine Dienste wie Google Analytics, Google Tag Manager,
+     LinkedIn Tracking, HubSpot, Mailchimp oder vergleichbare Werbe- und Analysedienste eingesetzt.</p>
+  <p>Die technische Verarbeitung des persönlichen Zugriffstokens im Web-Editor sowie notwendige
+     Serverkommunikation dienen ausschließlich der Bereitstellung, Zuordnung und Absicherung der
+     angeforderten Funktion und nicht der Erstellung von Nutzungsprofilen.</p>
+  <h3>10.3 Lokal bereitgestellte Schriftarten</h3>
+  <p>Die auf der Website verwendeten Schriftarten werden lokal von unseren eigenen beziehungsweise den
+     von uns beauftragten Servern bereitgestellt. Beim Abruf der Website wird daher keine Verbindung zu
+     Google Fonts oder einem externen Schriftarten-CDN hergestellt.</p>
+
+  <h2 id="a11">11. Empfänger und Auftragsverarbeiter</h2>
+  <p>Personenbezogene Daten werden nur an Empfänger übermittelt, wenn dies für die beschriebenen Zwecke
+     erforderlich ist, eine gesetzliche Verpflichtung besteht, eine wirksame Einwilligung vorliegt oder
+     eine andere datenschutzrechtliche Erlaubnis besteht. Zu den eingesetzten Dienstleistern gehören
+     insbesondere:</p>
+  <div class="tab-scroll">
+    <table>
+      <thead>
+        <tr><th>Empfänger / Dienstleister</th><th>Zweck</th><th>Datenkategorien</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Meta Platforms Ireland Limited, Irland</td>
+          <td>Empfang und Versand von WhatsApp-Nachrichten über die WhatsApp Business Cloud API</td>
+          <td>Telefonnummern, Nachrichteninhalte, Metadaten und Zustellinformationen</td>
+        </tr>
+        <tr>
+          <td>OpenAI Ireland Ltd. / OpenAI OpCo, LLC</td>
+          <td>Transkription von Sprachinhalten über eine kommerzielle API</td>
+          <td>Audio- oder Nachrichteninhalte, Transkripte und technische API-Daten</td>
+        </tr>
+        <tr>
+          <td>Anthropic PBC, USA</td>
+          <td>Strukturierung der Transkription oder Textnachricht mit dem Modell „Claude"</td>
+          <td>Textinhalte, Endkunden- und Leistungsangaben sowie technische API-Daten</td>
+        </tr>
+        <tr>
+          <td>IONOS SE, Deutschland</td>
+          <td>Webhosting, Anwendungsserver, Datenspeicherung und SMTP-E-Mail-Versand</td>
+          <td>Kontodaten, Angebote, Protokolle, Endkundendaten, Nachrichteninhalte, Serverdaten und Versanddaten</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Mit den Dienstleistern bestehen die nach Art. 28 DSGVO erforderlichen Vereinbarungen oder
+     gleichwertige vertragliche Datenschutzregelungen. Unterauftragsverarbeiter dürfen nur im Rahmen
+     der jeweiligen vertraglichen Bestimmungen eingesetzt werden.</p>
+  <p>Darüber hinaus können Daten an Behörden, Gerichte, Steuerberater, Wirtschaftsprüfer, Rechtsanwälte
+     oder sonstige Empfänger übermittelt werden, wenn dies gesetzlich vorgeschrieben oder zur
+     Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen erforderlich ist. Rechtsgrundlagen
+     sind in diesen Fällen insbesondere Art. 6 Abs. 1 lit. c und lit. f DSGVO.</p>
+  <p>Soweit wir für einen Handwerksbetrieb als Auftragsverarbeiter tätig sind, erfolgt die Weitergabe an
+     Unterauftragsverarbeiter ausschließlich nach Maßgabe des AVV und der dokumentierten Weisungen des
+     Handwerksbetriebs.</p>
+
+  <h2 id="a12">12. Datenübermittlungen in Drittländer</h2>
+  <p>Bei der Nutzung der APIs von OpenAI und Anthropic kann es zu einer Verarbeitung personenbezogener
+     Daten in den Vereinigten Staaten oder in anderen Staaten außerhalb der Europäischen Union und des
+     Europäischen Wirtschaftsraums kommen. Auch bei Meta können im Rahmen der globalen technischen
+     Infrastruktur oder durch Unterauftragsverarbeiter Drittlandübermittlungen stattfinden.</p>
+  <p>Eine Übermittlung erfolgt nur, wenn die Voraussetzungen der Art. 44 ff. DSGVO erfüllt sind. Als
+     Übermittlungsgrundlage kommen insbesondere ein Angemessenheitsbeschluss der Europäischen
+     Kommission, einschließlich einer anwendbaren Zertifizierung des Empfängers nach dem EU-US Data
+     Privacy Framework, sowie die Standardvertragsklauseln der Europäischen Kommission nach Art. 46
+     Abs. 2 lit. c DSGVO in Betracht. Soweit erforderlich, werden ergänzende technische,
+     organisatorische oder vertragliche Schutzmaßnahmen berücksichtigt.</p>
+  <p>Bei OpenAI und Anthropic sind die Standardvertragsklauseln Bestandteil der jeweiligen Datenschutz-
+     beziehungsweise Auftragsverarbeitungsregelungen. Welche konkrete Übermittlungsgrundlage im
+     Einzelfall greift, richtet sich nach dem Empfänger, dem Standort der Verarbeitung und der jeweils
+     aktuellen Zertifizierung oder Vertragslage.</p>
+  <p>Trotz dieser Schutzmechanismen kann bei einer Verarbeitung in Drittländern nicht ausgeschlossen
+     werden, dass staatliche Stellen nach dem dort geltenden Recht auf Daten zugreifen. Betroffene
+     Personen können sich für weitere Informationen zu den eingesetzten Garantien an uns wenden.</p>
+
+  <h2 id="a13">13. Speicherdauer und Löschung</h2>
+  <p>Wir speichern personenbezogene Daten nur so lange, wie dies für die jeweiligen
+     Verarbeitungszwecke erforderlich ist. Anschließend werden die Daten gelöscht oder anonymisiert,
+     sofern keine gesetzlichen Aufbewahrungspflichten, vertraglichen Löschregelungen,
+     Sicherheitsinteressen oder Erfordernisse der Rechtsverfolgung entgegenstehen.</p>
+  <h3>13.1 Daten des Handwerksbetriebs</h3>
+  <p>Kontaktdaten, Vertragsdaten, Einstellungen und sonstige Daten des Handwerksbetriebs werden
+     grundsätzlich für die Dauer des Nutzungsverhältnisses gespeichert. Nach dessen Beendigung werden
+     sie gelöscht, soweit sie nicht zur Vertragsabwicklung, zur Bearbeitung offener Ansprüche oder
+     aufgrund gesetzlicher handels- und steuerrechtlicher Aufbewahrungspflichten weiterhin benötigt
+     werden.</p>
+  <h3>13.2 Angebote, Protokolle, Nachrichten und Endkundendaten</h3>
+  <p>Soweit wir diese Daten als Auftragsverarbeiter verarbeiten, richten sich Speicherdauer, Rückgabe
+     und Löschung nach den Weisungen des Handwerksbetriebs und dem abgeschlossenen AVV. Nach Ende der
+     Auftragsverarbeitung werden die Daten nach Maßgabe des AVV gelöscht oder zurückgegeben, sofern
+     keine gesetzliche Pflicht zur weiteren Speicherung besteht.</p>
+  <p>Der Handwerksbetrieb ist als Verantwortlicher dafür zuständig, angemessene Löschfristen für seine
+     Endkundendaten festzulegen und entsprechende Löschweisungen zu erteilen.</p>
+  <h3>13.3 Testkonten, Logdaten und Kommunikation</h3>
+  <p>Für Testkonten gelten die in Abschnitt 9 beschriebenen Kriterien. Server-Logdaten werden nach
+     Maßgabe von Abschnitt 3 gelöscht. Kommunikationsdaten werden nach abschließender Bearbeitung
+     gelöscht, sofern keine Aufbewahrungspflicht oder ein sonstiger zulässiger Speichergrund besteht.</p>
+  <h3>13.4 Dienstleister</h3>
+  <p>Von uns eingesetzte Auftragsverarbeiter löschen oder geben personenbezogene Daten nach Maßgabe der
+     jeweiligen Verträge, Weisungen und gesetzlichen Pflichten zurück. Kurzzeitige technische
+     Speicherungen für die Leistungserbringung, Systemsicherheit, Missbrauchsbekämpfung oder
+     gesetzliche Nachweise können nach den Vertragsbedingungen der Anbieter zulässig sein.</p>
+
+  <h2 id="a14">14. Rechte betroffener Personen</h2>
+  <p>Betroffene Personen haben nach Maßgabe der gesetzlichen Voraussetzungen insbesondere folgende
+     Rechte:</p>
+  <ul>
+    <li><b>Auskunft, Art. 15 DSGVO:</b> Recht auf Auskunft über die verarbeiteten personenbezogenen
+       Daten und weitere Informationen zur Verarbeitung.</li>
+    <li><b>Berichtigung, Art. 16 DSGVO:</b> Recht auf Berichtigung unrichtiger und Vervollständigung
+       unvollständiger Daten.</li>
+    <li><b>Löschung, Art. 17 DSGVO:</b> Recht auf Löschung personenbezogener Daten, soweit keine
+       gesetzlichen oder sonstigen zulässigen Gründe für die weitere Verarbeitung bestehen.</li>
+    <li><b>Einschränkung der Verarbeitung, Art. 18 DSGVO:</b> Recht auf Einschränkung der Verarbeitung
+       unter den gesetzlichen Voraussetzungen.</li>
+    <li><b>Datenübertragbarkeit, Art. 20 DSGVO:</b> Recht, selbst bereitgestellte Daten in einem
+       strukturierten, gängigen und maschinenlesbaren Format zu erhalten oder an einen anderen
+       Verantwortlichen übertragen zu lassen, soweit die gesetzlichen Voraussetzungen erfüllt sind.</li>
+  </ul>
+  <div class="hebung">
+    <b>Widerspruch, Art. 21 DSGVO:</b> Recht, aus Gründen, die sich aus der besonderen Situation der
+    betroffenen Person ergeben, einer Verarbeitung zu widersprechen, die auf Art. 6 Abs. 1 lit. f DSGVO
+    beruht. Wir verarbeiten die Daten dann nicht weiter, es sei denn, wir können zwingende schutzwürdige
+    Gründe nachweisen oder die Verarbeitung dient der Geltendmachung, Ausübung oder Verteidigung von
+    Rechtsansprüchen.
+  </div>
+  <div class="hebung">
+    <b>Widerruf einer Einwilligung, Art. 7 Abs. 3 DSGVO:</b> Eine erteilte Einwilligung kann jederzeit
+    mit Wirkung für die Zukunft widerrufen werden. Die Rechtmäßigkeit der bis zum Widerruf erfolgten
+    Verarbeitung bleibt unberührt.
+  </div>
+  <ul>
+    <li><b>Beschwerde, Art. 77 DSGVO:</b> Recht, sich bei einer Datenschutzaufsichtsbehörde zu
+       beschweren.</li>
+  </ul>
+  <h3>14.1 Zuständigkeit bei Endkundendaten</h3>
+  <p>Endkunden, deren Daten durch einen Handwerksbetrieb in AuftragsBoss verarbeitet wurden, sollten
+     ihre Datenschutzrechte grundsätzlich gegenüber diesem Handwerksbetrieb geltend machen. Der
+     Handwerksbetrieb ist für diese Daten der Verantwortliche. Wir unterstützen den Handwerksbetrieb im
+     Rahmen des AVV bei der Bearbeitung entsprechender Anfragen und handeln nur nach dessen Weisung.</p>
+  <p>Für Datenverarbeitungen, bei denen die DAG Deutsche Automotive GmbH selbst Verantwortliche ist,
+     können Rechte unmittelbar über kontakt@deutsche-automotive.de geltend gemacht werden. Zur
+     Vermeidung unbefugter Datenoffenlegung können wir einen angemessenen Identitätsnachweis verlangen.</p>
+
+  <h2 id="a15">15. Kontakt und Beschwerderecht bei der Aufsichtsbehörde</h2>
+  <p>Fragen zum Datenschutz und zur Verarbeitung personenbezogener Daten sowie Anträge zur Ausübung von
+     Betroffenenrechten können gerichtet werden an:</p>
+  <p>DAG Deutsche Automotive GmbH, Augsburger Straße 746, 70329 Stuttgart, Deutschland, E-Mail:
+     <a href="mailto:kontakt@deutsche-automotive.de">kontakt@deutsche-automotive.de</a>.</p>
+  <p>Unabhängig davon besteht das Recht, sich bei einer Datenschutzaufsichtsbehörde zu beschweren. Für
+     die DAG Deutsche Automotive GmbH ist grundsätzlich zuständig:</p>
+  <p>Der Landesbeauftragte für den Datenschutz und die Informationsfreiheit Baden-Württemberg,
+     Heilbronner Straße 35, 70191 Stuttgart, E-Mail:
+     <a href="mailto:poststelle@lfdi.bwl.de">poststelle@lfdi.bwl.de</a>. Weitere Informationen und das
+     Beschwerdeformular sind über die Website der Behörde abrufbar.</p>
+
+  <h2 id="a16">16. Datensicherheit</h2>
+  <p>Wir treffen angemessene technische und organisatorische Maßnahmen, um personenbezogene Daten gegen
+     unbeabsichtigte oder unrechtmäßige Zerstörung, Verlust, Veränderung, unbefugte Offenlegung und
+     unbefugten Zugriff zu schützen. Die Maßnahmen werden unter Berücksichtigung des Stands der Technik,
+     der Implementierungskosten, der Art, des Umfangs, der Umstände und Zwecke der Verarbeitung sowie
+     der Eintrittswahrscheinlichkeit und Schwere der Risiken ausgewählt und fortlaufend überprüft.</p>
+  <p>Die Übertragung zwischen Browser und Website beziehungsweise Web-Editor erfolgt über Transport
+     Layer Security („TLS"). Auch die Kommunikation mit den eingesetzten API- und SMTP-Diensten wird
+     über verschlüsselte Verbindungen aufgebaut, soweit die jeweiligen Schnittstellen dies vorsehen.</p>
+  <p>Der persönliche Link zum Web-Editor enthält ein Zugriffstoken. Er ersetzt für diesen Zugriff ein
+     Passwort und muss deshalb besonders geschützt werden. Eine absolute Sicherheit von
+     Informationssystemen und Datenübertragungen kann trotz angemessener Schutzmaßnahmen nicht
+     garantiert werden.</p>
+  <p>Mitarbeiter und sonstige zur Datenverarbeitung befugte Personen werden auf Vertraulichkeit
+     verpflichtet und erhalten nur Zugriff, soweit dies für ihre Aufgaben erforderlich ist.</p>
+
+  <h2 id="a17">17. Änderungen dieser Datenschutzerklärung</h2>
+  <p>Wir können diese Datenschutzerklärung anpassen, wenn sich der Dienst, die eingesetzten Verfahren,
+     die Rechtslage oder behördliche Anforderungen ändern. Die jeweils aktuelle Fassung wird auf der
+     Website von AuftragsBoss veröffentlicht. Soweit eine Änderung eine Einwilligung oder eine
+     gesonderte Information erfordert, werden die betroffenen Personen entsprechend informiert.</p>
+
+  <p class="stand">Stand: 4. August 2026</p>
   <a class="back" href="index.html">← Zurück zur Startseite</a>
 </div>
 </body>

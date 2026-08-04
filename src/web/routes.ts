@@ -261,7 +261,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       const betreff = `${bezeichnung} ${dokument.nummer}${fuer}`;
       const html =
         `<p>Hallo,</p><p>im Anhang findest du dein ${bezeichnung} <b>${dokument.nummer}</b>${fuer} ` +
-        `als ${istPdf ? "PDF" : "Word-Datei"}.</p><p>— AuftragsBoss</p>`;
+        `als ${istPdf ? "PDF" : "Word-Datei"}.</p><p>Dein AuftragsBoss</p>`;
 
       try {
         await sendeMail(handwerker.email, betreff, html, [

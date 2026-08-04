@@ -21,6 +21,8 @@ export interface Anhang {
   filename: string;
   content: Buffer;
   contentType?: string;
+  /** Content-ID für Inline-Einbettung (z.B. Logo per <img src="cid:…">). */
+  cid?: string;
 }
 
 export async function sendeMail(

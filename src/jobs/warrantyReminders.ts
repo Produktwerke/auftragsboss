@@ -4,7 +4,7 @@
 // Idempotent über die *Gesendet-Flags — doppelte Mails ausgeschlossen.
 import cron from "node-cron";
 import { prisma } from "../pipeline.js";
-import { gewaehrleistungsErinnerung } from "../email/templates.js";
+import { gewaehrleistungsErinnerung, logoAnhang } from "../email/templates.js";
 import { sendeMail } from "../email/send.js";
 
 async function pruefeGewaehrleistungen(): Promise<void> {
@@ -26,7 +26,7 @@ async function pruefeGewaehrleistungen(): Promise<void> {
       nummer: g.dokument.nummer,
       einleitung: g.dokument.einleitung,
     });
-    await sendeMail(g.dokument.handwerker.email, mail.betreff, mail.html);
+    await sendeMail(g.dokument.handwerker.email, mail.betreff, mail.html, [logoAnhang()]);
     await prisma.gewaehrleistung.update({
       where: { id: g.id },
       data: { vorwarnungGesendet: true },
@@ -49,7 +49,7 @@ async function pruefeGewaehrleistungen(): Promise<void> {
       nummer: g.dokument.nummer,
       einleitung: g.dokument.einleitung,
     });
-    await sendeMail(g.dokument.handwerker.email, mail.betreff, mail.html);
+    await sendeMail(g.dokument.handwerker.email, mail.betreff, mail.html, [logoAnhang()]);
     await prisma.gewaehrleistung.update({
       where: { id: g.id },
       data: { ablaufGesendet: true },

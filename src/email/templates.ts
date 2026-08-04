@@ -1,12 +1,48 @@
-// HTML-E-Mail-Templates. Bewusst simpel gehalten (Inline-Styles) —
-// muss in Outlook & Gmail von konservativen Empfängern funktionieren.
+// HTML-E-Mail-Templates. Bewusst simpel gehalten (Inline-Styles), damit die
+// Mail in Outlook & Gmail auch bei konservativen Empfängern funktioniert.
 //
-// Explizite Hintergrund- UND Textfarbe überall: sonst kippt die Mail im
-// Dark Mode von Outlook/Gmail zu dunkler Schrift auf dunklem Grund.
+// Look im AuftragsBoss-Stil: HELLER Hintergrund (kein Weiß-auf-Schwarz),
+// dunkler Kopfbanner nur als Marken-Streifen, Signalgelb als Akzent (Button,
+// Trennlinien), sonst dunkle Schrift auf Weiß. Explizite Hintergrund- UND
+// Textfarbe überall, damit die Mail im Dark Mode von Outlook/Gmail nicht kippt.
+// Erst- und Folge-Fassungen nutzen dasselbe Layout; der Nachtrag bekommt nur
+// eine dezente Notiz oben, keine andersfarbige Box.
+import { readFileSync } from "node:fs";
 import type { DokumentDaten } from "../ai/structure.js";
 import type { Angebotssumme } from "../angebot/berechnung.js";
 import { euro, mengeMitEinheit, PLATZHALTER } from "../angebot/berechnung.js";
 import type { Preisliste } from "../preisliste.js";
+import type { Anhang } from "./send.js";
+
+// ── Marken-Farben (E-Mail-tauglich, hell) ─────────────────
+const ANTHRA = "#14161A"; // Kopfbanner, Tabellenkopf, Akzente
+const INK = "#1f2328"; // Fließtext
+const MUTED = "#6b7079"; // Sekundärtext
+const SIGNAL = "#FFC426"; // Signalgelb: Button, Akzentlinien
+const HAIR = "#e4e7ea"; // Trennlinien / Kartenrand
+const CARD = "#f5f6f8"; // helle Karten
+const AMBER = "#fff8e6"; // Hinweis-/Warn-Karten
+const AMBER_BORDER = "#e9b949";
+
+const FONT = "font-family:'Segoe UI',Roboto,Arial,sans-serif";
+const RAHMEN = `${FONT};max-width:680px;margin:0 auto;background:#ffffff;color:${INK};line-height:1.55;`;
+const H3 = `font-size:15px;color:${INK};margin:24px 0 8px;font-weight:700;`;
+
+// Logo wird als CID-Anhang FEST an jede Mail gehängt (siehe logoAnhang()),
+// damit es ohne „Bilder anzeigen" sofort erscheint. Kleingerechnete Version
+// (128 px, ~6 KB) liegt unter src/assets und wird einmal eingelesen.
+const LOGO_CID = "auftragsboss-logo";
+let logoBuffer: Buffer | undefined;
+function logoBytes(): Buffer {
+  if (!logoBuffer) logoBuffer = readFileSync(new URL("../assets/auftragsboss-logo-mail.png", import.meta.url));
+  return logoBuffer;
+}
+/** Logo als eingebetteter Inline-Anhang. Muss JEDER Mail beigelegt werden, die
+ *  die Signatur nutzt (dokumentMail, gewaehrleistungsErinnerung), sonst bleibt
+ *  das Bild leer. */
+export function logoAnhang(): Anhang {
+  return { filename: "auftragsboss-logo.png", content: logoBytes(), contentType: "image/png", cid: LOGO_CID };
+}
 
 const datumDE = (d: Date) =>
   d.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" });
@@ -15,18 +51,44 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-const RAHMEN =
-  "font-family:Segoe UI,Arial,sans-serif;max-width:680px;margin:0 auto;" +
-  "background:#ffffff;color:#1a1a1a;line-height:1.5;padding:24px;";
+/** Marken-Kopfbanner (dunkler Streifen mit Wortmarke). */
+const kopfBanner = `
+  <div style="background:${ANTHRA};padding:16px 24px;">
+    <span style="font-size:20px;font-weight:800;letter-spacing:.3px;color:#ffffff;${FONT};">AUFTRAGS<span style="color:${SIGNAL};">BOSS</span></span>
+  </div>`;
 
-const box = (inhalt: string, farbe = "#f6f8fa") =>
-  `<div style="background:${farbe};color:#1a1a1a;border-radius:8px;padding:16px 20px;margin:16px 0;">${inhalt}</div>`;
+/** Signatur (heller Fuß mit Logo und Kontaktdaten des Anbieters). */
+const signatur = `
+  <div style="border-top:1px solid ${HAIR};margin-top:28px;padding-top:18px;font-size:13px;color:${MUTED};line-height:1.65;">
+    <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:8px;">
+      <tr>
+        <td style="vertical-align:middle;padding-right:10px;">
+          <img src="cid:${LOGO_CID}" alt="AuftragsBoss" width="34" height="34" style="display:block;border-radius:7px;">
+        </td>
+        <td style="vertical-align:middle;font-weight:800;color:${INK};font-size:16px;letter-spacing:.2px;">AUFTRAGSBOSS</td>
+      </tr>
+    </table>
+    <div>Ein Dienst der DAG Deutsche Automotive GmbH</div>
+    <div>Augsburger Straße 746 · 70329 Stuttgart</div>
+    <div>
+      Tel. <a href="tel:+491749364823" style="color:${INK};text-decoration:none;">+49 174 936 4823</a> ·
+      <a href="mailto:kontakt@auftragsboss.de" style="color:${INK};text-decoration:none;">kontakt@auftragsboss.de</a> ·
+      <a href="https://auftragsboss.de" style="color:${INK};text-decoration:none;">auftragsboss.de</a>
+    </div>
+    <div style="color:#9aa0a6;margin-top:8px;">Per WhatsApp diktiert. Als fertiges Angebot zurück.</div>
+  </div>`;
+
+/** Helle Karte. Mit `akzent` bekommt sie eine farbige Leiste links statt Rand. */
+const box = (inhalt: string, bg = CARD, akzent?: string) =>
+  `<div style="background:${bg};color:${INK};border-radius:10px;` +
+  `${akzent ? `border-left:3px solid ${akzent};` : `border:1px solid ${HAIR};`}` +
+  `padding:16px 20px;margin:16px 0;font-size:14px;">${inhalt}</div>`;
 
 /** Positionstabelle. Fehlende Preise sind der Normalfall und erscheinen als
- *  neutrale Platzhalter zum Ausfüllen — nicht als Fehler. */
+ *  neutrale Platzhalter zum Ausfüllen, nicht als Fehler. */
 function positionsTabelle(summe: Angebotssumme): string {
   const zellStil = "padding:8px 10px;border-bottom:1px solid #e3e6ea;vertical-align:top;";
-  const kopfStil = "padding:8px 10px;background:#0b5cad;color:#ffffff;text-align:left;font-size:13px;";
+  const kopfStil = `padding:8px 10px;background:${ANTHRA};color:#ffffff;text-align:left;font-size:13px;`;
   const leer = `<span style="color:#aab0b6;letter-spacing:1px;">${PLATZHALTER}</span>`;
 
   const abschnitt = (text: string) =>
@@ -41,7 +103,7 @@ function positionsTabelle(summe: Angebotssumme): string {
           ? mengeMitEinheit(p.menge, p.einheit)
           : `<span style="color:#aab0b6;">____ ${p.einheit ?? ""}</span>`;
       const hinweis = p.mengeUnsicher
-        ? `<br><span style="color:#b7791f;font-size:12px;">≈ Menge abgeleitet — bitte prüfen</span>`
+        ? `<br><span style="color:#b7791f;font-size:12px;">≈ Menge abgeleitet, bitte prüfen</span>`
         : "";
 
       return `<tr>
@@ -53,10 +115,10 @@ function positionsTabelle(summe: Angebotssumme): string {
       </tr>`;
   };
 
-  // Leistungen und Material getrennt — Materialvorschläge sollen sichtbar
-  // als solche erkennbar sein, nicht stillschweigend mitlaufen.
-  const leistungen = summe.positionen.filter((p) => p.kategorie !== "MATERIAL");
+  // Material zuerst, dann Arbeitsaufwand, gleiche Reihenfolge wie in Editor,
+  // PDF und Word. Materialvorschläge bleiben klar als solche gekennzeichnet.
   const material = summe.positionen.filter((p) => p.kategorie === "MATERIAL");
+  const leistungen = summe.positionen.filter((p) => p.kategorie !== "MATERIAL");
 
   const summenZelle = "padding:6px 10px;text-align:right;white-space:nowrap;";
 
@@ -68,33 +130,33 @@ function positionsTabelle(summe: Angebotssumme): string {
     </tr>`;
 
   const zeilen = [
-    ...(material.length > 0 ? [abschnitt("Arbeitsaufwand")] : []),
-    ...leistungen.map(zeile),
     ...(material.length > 0
       ? [
-          zwischensumme("Zwischensumme Arbeitsaufwand", summe.leistungen),
           abschnitt(
             material.some((p) => p.vorschlag)
-              ? "Material  (Vorschlag – bitte prüfen und Mengen ergänzen)"
+              ? "Material  (Vorschlag: bitte prüfen und Mengen ergänzen)"
               : "Material",
           ),
           ...material.map(zeile),
           zwischensumme("Zwischensumme Material", summe.material),
+          abschnitt("Arbeitsaufwand"),
         ]
       : []),
+    ...leistungen.map(zeile),
+    ...(material.length > 0 ? [zwischensumme("Zwischensumme Arbeitsaufwand", summe.leistungen)] : []),
   ].join("");
 
-  // Solange nicht alle Preise stehen, ist eine ausgerechnete Summe irreführend —
+  // Solange nicht alle Preise stehen, ist eine ausgerechnete Summe irreführend;
   // dann zeigen wir durchgehend Platzhalter.
   const nettoWert = summe.vollstaendig ? euro(summe.netto) : leer;
   const mwstWert = summe.vollstaendig ? euro(summe.mwstBetrag) : leer;
   const bruttoWert = summe.vollstaendig
-    ? `<span style="color:#0b5cad;">${euro(summe.brutto)}</span>`
+    ? `<span style="color:${INK};">${euro(summe.brutto)}</span>`
     : leer;
 
   return `
   <div style="overflow-x:auto;">
-  <table style="width:100%;border-collapse:collapse;font-size:14px;color:#1a1a1a;">
+  <table style="width:100%;border-collapse:collapse;font-size:14px;color:${INK};">
     <thead><tr>
       <th style="${kopfStil}text-align:right;">Pos.</th>
       <th style="${kopfStil}">Leistung</th>
@@ -108,8 +170,8 @@ function positionsTabelle(summe: Angebotssumme): string {
           <td style="${summenZelle}">${nettoWert}</td></tr>
       <tr><td colspan="4" style="${summenZelle}color:#666;">zzgl. ${summe.mwstSatz} % MwSt.</td>
           <td style="${summenZelle}color:#666;">${mwstWert}</td></tr>
-      <tr><td colspan="4" style="${summenZelle}font-size:16px;font-weight:700;border-top:2px solid #0b5cad;">Gesamtbetrag</td>
-          <td style="${summenZelle}font-size:16px;font-weight:700;border-top:2px solid #0b5cad;">${bruttoWert}</td></tr>
+      <tr><td colspan="4" style="${summenZelle}font-size:16px;font-weight:700;border-top:2px solid ${SIGNAL};">Gesamtbetrag</td>
+          <td style="${summenZelle}font-size:16px;font-weight:700;border-top:2px solid ${SIGNAL};">${bruttoWert}</td></tr>
     </tfoot>
   </table>
   </div>`;
@@ -128,8 +190,8 @@ function kundenDokument(
   const titel = istAngebot ? "Angebot" : "Arbeitsprotokoll";
 
   const kopf = `
-    <div style="border-bottom:2px solid #0b5cad;padding-bottom:12px;margin-bottom:16px;">
-      <div style="font-size:18px;font-weight:700;color:#0b5cad;">${escapeHtml(b.firma)}</div>
+    <div style="border-bottom:2px solid ${ANTHRA};padding-bottom:12px;margin-bottom:16px;">
+      <div style="font-size:18px;font-weight:700;color:${ANTHRA};">${escapeHtml(b.firma)}</div>
       <div style="font-size:12px;color:#666;">
         ${escapeHtml([b.strasse, `${b.plz} ${b.ort}`.trim()].filter(Boolean).join(" · "))}
         ${b.telefon ? ` · Tel. ${escapeHtml(b.telefon)}` : ""}
@@ -143,8 +205,8 @@ function kundenDokument(
       ${daten.kunde.strasse ? `${escapeHtml(daten.kunde.strasse)}<br>` : ""}
       ${daten.kunde.plzOrt ? `${escapeHtml(daten.kunde.plzOrt)}<br>` : ""}
     </div>
-    <div style="display:flex;justify-content:space-between;font-size:13px;color:#666;margin-bottom:8px;">
-      <span><strong style="color:#1a1a1a;font-size:16px;">${titel} ${escapeHtml(nummer)}</strong></span>
+    <div style="font-size:13px;color:#666;margin-bottom:8px;">
+      <strong style="color:#1a1a1a;font-size:16px;">${titel} ${escapeHtml(nummer)}</strong>
     </div>
     <div style="font-size:13px;color:#666;margin-bottom:16px;">Datum: ${datumDE(datum)}${
       daten.objekt ? ` · Objekt: ${escapeHtml(daten.objekt)}` : ""
@@ -169,7 +231,7 @@ export function dokumentMail(args: {
   daten: DokumentDaten;
   summe: Angebotssumme;
   preisliste: Preisliste;
-  transkript: string;
+  transkript?: string;
   nummer: string;
   datum: Date;
   gewaehrleistungAblauf?: Date;
@@ -182,14 +244,12 @@ export function dokumentMail(args: {
     daten,
     summe,
     preisliste,
-    transkript,
     nummer,
     datum,
     gewaehrleistungAblauf,
     wordDateiname,
     version = 1,
     bearbeitenUrl,
-    kundenUrl,
   } = args;
   const istNachtrag = version > 1;
   const istAngebot = daten.art === "ANGEBOT";
@@ -199,11 +259,11 @@ export function dokumentMail(args: {
   const kopfSymbol = istNachtrag ? "🔄" : istAngebot ? "📄" : "📋";
   const zusatz = istNachtrag ? ` (Fassung ${version})` : "";
   const betreff = summe.vollstaendig
-    ? `${kopfSymbol} ${titel} ${nummer}${zusatz}: ${kunde} — ${euro(summe.brutto)}`
-    : `${kopfSymbol} ${titel} ${nummer}${zusatz}: ${kunde} — ${summe.positionen.length} Positionen`;
+    ? `${kopfSymbol} ${titel} ${nummer}${zusatz}: ${kunde}, ${euro(summe.brutto)}`
+    : `${kopfSymbol} ${titel} ${nummer}${zusatz}: ${kunde}, ${summe.positionen.length} Positionen`;
 
-  // Der Word-Anhang ist das eigentliche Arbeitsdokument — deshalb ganz oben.
-  // Der Zwischenstand steht bewusst NUR hier, nicht im Kundendokument.
+  // Zwischenstand steht bewusst NUR in der Mail an den Handwerker, nie im
+  // Kundendokument.
   const zwischenstand =
     !summe.vollstaendig && summe.bereitsBepreist > 0
       ? `<br><br><strong>Zwischenstand:</strong> ${euro(summe.bereitsBepreist)} netto aus
@@ -211,44 +271,47 @@ export function dokumentMail(args: {
          ${summe.anzahlOffen} warten noch auf Preis oder Menge.`
       : "";
 
-  // Der Link ist ab jetzt der Hauptweg — bequemer als die Word-Datei zu
-  // bearbeiten, und der Kunde kann von dort aus direkt annehmen.
+  // Nachtrag: dezente Notiz oben, GLEICHES Layout wie die Erst-Mail, nur mit
+  // gelber Akzentleiste statt einer andersfarbigen Box.
+  const nachtragKasten = istNachtrag
+    ? box(
+        `<strong>Aktualisierte Fassung ${version}</strong><br>
+         Dein Nachtrag ist eingearbeitet. Die Angebotsnummer bleibt gleich.
+         Verwende ab jetzt die Datei aus <em>dieser</em> E-Mail. Die vorherige Fassung bleibt im Archiv.`,
+        CARD,
+        SIGNAL,
+      )
+    : "";
+
+  // CTA: helle Karte mit gelbem Button (dunkle Schrift), der Haupt-Weg.
   const linkKasten = bearbeitenUrl
-    ? `<div style="background:#0b5cad;color:#ffffff;border-radius:8px;padding:20px;margin:16px 0;">
-         <div style="font-size:15px;font-weight:600;margin-bottom:10px;">
+    ? `<div style="background:${CARD};border:1px solid ${HAIR};border-radius:10px;padding:20px;margin:16px 0;">
+         <div style="font-size:15px;font-weight:700;color:${INK};margin-bottom:6px;">
            ${istAngebot ? "Angebot" : "Protokoll"} online bearbeiten
          </div>
-         <div style="font-size:14px;margin-bottom:14px;opacity:.9;">
-           Preise eintragen, Positionen anpassen, Summen rechnen automatisch mit —
-           danach als PDF oder Word exportieren.
+         <div style="font-size:14px;color:${MUTED};margin-bottom:16px;">
+           Preise eintragen, Positionen anpassen, die Summen rechnen automatisch mit.
+           Danach als PDF oder Word exportieren.
          </div>
-         <a href="${bearbeitenUrl}" style="display:inline-block;background:#ffffff;color:#0b5cad;
-            text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:600;">
+         <a href="${bearbeitenUrl}" style="display:inline-block;background:${SIGNAL};color:${ANTHRA};
+            text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:700;font-size:14px;">
            Jetzt bearbeiten →
          </a>
-         ${
-           kundenUrl && istAngebot
-             ? `<div style="font-size:12px;margin-top:14px;opacity:.85;">
-                  Link für den Kunden (mit Annehmen-Knopf) findest du im Editor.
-                </div>`
-             : ""
-         }
        </div>`
     : "";
 
   const anhangKasten = wordDateiname
     ? box(
-        `<strong>📎 ${escapeHtml(wordDateiname)}</strong><br>
-         Word-Datei im Anhang — dort ${
+        `<strong style="color:${INK};">📎 ${escapeHtml(wordDateiname)}</strong><br>
+         Word-Datei im Anhang. Dort ${
            summe.vollstaendig ? "prüfen und" : "die Preise eintragen,"
          } bei Bedarf anpassen, dann als PDF speichern und an den Kunden schicken.
          ${
            !summe.vollstaendig && istAngebot
-             ? `<br><span style="color:#666;font-size:13px;">Schneller geht's per Sprachnachricht:
-                Preise und Mengen einfach durchsagen — ich rechne und schicke die Datei neu.</span>`
+             ? `<br><span style="color:${MUTED};font-size:13px;">Schneller geht's per Sprachnachricht:
+                Preise und Mengen einfach durchsagen, ich rechne und schicke die Datei neu.</span>`
              : ""
          }${zwischenstand}`,
-        "#eaf2fb",
       )
     : "";
 
@@ -256,72 +319,65 @@ export function dokumentMail(args: {
     daten.rueckfragen.length > 0
       ? box(
           `<strong>❓ Vor dem Versand prüfen</strong>
-           <ul style="margin:8px 0;">${daten.rueckfragen.map((f) => `<li>${escapeHtml(f)}</li>`).join("")}</ul>`,
-          "#fff8e6",
+           <ul style="margin:8px 0;padding-left:20px;">${daten.rueckfragen
+             .map((f) => `<li>${escapeHtml(f)}</li>`)
+             .join("")}</ul>`,
+          AMBER,
+          AMBER_BORDER,
         )
       : "";
 
   const gewaehrleistungsBlock =
     daten.gewaehrleistung && gewaehrleistungAblauf
-      ? `<h3>3️⃣ Gewährleistung — automatisch im Blick</h3>
+      ? `<h3 style="${H3}">3️⃣ Gewährleistung: automatisch im Blick</h3>
          ${box(
            `<strong>Frist:</strong> ${
              daten.gewaehrleistung.typ === "BAUWERK_5_JAHRE" ? 5 : 2
-           } Jahre (§ 634a BGB — ${escapeHtml(daten.gewaehrleistung.begruendung)})<br>
+           } Jahre (§ 634a BGB: ${escapeHtml(daten.gewaehrleistung.begruendung)})<br>
             <strong>Läuft ab am:</strong> ${datumDE(gewaehrleistungAblauf)}<br>
-            <span style="color:#0b5cad;">🔔 Du bekommst automatisch 3 Monate vor Ablauf eine Erinnerung —
+            <span style="color:${INK};">🔔 Du bekommst automatisch 3 Monate vor Ablauf eine Erinnerung,
             die perfekte Gelegenheit für ein Wartungsangebot.</span>`,
-           "#fff8e6",
+           AMBER,
+           AMBER_BORDER,
          )}`
       : "";
 
-  const nachtragKasten = istNachtrag
-    ? box(
-        `<strong>🔄 Aktualisierte Fassung ${version}</strong><br>
-         Dein Nachtrag ist eingearbeitet. Die Angebotsnummer bleibt gleich —
-         verwende ab jetzt die Datei aus <em>dieser</em> E-Mail.
-         Die vorherige Fassung bleibt im Archiv.`,
-        "#eaf2fb",
-      )
-    : "";
-
   const html = `
 <div style="${RAHMEN}">
-  <h2 style="color:#0b5cad;margin-top:0;">${
-    istNachtrag
-      ? `🔄 ${titel} ${escapeHtml(nummer)} aktualisiert`
-      : istAngebot
-        ? "📄 Dein Angebot ist fertig"
-        : "✅ Dein Protokoll ist fertig"
-  }</h2>
-  ${nachtragKasten}
-  ${linkKasten}
-  ${anhangKasten}
-  ${rueckfragen}
+  ${kopfBanner}
+  <div style="padding:24px;">
+    <h2 style="font-size:21px;color:${INK};margin:4px 0 2px;font-weight:800;">${
+      istNachtrag
+        ? `${titel} ${escapeHtml(nummer)} aktualisiert`
+        : istAngebot
+          ? "Dein Angebot ist fertig"
+          : "Dein Protokoll ist fertig"
+    }</h2>
+    <div style="height:3px;width:44px;background:${SIGNAL};border-radius:2px;margin:0 0 14px;"></div>
 
-  <h3>1️⃣ Vorschau — so sieht die Word-Datei aus</h3>
-  <p style="color:#666;font-size:14px;">Zum Bearbeiten den Anhang öffnen; hier nur zur schnellen Kontrolle:</p>
-  <div style="border:1px solid #d7dbe0;border-radius:8px;padding:20px;background:#ffffff;color:#1a1a1a;">
-    ${kundenDokument(daten, summe, preisliste, nummer, datum)}
+    ${nachtragKasten}
+    ${linkKasten}
+    ${anhangKasten}
+    ${rueckfragen}
+
+    <h3 style="${H3}">1️⃣ Vorschau: so sieht die Word-Datei aus</h3>
+    <p style="color:${MUTED};font-size:14px;margin:0 0 10px;">Zum Bearbeiten den Anhang öffnen; hier nur zur schnellen Kontrolle:</p>
+    <div style="border:1px solid ${HAIR};border-radius:10px;padding:20px;background:#ffffff;color:${INK};">
+      ${kundenDokument(daten, summe, preisliste, nummer, datum)}
+    </div>
+
+    <h3 style="${H3}">2️⃣ Notizen für dich (nicht im Kundenangebot)</h3>
+    ${box(`
+      ${daten.aufmassNotizen ? `<strong>📐 Aufmaß:</strong> ${escapeHtml(daten.aufmassNotizen)}<br>` : ""}
+      ${daten.besonderheiten ? `<strong>⚠️ Besonderheiten:</strong> ${escapeHtml(daten.besonderheiten)}<br>` : ""}
+      ${daten.folgetermin ? `<strong>📅 Folgetermin:</strong> ${escapeHtml(daten.folgetermin)}<br>` : ""}
+      <span style="color:#888;font-size:13px;">Archiv-Nr. ${escapeHtml(nummer)}</span>
+    `)}
+
+    ${gewaehrleistungsBlock}
+
+    ${signatur}
   </div>
-
-  <h3>2️⃣ Interne Notizen</h3>
-  ${box(`
-    ${daten.aufmassNotizen ? `<strong>📐 Aufmaß:</strong> ${escapeHtml(daten.aufmassNotizen)}<br>` : ""}
-    ${daten.besonderheiten ? `<strong>⚠️ Besonderheiten:</strong> ${escapeHtml(daten.besonderheiten)}<br>` : ""}
-    ${daten.folgetermin ? `<strong>📅 Folgetermin:</strong> ${escapeHtml(daten.folgetermin)}<br>` : ""}
-    <span style="color:#888;font-size:13px;">Archiv-Nr. ${escapeHtml(nummer)}</span>
-  `)}
-
-  ${gewaehrleistungsBlock}
-
-  <details style="margin-top:24px;">
-    <summary style="color:#888;cursor:pointer;">Original-Transkript anzeigen (Beweissicherung)</summary>
-    <p style="color:#666;font-size:13px;white-space:pre-wrap;">${escapeHtml(transkript)}</p>
-  </details>
-
-  <hr style="border:none;border-top:1px solid #ddd;margin:24px 0;">
-  <p style="color:#999;font-size:12px;">AuftragsBoss · Diktiert per WhatsApp, archiviert für immer.</p>
 </div>`;
 
   return { betreff, html };
@@ -342,19 +398,21 @@ export function gewaehrleistungsErinnerung(args: {
       betreff: `🔔 Gewährleistung läuft in 3 Monaten ab: ${kunde}`,
       html: `
 <div style="${RAHMEN}">
-  <h2 style="color:#b7791f;margin-top:0;">🔔 Gewährleistungs-Erinnerung</h2>
-  <p>Die Gewährleistung für den Auftrag bei <strong>${escapeHtml(kunde)}</strong>
-     (${datumDE(datum)}, Archiv-Nr. ${escapeHtml(nummer)}) läuft am
-     <strong>${datumDE(ablauf)}</strong> ab.</p>
-  ${box(
-    `<strong>💡 Deine Chance:</strong> Jetzt beim Kunden melden und einen
-     <strong>Wartungs- oder Prüftermin</strong> anbieten — bevor die Frist endet.
-     Das wirkt professionell und bringt Folgeaufträge.`,
-    "#fff8e6",
-  )}
-  <details><summary style="color:#888;cursor:pointer;">Damaliges Dokument anzeigen</summary>
-    <div style="white-space:pre-wrap;color:#666;font-size:13px;">${escapeHtml(einleitung)}</div>
-  </details>
+  ${kopfBanner}
+  <div style="padding:24px;">
+    <h2 style="color:#b7791f;margin:4px 0 12px;font-size:20px;">🔔 Gewährleistungs-Erinnerung</h2>
+    <p>Die Gewährleistung für den Auftrag bei <strong>${escapeHtml(kunde)}</strong>
+       (${datumDE(datum)}, Archiv-Nr. ${escapeHtml(nummer)}) läuft am
+       <strong>${datumDE(ablauf)}</strong> ab.</p>
+    ${box(
+      `<strong>💡 Deine Chance:</strong> Jetzt beim Kunden melden und einen
+       <strong>Wartungs- oder Prüftermin</strong> anbieten, bevor die Frist endet.
+       Das wirkt professionell und bringt Folgeaufträge.`,
+      AMBER,
+      AMBER_BORDER,
+    )}
+    ${signatur}
+  </div>
 </div>`,
     };
   }
@@ -363,11 +421,15 @@ export function gewaehrleistungsErinnerung(args: {
     betreff: `✅ Gewährleistung abgelaufen: ${kunde}`,
     html: `
 <div style="${RAHMEN}">
-  <h2 style="color:#2e7d32;margin-top:0;">✅ Gewährleistung beendet</h2>
-  <p>Die Gewährleistungsfrist für den Auftrag bei <strong>${escapeHtml(kunde)}</strong>
-     (${datumDE(datum)}, Archiv-Nr. ${escapeHtml(nummer)}) ist am
-     <strong>${datumDE(ablauf)}</strong> abgelaufen. Deine Haftung für diesen
-     Auftrag ist damit dokumentiert beendet — das Dokument bleibt im Archiv.</p>
+  ${kopfBanner}
+  <div style="padding:24px;">
+    <h2 style="color:#2e7d32;margin:4px 0 12px;font-size:20px;">✅ Gewährleistung beendet</h2>
+    <p>Die Gewährleistungsfrist für den Auftrag bei <strong>${escapeHtml(kunde)}</strong>
+       (${datumDE(datum)}, Archiv-Nr. ${escapeHtml(nummer)}) ist am
+       <strong>${datumDE(ablauf)}</strong> abgelaufen. Deine Haftung für diesen
+       Auftrag ist damit dokumentiert beendet. Das Dokument bleibt im Archiv.</p>
+    ${signatur}
+  </div>
 </div>`,
   };
 }

@@ -18,7 +18,7 @@ import { strukturiereDialog } from "./ai/structure.js";
 import { berechneAngebot, euro } from "./angebot/berechnung.js";
 import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
 import { ladePreisliste } from "./preisliste.js";
-import { dokumentMail } from "./email/templates.js";
+import { dokumentMail, logoAnhang } from "./email/templates.js";
 import { sendeMail, WORD_MIME } from "./email/send.js";
 import { bearbeitenLink, einstellungenLink, erzeugeToken, kundenLink, werbeLink } from "./web/tokens.js";
 import { effektivePreisliste, einstellungenTokenBereit } from "./betrieb/betriebsdaten.js";
@@ -435,6 +435,7 @@ export async function erstelleDokument(args: {
     try {
       await sendeMail(handwerker.email, mail.betreff, mail.html, [
         { filename: dateiname, content: word, contentType: WORD_MIME },
+        logoAnhang(),
       ]);
     } catch (err) {
       console.warn(

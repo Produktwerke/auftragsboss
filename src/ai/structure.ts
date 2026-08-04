@@ -285,6 +285,7 @@ Du erhältst das Roh-Transkript einer WhatsApp-Sprachnachricht, die ein Handwerk
 - **RECHNE NICHT.** Keine Zwischensummen, keine Gesamtsumme, keine Mehrwertsteuer. Das übernimmt das Programm. Du lieferst nur Menge und Einzelpreis.
 - **ERFINDE KEINE LEISTUNGEN.** Nur was diktiert wurde. Wenn dir auffällt, dass ein üblicher Arbeitsschritt fehlt, gehört dieser Hinweis in "rueckfragen" — nicht in die Positionsliste.
 - Was nicht im Diktat steht, ist null oder ein leeres Array.
+- **KEINE GEDANKENSTRICHE.** Verwende in allen Texten (Einleitung, Schlusstext, Rückfragen, Dialog-Nachrichten) keine Gedankenstriche (— oder –). Nutze stattdessen Komma, Punkt oder Doppelpunkt. Ein normaler Bindestrich in zusammengesetzten Wörtern (z.B. „Wartungs-Termin") ist erlaubt.
 
 ## Materialwissen für dieses Gewerk (${preisliste.betrieb.gewerk || "unbekannt"})
 

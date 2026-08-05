@@ -214,6 +214,14 @@ export function editorSeite(args: {
     #postab td.c-einheit{ flex-wrap:wrap; }
     #postab td.c-einheit .pos-einheit-custom{ flex:1 0 100%; width:100%; max-width:none; margin-top:6px; }
   }
+  /* Herkunfts-Etiketten je Zeile (woher der Preis kommt) */
+  .hk-box{ margin-top:3px; line-height:1; }
+  .hk{ display:inline-block; font-size:11px; line-height:1.4; padding:1px 8px; border-radius:10px; font-weight:600; }
+  .hk-vor{ background:#fff3e0; color:#b7791f; }
+  .hk-ged{ background:#e8f0fe; color:#1a56c4; }
+  .hk-dik{ background:#eef2f5; color:#5a636b; }
+  .hk-lst{ background:#eef7ee; color:#2e7d32; }
+  .hk-man{ background:#f0f0f2; color:#555; }
 </style>
 </head>
 <body>
@@ -313,12 +321,29 @@ let positionen = START.positionen.map(p => ({
   // Herkunft mitführen, damit sie beim Speichern erhalten bleibt (früher ging
   // sie verloren und jeder Preis wurde fälschlich zu "DIKTAT").
   preisquelle: p.preisquelle || (p.einzelpreis!=null ? 'DIKTAT' : 'UNBEKANNT'),
-  vorschlag: !!p.vorschlag, mengeUnsicher: !!p.mengeUnsicher
+  vorschlag: !!p.vorschlag, mengeUnsicher: !!p.mengeUnsicher,
+  preisStand: p.preisStand || null
 }));
 
 const euro = n => n.toLocaleString('de-DE',{style:'currency',currency:'EUR'});
 const OFFEN = '<span class="offen">___ €</span>';
 const katName = k => k==='LEISTUNG' ? 'Arbeitsaufwand' : (k==='MATERIAL' ? 'Material' : k);
+
+// Herkunft einer Zeile als kleines, verständliches Etikett. Zeigt dem Handwerker
+// auf einen Blick, woher ein Preis kommt und was er noch prüfen sollte, ohne die
+// Oberfläche zu überladen. Vorschläge haben Vorrang (die will er bewusst prüfen).
+function fmtDatum(iso){ try{ return new Date(iso).toLocaleDateString('de-DE'); }catch(e){ return ''; } }
+function herkunftHtml(p){
+  if(p.vorschlag) return '<span class="hk hk-vor">Vorschlag, bitte prüfen</span>';
+  switch(p.preisquelle){
+    case 'PREISGEDAECHTNIS':
+      return '<span class="hk hk-ged">aus Preisgedächtnis'+(p.preisStand?', zuletzt '+fmtDatum(p.preisStand):'')+'</span>';
+    case 'DIKTAT':    return '<span class="hk hk-dik">aus Diktat</span>';
+    case 'PREISLISTE':return '<span class="hk hk-lst">aus Preisliste</span>';
+    case 'MANUELL':   return '<span class="hk hk-man">selbst eingetragen</span>';
+    default:          return '';
+  }
+}
 
 function zeilensumme(p){
   const menge = p.einheit==='pauschal' ? (p.menge??1) : p.menge;
@@ -367,7 +392,7 @@ function render(){
       const g = zeilensumme(p);
       const tr = document.createElement('tr');
       tr.innerHTML =
-        '<td class="c-beschr" data-label="Leistung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this)">'+esc(p.beschreibung)+'</textarea></td>'+
+        '<td class="c-beschr" data-label="Leistung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this)">'+esc(p.beschreibung)+'</textarea><div class="hk-box">'+herkunftHtml(p)+'</div></td>'+
         '<td class="r" data-label="Menge"><input class="pos-menge r" inputmode="decimal" value="'+(p.menge??'')+'" oninput="setNum('+i+',\\'menge\\',this.value,this)"></td>'+
         '<td class="c-einheit" data-label="Einheit">'+einheitZelle(i,p.einheit)+'</td>'+
         '<td class="r" data-label="Einzelpreis"><input class="pos-preis r" inputmode="decimal" value="'+(p.einzelpreis??'')+'" placeholder="___" oninput="setNum('+i+',\\'einzelpreis\\',this.value,this)"></td>'+
@@ -505,6 +530,9 @@ function setNum(i,feld,wert,el){
   // (bzw. UNBEKANNT, wenn er ihn leert) — nicht mehr die ursprüngliche KI-Quelle.
   if(feld==='einzelpreis'){
     positionen[i].preisquelle = positionen[i].einzelpreis==null ? 'UNBEKANNT' : 'MANUELL';
+    positionen[i].preisStand = null;
+    const box = el.closest('tr').querySelector('.hk-box');
+    if(box) box.innerHTML = herkunftHtml(positionen[i]);
   }
   const g = zeilensumme(positionen[i]);
   const zelle = el.closest('tr').querySelector('.zeilensumme');

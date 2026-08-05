@@ -88,13 +88,17 @@ export interface GedaechtnisVorschlag {
  * unangetastet. Der Aufrufer macht die Vorschläge für den Handwerker sichtbar,
  * damit nichts stillschweigend endgültig wird.
  */
+/** Position plus optionalem Datumsstempel des Preisgedächtnis-Vorschlags.
+ *  preisStand reist als ISO-Datum bis in den Editor mit (Herkunftsanzeige). */
+export type PositionMitStand = Position & { preisStand?: string };
+
 export async function schlagePreiseVor(
   prisma: PrismaClient,
   handwerkerId: string,
   positionen: Position[],
-): Promise<{ positionen: Position[]; vorschlaege: GedaechtnisVorschlag[] }> {
+): Promise<{ positionen: PositionMitStand[]; vorschlaege: GedaechtnisVorschlag[] }> {
   const vorschlaege: GedaechtnisVorschlag[] = [];
-  const ergebnis: Position[] = [];
+  const ergebnis: PositionMitStand[] = [];
   for (const p of positionen) {
     if (p.einzelpreis !== null || !p.beschreibung.trim()) {
       ergebnis.push(p);
@@ -105,7 +109,12 @@ export async function schlagePreiseVor(
       where: { handwerkerId_leistungSchluessel: { handwerkerId, leistungSchluessel: schluessel } },
     });
     if (treffer) {
-      ergebnis.push({ ...p, einzelpreis: treffer.letzterPreis, preisquelle: "PREISGEDAECHTNIS" });
+      ergebnis.push({
+        ...p,
+        einzelpreis: treffer.letzterPreis,
+        preisquelle: "PREISGEDAECHTNIS",
+        preisStand: treffer.zuletztAm.toISOString(),
+      });
       vorschlaege.push({ beschreibung: p.beschreibung, preis: treffer.letzterPreis, zuletztAm: treffer.zuletztAm });
     } else {
       ergebnis.push(p);

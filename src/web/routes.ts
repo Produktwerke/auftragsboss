@@ -51,6 +51,7 @@ interface EinstellungenKoerper {
   bank?: string;
   farbe?: string; // Hex ohne #
   standardEinleitung?: string;
+  preisGedaechtnisAktiv?: boolean;
   standardSchlusstext?: string;
 }
 
@@ -378,6 +379,9 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
           farbe,
           standardEinleitung: text(k.standardEinleitung),
           standardSchlusstext: text(k.standardSchlusstext),
+          ...(typeof k.preisGedaechtnisAktiv === "boolean"
+            ? { preisGedaechtnisAktiv: k.preisGedaechtnisAktiv }
+            : {}),
         },
       });
       return reply.send({ ok: true });

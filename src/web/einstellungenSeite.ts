@@ -223,6 +223,16 @@ export function einstellungenSeite(args: {
     <textarea id="standardSchlusstext" placeholder="z.B. Es gelten unsere allgemeinen Geschäftsbedingungen. Gewährleistung nach den gesetzlichen Bestimmungen.">${escapeHtml(f.standardSchlusstext.wert)}</textarea>
   </div>
 
+  <!-- Preise / Preisgedächtnis -->
+  <div class="karte">
+    <h2>Preise</h2>
+    <p class="hint">AuftragsBoss erfindet nie Preise. Auf Wunsch merkt es sich, wie Sie ähnliche Leistungen zuletzt kalkuliert haben, und schlägt den Preis beim nächsten Mal mit Datum vor. Sie bestätigen jeden Vorschlag selbst.</p>
+    <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:500;">
+      <input type="checkbox" id="preisGedaechtnisAktiv" ${h.preisGedaechtnisAktiv ? "checked" : ""} style="width:auto;">
+      <span>Meine Preise merken (Preisgedächtnis)</span>
+    </label>
+  </div>
+
   <!-- Angebotsübersicht -->
   <div class="karte">
     <h2>Ihre Angebote</h2>
@@ -279,6 +289,7 @@ function markiere(){
 async function speichern(){
   const daten={farbe:document.getElementById("farbe").value.replace("#","")};
   for(const id of FELDER) daten[id]=val(id);
+  daten.preisGedaechtnisAktiv=document.getElementById("preisGedaechtnisAktiv").checked;
   try{
     const r=await fetch("/api/einstellungen/"+TOKEN,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(daten)});
     if(!r.ok) throw 0;
@@ -289,6 +300,7 @@ function setStatus(id,text,farbe){ const s=document.getElementById(id); s.textCo
 
 FELDER.forEach(id=>document.getElementById(id).addEventListener("input",markiere));
 document.getElementById("farbe").addEventListener("input",markiere);
+document.getElementById("preisGedaechtnisAktiv").addEventListener("change",markiere);
 
 // ── Logo hochladen ────────────────────────────────────
 document.getElementById("logoDatei").addEventListener("change",function(){

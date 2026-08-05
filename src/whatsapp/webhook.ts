@@ -21,6 +21,7 @@ interface WhatsAppMessage {
   id: string;
   type: string;
   audio?: { id: string; mime_type: string };
+  image?: { id: string; mime_type: string; caption?: string };
   text?: { body: string };
 }
 
@@ -89,15 +90,18 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     const messages =
       body.entry?.flatMap((e) => e.changes ?? []).flatMap((c) => c.value?.messages ?? []) ?? [];
 
-    // Sprache UND Text sind gleichwertige Eingaben — Rückfragen darf der
-    // Handwerker so beantworten, wie es ihm im Moment leichter fällt.
+    // Sprache, Foto UND Text sind gleichwertige Eingaben — der Handwerker darf
+    // so liefern, wie es ihm im Moment leichter fällt (diktieren, Aufmaß-Zettel
+    // fotografieren oder tippen).
     for (const msg of messages) {
       const eingabe =
         msg.type === "audio" && msg.audio
           ? { vonNummer: msg.from, mediaId: msg.audio.id }
-          : msg.type === "text" && msg.text
-            ? { vonNummer: msg.from, text: msg.text.body }
-            : null;
+          : msg.type === "image" && msg.image
+            ? { vonNummer: msg.from, bildMediaId: msg.image.id }
+            : msg.type === "text" && msg.text
+              ? { vonNummer: msg.from, text: msg.text.body }
+              : null;
 
       if (!eingabe) continue;
 

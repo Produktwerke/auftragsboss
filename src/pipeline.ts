@@ -11,9 +11,10 @@
 // Abgeschlossen wird außerdem bei Stichwort ("weiter", "später"),
 // nach MAX_RUNDEN Rückfragen oder bei Zeitablauf (siehe jobs/vorgangTimeout.ts).
 import { PrismaClient, type Vorgang } from "@prisma/client";
-import { ladeAudio } from "./whatsapp/media.js";
+import { ladeAudio, ladeBild } from "./whatsapp/media.js";
 import { sendeWhatsAppText } from "./whatsapp/send.js";
 import { transkribiereAudio } from "./ai/transcribe.js";
+import { liesBildNotiz } from "./ai/bildLesen.js";
 import { strukturiereDialog } from "./ai/structure.js";
 import { berechneAngebot, euro } from "./angebot/berechnung.js";
 import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
@@ -80,9 +81,10 @@ async function naechsteNummer(handwerkerId: string, art: string, datum: Date): P
 export async function verarbeiteNachricht(args: {
   vonNummer: string;
   mediaId?: string; // Sprachnachricht
+  bildMediaId?: string; // Foto/Screenshot (Aufmaß-Zettel, Handy-Notiz)
   text?: string; // Textnachricht
 }): Promise<void> {
-  const { vonNummer, mediaId, text } = args;
+  const { vonNummer, mediaId, bildMediaId, text } = args;
 
   // 1. Absender kennen wir? (Kein Login — die Nummer IST die Identität)
   let handwerker = await prisma.handwerker.findUnique({ where: { whatsappNummer: vonNummer } });
@@ -200,6 +202,13 @@ export async function verarbeiteNachricht(args: {
       inhalt = t.haupttext;
       zweitfassung = t.varianten[1];
       art = "sprache";
+    } else if (bildMediaId) {
+      // Foto/Screenshot: der Handwerker fotografiert seinen Aufmaß-Zettel oder
+      // schickt einen Notiz-Screenshot. Claude Vision liest den Inhalt als Text,
+      // der Rest der Pipeline behandelt ihn wie ein Diktat.
+      await sendeWhatsAppText(vonNummer, "📷 Foto hab' ich! Ich lese deine Notizen und mache ein Angebot, einen kurzen Moment …");
+      inhalt = await liesBildNotiz(await ladeBild(bildMediaId));
+      art = "text";
     } else {
       inhalt = (text ?? "").trim();
       art = "text";
@@ -307,6 +316,7 @@ const laufendeVerarbeitung = new Map<string, Promise<unknown>>();
 export function verarbeiteNachrichtSeriell(args: {
   vonNummer: string;
   mediaId?: string;
+  bildMediaId?: string;
   text?: string;
 }): Promise<void> {
   const key = args.vonNummer;

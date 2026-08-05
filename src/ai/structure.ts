@@ -55,8 +55,12 @@ export const PositionSchema = z.object({
         "später am Schreibtisch ein. Niemals schätzen oder aus Erfahrung ergänzen.",
     ),
   preisquelle: z
-    .enum(["DIKTAT", "PREISLISTE", "UNBEKANNT"])
-    .describe("Woher der Einzelpreis stammt. UNBEKANNT, wenn einzelpreis null ist."),
+    .enum(["DIKTAT", "PREISLISTE", "PREISGEDAECHTNIS", "MANUELL", "UNBEKANNT"])
+    .describe(
+      "Woher der Einzelpreis stammt. Du als KI setzt NUR eines von: DIKTAT (im Diktat ausdrücklich " +
+        "genannt), PREISLISTE (steht in der hinterlegten Preisliste) oder UNBEKANNT (einzelpreis null). " +
+        "PREISGEDAECHTNIS und MANUELL setzt ausschließlich die Anwendung, niemals du.",
+    ),
   mengeUnsicher: z
     .boolean()
     .describe("true, wenn die Menge geschätzt/abgeleitet wurde statt klar diktiert (z.B. aus Raumangaben gerechnet)."),
@@ -184,6 +188,9 @@ export const DokumentSchema = z.object({
 
 export type DokumentDaten = z.infer<typeof DokumentSchema>;
 export type Position = z.infer<typeof PositionSchema>;
+/** Herkunft eines Einzelpreises. DIKTAT/PREISLISTE/UNBEKANNT setzt die KI,
+ *  PREISGEDAECHTNIS/MANUELL setzt die Anwendung (Editor bzw. Preisgedächtnis). */
+export type Preisquelle = Position["preisquelle"];
 
 // Gewerkespezifische Materialketten. Malerei ist bewusst am ausführlichsten
 // gepflegt — lieber ein Gewerk richtig gut als sieben halbgut. Weitere Gewerke

@@ -20,9 +20,10 @@ import { effektivePreisliste, einstellungenTokenBereit } from "../betrieb/betrie
 import { bearbeitenLink, einstellungenLink } from "./tokens.js";
 import { ladeLogo } from "../betrieb/logo.js";
 import { speichereLogo, entferneLogo, LogoFehler } from "../betrieb/logoUpload.js";
-import { smtpKonfiguriert } from "../config.js";
+import { smtpKonfiguriert, featureConfig } from "../config.js";
 import { sendeMail, WORD_MIME } from "../email/send.js";
 import { dokumentMail, logoAnhang } from "../email/templates.js";
+import { merkePreise } from "../betrieb/preisgedaechtnis.js";
 
 interface SpeicherKoerper {
   kundeName?: string;
@@ -121,6 +122,16 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
           : {}),
       },
     });
+
+    // Preisgedächtnis speisen (opt-in): merkt sich die eingetragenen Preise
+    // DIESES Betriebs für ähnliche Leistungen. Nur wenn Flag + Betriebs-
+    // einstellung aktiv; sonst passiert nichts. Streng an handwerkerId gebunden.
+    if (positionen && featureConfig().FEATURE_PREISGEDAECHTNIS) {
+      const betrieb = await prisma.handwerker.findUnique({ where: { id: dokument.handwerkerId } });
+      if (betrieb?.preisGedaechtnisAktiv) {
+        await merkePreise(prisma, betrieb.id, positionen);
+      }
+    }
 
     return reply.send({ ok: true });
   });

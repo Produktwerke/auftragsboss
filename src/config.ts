@@ -92,6 +92,30 @@ export const direkttestConfig = lade(
   }),
 );
 
+// Feature-Flags für den schrittweisen Maler-Umbau. Jede neue Fähigkeit liegt
+// hinter einem Schalter, der standardmäßig AUS ist — so verändert der Umbau das
+// Live-Verhalten erst, wenn der jeweilige Baustein bewusst aktiviert wird
+// (Rollback = Flag in der .env auf "false"). Bricht nie ab (alles hat Vorgaben).
+const flagge = (vorgabe: boolean) =>
+  z
+    .string()
+    .default(String(vorgabe))
+    .transform((v) => ["true", "1", "ja", "on"].includes(v.trim().toLowerCase()));
+
+export const featureConfig = lade(
+  "Feature-Flags",
+  z.object({
+    // Deterministischer Validator vor jeder Ausgabe (erzwingt: keine erfundenen
+    // Preise/Fakten, Herkunft je Position, keine Fremd-Betriebsdaten).
+    FEATURE_VALIDATOR: flagge(false),
+    // Preisgedächtnis: merkt sich (opt-in je Betrieb), wie ähnliche Leistungen
+    // zuletzt kalkuliert wurden, und schlägt sie datiert vor.
+    FEATURE_PREISGEDAECHTNIS: flagge(false),
+    // Maler-Scope: Gewerk als explizites Objekt, Maler-Fachlogik greift.
+    FEATURE_MALER_SCOPE: flagge(false),
+  }),
+);
+
 export const emailConfig = lade(
   "E-Mail (SMTP)",
   z.object({

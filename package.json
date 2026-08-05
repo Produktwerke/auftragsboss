@@ -11,6 +11,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "test:ki": "tsx src/test-ki.ts",
     "test:demo": "tsx src/test-demo.ts",
     "test:dialog": "tsx src/test-dialog.ts",
@@ -40,6 +41,7 @@
     "@types/pdfkit": "^0.17.6",
     "prisma": "^6.19.3",
     "tsx": "^4.23.1",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   }
 }

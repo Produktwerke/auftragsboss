@@ -309,7 +309,11 @@ const EINHEIT_LABEL = {m2:'m²', lfm:'lfm', Stk:'Stk.', Std:'Std.', l:'Liter', k
 const einheitLabel = e => EINHEIT_LABEL[e] || e;
 let positionen = START.positionen.map(p => ({
   kategorie: p.kategorie, beschreibung: p.beschreibung,
-  menge: p.menge, einheit: p.einheit, einzelpreis: p.einzelpreis
+  menge: p.menge, einheit: p.einheit, einzelpreis: p.einzelpreis,
+  // Herkunft mitführen, damit sie beim Speichern erhalten bleibt (früher ging
+  // sie verloren und jeder Preis wurde fälschlich zu "DIKTAT").
+  preisquelle: p.preisquelle || (p.einzelpreis!=null ? 'DIKTAT' : 'UNBEKANNT'),
+  vorschlag: !!p.vorschlag, mengeUnsicher: !!p.mengeUnsicher
 }));
 
 const euro = n => n.toLocaleString('de-DE',{style:'currency',currency:'EUR'});
@@ -497,6 +501,11 @@ function setF(i,feld,wert){ positionen[i][feld]=wert; if(feld==='einheit') rende
 function setNum(i,feld,wert,el){
   const t = wert.replace(',','.').trim();
   positionen[i][feld] = t===''?null:(isNaN(parseFloat(t))?null:parseFloat(t));
+  // Ändert der Handwerker den Preis von Hand, ist die Herkunft ab jetzt MANUELL
+  // (bzw. UNBEKANNT, wenn er ihn leert) — nicht mehr die ursprüngliche KI-Quelle.
+  if(feld==='einzelpreis'){
+    positionen[i].preisquelle = positionen[i].einzelpreis==null ? 'UNBEKANNT' : 'MANUELL';
+  }
   const g = zeilensumme(positionen[i]);
   const zelle = el.closest('tr').querySelector('.zeilensumme');
   if(zelle) zelle.innerHTML = g==null?OFFEN:euro(g);
@@ -512,7 +521,8 @@ function neuePosition(kat){
   // nur den Preis ein. Material/eigene Kategorien starten neutral mit m².
   const istLeistung = kat==='LEISTUNG';
   const neue = {kategorie:kat,beschreibung:'',
-    menge:istLeistung?1:null, einheit:istLeistung?'pauschal':'m2', einzelpreis:null};
+    menge:istLeistung?1:null, einheit:istLeistung?'pauschal':'m2', einzelpreis:null,
+    preisquelle:'UNBEKANNT', vorschlag:false, mengeUnsicher:false};
   if(letzte>=0) positionen.splice(letzte+1,0,neue); else positionen.push(neue);
   render(); markiereGeaendert();
 }
@@ -523,7 +533,7 @@ function neueKategorie(){
   if(kategorien().some(k=>katName(k).toLowerCase()===name.toLowerCase())){
     feld.select(); return; // gibt es schon — nicht doppelt anlegen
   }
-  positionen.push({kategorie:name,beschreibung:'',menge:null,einheit:'m2',einzelpreis:null});
+  positionen.push({kategorie:name,beschreibung:'',menge:null,einheit:'m2',einzelpreis:null,preisquelle:'UNBEKANNT',vorschlag:false,mengeUnsicher:false});
   feld.value='';
   render(); markiereGeaendert();
 }

@@ -2,7 +2,7 @@
 // Word-/E-Mail-Erzeugung erwartet. Editor und Export teilen sich so denselben
 // Datenweg — was im Browser bearbeitet wird, landet unverändert im Dokument.
 import type { Dokument } from "@prisma/client";
-import type { DokumentDaten, Position } from "../ai/structure.js";
+import type { DokumentDaten, Position, Preisquelle } from "../ai/structure.js";
 import type { EingabePosition } from "../angebot/berechnung.js";
 
 export function dokumentZuDaten(dok: Dokument): DokumentDaten {
@@ -34,17 +34,27 @@ export interface EditorPosition {
   menge: number | null;
   einheit: string | null; // aus der Liste ODER eigene Einheit ("Andere…")
   einzelpreis: number | null;
+  // Herkunft wird jetzt vom Editor MITGELIEFERT und bleibt erhalten. Früher hat
+  // diese Funktion sie fest überschrieben, wodurch die echte Quelle (Diktat,
+  // Preisliste, Vorschlag) beim ersten Speichern verloren ging. Optional, damit
+  // ältere Clients ohne diese Felder weiter funktionieren (Fallback unten).
+  preisquelle?: Preisquelle;
+  vorschlag?: boolean;
+  mengeUnsicher?: boolean;
 }
 
 export function editorZuPositionen(eingabe: EditorPosition[]): EingabePosition[] {
   return eingabe.map((p) => ({
     kategorie: p.kategorie,
-    vorschlag: false, // im Editor bestätigt der Handwerker jede Zeile bewusst
+    vorschlag: p.vorschlag ?? false,
     beschreibung: p.beschreibung,
     menge: p.menge,
     einheit: p.einheit,
     einzelpreis: p.einzelpreis,
-    preisquelle: p.einzelpreis !== null ? "DIKTAT" : "UNBEKANNT",
-    mengeUnsicher: false,
+    // Vom Editor gelieferte Herkunft übernehmen. Fehlt sie (Altbestand), aus dem
+    // Preis ableiten: ein von Hand vorhandener Preis gilt als MANUELL, kein Preis
+    // als UNBEKANNT. Nie mehr fälschlich als DIKTAT ausweisen.
+    preisquelle: p.preisquelle ?? (p.einzelpreis !== null ? "MANUELL" : "UNBEKANNT"),
+    mengeUnsicher: p.mengeUnsicher ?? false,
   }));
 }

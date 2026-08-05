@@ -25,7 +25,10 @@ import { effektivePreisliste, einstellungenTokenBereit } from "./betrieb/betrieb
 import { willFeedback, extrahiereFeedback, FEEDBACK_FENSTER_MINUTEN } from "./feedback.js";
 import { werbeCodeBereit, EMPFEHLUNG_AB_ANGEBOT } from "./empfehlung.js";
 import { starteTestFuerNeueNummer, testNachrichtBlockiert } from "./direkttest.js";
-import { direkttestConfig } from "./config.js";
+import { direkttestConfig, featureConfig } from "./config.js";
+import { validierePositionen } from "./validierung/validator.js";
+import { schlagePreiseVor } from "./betrieb/preisgedaechtnis.js";
+import { spurEvent } from "./analytics/event.js";
 import {
   MAX_RUNDEN,
   alsDialog,
@@ -271,6 +274,7 @@ export async function verarbeiteNachricht(args: {
         },
       });
       console.log(`❓ Rückfrage an ${handwerker.firma} (Runde ${vorgang.runde + 1}).`);
+      await spurEvent(prisma, "RUECKFRAGE", { handwerkerId: handwerker.id, data: { runde: vorgang.runde + 1 } });
       return;
     }
 
@@ -332,6 +336,49 @@ export async function erstelleDokument(args: {
   // legen — sie erscheinen so auf Word/PDF und in der E-Mail.
   const eff = effektivePreisliste(handwerker, preisliste);
   const datum = new Date();
+
+  // Sicherheitsnetz: Bevor aus der KI-Ausgabe ein Angebot wird, prüft der
+  // Validator jeden Preis auf belegbare Herkunft und entfernt Unbelegtes. So
+  // ist "AuftragsBoss erfindet keine Preise" technisch erzwungen, nicht nur im
+  // Prompt versprochen. Hinter einem Flag, damit sich der Schritt gefahrlos
+  // scharfschalten und wieder abschalten lässt.
+  if (featureConfig().FEATURE_VALIDATOR) {
+    const geprueftesDiktat = alsDialog(vorgang)
+      .filter((n) => n.rolle === "handwerker")
+      .map((n) => n.text)
+      .join("\n\n");
+    const pruefung = validierePositionen(daten.positionen, { transkript: geprueftesDiktat, preisliste: eff });
+    daten.positionen = pruefung.positionen;
+    if (pruefung.korrigiert > 0) {
+      // Entfernte Preise für den Handwerker sichtbar machen (erscheinen in den
+      // "Notizen für dich" der E-Mail, nicht im Kundendokument).
+      daten.rueckfragen = [
+        ...daten.rueckfragen,
+        ...pruefung.befunde.filter((b) => b.schwere === "korrigiert").map((b) => b.meldung),
+      ];
+      console.log(`🛡️ Validator: ${pruefung.korrigiert} unbelegte(r) Preis(e) entfernt (${handwerker.firma}).`);
+    }
+  }
+
+  // Preisgedächtnis (opt-in je Betrieb): NACH dem Validator ausgeführt. Es füllt
+  // nur noch OFFENE Preise mit einem datierten Vorschlag aus der eigenen Historie
+  // dieses Betriebs. Streng pro handwerkerId, nie global, nie erfunden — der Preis
+  // stammt immer aus einem früheren Angebot DESSELBEN Betriebs.
+  if (featureConfig().FEATURE_PREISGEDAECHTNIS && handwerker.preisGedaechtnisAktiv) {
+    const vor = await schlagePreiseVor(prisma, handwerker.id, daten.positionen);
+    daten.positionen = vor.positionen;
+    if (vor.vorschlaege.length > 0) {
+      daten.rueckfragen = [
+        ...daten.rueckfragen,
+        ...vor.vorschlaege.map(
+          (v) =>
+            `Preis für „${v.beschreibung}": ${euro(v.preis)} aus deinem Preisgedächtnis ` +
+            `(zuletzt ${v.zuletztAm.toLocaleDateString("de-DE")}), bitte prüfen.`,
+        ),
+      ];
+    }
+  }
+
   const summe = berechneAngebot(daten.positionen, eff, datum);
 
   // Standardtexte des Betriebs einweben: fehlt ein Anschreiben, nimm die
@@ -492,6 +539,18 @@ export async function erstelleDokument(args: {
   }
 
   await sendeWhatsAppText(vonNummer, zeilen.join("\n"));
+
+  await spurEvent(prisma, "ANGEBOT_ERSTELLT", {
+    handwerkerId,
+    data: {
+      art: daten.art,
+      version,
+      nachtrag: istNachtrag,
+      positionen: summe.positionen.length,
+      offen: summe.anzahlOffen,
+      istTest: handwerker.istTest,
+    },
+  });
 
   // Nach dem 3. Angebot einmalig zum Weiterempfehlen einladen (nur Erstfassungen;
   // Test-Konten sind hier ausgenommen).

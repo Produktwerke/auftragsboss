@@ -23,6 +23,16 @@ model Handwerker {
   email          String // Zieladresse für die fertigen Dokumente
   gewerk         String?
 
+  // Explizites Gewerk als Domänenobjekt (Maler-Spezialisierung). Steuert, welche
+  // Fachlogik/Ontologie greift. Start: "MALER". Bestehende Betriebe defaulten
+  // migrationssicher auf MALER — das ist die aktuelle Produktausrichtung.
+  gewerkTyp String @default("MALER")
+
+  // Preisgedächtnis (opt-in): Nur wenn der Betrieb es wünscht, merkt sich
+  // AuftragsBoss, wie er ähnliche Leistungen zuletzt kalkuliert hat, und schlägt
+  // den Preis DATIERT vor. Standardmäßig aus — nie ungefragt.
+  preisGedaechtnisAktiv Boolean @default(false)
+
   // Betriebsprofil — jeder Betrieb hinterlegt seine eigenen Stammdaten über
   // die Einstellungsseite. Solange ein Feld leer ist, greift der Eintrag aus
   // preisliste.json als Vorgabe (Einzelbetrieb im Test).
@@ -66,11 +76,12 @@ model Handwerker {
   // aus dem Editor — bleibt gesetzt, bis der Handwerker ihn wieder abwählt.
   mailStandard Boolean @default(false)
 
-  erstelltAm   DateTime     @default(now())
-  dokumente    Dokument[]
-  vorgaenge    Vorgang[]
-  feedback     Feedback[]
-  empfehlungen Empfehlung[] // von diesem Betrieb geworbene Kollegen (Leads)
+  erstelltAm       DateTime           @default(now())
+  dokumente        Dokument[]
+  vorgaenge        Vorgang[]
+  feedback         Feedback[]
+  empfehlungen     Empfehlung[] // von diesem Betrieb geworbene Kollegen (Leads)
+  preisGedaechtnis Preisgedaechtnis[]
 }
 
 // Eine Empfehlung: Ein Betrieb wirbt einen Kollegen. Erst als Lead erfasst
@@ -206,6 +217,51 @@ model Dokument {
   @@index([art])
   @@index([nummer])
   @@index([angenommenAm])
+}
+
+// Preisgedächtnis (opt-in je Betrieb): AuftragsBoss merkt sich, wie DIESER
+// Betrieb ähnliche Leistungen bisher kalkuliert hat, und schlägt den Preis beim
+// nächsten Mal DATIERT vor. Kein Preisbuch, das gepflegt werden müsste — es lernt
+// aus der tatsächlichen Nutzung. Streng pro Betrieb (handwerkerId), nie global,
+// nie automatisch gesetzt, nie erfunden: Es ist immer ein Preis, den der Betrieb
+// SELBST schon einmal eingetragen hat.
+model Preisgedaechtnis {
+  id           String     @id @default(cuid())
+  handwerkerId String
+  handwerker   Handwerker @relation(fields: [handwerkerId], references: [id])
+
+  // Normalisierter Schlüssel aus Beschreibung + Einheit, um ähnliche Leistungen
+  // wiederzuerkennen (z.B. "wand streichen|m2"). Bewusst simpel für Phase 1;
+  // später ersetzbar durch Ähnlichkeitssuche über die Positionsbibliothek.
+  leistungSchluessel String
+  beschreibung       String // Originalbeschreibung, wie zuletzt verwendet
+  einheit            String?
+
+  letzterPreis Float
+  zuletztAm    DateTime @default(now()) // Datum des zuletzt bestätigten Preises
+  quelle       String   @default("EDITOR") // "EDITOR" | "IMPORT"
+
+  erstelltAm DateTime @default(now())
+
+  @@unique([handwerkerId, leistungSchluessel])
+  @@index([handwerkerId])
+}
+
+// Minimales Event-Tracking für Produktmetriken (Aktivierung/Qualität/Bindung).
+// Datensparsam: Typ + optionaler Betriebsbezug + wenige strukturierte Felder als
+// JSON. KEINE Kundennamen oder Freitexte. Grundlage fürs spätere Dashboard.
+// Bewusst OHNE Relation (handwerkerId als reiner String), damit auch Ereignisse
+// ohne Betriebsbezug (z.B. anonyme Landingpage-Aktion) erfasst werden können.
+model Event {
+  id           String  @id @default(cuid())
+  typ          String // z.B. "ANGEBOT_ERSTELLT", "RUECKFRAGE", "IMPORT_START"
+  handwerkerId String? // null bei Ereignissen ohne Betriebsbezug
+  dataJson     String  @default("{}")
+
+  erstelltAm DateTime @default(now())
+
+  @@index([typ, erstelltAm])
+  @@index([handwerkerId])
 }
 
 // Gewährleistungs-Tracking nach § 634a BGB — nur für Protokolle:

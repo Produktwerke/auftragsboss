@@ -1,0 +1,97 @@
+Ich habe dir die Datei `AuftragsBoss_Maler_Spezialisierung_Claude_Code_Brief.md` bereitgestellt. Behandle sie als verbindliches strategisches und technisches Produktbriefing für die weitere Entwicklung von AuftragsBoss.
+
+AuftragsBoss wird von einer generischen Angebotssoftware für verschiedene Handwerksbetriebe zu einer spezialisierten Angebots- und Wissensplattform für Maler- und Lackiererbetriebe umgebaut. Der erste klar abgegrenzte Anwendungsbereich sind Renovierungsangebote für Innenräume.
+
+Die Spezialisierung darf nicht nur aus geänderten Website-Texten oder einem neuen Prompt bestehen. Sie muss sich tief in folgenden Bereichen wiederfinden:
+
+* Datenmodell
+* KI-Pipeline
+* strukturierte Auftragsextraktion
+* Maler-Fachwissen
+* Rückfragenlogik
+* Positionsbibliothek
+* Preislogik
+* Angebotsimport
+* kundenspezifisches Betriebsprofil
+* Lernen aus Korrekturen
+* Editor
+* WhatsApp-Ablauf
+* Website
+* Analytics
+* Datenschutz und Mandantentrennung
+
+Ein zentraler neuer Produktbestandteil ist der Import alter Angebote. Ein Betrieb soll zehn bis 30 bisherige Angebote hochladen können. AuftragsBoss soll daraus nicht nur den Schreibstil erkennen, sondern eine private, strukturierte Wissensbasis dieses Betriebs erstellen:
+
+* wiederkehrende Positionen
+* eigene Leistungsbeschreibungen
+* typische Einheiten
+* Standardtexte
+* Angebotsaufbau
+* Reihenfolge von Positionen
+* betriebliche Regeln
+* Preisquellen
+* Kalkulationsgewohnheiten
+* Materialpräferenzen
+* regelmäßig ergänzte Nebenleistungen
+
+Diese Informationen dürfen ausschließlich für den jeweiligen Betrieb verwendet werden. Preise, Texte, Kundendaten und Kalkulationslogik verschiedener Betriebe dürfen niemals vermischt werden.
+
+AuftragsBoss soll außerdem aus späteren Änderungen lernen. Dabei darf es Änderungen nicht unkontrolliert übernehmen. Wiederkehrende Korrekturen sollen erkannt und dem Nutzer als bestätigbare Betriebsregel vorgeschlagen werden.
+
+Beispiel:
+
+„Sie haben bei vier vergleichbaren Angeboten die Position ‚Bodenflächen schützen‘ ergänzt. Soll AuftragsBoss diese bei möblierten Innenräumen künftig automatisch vorschlagen?“
+
+Erst nach Bestätigung darf die Regel automatisch angewendet werden.
+
+Das unverhandelbare Produktprinzip bleibt:
+
+AuftragsBoss erfindet niemals Preise.
+
+Ein Preis darf nur verwendet werden, wenn er:
+
+1. im aktuellen Diktat ausdrücklich genannt wurde,
+2. aus einem bestätigten privaten Preisbuch stammt,
+3. aus einer bestätigten Position des jeweiligen Betriebsprofils stammt,
+4. vom Nutzer manuell ergänzt und für die weitere Verwendung freigegeben wurde.
+
+Historische Preise müssen mit Quelle und Aktualitätsdatum versehen werden. Unbekannte Preise bleiben leer.
+
+Arbeite nicht sofort mit einem vollständigen Umbau los. Gehe in dieser Reihenfolge vor:
+
+1. Analysiere das gesamte bestehende Repository.
+2. Dokumentiere die tatsächliche Architektur und alle relevanten Datenflüsse.
+3. Benenne konkrete Dateien, Module, Tabellen, Prompts und Schnittstellen.
+4. Vergleiche den Ist-Zustand mit der hochgeladenen Spezifikation.
+5. Erstelle eine Gap-Analyse.
+6. Entwickle einen schrittweisen Migrationsplan ohne Big-Bang-Neuentwicklung.
+7. Definiere notwendige Datenbankmigrationen, Feature Flags, Tests und Rollback-Möglichkeiten.
+8. Priorisiere die Änderungen nach Produktwirkung, Sicherheit und Abhängigkeiten.
+9. Beginne anschließend mit der ersten klar abgegrenzten Umsetzungsphase.
+10. Erhalte den bereits funktionierenden WhatsApp-zu-Angebot-Prozess während des Umbaus.
+
+Die erste Antwort soll noch keine umfangreichen Codeänderungen enthalten. Sie soll liefern:
+
+* Zusammenfassung des verstandenen Strategiewechsels
+* Bestandsaufnahme des vorhandenen Systems
+* wichtigste Architektur- und Datenmodelllücken
+* kritische Datenschutz- und Mandantentrennungsrisiken
+* priorisierten Phasenplan
+* konkret zuerst zu ändernde Dateien und Module
+* notwendige Tests
+* Akzeptanzkriterien für Phase 1
+* klare Empfehlung für den ersten Implementierungsschritt
+
+Vermeide eine generische KI-Architektur, bei der sämtliches Wissen in langen Prompts steckt. Bevorzuge:
+
+* strukturierte Daten
+* Maler-Ontologie
+* private Betriebsprofile
+* Retrieval
+* deterministische Regeln
+* Quellenkennzeichnung
+* bestätigbare Lernregeln
+* Validatoren
+* automatisierte Regressionstests
+
+Die hochgeladene Datei ist die zentrale Spezifikation. Der bestehende Quellcode ist die Quelle der Wahrheit für den aktuellen technischen Zustand. Erfinde keine vorhandenen Komponenten und dokumentiere getroffene Annahmen.

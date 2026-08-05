@@ -33,6 +33,11 @@ model Handwerker {
   // den Preis DATIERT vor. Standardmäßig aus — nie ungefragt.
   preisGedaechtnisAktiv Boolean @default(false)
 
+  // Zusammenfassung vor dem Angebot ("das habe ich verstanden") per WhatsApp.
+  // Standardmäßig AN — schafft Vertrauen. Der Betrieb kann sie dauerhaft
+  // abschalten (Einstellungen oder Stichwort), sobald er dem System vertraut.
+  zusammenfassungAktiv Boolean @default(true)
+
   // Betriebsprofil — jeder Betrieb hinterlegt seine eigenen Stammdaten über
   // die Einstellungsseite. Solange ein Feld leer ist, greift der Eintrag aus
   // preisliste.json als Vorgabe (Einzelbetrieb im Test).
@@ -131,6 +136,10 @@ model Vorgang {
 
   status String @default("OFFEN") // "OFFEN" | "ABGESCHLOSSEN"
   runde  Int    @default(0) // Anzahl bereits gestellter Rückfrage-Runden
+
+  // Wurde in diesem Vorgang die Zusammenfassung "das habe ich verstanden" schon
+  // gezeigt? Verhindert, dass sie sich bei jeder Antwort wiederholt.
+  zusammenfassungGezeigt Boolean @default(false)
 
   // JSON: [{ rolle: "handwerker"|"assistent", text, art, zeit }]
   nachrichtenJson String @default("[]")

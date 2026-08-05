@@ -33,6 +33,7 @@ import { spurEvent } from "./analytics/event.js";
 import {
   MAX_RUNDEN,
   alsDialog,
+  baueZusammenfassung,
   ergaenzeNachricht,
   holeNachtragsVorgang,
   holeOffenenVorgang,
@@ -284,6 +285,44 @@ export async function verarbeiteNachricht(args: {
       });
       console.log(`❓ Rückfrage an ${handwerker.firma} (Runde ${vorgang.runde + 1}).`);
       await spurEvent(prisma, "RUECKFRAGE", { handwerkerId: handwerker.id, data: { runde: vorgang.runde + 1 } });
+      return;
+    }
+
+    // 5b. Zusammenfassung "das habe ich verstanden" vor dem Angebot — einmal je
+    //     Vorgang, sofern der Betrieb sie nicht abgeschaltet hat. Der Handwerker
+    //     bestätigt mit "ja" oder korrigiert per Sprache; ohne Antwort stellt der
+    //     Timeout-Job das Angebot ohnehin fertig. Dauerhaft abschaltbar per
+    //     Stichwort ("ohne Zusammenfassung") oder in den Einstellungen.
+    const willKeineZusammenfassung = /ohne zusammenfassung|keine zusammenfassung|zusammenfassung aus/i.test(inhalt);
+    if (willKeineZusammenfassung && handwerker.zusammenfassungAktiv) {
+      await prisma.handwerker.update({ where: { id: handwerker.id }, data: { zusammenfassungAktiv: false } });
+      handwerker.zusammenfassungAktiv = false;
+    }
+    if (
+      featureConfig().FEATURE_ZUSAMMENFASSUNG &&
+      handwerker.zusammenfassungAktiv &&
+      !vorgang.zusammenfassungGezeigt &&
+      !willKeineZusammenfassung
+    ) {
+      const zusammenfassung = baueZusammenfassung(daten);
+      await sendeWhatsAppText(
+        vonNummer,
+        zusammenfassung +
+          `\n\nPasst das? Antworte mit *ja*, oder korrigier's einfach per Sprache oder Text.` +
+          `\n_Zusammenfassung künftig weglassen: schreib „ohne Zusammenfassung"._`,
+      );
+      await prisma.vorgang.updateMany({
+        where: { id: vorgang.id },
+        data: {
+          zusammenfassungGezeigt: true,
+          letzteAktivitaet: new Date(),
+          nachrichtenJson: JSON.stringify([
+            ...JSON.parse(vorgang.nachrichtenJson),
+            { rolle: "assistent", text: zusammenfassung, art: "text", zeit: new Date().toISOString() },
+          ]),
+        },
+      });
+      await spurEvent(prisma, "ZUSAMMENFASSUNG_GEZEIGT", { handwerkerId: handwerker.id });
       return;
     }
 

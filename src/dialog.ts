@@ -5,7 +5,8 @@
 // jederzeit ein Ausweg per Stichwort, und automatischer Abschluss, wenn
 // er das Handy einfach weglegt.
 import type { PrismaClient, Vorgang } from "@prisma/client";
-import type { DialogNachricht } from "./ai/structure.js";
+import type { DialogNachricht, DokumentDaten } from "./ai/structure.js";
+import { euro } from "./angebot/berechnung.js";
 
 /** Höchstens so viele Rückfrage-Runden, dann wird abgeschlossen. */
 export const MAX_RUNDEN = 2;
@@ -76,6 +77,26 @@ export function istAbschluss(text: string): boolean {
     .trim();
   if (sauber.length > 40) return false;
   return ABSCHLUSS_WOERTER.some((w) => sauber === w || sauber.startsWith(w + " ") || sauber.endsWith(" " + w));
+}
+
+/**
+ * Kurze, lesbare Zusammenfassung dessen, was die KI verstanden hat — für den
+ * WhatsApp-Readback vor dem Angebot ("das habe ich verstanden"). Nur die
+ * wichtigen Punkte, keine Überfrachtung. Keine Gedankenstriche.
+ */
+export function baueZusammenfassung(daten: DokumentDaten): string {
+  const zeilen: string[] = ["📝 *Das habe ich verstanden:*"];
+  const k = daten.kunde;
+  if (k.name) zeilen.push(`👤 ${k.name}${k.strasse ? ", " + k.strasse : ""}`);
+  if (daten.objekt) zeilen.push(`🏠 ${daten.objekt}`);
+  const leistungen = daten.positionen.filter((p) => p.kategorie === "LEISTUNG").map((p) => p.beschreibung);
+  if (leistungen.length) zeilen.push(`🛠️ ${leistungen.join(", ")}`);
+  if (daten.aufmassNotizen?.trim()) zeilen.push(`📏 ${daten.aufmassNotizen.trim()}`);
+  const preise = daten.positionen
+    .filter((p) => p.einzelpreis != null)
+    .map((p) => `${p.beschreibung}: ${euro(p.einzelpreis as number)}`);
+  if (preise.length) zeilen.push(`💶 ${preise.join(", ")}`);
+  return zeilen.join("\n");
 }
 
 export function nachrichtenLesen(vorgang: Vorgang): GespeicherteNachricht[] {

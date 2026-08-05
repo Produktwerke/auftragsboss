@@ -113,6 +113,8 @@ export const featureConfig = lade(
     FEATURE_PREISGEDAECHTNIS: flagge(false),
     // Maler-Scope: Gewerk als explizites Objekt, Maler-Fachlogik greift.
     FEATURE_MALER_SCOPE: flagge(false),
+    // Zusammenfassung "das habe ich verstanden" vor dem Angebot (mit Skip).
+    FEATURE_ZUSAMMENFASSUNG: flagge(false),
   }),
 );
 

@@ -52,6 +52,7 @@ interface EinstellungenKoerper {
   farbe?: string; // Hex ohne #
   standardEinleitung?: string;
   preisGedaechtnisAktiv?: boolean;
+  zusammenfassungAktiv?: boolean;
   standardSchlusstext?: string;
 }
 
@@ -381,6 +382,9 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
           standardSchlusstext: text(k.standardSchlusstext),
           ...(typeof k.preisGedaechtnisAktiv === "boolean"
             ? { preisGedaechtnisAktiv: k.preisGedaechtnisAktiv }
+            : {}),
+          ...(typeof k.zusammenfassungAktiv === "boolean"
+            ? { zusammenfassungAktiv: k.zusammenfassungAktiv }
             : {}),
         },
       });

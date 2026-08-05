@@ -233,6 +233,16 @@ export function einstellungenSeite(args: {
     </label>
   </div>
 
+  <!-- Ablauf -->
+  <div class="karte">
+    <h2>Ablauf</h2>
+    <p class="hint">Vor jedem Angebot fasst AuftragsBoss per WhatsApp kurz zusammen, was es verstanden hat, damit Sie es mit „ja" bestätigen oder per Sprache korrigieren können. Wenn Sie darauf vertrauen, können Sie das abschalten (auch per Nachricht „ohne Zusammenfassung").</p>
+    <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:500;">
+      <input type="checkbox" id="zusammenfassungAktiv" ${h.zusammenfassungAktiv ? "checked" : ""} style="width:auto;">
+      <span>Vor dem Angebot kurz zusammenfassen, was verstanden wurde</span>
+    </label>
+  </div>
+
   <!-- Angebotsübersicht -->
   <div class="karte">
     <h2>Ihre Angebote</h2>
@@ -290,6 +300,7 @@ async function speichern(){
   const daten={farbe:document.getElementById("farbe").value.replace("#","")};
   for(const id of FELDER) daten[id]=val(id);
   daten.preisGedaechtnisAktiv=document.getElementById("preisGedaechtnisAktiv").checked;
+  daten.zusammenfassungAktiv=document.getElementById("zusammenfassungAktiv").checked;
   try{
     const r=await fetch("/api/einstellungen/"+TOKEN,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(daten)});
     if(!r.ok) throw 0;
@@ -301,6 +312,7 @@ function setStatus(id,text,farbe){ const s=document.getElementById(id); s.textCo
 FELDER.forEach(id=>document.getElementById(id).addEventListener("input",markiere));
 document.getElementById("farbe").addEventListener("input",markiere);
 document.getElementById("preisGedaechtnisAktiv").addEventListener("change",markiere);
+document.getElementById("zusammenfassungAktiv").addEventListener("change",markiere);
 
 // ── Logo hochladen ────────────────────────────────────
 document.getElementById("logoDatei").addEventListener("change",function(){

@@ -120,6 +120,30 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 05.08.2026 (abends) — Eingabewege, Zusammenfassung, Aufnahme-Knopf (live auf VPS):**
+> - **Foto/Screenshot-Upload:** WhatsApp-Bildnachricht (Aufmaß-Zettel, Handy-Notiz) → Claude Vision
+>   (`src/ai/bildLesen.ts`) liest den Inhalt als Text → dieselbe Pipeline wie beim Diktat.
+>   `whatsapp/media.ts` lädt jetzt Bild UND Audio. Drei gleichwertige Eingabewege: Sprache, Text, Foto.
+> - **Zusammenfassung „das habe ich verstanden"** vor dem Angebot (`baueZusammenfassung` in `dialog.ts`),
+>   mit Skip: einmalig „ja"/„passt"; dauerhaft per Einstellungs-Schalter „Ablauf"
+>   (`Handwerker.zusammenfassungAktiv`, Default an) ODER Stichwort „ohne Zusammenfassung"
+>   (Text und Sprache). Format: FETT-Überschriften (keine Emojis), Leistungen als Aufzählung, keine
+>   doppelte Maß-Zeile. Einmal je Vorgang (`Vorgang.zusammenfassungGezeigt`); ohne Antwort finalisiert
+>   der Timeout-Job. **FIX:** kurze Textantwort „Ja" (2 Zeichen) wurde von der Kürze-Sperre abgewiesen —
+>   die greift jetzt nur ohne laufenden Vorgang; „ja/jo/genau…" zusätzlich im Notfallnetz.
+> - **Aufnahme-Knopf (Website):** Seite `/testen` (`src/web/testSeite.ts`) mit Mikrofon-Aufnahme +
+>   „Beispiel ansehen"; öffentliche Endpunkte `/api/testen/audio` + `/api/testen/beispiel`
+>   (`src/web/webtest.ts`) nutzen die Pipeline OHNE WhatsApp/E-Mail → mündet direkt im echten Editor.
+>   IP-Missbrauchs-/Kostenschutz (`webtestConfig`: WEBTEST_MAX_PRO_IP/PRO_TAG/MIN_ABSTAND, im
+>   Arbeitsspeicher). Landingpage-Test-CTAs (`marketing/index.html`) verlinken jetzt auf `/testen`
+>   (index.html bei IONOS hochgeladen).
+> - **Feature-Flags auf dem VPS jetzt AKTIV:** `FEATURE_VALIDATOR`, `FEATURE_PREISGEDAECHTNIS`,
+>   `FEATURE_ZUSAMMENFASSUNG`, `WEBTEST_AKTIV`. Weiterhin AUS: `FEATURE_MALER_SCOPE`.
+> - **Tests:** vitest **33 grün**; Vision- und Web-Test-Durchstich lokal echt verifiziert.
+> - ⏳ **Live-Nachtest offen** (05.08. Feierabend): Zusammenfassung mit „Ja" (Text), Foto-Upload,
+>   `auftragsboss.de` → „Jetzt im Browser testen". Follow-ups im Ideen-Backlog (Bild-Caption, mehrere
+>   Fotos, mobile Mikrofon-Details iOS/Safari, Platzhalter-Nummer/QR im Hero).
+
 > **Update 05.08.2026 — Maler-Neuausrichtung Phase 1 (deployt, Feature-Flags AUS) + Meta durch:**
 > - **Strategiewechsel:** AuftragsBoss wird spezialisierte Plattform je Gewerk, Start **Maler
 >   (Innenraum-Renovierung)**, Go-to-Market regional dicht. **Ein Codebase**, austauschbare Fachpakete.

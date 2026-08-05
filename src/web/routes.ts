@@ -20,10 +20,12 @@ import { effektivePreisliste, einstellungenTokenBereit } from "../betrieb/betrie
 import { bearbeitenLink, einstellungenLink } from "./tokens.js";
 import { ladeLogo } from "../betrieb/logo.js";
 import { speichereLogo, entferneLogo, LogoFehler } from "../betrieb/logoUpload.js";
-import { smtpKonfiguriert, featureConfig } from "../config.js";
+import { smtpKonfiguriert, featureConfig, webtestConfig } from "../config.js";
 import { sendeMail, WORD_MIME } from "../email/send.js";
 import { dokumentMail, logoAnhang } from "../email/templates.js";
 import { merkePreise } from "../betrieb/preisgedaechtnis.js";
+import { testSeite } from "./testSeite.js";
+import { testErlaubt, testAngebotAusAudio, testAngebotBeispiel } from "./webtest.js";
 
 interface SpeicherKoerper {
   kundeName?: string;
@@ -136,6 +138,57 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     }
 
     return reply.send({ ok: true });
+  });
+
+  // ── Öffentlicher "Jetzt testen"-Aufnahmeknopf ─────────
+  // Anonymer Besucher diktiert im Browser, bekommt ein echtes Angebot im Editor.
+  // Nur aktiv bei WEBTEST_AKTIV; Missbrauchs-/Kostenschutz IP-basiert (webtest.ts).
+  const endungFuerMime = (mime: string | undefined): string => {
+    const m = (mime ?? "").toLowerCase();
+    if (m.includes("webm")) return "webm";
+    if (m.includes("ogg") || m.includes("opus")) return "ogg";
+    if (m.includes("mp4") || m.includes("m4a")) return "mp4";
+    if (m.includes("mpeg") || m.includes("mp3")) return "mp3";
+    if (m.includes("wav")) return "wav";
+    return "webm";
+  };
+
+  app.get("/testen", async (_req, reply) => {
+    if (!webtestConfig().WEBTEST_AKTIV) return reply.code(404).send("nicht verfügbar");
+    return reply.type("text/html; charset=utf-8").send(testSeite());
+  });
+
+  app.post<{ Body: { audio?: string; mime?: string } }>(
+    "/api/testen/audio",
+    { bodyLimit: 25 * 1024 * 1024 },
+    async (req, reply) => {
+      const ip = (((req.headers["x-forwarded-for"] as string) ?? "").split(",")[0] ?? "").trim() || req.ip;
+      const erlaubt = testErlaubt(ip);
+      if (!erlaubt.ok) return reply.code(429).send({ fehler: erlaubt.grund });
+      const b64 = (req.body?.audio ?? "").split(",").pop() ?? "";
+      if (!b64) return reply.code(400).send({ fehler: "Keine Aufnahme empfangen." });
+      try {
+        const audio = Buffer.from(b64, "base64");
+        const editorUrl = await testAngebotAusAudio(audio, "aufnahme." + endungFuerMime(req.body?.mime), ip);
+        return reply.send({ editorUrl });
+      } catch (err) {
+        req.log.error({ err }, "Web-Test (Audio) fehlgeschlagen");
+        return reply.code(500).send({ fehler: "Das hat leider nicht geklappt. Versuch es noch einmal." });
+      }
+    },
+  );
+
+  app.post("/api/testen/beispiel", async (req, reply) => {
+    const ip = (((req.headers["x-forwarded-for"] as string) ?? "").split(",")[0] ?? "").trim() || req.ip;
+    const erlaubt = testErlaubt(ip);
+    if (!erlaubt.ok) return reply.code(429).send({ fehler: erlaubt.grund });
+    try {
+      const editorUrl = await testAngebotBeispiel(ip);
+      return reply.send({ editorUrl });
+    } catch (err) {
+      req.log.error({ err }, "Web-Test (Beispiel) fehlgeschlagen");
+      return reply.code(500).send({ fehler: "Das hat leider nicht geklappt. Versuch es noch einmal." });
+    }
   });
 
   // ── Export ────────────────────────────────────────────

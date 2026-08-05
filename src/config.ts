@@ -118,6 +118,22 @@ export const featureConfig = lade(
   }),
 );
 
+// Öffentlicher "Jetzt testen"-Aufnahmeknopf auf der Website: anonyme Besucher
+// diktieren im Browser und bekommen ein echtes Angebot im Editor. Missbrauchs-
+// und Kostenschutz IP-basiert. Standardmäßig aus (WEBTEST_AKTIV).
+export const webtestConfig = lade(
+  "Web-Test (Aufnahmeknopf)",
+  z.object({
+    WEBTEST_AKTIV: flagge(false),
+    // Kostenlose Test-Angebote pro IP (danach Hinweis auf Anmeldung).
+    WEBTEST_MAX_PRO_IP: z.coerce.number().int().min(1).default(3),
+    // Tages-Gesamtdeckel über alle Besucher (Kostenobergrenze).
+    WEBTEST_MAX_PRO_TAG: z.coerce.number().int().min(1).default(100),
+    // Mindestabstand zwischen zwei Versuchen derselben IP, in Sekunden.
+    WEBTEST_MIN_ABSTAND_SEKUNDEN: z.coerce.number().int().min(0).default(5),
+  }),
+);
+
 export const emailConfig = lade(
   "E-Mail (SMTP)",
   z.object({

@@ -16,11 +16,11 @@
 
 ## 1. Hoch — als Nächstes umsetzen
 
-### 1.1 Login-freier Aufnahme-Knopf auf der Startseite  ⭐ Dirks Nr. 1
+### 1.1 Login-freier Aufnahme-Knopf auf der Startseite  ⭐ Dirks Nr. 1  ✅ GEBAUT (05.08.2026)
 Besucher drückt auf der Website „Aufnahme", diktiert einen Malerauftrag, sieht ~20 Sek. später ein echtes Angebot. **Marktlücke:** Kein Wettbewerber lässt den Besucher es wirklich live erleben (alle nur Video/Animation, dann Login-Wand).
-- Technik: Mikro-Aufnahme im Browser → öffentlicher, ratenbegrenzter Endpunkt → bestehende Pipeline (Transkription → Struktur → Angebot). **Missbrauchsschutz aus `src/direkttest.ts` wiederverwenden.**
-- Fallback für Zögerliche: vorbefülltes Beispiel per Ein-Klick („Wohnzimmer 25 m², Wände und Decke weiß, zweimal").
-- Aufwand: **mittel**. Quelle: profiangebot (Browser-Diktat ohne Login) + angebots-autopilot (eingebettete Chat-Simulation).
+- Umgesetzt: Seite `/testen` (`src/web/testSeite.ts`) mit Mikrofon-Aufnahmeknopf + „Beispiel ansehen"; Endpunkte `/api/testen/audio` + `/api/testen/beispiel` (`src/web/webtest.ts`) nutzen die Pipeline ohne WhatsApp/E-Mail und münden **direkt im echten Editor**. IP-basierter Missbrauchs-/Kostenschutz (pro IP, Tagesdeckel, Tempo). Hinter `WEBTEST_AKTIV`.
+- **Offen (Follow-up):** (a) „Kostenlos testen"-Button der Landingpage auf `/testen` verlinken (marketing/index.html, separater IONOS-Upload); (b) mobile Mikrofon-Details (Safari/iOS) im Feld prüfen.
+- Quelle: profiangebot (Browser-Diktat ohne Login) + angebots-autopilot (eingebettete Chat-Simulation).
 
 ### 1.2 Foto/Screenshot als Eingabekanal  ⭐ Dirk: „praktisch"  ✅ GEBAUT (05.08.2026, Deploy ausstehend)
 Der Maler fotografiert seinen handschriftlichen Aufmaß-Zettel oder schickt einen Screenshot seiner Handy-Notizen — zusätzlich oder statt Diktat.
@@ -36,10 +36,11 @@ Website-Vertrauenselement. Dirk hat echte Maler als Tester/Ideengeber → ehrlic
 
 ## 2. Trust & Qualität — passt in Phase 2 (Maler-Fachengine)
 
-### 2.1 Zusammenfassung „das habe ich verstanden" — mit Skip-Option
-Nach dem Diktat schickt AuftragsBoss das Verstandene per WhatsApp zurück: „Ich habe verstanden: 45 m² Wandfläche, 2× weiß streichen, Anfahrt 40 €. Passt das? Sag ‚ja' oder korrigier's per Sprache."
-- **Dirks Auflage:** muss **überspringbar** sein — einmalig („schick einfach") UND **dauerhaft abschaltbar** (Einstellung „Zusammenfassung vor Angebot: an/aus"). Sobald der Handwerker Vertrauen hat, dass es stimmt, will er die Zusammenfassung evtl. dauerhaft weglassen.
-- Passt zum Speech-Parser aus Phase 2 (liefert die strukturierten Fakten zum Vorlesen). Aufwand: **mittel**. Quelle: voice-offer (Korrektur-Loop) + handwerker-rechnungen (Verständnis-Beleg).
+### 2.1 Zusammenfassung „das habe ich verstanden" — mit Skip-Option  ✅ GEBAUT & LIVE (05.08.2026)
+Nach dem Diktat schickt AuftragsBoss das Verstandene per WhatsApp zurück: „📝 Das habe ich verstanden: … Passt das? Antworte mit ja, oder korrigier's per Sprache oder Text."
+- Umgesetzt: `baueZusammenfassung` (dialog.ts) zeigt Kunde/Objekt/Leistungen/Aufmaß/genannte Preise; einmal je Vorgang (`Vorgang.zusammenfassungGezeigt`); ohne Antwort finalisiert der Timeout-Job. Hinter `FEATURE_ZUSAMMENFASSUNG` (auf dem VPS aktiv).
+- **Skip erfüllt:** einmalig per „ja/passt/schick"; **dauerhaft** per Einstellungs-Schalter „Ablauf" (`Handwerker.zusammenfassungAktiv`, Default an) ODER Stichwort „ohne Zusammenfassung".
+- Quelle: voice-offer (Korrektur-Loop) + handwerker-rechnungen (Verständnis-Beleg).
 
 ### 2.2 Maler-Material-/Verbrauchswissen
 Realistische Mengen (Farbe, Grundierung, Kleister; m²-Verbrauch) als **markierter Vorschlag** — Preise weiterhin nur aus Diktat/Preisgedächtnis. Ist Teil der Phase-2-Ontologie/Positionsbibliothek. Aufwand: **Teil von Phase 2**. Quelle: vetron.

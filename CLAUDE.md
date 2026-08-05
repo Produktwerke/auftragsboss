@@ -120,6 +120,29 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 05.08.2026 — Maler-Neuausrichtung Phase 1 (deployt, Feature-Flags AUS) + Meta durch:**
+> - **Strategiewechsel:** AuftragsBoss wird spezialisierte Plattform je Gewerk, Start **Maler
+>   (Innenraum-Renovierung)**, Go-to-Market regional dicht. **Ein Codebase**, austauschbare Fachpakete.
+>   Vollständige Ist-Analyse + Migrationsplan: `Neuausrichtung Maler/Ist-Analyse_und_Migrationsplan.md`.
+>   Leitprinzip bleibt: **erfindet nie Preise**, strikte Mandantentrennung.
+> - **Phase 1 live auf dem VPS, alle Flags standardmäßig AUS (Live-Verhalten unverändert):**
+>   - **Feature-Flags** (`config.ts`): `FEATURE_VALIDATOR`, `FEATURE_PREISGEDAECHTNIS`, `FEATURE_MALER_SCOPE`.
+>   - **Validator** (`src/validierung/validator.ts`): erzwingt maschinell „keine erfundenen Preise"
+>     (entfernt jeden Preis ohne belegbare Herkunft), hinter Flag in der Pipeline.
+>   - **Herkunft bleibt erhalten** (`dokumentDaten.ts` überschreibt `preisquelle` nicht mehr; Editor gibt
+>     die Quelle zurück, Handänderung → MANUELL). Quellen: DIKTAT/PREISLISTE/**PREISGEDAECHTNIS**/**MANUELL**/UNBEKANNT.
+>   - **Preisgedächtnis statt Preisbuch** (`src/betrieb/preisgedaechtnis.ts`): merkt sich (opt-in je Betrieb,
+>     Feld `preisGedaechtnisAktiv`) frühere Preise und schlägt sie DATIERT vor, streng pro `handwerkerId`.
+>     KEIN globales Preisbuch (bewusst gestrichen).
+>   - **Eventtracking** (`src/analytics/event.ts`): `ANGEBOT_ERSTELLT`, `RUECKFRAGE`.
+>   - **Datenmodell:** `Handwerker.gewerkTyp` (Default MALER), `preisGedaechtnisAktiv`; Tabellen
+>     `Preisgedaechtnis`, `Event`. Auf den VPS via `prisma db push` gebracht (additiv).
+>   - **Testnetz:** vitest (`npm test`), 27 Tests grün; Herkunft + Preisgedächtnis zusätzlich lokal mit
+>     aktivierten Flags im Browser verifiziert.
+> - ✅ **Meta-Firmenverifizierung DURCH** — Produktionsnummer **+49 174 936 4823** kann jetzt eingebunden
+>   werden: bei Meta hinzufügen (Anzeigename „AuftragsBoss") + Zahlungsmethode → `WHATSAPP_PHONE_NUMBER_ID`
+>   in Server-`.env` → `pm2 restart` → `wa.me`/Nummer/QR auf der Landingpage setzen (Platzhalter `+4915123456789`).
+
 > **Update 04.08.2026 — alles live auf VPS + Website:**
 > - **E-Mail komplett überarbeitet** (`email/templates.ts`): EINE einheitliche Vorlage (`dokumentMail`)
 >   für alle Mails — Anthrazit-Kopfbanner mit Logo, Outlook-fester Tabellen-Button „Jetzt bearbeiten",
@@ -286,10 +309,8 @@ deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
 - **Go-Live-Stand (01.08.2026):**
   - ✅ **Website live** unter **auftragsboss.de** (IONOS-Webhosting Plus, Vertrag 113188648,
     SSL aktiv). Deploy = Inhalt von `marketing/` in den Webroot-Ordner `public` hochladen.
-  - ⏳ **Meta-Firmenverifizierung LÄUFT** (DAG Deutsche Automotive GmbH; Unternehmensart
-    **„Privatunternehmen"/GmbH**). Erster Antrag hatte ein Ausweis-Problem → am **02.08.2026 neu
-    gestartet**, dauert ~48 Std. **Solange sie läuft, ist das Hinzufügen der Produktionsnummer
-    gesperrt** (im „WhatsApp-Manager → Nummer hinzufügen" ist das Land-Feld gesperrt).
+  - ✅ **Meta-Firmenverifizierung DURCH (05.08.2026)** (DAG Deutsche Automotive GmbH). Der frühere
+    Blocker ist weg: die Produktionsnummer kann jetzt hinzugefügt werden (siehe Update 05.08.2026 oben).
   - ✅ **Servicenummer bereit:** eSIM **+49 174 936 4823** eingerichtet, wartet auf die Verifizierung.
     Sobald durch: Nummer bei Meta hinzufügen (Anzeigename „AuftragsBoss") + Zahlungsmethode →
     Phone-Number-ID in Server-`.env` (`WHATSAPP_PHONE_NUMBER_ID`) → `pm2 restart auftragsboss` →

@@ -15,19 +15,23 @@ const daten = {
 
 describe("baueZusammenfassung", () => {
   const text = baueZusammenfassung(daten);
-  it("nennt Kunde, Objekt, Leistung und Aufmaß", () => {
+  it("nutzt fettgedruckte Überschriften statt Emojis", () => {
+    expect(text).toContain("*Kunde:*");
+    expect(text).toContain("*Objekt:*");
+    expect(text).toContain("*Leistungen:*");
+    expect(text).not.toMatch(/📝|🛠️|📏|👤|🏠|💶/);
+  });
+  it("nennt Kunde, Objekt und Leistungen als Aufzählung", () => {
     expect(text).toContain("Familie Bär");
     expect(text).toContain("Wohnzimmer");
-    expect(text).toContain("Wände streichen");
-    expect(text).toContain("45 m² Wandfläche");
+    expect(text).toContain("• Wände streichen");
   });
   it("zeigt genannte Preise formatiert", () => {
     expect(text).toMatch(/Anfahrt: .*40/);
   });
-  it("führt in der Leistungszeile nur Leistungen, kein Material", () => {
-    const leistungszeile = text.split("\n").find((l) => l.startsWith("🛠️")) ?? "";
-    expect(leistungszeile).toContain("Wände streichen");
-    expect(leistungszeile).not.toContain("Dispersionsfarbe");
+  it("wiederholt keine Maße separat und listet kein Material als Leistung", () => {
+    expect(text).not.toContain("45 m² Wandfläche"); // stand nur in aufmassNotizen
+    expect(text).not.toContain("Dispersionsfarbe");
   });
 });
 

@@ -220,7 +220,10 @@ export async function verarbeiteNachricht(args: {
     let vorgang = await holeOffenenVorgang(prisma, handwerker.id);
     if (!vorgang) vorgang = await holeNachtragsVorgang(prisma, handwerker.id);
 
-    if (inhalt.length < 3) {
+    // Kürze-Sperre NUR ohne laufenden Vorgang: Bei einer offenen Rückfrage oder
+    // Zusammenfassung ist ein kurzes "ja" (oder "ok") eine gültige Antwort und
+    // darf nicht als "nichts Verständliches" abgewiesen werden.
+    if (!vorgang && inhalt.length < 3) {
       await sendeWhatsAppText(
         vonNummer,
         "🤔 Da war nichts Verständliches dabei. Schick mir die Details bitte noch einmal.",

@@ -53,6 +53,12 @@ const ABSCHLUSS_WOERTER = [
   "erstelle",
   "ok",
   "okay",
+  "ja",
+  "jo",
+  "jup",
+  "jawohl",
+  "genau",
+  "stimmt",
   "weiß ich nicht",
   "weiss ich nicht",
   "keine ahnung",
@@ -81,21 +87,34 @@ export function istAbschluss(text: string): boolean {
 
 /**
  * Kurze, lesbare Zusammenfassung dessen, was die KI verstanden hat — für den
- * WhatsApp-Readback vor dem Angebot ("das habe ich verstanden"). Nur die
- * wichtigen Punkte, keine Überfrachtung. Keine Gedankenstriche.
+ * WhatsApp-Readback vor dem Angebot ("das habe ich verstanden").
+ *
+ * Bewusst mit FETTGEDRUCKTEN Überschriften statt Emojis und OHNE separate
+ * Aufmaß-Zeile: Die Maße stehen ohnehin im Objekt und in den Leistungen; eine
+ * zusätzliche Maß-Zeile wirkte wie eine Doppelung und verwirrte. Keine
+ * Gedankenstriche.
  */
 export function baueZusammenfassung(daten: DokumentDaten): string {
-  const zeilen: string[] = ["📝 *Das habe ich verstanden:*"];
+  const zeilen: string[] = ["*Das habe ich verstanden:*", ""];
   const k = daten.kunde;
-  if (k.name) zeilen.push(`👤 ${k.name}${k.strasse ? ", " + k.strasse : ""}`);
-  if (daten.objekt) zeilen.push(`🏠 ${daten.objekt}`);
-  const leistungen = daten.positionen.filter((p) => p.kategorie === "LEISTUNG").map((p) => p.beschreibung);
-  if (leistungen.length) zeilen.push(`🛠️ ${leistungen.join(", ")}`);
-  if (daten.aufmassNotizen?.trim()) zeilen.push(`📏 ${daten.aufmassNotizen.trim()}`);
+  const kunde = [k.name, k.strasse].filter((s) => s && s.trim()).join(", ");
+  if (kunde) zeilen.push(`*Kunde:* ${kunde}`);
+  if (daten.objekt?.trim()) zeilen.push(`*Objekt:* ${daten.objekt.trim()}`);
+
+  const leistungen = daten.positionen
+    .filter((p) => p.kategorie === "LEISTUNG")
+    .map((p) => p.beschreibung.trim())
+    .filter(Boolean);
+  if (leistungen.length) {
+    zeilen.push("*Leistungen:*");
+    for (const l of leistungen) zeilen.push(`• ${l}`);
+  }
+
   const preise = daten.positionen
     .filter((p) => p.einzelpreis != null)
-    .map((p) => `${p.beschreibung}: ${euro(p.einzelpreis as number)}`);
-  if (preise.length) zeilen.push(`💶 ${preise.join(", ")}`);
+    .map((p) => `${p.beschreibung.trim()}: ${euro(p.einzelpreis as number)}`);
+  if (preise.length) zeilen.push(`*Preise:* ${preise.join(", ")}`);
+
   return zeilen.join("\n");
 }
 

@@ -215,10 +215,24 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
       .fillColor(grau)
       .fontSize(8.5)
       .text(
-        `Dieses Angebot ist gültig bis ${datumDE(summe.gueltigBis)}. Zahlungsziel: ${preisliste.konditionen.zahlungsziel}.` +
-          (b.ustIdNr ? `  USt-IdNr.: ${b.ustIdNr}` : ""),
+        `Dieses Angebot ist gültig bis ${datumDE(summe.gueltigBis)}. Zahlungsziel: ${preisliste.konditionen.zahlungsziel}.`,
         { width: breite },
       );
+  }
+
+  // Fußzeile mit Firmen-, Ansprechpartner-, Steuer- und Bankdaten (wie im Word),
+  // damit beide Formate dieselben hinterlegten Angaben zeigen.
+  const fusstext = [
+    [b.firma, b.strasse, `${b.plz} ${b.ort}`.trim()].filter(Boolean).join(", "),
+    b.inhaber ? `Ansprechpartner: ${b.inhaber}` : "",
+    b.ustIdNr ? `USt-IdNr.: ${b.ustIdNr}` : "",
+    b.bank ? `Bank: ${b.bank}` : "",
+  ]
+    .filter(Boolean)
+    .join("   ·   ");
+  if (fusstext) {
+    doc.moveDown(0.8);
+    doc.fillColor(grau).fontSize(8).text(fusstext, { width: breite });
   }
 
   doc.end();

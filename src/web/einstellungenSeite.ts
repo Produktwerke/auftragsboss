@@ -66,6 +66,9 @@ export function einstellungenSeite(args: {
   const inp = (id: string, x: { wert: string; ph: string }, extra = "") =>
     `<input id="${id}" value="${escapeHtml(x.wert)}" placeholder="${escapeHtml(x.ph)}" ${extra}>`;
 
+  /** Kleiner Hinweis unter einem Feld: wo der Wert im Angebot erscheint. */
+  const fhint = (text: string) => `<span class="feldhint">${escapeHtml(text)}</span>`;
+
   const zeilen =
     dokumente.length === 0
       ? `<tr><td colspan="5" style="text-align:center;color:#888;padding:20px;">Noch keine Angebote — sobald das erste fertig ist, erscheint es hier.</td></tr>`
@@ -97,6 +100,7 @@ export function einstellungenSeite(args: {
   .karte { background:#fff; border-radius:12px; padding:22px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
   .karte h2 { font-size:16px; margin:0 0 4px; }
   .karte .hint { color:#777; font-size:13px; margin:0 0 14px; }
+  .feldhint { display:block; font-size:12px; color:#999; margin:4px 0 2px; font-weight:400; }
   label { display:block; font-size:13px; color:#555; margin:12px 0 4px; font-weight:600; }
   input, textarea { width:100%; padding:9px 11px; border:1px solid #cfd4da; border-radius:7px; font-size:15px; font-family:inherit; background:#fff; }
   textarea { min-height:90px; resize:vertical; }
@@ -185,31 +189,33 @@ export function einstellungenSeite(args: {
     <label>Akzentfarbe</label>
     <div class="farb-zeile">
       <input type="color" id="farbe" value="${akzent}">
-      <span class="hex" id="farbeHex">${akzent}</span>
-      <span style="color:#888;font-size:13px;">Farbe für Briefkopf und Tabellenkopf</span>
+      <input type="text" id="farbeHex" value="${akzent.toUpperCase()}" maxlength="7" spellcheck="false"
+             style="width:110px;font-family:ui-monospace,monospace;text-transform:uppercase;">
+      <span style="color:#888;font-size:13px;">Farbe für Briefkopf und Tabellenkopf. Hex-Code wie #FE5722 eintippen oder den Farbwähler nutzen.</span>
     </div>
   </div>
 
   <!-- Betriebsdaten -->
   <div class="karte">
     <h2>Betriebsdaten</h2>
-    <p class="hint">Was hier steht, erscheint im Kopf und Fuß Ihrer Angebote.</p>
+    <p class="hint">Was hier steht, erscheint im Briefkopf (oben) oder in der Fußzeile Ihrer Angebote. Der Hinweis unter jedem Feld sagt, wo.</p>
     <div class="zwei">
-      <div><label>Firma</label>${inp("firma", f.firma)}</div>
-      <div><label>Inhaber / Ansprechpartner</label>${inp("name", f.name)}</div>
+      <div><label>Firma</label>${inp("firma", f.firma)}${fhint("Briefkopf (groß, oben) und Fußzeile")}</div>
+      <div><label>Inhaber / Ansprechpartner</label>${inp("name", f.name)}${fhint("Fußzeile („Ansprechpartner: …“)")}</div>
     </div>
-    <label>Straße und Hausnummer</label>${inp("strasse", f.strasse)}
+    <label>Straße und Hausnummer</label>${inp("strasse", f.strasse)}${fhint("Briefkopf-Adresszeile und Fußzeile")}
     <div class="plz-ort">
       <div><label>PLZ</label>${inp("plz", f.plz)}</div>
       <div><label>Ort</label>${inp("ort", f.ort)}</div>
     </div>
+    ${fhint("PLZ und Ort: Briefkopf-Adresszeile und Fußzeile")}
     <div class="zwei">
-      <div><label>Telefon</label>${inp("telefon", f.telefon)}</div>
-      <div><label>E-Mail</label>${inp("email", f.email, 'type="email"')}</div>
+      <div><label>Telefon</label>${inp("telefon", f.telefon)}${fhint("Briefkopf-Adresszeile")}</div>
+      <div><label>E-Mail</label>${inp("email", f.email, 'type="email"')}${fhint("Briefkopf-Adresszeile; außerdem Absender-/Zieladresse beim Mailversand")}</div>
     </div>
     <div class="zwei">
-      <div><label>USt-IdNr. (optional)</label>${inp("ustIdNr", f.ustIdNr)}</div>
-      <div><label>Bankverbindung (optional)</label>${inp("bank", f.bank)}</div>
+      <div><label>USt-IdNr. (optional)</label>${inp("ustIdNr", f.ustIdNr)}${fhint("Fußzeile des Angebots")}</div>
+      <div><label>Bankverbindung (optional)</label>${inp("bank", f.bank)}${fhint("Fußzeile des Angebots")}</div>
     </div>
   </div>
 
@@ -285,7 +291,6 @@ function aktualisiereVorschau(){
   document.getElementById("pvAdr").textContent = teile.join("  ·  ");
   const farbe = document.getElementById("farbe").value;
   document.documentElement.style.setProperty("--akzent", farbe);
-  document.getElementById("farbeHex").textContent = farbe.toUpperCase();
 }
 
 // ── Speichern (entprellt) ─────────────────────────────
@@ -310,7 +315,16 @@ async function speichern(){
 function setStatus(id,text,farbe){ const s=document.getElementById(id); s.textContent=text; s.style.color=farbe; }
 
 FELDER.forEach(id=>document.getElementById(id).addEventListener("input",markiere));
-document.getElementById("farbe").addEventListener("input",markiere);
+// Farbwähler und Hex-Eingabefeld halten sich gegenseitig aktuell.
+const farbeInput=document.getElementById("farbe");
+const farbeHexInput=document.getElementById("farbeHex");
+farbeInput.addEventListener("input",()=>{ farbeHexInput.value=farbeInput.value.toUpperCase(); markiere(); });
+farbeHexInput.addEventListener("input",()=>{
+  let v=farbeHexInput.value.trim(); if(v && v[0]!=="#") v="#"+v;
+  if(/^#[0-9a-fA-F]{6}$/.test(v)){ farbeInput.value=v; markiere(); }
+});
+// Beim Verlassen das Feld auf die tatsächlich gültige Farbe normalisieren.
+farbeHexInput.addEventListener("blur",()=>{ farbeHexInput.value=farbeInput.value.toUpperCase(); });
 document.getElementById("preisGedaechtnisAktiv").addEventListener("change",markiere);
 document.getElementById("zusammenfassungAktiv").addEventListener("change",markiere);
 

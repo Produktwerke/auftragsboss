@@ -342,8 +342,7 @@ export async function erzeugeAngebotWord(args: {
           new TextRun({
             text:
               `Dieses Angebot ist gültig bis ${datumDE(summe.gueltigBis)}. ` +
-              `Zahlungsziel: ${preisliste.konditionen.zahlungsziel}.` +
-              (b.ustIdNr ? `  USt-IdNr.: ${b.ustIdNr}` : ""),
+              `Zahlungsziel: ${preisliste.konditionen.zahlungsziel}.`,
             size: 16,
             color: GRAU,
           }),
@@ -352,9 +351,10 @@ export async function erzeugeAngebotWord(args: {
     );
   }
 
-  // Fußzeile mit Firmen- und Bankdaten, falls hinterlegt
+  // Fußzeile mit Firmen-, Ansprechpartner-, Steuer- und Bankdaten, falls hinterlegt
   const fusstext = [
     [b.firma, b.strasse, `${b.plz} ${b.ort}`.trim()].filter(Boolean).join(", "),
+    b.inhaber ? `Ansprechpartner: ${b.inhaber}` : "",
     b.ustIdNr ? `USt-IdNr.: ${b.ustIdNr}` : "",
     b.bank ? `Bank: ${b.bank}` : "",
   ]

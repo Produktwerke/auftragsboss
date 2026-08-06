@@ -15,6 +15,7 @@ import { featureConfig } from "../config.js";
 import { importiereAltangebot } from "../maler/import/importDienst.js";
 import { ImportFormatFehler } from "../maler/import/extraktion.js";
 import { merkePreiseAusImport } from "../betrieb/preisgedaechtnis.js";
+import { cockpitLink } from "./tokens.js";
 
 const MAX_BYTES = 15 * 1024 * 1024; // 15 MB — großzügig für gescannte Angebote
 
@@ -125,10 +126,13 @@ function importSeite(token: string, firma: string, preisGedaechtnisAktiv: boolea
   button.zweit{background:#0a7d33}
   button:disabled{opacity:.5;cursor:default}
   .hinweis{color:#555;font-size:.9rem}
+  .zurueck{display:inline-block;margin-bottom:1rem;color:#0B5CAD;text-decoration:none;font-size:.95rem}
+  .zurueck:hover{text-decoration:underline}
   #ergebnis{margin-top:1rem;white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:.85rem}
   #bestaetigen{display:none}
   .ok{color:#0a7d33}.warn{color:#b26a00}.err{color:#c0261a}
 </style></head><body>
+<a class="zurueck" href="${cockpitLink(token)}">← Übersicht</a>
 <h1>Altes Angebot importieren</h1>
 <p class="hinweis">Betrieb: <strong>${sicher(firma)}</strong>. Nur Ihre Texte werden gelesen &mdash; das neue Angebot entsteht immer im AuftragsBoss-Stil. PDF oder Word (.docx), max. 15&nbsp;MB.</p>
 <div class="karte">

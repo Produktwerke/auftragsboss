@@ -229,7 +229,7 @@ export function editorSeite(args: {
 
   ${
     einstellungenUrl
-      ? `<a class="zurueck" href="${escapeHtml(einstellungenUrl)}">← Zurück zu Einstellungen &amp; allen Angeboten</a>`
+      ? `<a class="zurueck" href="${escapeHtml(einstellungenUrl)}">← Zurück zur Übersicht</a>`
       : ""
   }
 

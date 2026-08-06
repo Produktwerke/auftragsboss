@@ -9,6 +9,7 @@
 import type { Handwerker } from "@prisma/client";
 import type { Preisliste } from "../preisliste.js";
 import { bearbeitenLink } from "./tokens.js";
+import { navLeiste, navStyles, topBar } from "./navigation.js";
 
 function escapeHtml(s: string): string {
   return s
@@ -69,20 +70,6 @@ export function einstellungenSeite(args: {
   /** Kleiner Hinweis unter einem Feld: wo der Wert im Angebot erscheint. */
   const fhint = (text: string) => `<span class="feldhint">${escapeHtml(text)}</span>`;
 
-  const zeilen =
-    dokumente.length === 0
-      ? `<tr><td colspan="5" style="text-align:center;color:#888;padding:20px;">Noch keine Angebote — sobald das erste fertig ist, erscheint es hier.</td></tr>`
-      : dokumente
-          .map(
-            (d) => `<tr>
-        <td class="c-num" data-label="Nummer"><a href="${bearbeitenLink(d.bearbeitenToken)}" target="_blank" rel="noopener">${escapeHtml(d.nummer)}</a>${d.version > 1 ? ` <span class="fassung">Fassung ${d.version}</span>` : ""}</td>
-        <td data-label="Art">${d.art === "ANGEBOT" ? "Angebot" : "Protokoll"}</td>
-        <td data-label="Kunde">${escapeHtml(d.kundeName ?? "—")}</td>
-        <td data-label="Datum">${datumDE(d.datum)}</td>
-        <td class="r" data-label="Betrag">${d.vollstaendig ? euro(d.brutto) : '<span class="offen">offen</span>'}</td>
-      </tr>`,
-          )
-          .join("");
 
   return `<!doctype html>
 <html lang="de">
@@ -95,6 +82,7 @@ export function einstellungenSeite(args: {
   * { box-sizing: border-box; }
   body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:#eef0f3; color:#1a1a1a; line-height:1.5; }
   .rahmen { max-width:1140px; margin:0 auto; padding:16px; }
+  ${navStyles()}
   /* Zwei Spalten: links Eingaben, rechts sticky Live-Angebotsblatt */
   .layout { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap:20px; align-items:start; }
   .spalte-vorschau { position:sticky; top:16px; }
@@ -178,6 +166,8 @@ export function einstellungenSeite(args: {
 </head>
 <body>
 <div class="rahmen">
+  ${topBar(h, logoDataUrl)}
+  ${navLeiste(token, "einstellungen")}
   <h1>Betriebseinstellungen</h1>
   <p class="unter">Diese Angaben erscheinen auf jedem Angebot. Einmal einstellen — danach passt alles automatisch.</p>
 
@@ -257,18 +247,6 @@ export function einstellungenSeite(args: {
       <input type="checkbox" id="zusammenfassungAktiv" ${h.zusammenfassungAktiv ? "checked" : ""} style="width:auto;">
       <span>Vor dem Angebot kurz zusammenfassen, was verstanden wurde</span>
     </label>
-  </div>
-
-  <!-- Angebotsübersicht -->
-  <div class="karte">
-    <h2>Ihre Angebote</h2>
-    <p class="hint">${dokumente.length} ${dokumente.length === 1 ? "Dokument" : "Dokumente"} — zum Öffnen auf die Nummer klicken.</p>
-    <div class="tab-scroll">
-      <table>
-        <thead><tr><th>Nummer</th><th>Art</th><th>Kunde</th><th>Datum</th><th class="r">Betrag</th></tr></thead>
-        <tbody>${zeilen}</tbody>
-      </table>
-    </div>
   </div>
 
   <!-- Feedback ans Team -->

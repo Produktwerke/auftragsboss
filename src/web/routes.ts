@@ -13,11 +13,12 @@ import { erzeugeAngebotWord, wordDateiname } from "../angebot/word.js";
 import { erzeugeAngebotPdf } from "../angebot/pdf.js";
 import { editorSeite } from "./editorSeite.js";
 import { einstellungenSeite, type DokUebersicht } from "./einstellungenSeite.js";
+import { cockpitSeite } from "./cockpitSeite.js";
 import { adminSeite } from "./adminSeite.js";
 import { einladungSeite } from "./einladungSeite.js";
 import { dokumentZuDaten, editorZuPositionen, type EditorPosition } from "./dokumentDaten.js";
 import { effektivePreisliste, einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
-import { bearbeitenLink, einstellungenLink } from "./tokens.js";
+import { bearbeitenLink, einstellungenLink, cockpitLink } from "./tokens.js";
 import { ladeLogo } from "../betrieb/logo.js";
 import { speichereLogo, entferneLogo, LogoFehler } from "../betrieb/logoUpload.js";
 import { smtpKonfiguriert, featureConfig, webtestConfig } from "../config.js";
@@ -78,7 +79,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     // für sie entfällt der Zurück-Link ganz.
     const einstellungenUrl = handwerker.istTest
       ? undefined
-      : einstellungenLink(await einstellungenTokenBereit(prisma, handwerker));
+      : cockpitLink(await einstellungenTokenBereit(prisma, handwerker));
 
     return reply.type("text/html; charset=utf-8").send(
       editorSeite({ dokument, handwerker, preisliste, einstellungenUrl }),
@@ -354,6 +355,40 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       return reply.send({ ok: true });
     },
   );
+
+  // ── Cockpit / Übersicht (passwortloser Zugang per Token) ─
+  app.get<{ Params: { token: string } }>("/start/:token", async (req, reply) => {
+    const handwerker = await prisma.handwerker.findUnique({
+      where: { einstellungenToken: req.params.token },
+    });
+    if (!handwerker) return reply.code(404).type("text/html").send(nichtGefunden());
+
+    const eff = effektivePreisliste(handwerker, ladePreisliste());
+    const logo = ladeLogo(eff.betrieb.logo);
+    const akzent = `#${/^[0-9a-fA-F]{6}$/.test(eff.betrieb.farbe) ? eff.betrieb.farbe : "0B5CAD"}`;
+
+    const dokumente = await prisma.dokument.findMany({
+      where: { handwerkerId: handwerker.id },
+      orderBy: { datum: "desc" },
+      take: 200,
+    });
+    const uebersicht: DokUebersicht[] = dokumente.map((d) => ({
+      art: d.art, nummer: d.nummer, kundeName: d.kundeName, datum: d.datum, brutto: d.brutto,
+      vollstaendig: d.anzahlOffen === 0, bearbeitenToken: d.bearbeitenToken, version: d.version,
+    }));
+    const kennzahlen = {
+      anzahl: dokumente.length,
+      offen: dokumente.filter((d) => d.anzahlOffen > 0).length,
+      volumen: dokumente.reduce((s, d) => s + (d.anzahlOffen === 0 ? d.brutto : 0), 0),
+    };
+
+    return reply.type("text/html; charset=utf-8").send(
+      cockpitSeite({
+        handwerker, logoDataUrl: logo?.dataUrl ?? null, akzent,
+        dokumente: uebersicht, kennzahlen, token: req.params.token,
+      }),
+    );
+  });
 
   // ── Einstellungsseite (passwortloser Zugang per Token) ─
   app.get<{ Params: { token: string } }>("/einstellungen/:token", async (req, reply) => {

@@ -9,6 +9,7 @@
 // Betrieb sieht ausschließlich sein eigenes Gedächtnis.
 import type { PrismaClient } from "@prisma/client";
 import type { Position } from "../ai/structure.js";
+import { erzwingeTenant } from "../mandant.js";
 
 /**
  * Normalisierter Wiedererkennungs-Schlüssel aus Beschreibung + Einheit.
@@ -69,6 +70,66 @@ export async function merkePreise(
         einheit: p.einheit,
         letzterPreis: p.einzelpreis,
         quelle: "EDITOR",
+      },
+    });
+    gemerkt++;
+  }
+  return gemerkt;
+}
+
+/**
+ * Übernimmt die Preise eines BESTÄTIGTEN Alt-Angebots ins Preisgedächtnis
+ * dieses Betriebs ("kontrolliertes Lernen": erst nach Bestätigung, nie schon
+ * beim Hochladen). Streng tenant-gebunden. Besonderheiten gegenüber merkePreise:
+ *   • DATIERT auf das Angebotsdatum (nicht "heute") — der Vorschlag bleibt
+ *     ehrlich als alter Preis erkennbar.
+ *   • FRISCHE-SCHUTZ: ein bereits gespeicherter, NEUERER Preis (z.B. eine
+ *     frische Editor-Eingabe) wird NICHT von einem älteren Import überschrieben.
+ *   • Nur ausgewiesene Einzelpreise mit belastbarer Konfidenz (nicht "low")
+ *     werden übernommen — nichts wird gerechnet oder geraten.
+ * @returns Anzahl übernommener Preise.
+ */
+export async function merkePreiseAusImport(
+  prisma: PrismaClient,
+  handwerkerId: string,
+  importDokumentId: string,
+): Promise<number> {
+  const tenant = erzwingeTenant(handwerkerId, "merkePreiseAusImport");
+
+  // Tenant-sicher: Dokument NUR laden, wenn es diesem Betrieb gehört.
+  const dok = await prisma.importDokument.findFirst({
+    where: { id: importDokumentId, handwerkerId: tenant },
+    include: { positionen: true },
+  });
+  if (!dok) return 0;
+
+  // Datum des Preises: das Angebotsdatum, ersatzweise der Importzeitpunkt.
+  const stand = dok.dokumentDatum ?? dok.erstelltAm;
+
+  let gemerkt = 0;
+  for (const p of dok.positionen) {
+    if (p.einzelpreis == null) continue; // nur ausgewiesene Einzelpreise
+    if (p.extraktionsKonfidenz === "low") continue; // Unsicheres nicht lernen
+    if (!p.originalTitel.trim()) continue;
+
+    const schluessel = leistungSchluessel(p.originalTitel, p.einheit);
+    const vorhanden = await prisma.preisgedaechtnis.findUnique({
+      where: { handwerkerId_leistungSchluessel: { handwerkerId: tenant, leistungSchluessel: schluessel } },
+    });
+    // Frische-Schutz: nichts Neueres (oder Gleichaltriges) überschreiben.
+    if (vorhanden && vorhanden.zuletztAm >= stand) continue;
+
+    await prisma.preisgedaechtnis.upsert({
+      where: { handwerkerId_leistungSchluessel: { handwerkerId: tenant, leistungSchluessel: schluessel } },
+      update: { letzterPreis: p.einzelpreis, einheit: p.einheit, beschreibung: p.originalTitel, zuletztAm: stand, quelle: "IMPORT" },
+      create: {
+        handwerkerId: tenant,
+        leistungSchluessel: schluessel,
+        beschreibung: p.originalTitel,
+        einheit: p.einheit,
+        letzterPreis: p.einzelpreis,
+        zuletztAm: stand,
+        quelle: "IMPORT",
       },
     });
     gemerkt++;

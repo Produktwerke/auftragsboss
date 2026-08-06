@@ -49,7 +49,7 @@ describe("parseAngebotstext — Positionen", () => {
     expect(p.originalNummer).toBe("1");
     expect(p.originalTitel).toBe("Wände und Decken grundieren");
     expect(p.menge).toBe(80);
-    expect(p.einheit).toBe("m²");
+    expect(p.einheit).toBe("m2"); // kanonisch (Pipeline-Schreibweise), nicht "m²"
     expect(p.einzelpreis).toBe(3.5);
     expect(p.gesamtpreis).toBe(280);
     expect(p.konfidenz).toBe("high");

@@ -34,13 +34,16 @@ export interface ParseErgebnis {
   warnungen: string[];
 }
 
-// Erkannte Einheiten (klein geschrieben). Reihenfolge: längere zuerst matchen.
+// Erkannte Einheiten → KANONISCHE Schreibweise der Angebots-Pipeline
+// (siehe preisliste.ts EINHEITEN: m2, lfm, Stk, Std, l, kg, Sack, Gebinde,
+// Rolle, pauschal). Wichtig, damit importierte Preise über den identischen
+// Schlüssel im Preisgedächtnis beim neuen Angebot wiedererkannt werden.
 const EINHEITEN: Record<string, string> = {
-  "m²": "m²",
-  m2: "m²",
-  qm: "m²",
-  "m³": "m³",
-  m3: "m³",
+  "m²": "m2",
+  m2: "m2",
+  qm: "m2",
+  "m³": "m3",
+  m3: "m3",
   lfdm: "lfm",
   lfm: "lfm",
   "lfd.m": "lfm",
@@ -55,13 +58,13 @@ const EINHEITEN: Record<string, string> = {
   psch: "pauschal",
   pauschal: "pauschal",
   pausch: "pauschal",
-  liter: "Liter",
-  l: "Liter",
+  liter: "l",
+  l: "l",
   kg: "kg",
   sack: "Sack",
   gebinde: "Gebinde",
   rolle: "Rolle",
-  stg: "Stg", // Gerüst-Standgerüst o.ä. — als Rohwert übernehmen
+  stg: "Stg", // Gerüst-Standgerüst o.ä. — kein Pipeline-Pendant, Rohwert
 };
 
 /** Deutsche Zahl ("1.234,56" / "45,00" / "12") → number. Null bei Unsinn. */

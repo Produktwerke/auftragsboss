@@ -75,7 +75,7 @@ export function einstellungenSeite(args: {
       : dokumente
           .map(
             (d) => `<tr>
-        <td class="c-num" data-label="Nummer"><a href="${bearbeitenLink(d.bearbeitenToken)}">${escapeHtml(d.nummer)}</a>${d.version > 1 ? ` <span class="fassung">Fassung ${d.version}</span>` : ""}</td>
+        <td class="c-num" data-label="Nummer"><a href="${bearbeitenLink(d.bearbeitenToken)}" target="_blank" rel="noopener">${escapeHtml(d.nummer)}</a>${d.version > 1 ? ` <span class="fassung">Fassung ${d.version}</span>` : ""}</td>
         <td data-label="Art">${d.art === "ANGEBOT" ? "Angebot" : "Protokoll"}</td>
         <td data-label="Kunde">${escapeHtml(d.kundeName ?? "—")}</td>
         <td data-label="Datum">${datumDE(d.datum)}</td>
@@ -107,9 +107,9 @@ export function einstellungenSeite(args: {
   .blatt table { margin:10px 0; }
   .bl-tab th { padding:6px 7px; font-size:11px; }
   .bl-tab td { padding:6px 7px; font-size:11.5px; border-bottom:1px solid #eef1f3; }
-  .bl-sum { width:62%; margin-left:38%; }
-  .bl-sum td { padding:3px 7px; font-size:11.5px; border:none; }
-  .bl-sum tr.ges td { font-weight:700; color:var(--akzent); border-top:2px solid var(--akzent); padding-top:6px; }
+  .bl-tab tr.sum td { border-bottom:none; padding:3px 7px; color:#333; }
+  .bl-tab tr.sum.erste td { padding-top:9px; }
+  .bl-tab tr.ges td { font-weight:700; color:var(--akzent); border-top:2px solid var(--akzent); border-bottom:none; padding-top:6px; }
   .bl-gueltig { font-size:10.5px; color:#666; margin-top:10px; }
   .bl-fuss { font-size:10px; color:#8a8a8a; margin-top:16px; padding-top:8px; border-top:1px solid #eceff2; line-height:1.6; }
   .vorschau-hinweis { color:#777; font-size:13px; margin:0 0 12px; }
@@ -314,12 +314,10 @@ export function einstellungenSeite(args: {
             <tr><td>1</td><td>Wände und Decken streichen</td><td class="r">pauschal</td><td class="r">850,00 €</td><td class="r">850,00 €</td></tr>
             <tr><td>2</td><td>Alte Tapete entfernen</td><td class="r">pauschal</td><td class="r">220,00 €</td><td class="r">220,00 €</td></tr>
             <tr><td>3</td><td>Dispersionsfarbe (Material)</td><td class="r">4 Rolle</td><td class="r">45,00 €</td><td class="r">180,00 €</td></tr>
+            <tr class="sum erste"><td colspan="4" class="r">Nettosumme</td><td class="r">1.250,00 €</td></tr>
+            <tr class="sum"><td colspan="4" class="r">zzgl. 19 % MwSt.</td><td class="r">237,50 €</td></tr>
+            <tr class="ges"><td colspan="4" class="r">Gesamtbetrag</td><td class="r">1.487,50 €</td></tr>
           </tbody>
-        </table>
-        <table class="bl-sum">
-          <tr><td class="r">Nettosumme</td><td class="r">1.250,00 €</td></tr>
-          <tr><td class="r">zzgl. 19 % MwSt.</td><td class="r">237,50 €</td></tr>
-          <tr class="ges"><td class="r">Gesamtbetrag</td><td class="r">1.487,50 €</td></tr>
         </table>
 
         <div class="bl-text" id="pvSchluss"></div>
@@ -361,12 +359,16 @@ function aktualisiereVorschau(){
   document.getElementById("pvSchluss").textContent =
     val("standardSchlusstext").trim() || ("Mit freundlichen Grüßen\\n" + firma);
 
-  // Fußzeile: Firma, Adresse · Ansprechpartner · USt-IdNr · Bank
-  const fuss = [[firma, wert("strasse"), [wert("plz"), wert("ort")].filter(Boolean).join(" ")].filter(Boolean).join(", ")];
-  const name = wert("name"); if(name) fuss.push("Ansprechpartner: " + name);
-  const ust = wert("ustIdNr"); if(ust) fuss.push("USt-IdNr.: " + ust);
-  const bank = wert("bank"); if(bank) fuss.push("Bank: " + bank);
-  document.getElementById("pvFuss").textContent = fuss.join("   ·   ");
+  // Fußzeile in zwei Zeilen: 1) Firma, Adresse, Ansprechpartner  2) USt-IdNr., Bank
+  const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const z1 = [[firma, wert("strasse"), [wert("plz"), wert("ort")].filter(Boolean).join(" ")].filter(Boolean).join(", ")];
+  const name = wert("name"); if(name) z1.push("Ansprechpartner: " + name);
+  const z2 = [];
+  const ust = wert("ustIdNr"); if(ust) z2.push("USt-IdNr.: " + ust);
+  const bank = wert("bank"); if(bank) z2.push("Bank: " + bank);
+  const zeilen = [z1.join("   ·   ")];
+  if(z2.length) zeilen.push(z2.join("   ·   "));
+  document.getElementById("pvFuss").innerHTML = zeilen.map(esc).join("<br>");
 
   document.documentElement.style.setProperty("--akzent", document.getElementById("farbe").value);
 }

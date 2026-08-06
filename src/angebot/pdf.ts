@@ -220,19 +220,25 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
       );
   }
 
-  // Fußzeile mit Firmen-, Ansprechpartner-, Steuer- und Bankdaten (wie im Word),
-  // damit beide Formate dieselben hinterlegten Angaben zeigen.
-  const fusstext = [
+  // Fußzeile in zwei Zeilen (wie im Word), damit beide Formate gleich aussehen:
+  //   1) Firma, Anschrift, Ansprechpartner   2) USt-IdNr., Bank
+  const fussZeile1 = [
     [b.firma, b.strasse, `${b.plz} ${b.ort}`.trim()].filter(Boolean).join(", "),
     b.inhaber ? `Ansprechpartner: ${b.inhaber}` : "",
+  ]
+    .filter(Boolean)
+    .join("   ·   ");
+  const fussZeile2 = [
     b.ustIdNr ? `USt-IdNr.: ${b.ustIdNr}` : "",
     b.bank ? `Bank: ${b.bank}` : "",
   ]
     .filter(Boolean)
     .join("   ·   ");
-  if (fusstext) {
+  if (fussZeile1 || fussZeile2) {
     doc.moveDown(0.8);
-    doc.fillColor(grau).fontSize(8).text(fusstext, { width: breite });
+    doc.fillColor(grau).fontSize(8);
+    if (fussZeile1) doc.text(fussZeile1, { width: breite });
+    if (fussZeile2) doc.text(fussZeile2, { width: breite });
   }
 
   doc.end();

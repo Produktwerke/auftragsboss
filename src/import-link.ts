@@ -30,9 +30,14 @@ if (!hw) {
   console.log("➕ Neuen Test-Betrieb angelegt.");
 }
 
-// Fürs Testen der ganzen Kette: Preisgedächtnis einschalten.
-if (!hw.preisGedaechtnisAktiv) {
-  await prisma.handwerker.update({ where: { id: hw.id }, data: { preisGedaechtnisAktiv: true } });
+// Aus einem (evtl. aus Direkt-Tests stammenden) Test-Konto ein echtes,
+// registriertes Konto machen: Test-Flag entfernen (sonst fehlt u.a. der
+// „Einstellungen"-Link auf den Angeboten) und Preisgedächtnis einschalten.
+if (hw.istTest || !hw.preisGedaechtnisAktiv) {
+  hw = await prisma.handwerker.update({
+    where: { id: hw.id },
+    data: { istTest: false, preisGedaechtnisAktiv: true },
+  });
 }
 
 const token = await einstellungenTokenBereit(prisma, hw);

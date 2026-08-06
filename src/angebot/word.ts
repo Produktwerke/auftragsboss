@@ -351,10 +351,14 @@ export async function erzeugeAngebotWord(args: {
     );
   }
 
-  // Fußzeile mit Firmen-, Ansprechpartner-, Steuer- und Bankdaten, falls hinterlegt
-  const fusstext = [
+  // Fußzeile in zwei Zeilen: 1) Firma, Anschrift, Ansprechpartner  2) USt-IdNr., Bank
+  const fussZeile1 = [
     [b.firma, b.strasse, `${b.plz} ${b.ort}`.trim()].filter(Boolean).join(", "),
     b.inhaber ? `Ansprechpartner: ${b.inhaber}` : "",
+  ]
+    .filter(Boolean)
+    .join("   ·   ");
+  const fussZeile2 = [
     b.ustIdNr ? `USt-IdNr.: ${b.ustIdNr}` : "",
     b.bank ? `Bank: ${b.bank}` : "",
   ]
@@ -377,7 +381,10 @@ export async function erzeugeAngebotWord(args: {
               new Paragraph({
                 alignment: AlignmentType.CENTER,
                 border: { top: { style: BorderStyle.SINGLE, size: 4, color: "DDDDDD" } },
-                children: [new TextRun({ text: fusstext, size: 14, color: GRAU })],
+                children: [
+                  new TextRun({ text: fussZeile1, size: 14, color: GRAU }),
+                  ...(fussZeile2 ? [new TextRun({ text: fussZeile2, size: 14, color: GRAU, break: 1 })] : []),
+                ],
               }),
             ],
           }),

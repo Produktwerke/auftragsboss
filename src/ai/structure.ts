@@ -13,7 +13,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { anthropicConfig } from "../config.js";
+import { anthropicConfig, featureConfig } from "../config.js";
+import { malerFachwissen } from "../maler/prompt.js";
 import { EINHEITEN, preislisteAlsText, type Preisliste } from "../preisliste.js";
 
 export const PositionSchema = z.object({
@@ -230,6 +231,10 @@ function materialHinweis(gewerk: string): string {
 }
 
 function systemPrompt(preisliste: Preisliste): string {
+  // Maler-Fachwissen nur einspeisen, wenn der Baustein an ist UND der Betrieb
+  // ein Maler ist. Sonst bleibt der Prompt unverändert (Live-Verhalten).
+  const istMaler = /maler/i.test(preisliste.betrieb.gewerk ?? "");
+  const malerBlock = featureConfig().FEATURE_MALER_SCOPE && istMaler ? `\n\n${malerFachwissen()}` : "";
   return `Du bist das Backend von "AuftragsBoss", einem Diktier-Tool für deutsche Handwerksbetriebe.
 
 Du erhältst das Roh-Transkript einer WhatsApp-Sprachnachricht, die ein Handwerker direkt nach einem Kundentermin im Auto diktiert hat. Transkripte sind umgangssprachlich, ungeordnet, enthalten Füllwörter, Dialekt-Reste und vor allem TRANSKRIPTIONSFEHLER bei Fachbegriffen.
@@ -302,7 +307,7 @@ ${materialHinweis(preisliste.betrieb.gewerk)}
 
 ${preislisteAlsText(preisliste)}
 
-Ordne Positionen anhand der Suchbegriffe zu. Passt nichts, bleibt der Preis unbekannt.`;
+Ordne Positionen anhand der Suchbegriffe zu. Passt nichts, bleibt der Preis unbekannt.${malerBlock}`;
 }
 
 /** Eine Nachricht im WhatsApp-Dialog. */

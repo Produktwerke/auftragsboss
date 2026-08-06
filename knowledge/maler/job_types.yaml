@@ -1,0 +1,110 @@
+# Typische Innenrenovierungs-Auftragstypen v0 (Brief §6.4). Helfen der Engine,
+# aus wenigen Worten die üblichen Positionen, Pflichtangaben und typischen
+# Stolperfallen (häufig vergessen, unzulässige Annahmen) zu erkennen.
+# ERSTER ENTWURF — von Malermeistern zu validieren.
+
+auftragstypen:
+  - id: wand_raufaser_weiss
+    eingangsaussagen: ["Wände weiß streichen, Raufaser bleibt", "einmal alles weiß"]
+    zwingende_angaben: [flaeche]
+    wichtige_angaben: [substrate_condition, anzahl_arbeitsgaenge, farbwechsel, moeblierungszustand]
+    typische_positionen: [wand_beschichten]
+    zusatzpositionen: [boden_schuetzen, moebel_abdecken, decke_beschichten]
+    haeufig_vergessen: [decke_beschichten, abdeckarbeiten, sockelleisten_beschichten]
+    unzulaessige_annahmen: [untergrund_tragfaehig, ein_anstrich_reicht]
+
+  - id: wohnung_auszug_renovieren
+    eingangsaussagen: ["komplette Wohnung bei Auszug renovieren", "Wohnung streichen zum Auszug"]
+    zwingende_angaben: [flaeche]
+    wichtige_angaben: [anzahl_raeume, substrate_condition, moeblierungszustand]
+    typische_positionen: [wand_beschichten, decke_beschichten]
+    zusatzpositionen: [tueren_lackieren, zargen_lackieren, sockelleisten_beschichten, heizkoerper_lackieren]
+    haeufig_vergessen: [decke_beschichten, heizkoerper_lackieren, abschlussreinigung]
+    unzulaessige_annahmen: [bauteil_enthalten]
+    warnungen: ["Umfang je Raum unterschiedlich, Flächen einzeln erfragen"]
+
+  - id: decken_moebliert
+    eingangsaussagen: ["Decken streichen, Möbel stehen noch drin"]
+    zwingende_angaben: [flaeche]
+    wichtige_angaben: [raumhoehe, moeblierungszustand]
+    typische_positionen: [decke_beschichten]
+    zusatzpositionen: [boden_schuetzen, moebel_abdecken, moebel_bewegen]
+    haeufig_vergessen: [abdeckarbeiten]
+    unzulaessige_annahmen: [ein_anstrich_reicht]
+
+  - id: tapete_entfernen_neu_streichen
+    eingangsaussagen: ["Tapete runter und Wand neu streichen"]
+    zwingende_angaben: [flaeche]
+    wichtige_angaben: [substrate_condition, entsorgung]
+    typische_positionen: [tapete_entfernen, untergrund_pruefen, wand_beschichten]
+    zusatzpositionen: [spachteln, grundieren, abfall_entsorgen]
+    haeufig_vergessen: [entsorgung, spachteln, grundieren]
+    unzulaessige_annahmen: [entsorgung_inklusive, untergrund_tragfaehig]
+
+  - id: glattvlies_streichen
+    eingangsaussagen: ["Glattvlies anbringen und streichen"]
+    zwingende_angaben: [flaeche]
+    wichtige_angaben: [materialstellung]
+    typische_positionen: [vlies_kleben, wand_beschichten]
+    zusatzpositionen: [grundieren]
+    haeufig_vergessen: [grundierung]
+    unzulaessige_annahmen: [materialverbrauch_fix]
+
+  - id: gipskarton_spachteln_streichen
+    eingangsaussagen: ["Rigips spachteln und streichen", "Trockenbau fertig machen"]
+    zwingende_angaben: [flaeche]
+    wichtige_angaben: [qualitaetsstufe]
+    typische_positionen: [spachteln, schleifen, grundieren, wand_beschichten]
+    haeufig_vergessen: [grundierung, qualitaetsstufe]
+    unzulaessige_annahmen: [materialverbrauch_fix]
+    warnungen: ["Qualitätsstufe (z. B. Q2/Q3) erfragen, verändert Aufwand deutlich"]
+
+  - id: tueren_zargen_lackieren
+    eingangsaussagen: ["Türen und Zargen lackieren"]
+    zwingende_angaben: [anzahl]
+    wichtige_angaben: [glanzgrad, farbton, ausfuehrungsrisiko]
+    typische_positionen: [tueren_lackieren, zargen_lackieren]
+    haeufig_vergessen: [zargen_lackieren]
+    unzulaessige_annahmen: [bauteil_enthalten]
+
+  - id: nikotinwohnung
+    eingangsaussagen: ["Raucherwohnung streichen", "alles vergilbt von Nikotin"]
+    zwingende_angaben: [flaeche]
+    wichtige_angaben: [anzahl_arbeitsgaenge]
+    typische_positionen: [reinigen, absperren, wand_beschichten, decke_beschichten]
+    haeufig_vergessen: [absperren, reinigung]
+    unzulaessige_annahmen: [ein_anstrich_reicht]
+    warnungen: ["Nikotin durchschlägt ohne Absperrung, Isolieranstrich einplanen"]
+
+  - id: wasserflecken_risiko
+    eingangsaussagen: ["Wasserflecken an der Decke überstreichen"]
+    zwingende_angaben: [flaeche]
+    wichtige_angaben: [ausfuehrungsrisiko]
+    typische_positionen: [absperren, decke_beschichten]
+    haeufig_vergessen: [absperren]
+    unzulaessige_annahmen: [untergrund_tragfaehig]
+    warnungen: ["Ursache der Feuchte offen, ggf. Hinweis an Kunden, keine Bewertung"]
+    scope_grenzen: [schimmelbewertung]
+
+  - id: treppenhaus
+    eingangsaussagen: ["Treppenhaus renovieren"]
+    zwingende_angaben: [flaeche]
+    wichtige_angaben: [raumhoehe, zugaenglichkeit]
+    typische_positionen: [wand_beschichten, decke_beschichten]
+    zusatzpositionen: [gelaender, baustelle_einrichten]
+    haeufig_vergessen: [gerüst_oder_leiter, zugaenglichkeit]
+    warnungen: ["Höhe/Zugänglichkeit im Treppenauge erfragen"]
+
+  - id: teilrenovierung_kundenmaterial
+    eingangsaussagen: ["nur streichen, Farbe stellt der Kunde"]
+    zwingende_angaben: [flaeche, materialstellung]
+    wichtige_angaben: [substrate_condition]
+    typische_positionen: [wand_beschichten]
+    unzulaessige_annahmen: [material_vom_betrieb]
+
+  - id: nachtrag_sockelleisten
+    eingangsaussagen: ["die Sockelleisten sollen auch noch", "den Flur noch dazu"]
+    zwingende_angaben: []
+    wichtige_angaben: [laenge]
+    typische_positionen: [nachtrag, sockelleisten_beschichten]
+    warnungen: ["Als Nachtrag zum bestehenden Angebot behandeln, nicht neues Angebot"]

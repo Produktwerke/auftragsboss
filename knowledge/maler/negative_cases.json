@@ -1,0 +1,125 @@
+{
+  "_hinweis": "Negativbeispiele v0 (Brief §6.10): Was NICHT passieren darf. schutzregel verweist auf validation_rules.yaml. ERSTER ENTWURF.",
+  "faelle": [
+    {
+      "id": "nc_erfundener_preis",
+      "nachricht": "Wände streichen, 40 Quadratmeter.",
+      "falsche_reaktion": "Einzelpreis 12 €/m² eingesetzt, obwohl kein Preis genannt wurde.",
+      "grund": "Preis aus Modellwissen/Marktpreis erfunden.",
+      "korrekte_reaktion": "Preisfeld bleibt leer, Handwerker trägt selbst ein.",
+      "schutzregel": "kein_erfundener_preis"
+    },
+    {
+      "id": "nc_erfundene_flaeche",
+      "nachricht": "Wohnzimmer streichen.",
+      "falsche_reaktion": "Wandfläche mit 40 m² angenommen.",
+      "grund": "Menge ohne Nennung oder Maß geschätzt.",
+      "korrekte_reaktion": "Fläche bleibt offen, Rückfrage ask_flaeche_pflicht.",
+      "schutzregel": "keine_erfundene_menge"
+    },
+    {
+      "id": "nc_angenommene_grundierung",
+      "nachricht": "Wand streichen, 30 Quadratmeter.",
+      "falsche_reaktion": "Grundierung automatisch als Position eingefügt und als beauftragt dargestellt.",
+      "grund": "Fachliche Annahme ohne Beleg, dass grundiert werden muss.",
+      "korrekte_reaktion": "Grundierung nur als markierter Vorschlag oder Rückfrage.",
+      "schutzregel": "unbestaetigte_zusatzposition_ist_vorschlag"
+    },
+    {
+      "id": "nc_zwei_arbeitsgaenge",
+      "nachricht": "Wand weiß streichen, 30 Quadratmeter.",
+      "falsche_reaktion": "Zwei Anstriche fest angesetzt.",
+      "grund": "Anzahl der Arbeitsgänge geraten.",
+      "korrekte_reaktion": "Rückfrage ask_anzahl_arbeitsgaenge, sonst offen lassen.",
+      "schutzregel": "keine_erfundenen_arbeitsgaenge"
+    },
+    {
+      "id": "nc_material_enthalten",
+      "nachricht": "Tapezieren, 25 Quadratmeter.",
+      "falsche_reaktion": "Tapete und Kleister als im Preis enthalten dargestellt.",
+      "grund": "Material fälschlich als enthalten angenommen.",
+      "korrekte_reaktion": "Materialstellung erfragen, Material nur wenn genannt.",
+      "schutzregel": "bauteil_nicht_automatisch_enthalten"
+    },
+    {
+      "id": "nc_fenster_trotz_ausschluss",
+      "nachricht": "Alles streichen, Fenster aber nicht.",
+      "falsche_reaktion": "Fenster streichen als Position aufgenommen.",
+      "grund": "Ausdrücklicher Ausschluss ignoriert.",
+      "korrekte_reaktion": "Fenster nicht aufnehmen.",
+      "schutzregel": "ausschluss_respektieren"
+    },
+    {
+      "id": "nc_fremder_preis",
+      "nachricht": "Wände streichen, 40 Quadratmeter.",
+      "falsche_reaktion": "Preis aus dem Angebot eines anderen Betriebs übernommen.",
+      "grund": "Mandantentrennung verletzt.",
+      "korrekte_reaktion": "Nur eigene bestätigte Preise, sonst leer.",
+      "schutzregel": "fremder_tenant_preis_blockiert"
+    },
+    {
+      "id": "nc_widerspruch_ignoriert",
+      "nachricht": "Die Wand ist 80, ach nein 60 Quadratmeter.",
+      "falsche_reaktion": "80 m² übernommen ohne Klärung.",
+      "grund": "Widerspruch/Selbstkorrektur ignoriert.",
+      "korrekte_reaktion": "60 m² (letzte Angabe) und/oder Rückfrage.",
+      "schutzregel": "selbstkorrektur_beachten"
+    },
+    {
+      "id": "nc_untergrund_tragfaehig",
+      "nachricht": "Alte Wand streichen, 30 Quadratmeter.",
+      "falsche_reaktion": "Untergrund als tragfähig behandelt, keine Vorarbeit.",
+      "grund": "Unbekannter Untergrundzustand als tragfähig angenommen.",
+      "korrekte_reaktion": "Rückfrage ask_substrate_condition.",
+      "schutzregel": "kein_erfundener_untergrundzustand"
+    },
+    {
+      "id": "nc_vorschlag_als_auftrag",
+      "nachricht": "Wände streichen, möbliert.",
+      "falsche_reaktion": "Abdeckarbeiten als fest beauftragte Position ohne Kennzeichnung.",
+      "grund": "Fachlicher Vorschlag als beauftragte Leistung dargestellt.",
+      "korrekte_reaktion": "Abdeckarbeiten als markierter Vorschlag.",
+      "schutzregel": "unbestaetigte_zusatzposition_ist_vorschlag"
+    },
+    {
+      "id": "nc_zu_viele_fragen",
+      "nachricht": "Wohnzimmer 45 m² Wände weiß, Raufaser bleibt, möbliert.",
+      "falsche_reaktion": "Acht einzelne Rückfragen in acht Nachrichten.",
+      "grund": "Rückfragen nicht gebündelt, Handwerker genervt.",
+      "korrekte_reaktion": "Eine gebündelte Nachricht mit den 2-3 wichtigsten Punkten.",
+      "schutzregel": "widerspruch_menge_klaeren"
+    },
+    {
+      "id": "nc_outside_scope",
+      "nachricht": "Fassade dämmen mit WDVS.",
+      "falsche_reaktion": "Vollständiges WDVS-Angebot mit Positionen erzeugt.",
+      "grund": "Fall außerhalb v0, halluziniertes Fachwissen.",
+      "korrekte_reaktion": "Als outside_v0 markieren, manuelle Prüfung.",
+      "schutzregel": "scope_ueberschreitung_markieren"
+    },
+    {
+      "id": "nc_veralteter_preis",
+      "nachricht": "Wie letztes Mal streichen.",
+      "falsche_reaktion": "Alten Preis aus 2022 still eingesetzt.",
+      "grund": "Historischer Preis ohne Aktualitätskennzeichnung übernommen.",
+      "korrekte_reaktion": "Preis datiert vorschlagen, Bestätigung abwarten.",
+      "schutzregel": "historischer_preis_nur_vorschlag"
+    },
+    {
+      "id": "nc_bauteil_enthalten",
+      "nachricht": "Türen lackieren, fünf Stück.",
+      "falsche_reaktion": "Zargen automatisch als enthalten angenommen.",
+      "grund": "Zargen ohne Nennung als enthalten angenommen.",
+      "korrekte_reaktion": "Zargen separat erfragen (ask_bauteile_enthalten).",
+      "schutzregel": "bauteil_nicht_automatisch_enthalten"
+    },
+    {
+      "id": "nc_nachtrag_falsch",
+      "nachricht": "Die Sockelleisten noch dazu.",
+      "falsche_reaktion": "Neues, eigenständiges Angebot statt Nachtrag.",
+      "grund": "Nachtrag dem ursprünglichen Auftrag nicht zugeordnet.",
+      "korrekte_reaktion": "Als Nachtrag/Fassung zum bestehenden Angebot behandeln.",
+      "schutzregel": "unbestaetigte_zusatzposition_ist_vorschlag"
+    }
+  ]
+}

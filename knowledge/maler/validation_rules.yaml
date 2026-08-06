@@ -1,0 +1,59 @@
+# Validierungsregeln v0 (Brief §6.6). Der Validator prüft jede Ausgabe gegen
+# diese Regeln. schwere: "block" = keine Ausgabe/Rückfrage nötig,
+# "korrigiert" = automatisch bereinigt (z. B. Preis geleert),
+# "hinweis" = markiert, aber durchgelassen.
+# Teils bereits im bestehenden Validator (src/validierung/validator.ts) umgesetzt.
+
+regeln:
+  - rule_id: kein_erfundener_preis
+    kategorie: preis
+    beschreibung: Ein Einzelpreis ohne zulässige Herkunft (Diktat/Historie/Betriebsprofil/manuell) wird geleert.
+    schwere: korrigiert
+  - rule_id: diktatpreis_muss_belegt_sein
+    kategorie: preis
+    beschreibung: Als Diktat ausgewiesener Preis muss im Transkript tatsächlich vorkommen.
+    schwere: korrigiert
+  - rule_id: historischer_preis_nur_vorschlag
+    kategorie: preis
+    beschreibung: Historische Preise (Preisgedächtnis) werden datiert vorgeschlagen, nie still gesetzt.
+    schwere: hinweis
+  - rule_id: fremder_tenant_preis_blockiert
+    kategorie: mandant
+    beschreibung: Ein Preis oder eine Position aus einem anderen Betrieb darf nie verwendet werden.
+    schwere: block
+  - rule_id: keine_erfundene_menge
+    kategorie: menge
+    beschreibung: Mengen nur aus ausdrücklicher Nennung oder nachvollziehbarer Berechnung aus genannten Maßen.
+    schwere: korrigiert
+  - rule_id: kein_erfundener_untergrundzustand
+    kategorie: fakt
+    beschreibung: Untergrundzustand nicht annehmen; unbekannt bleibt unbekannt oder löst Rückfrage aus.
+    schwere: hinweis
+  - rule_id: keine_erfundenen_arbeitsgaenge
+    kategorie: fakt
+    beschreibung: Anzahl der Anstriche/Arbeitsgänge nicht raten.
+    schwere: hinweis
+  - rule_id: unbestaetigte_zusatzposition_ist_vorschlag
+    kategorie: position
+    beschreibung: Nicht diktierte Zusatzleistungen nur als markierten Vorschlag, nie als beauftragt.
+    schwere: hinweis
+  - rule_id: widerspruch_menge_klaeren
+    kategorie: widerspruch
+    beschreibung: Widersprüchliche Mengen müssen geklärt werden.
+    schwere: block
+  - rule_id: scope_ueberschreitung_markieren
+    kategorie: scope
+    beschreibung: Außerhalb des v0-Scopes (WDVS, Schadstoff, Ausschreibung …) wird markiert und zur manuellen Prüfung gegeben.
+    schwere: block
+  - rule_id: ausschluss_respektieren
+    kategorie: fakt
+    beschreibung: Ausdrücklich ausgeschlossene Bauteile (z. B. "Fenster nicht") dürfen nicht ins Angebot.
+    schwere: korrigiert
+  - rule_id: selbstkorrektur_beachten
+    kategorie: fakt
+    beschreibung: Eine Selbstkorrektur in der Nachricht ("nicht 80, sondern 60") überschreibt den früheren Wert.
+    schwere: korrigiert
+  - rule_id: bauteil_nicht_automatisch_enthalten
+    kategorie: fakt
+    beschreibung: Türen, Zargen, Heizkörper, Rohre, Sockelleisten, Fensterlaibungen nicht automatisch als enthalten annehmen.
+    schwere: hinweis

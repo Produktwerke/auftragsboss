@@ -1,0 +1,56 @@
+# Scope der Maler-Fachengine v0 (Brief §2/§7).
+# Innenrenovierung ist der sichere Bereich. Alles klar Andere wird erkannt und
+# als outside_v0 markiert (requires_manual_review) statt fachlich zu halluzinieren.
+# "eingeschraenkt" = wird bearbeitet, aber mit Vorsicht/Rückfrage.
+
+inside_v0:
+  - Wände und Decken beschichten
+  - Tapete entfernen, tapezieren, Vlies anbringen
+  - Untergrund reinigen, grundieren, spachteln, schleifen
+  - Risse und kleine Schadstellen bearbeiten
+  - Abdeck- und Schutzarbeiten, Möbel abdecken und bewegen
+  - Türen, Zargen, Heizkörper, Rohre, Sockelleisten (innen) lackieren/beschichten
+  - Fensterlaibungen
+  - bewohnte und unbewohnte Innenräume
+  - Baustelleneinrichtung, Entsorgung, Abschlussreinigung, Anfahrt, Nachträge
+
+eingeschraenkt:
+  - Schimmel sichtbar (nur Hinweis, keine fachliche Bewertung der Ursache)
+  - Nikotin- oder Wasserflecken (Absperrung möglich, Ursache bleibt offen)
+  - unbekannter oder schadhafter Untergrund (Rückfrage statt Annahme)
+
+outside_v0:
+  - WDVS und Fassadendämmung
+  - umfangreiche Fassadensanierung
+  - Korrosionsschutz, industrielle Lackierung
+  - Betoninstandsetzung
+  - Brandschutzbeschichtungen
+  - Denkmalpflege
+  - Schadstoff- oder Schimmelsanierung, Schimmelbewertung
+  - öffentliche Ausschreibungen, GAEB, Leistungsverzeichnisse
+  - rechtliche Beratung, verbindliche technische Beurteilung unbekannter Schäden
+
+# Kleingeschriebene Teilstrings zur automatischen Scope-Erkennung im Transkript.
+outside_keywords:
+  - wdvs
+  - fassadendämmung
+  - fassade dämmen
+  - vollwärmeschutz
+  - korrosionsschutz
+  - betoninstandsetzung
+  - brandschutzbeschichtung
+  - denkmal
+  - schadstoff
+  - asbest
+  - schimmelsanierung
+  - schimmel entfernen
+  - ausschreibung
+  - gaeb
+  - leistungsverzeichnis
+
+eingeschraenkt_keywords:
+  - schimmel
+  - schwarzer belag
+  - feuchte wand
+  - wasserschaden
+  - nikotin

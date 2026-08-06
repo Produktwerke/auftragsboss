@@ -1,0 +1,150 @@
+# Rückfrageregeln v0 (Brief §6.5). Wenige, wirtschaftlich relevante Fragen.
+# Priorität A: ohne Antwort kein sinnvoller Entwurf.
+# Priorität B: verändert Umfang, Risiko oder Kalkulation deutlich.
+# Priorität C: kann aus bestätigtem Betriebsstandard stammen oder später geklärt werden.
+# "bundle" nennt Fragen, die möglichst in EINER WhatsApp-Nachricht zusammengefasst werden.
+# ERSTER ENTWURF — von Malermeistern zu validieren.
+
+fragen:
+  # ── Priorität A ──────────────────────────────────────
+  - question_id: ask_leistung_unklar
+    prioritaet: A
+    zweck: Keine erkennbare Leistung, klären was gemacht werden soll.
+    short_message: "Was genau soll gemacht werden, Wände, Decke, Türen oder mehr?"
+    trigger: { keine_leistung: true }
+
+  - question_id: ask_flaeche_pflicht
+    prioritaet: A
+    zweck: Fläche fehlt, von der mehrere Positionen abhängen (Wand/Decke).
+    short_message: "Wie groß ist die Fläche ungefähr (z. B. Wandfläche in m²)?"
+    trigger: { leistung: [wand_beschichten, decke_beschichten, tapezieren, tapete_entfernen], fehlendes_feld: [flaeche] }
+    can_be_skipped_when: [explicit_current_input_available]
+
+  - question_id: ask_menge_widerspruch
+    prioritaet: A
+    zweck: Zwei Mengen widersprechen sich, eindeutig klären.
+    short_message: "Ich habe zwei verschiedene Maße gehört. Welches stimmt?"
+    trigger: { widerspruch: menge }
+
+  - question_id: ask_bauteil_zuordnung
+    prioritaet: A
+    zweck: Unklar, ob Wand oder Decke gemeint ist.
+    short_message: "Geht es um die Wände, die Decke oder beides?"
+    trigger: { unklar: bauteil }
+
+  # ── Priorität B ──────────────────────────────────────
+  - question_id: ask_substrate_condition
+    prioritaet: B
+    zweck: Umfang und Vorarbeiten hängen vom Untergrundzustand ab.
+    short_message: "Wie ist der Untergrund, sauber und tragfähig, oder gibt es Risse, Flecken oder lose Stellen?"
+    trigger: { leistung: [wand_beschichten, decke_beschichten], fehlendes_feld: [substrate_condition] }
+    can_be_skipped_when: [confirmed_private_rule_available, explicit_current_input_available]
+    bundle: [ask_ausbesserungen]
+
+  - question_id: ask_altbelag
+    prioritaet: B
+    zweck: Alte Tapete entfernen oder erhalten, ändert Umfang stark.
+    short_message: "Soll die alte Tapete runter, oder bleibt sie drauf?"
+    trigger: { untergrund: [raufaser, tapete_unbekannt], fehlendes_feld: [altbelag] }
+
+  - question_id: ask_moebliert
+    prioritaet: B
+    zweck: Möbliert/bewohnt erfordert Abdeck- und Schutzarbeiten.
+    short_message: "Ist der Raum leer geräumt oder stehen die Möbel noch drin?"
+    trigger: { fehlendes_feld: [moeblierungszustand] }
+    bundle: [ask_abdeck_separat]
+
+  - question_id: ask_abdeck_separat
+    prioritaet: B
+    zweck: Abdeckarbeiten separat ausweisen oder nicht.
+    short_message: "Sollen Abdeck- und Schutzarbeiten separat angeboten werden?"
+    trigger: { raumstatus: [moebliert, bewohnt] }
+    can_be_skipped_when: [confirmed_private_rule_available]
+
+  - question_id: ask_farbwechsel
+    prioritaet: B
+    zweck: Starker Farbwechsel kann mehrere Arbeitsgänge nötig machen.
+    short_message: "Bleibt es beim Farbton oder ist ein starker Farbwechsel geplant (z. B. dunkel auf hell)?"
+    trigger: { leistung: [wand_beschichten, decke_beschichten], fehlendes_feld: [anzahl_arbeitsgaenge] }
+    bundle: [ask_anzahl_arbeitsgaenge]
+
+  - question_id: ask_anzahl_arbeitsgaenge
+    prioritaet: B
+    zweck: Anzahl der Anstriche nie raten.
+    short_message: "Wie oft soll gestrichen werden, einmal oder zweimal?"
+    trigger: { leistung: [wand_beschichten, decke_beschichten], fehlendes_feld: [anzahl_arbeitsgaenge] }
+    can_be_skipped_when: [explicit_current_input_available]
+
+  - question_id: ask_ausbesserungen
+    prioritaet: B
+    zweck: Ausbesserungen/Spachtelarbeiten getrennt kalkulieren.
+    short_message: "Sind Ausbesserungen oder Spachtelarbeiten nötig, oder ist die Fläche in Ordnung?"
+    trigger: { zustand: [uneben, gerissen, schadhaft] }
+
+  - question_id: ask_materialstellung
+    prioritaet: B
+    zweck: Wer stellt das Material, beeinflusst die Positionen.
+    short_message: "Stellst du das Material oder kommt es vom Kunden?"
+    trigger: { leistung: [tapezieren, vlies_kleben], fehlendes_feld: [materialstellung] }
+    can_be_skipped_when: [confirmed_private_rule_available]
+
+  - question_id: ask_raumhoehe
+    prioritaet: B
+    zweck: Raumhöhe beeinflusst Decken-/Gerüstaufwand.
+    short_message: "Wie hoch ist der Raum ungefähr, normal oder hohe Decken?"
+    trigger: { leistung: [decke_beschichten], fehlendes_feld: [raumhoehe] }
+    can_be_skipped_when: [explicit_current_input_available]
+
+  - question_id: ask_bauteile_enthalten
+    prioritaet: B
+    zweck: Türen/Zargen/Heizkörper/Sockelleisten nie automatisch als enthalten annehmen.
+    short_message: "Sollen Türen, Zargen, Heizkörper oder Sockelleisten mit dazu, oder nur die Flächen?"
+    trigger: { fehlendes_feld: [bauteile_enthalten] }
+
+  - question_id: ask_entsorgung
+    prioritaet: B
+    zweck: Entsorgung nicht automatisch als enthalten annehmen.
+    short_message: "Soll die Entsorgung des Altmaterials mit angeboten werden?"
+    trigger: { leistung: [tapete_entfernen, altbelag_entfernen], fehlendes_feld: [entsorgung] }
+    can_be_skipped_when: [confirmed_private_rule_available]
+
+  - question_id: ask_untergrund_risiko
+    prioritaet: B
+    zweck: Bei Nikotin/Wasser/Schimmelverdacht Vorgehen klären.
+    short_message: "Du hast Flecken erwähnt, sind das Wasser-, Nikotin- oder andere Flecken? Das beeinflusst die Vorarbeit."
+    trigger: { zustand: [fleckig, nikotinbelastung, wasserflecken] }
+
+  # ── Priorität C ──────────────────────────────────────
+  - question_id: ask_zahlungsziel
+    prioritaet: C
+    zweck: Zahlungsziel kommt meist aus dem Betriebsstandard.
+    short_message: "Welches Zahlungsziel soll auf dem Angebot stehen?"
+    trigger: { fehlendes_feld: [zahlungsziel] }
+    can_be_skipped_when: [confirmed_private_rule_available]
+
+  - question_id: ask_gueltigkeit
+    prioritaet: C
+    zweck: Gültigkeitsdauer aus Betriebsstandard.
+    short_message: "Wie lange soll das Angebot gültig sein?"
+    trigger: { fehlendes_feld: [gueltigkeit] }
+    can_be_skipped_when: [confirmed_private_rule_available]
+
+  - question_id: ask_anfahrt
+    prioritaet: C
+    zweck: Anfahrt aus Betriebsstandard.
+    short_message: "Soll die Anfahrt separat berechnet werden?"
+    trigger: { fehlendes_feld: [anfahrt] }
+    can_be_skipped_when: [confirmed_private_rule_available]
+
+  - question_id: ask_ausfuehrungstermin
+    prioritaet: C
+    zweck: Termin optional, kann später kommen.
+    short_message: "Gibt es einen Wunschtermin für die Ausführung?"
+    trigger: { fehlendes_feld: [ausfuehrungstermin] }
+
+  - question_id: ask_qualitaetsstufe
+    prioritaet: C
+    zweck: Qualitätsstufe bei Gipskarton/Spachtel klären (fachlich relevant).
+    short_message: "Welche Oberflächenqualität ist gewünscht (z. B. normal oder besonders glatt)?"
+    trigger: { untergrund: [gipskarton], leistung: [spachteln] }
+    can_be_skipped_when: [confirmed_private_rule_available]

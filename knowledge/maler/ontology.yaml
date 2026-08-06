@@ -1,0 +1,376 @@
+# Maler-Ontologie v0 (Innenrenovierung). Fachvokabular als strukturierte Daten,
+# nicht als Prompt. Jeder Eintrag: technische id, deutsche Bezeichnung, Synonyme,
+# typische Umgangssprache, mögliche Verwechslungen, notwendige Folgeinfos.
+# ERSTER ENTWURF aus dem Briefing — von Malermeistern gegenzulesen.
+
+objektarten:
+  - id: wohnung
+    de: Wohnung
+    umgangssprache: ["die Wohnung", "3-Zimmer-Wohnung"]
+    folgeinfos: [raumtypen, moeblierungszustand]
+  - id: einfamilienhaus
+    de: Einfamilienhaus
+    synonyme: [EFH]
+    folgeinfos: [raumtypen]
+  - id: mehrfamilienhaus
+    de: Mehrfamilienhaus
+    synonyme: [MFH]
+  - id: einzelner_raum
+    de: Einzelner Raum
+    umgangssprache: ["ein Zimmer", "nur der Raum"]
+    folgeinfos: [raumtyp]
+  - id: treppenhaus
+    de: Treppenhaus
+    umgangssprache: ["das Treppenhaus"]
+    folgeinfos: [raumhoehe, zugaenglichkeit]
+  - id: buero
+    de: Büro
+    umgangssprache: ["Büroräume"]
+    folgeinfos: [ausfuehrungstermin]
+  - id: ladenlokal
+    de: Ladenlokal
+    synonyme: [Geschäft, Laden]
+  - id: gewerbeeinheit
+    de: Gewerbeeinheit
+    synonyme: [Gewerberaum]
+
+raumtypen:
+  - id: wohnzimmer
+    de: Wohnzimmer
+    umgangssprache: ["Wohnzimmer", "die gute Stube"]
+  - id: schlafzimmer
+    de: Schlafzimmer
+  - id: kinderzimmer
+    de: Kinderzimmer
+  - id: kueche
+    de: Küche
+    verwechslung: [bad]
+    folgeinfos: [fettig]
+  - id: bad
+    de: Bad
+    synonyme: [Badezimmer]
+    folgeinfos: [feucht]
+  - id: flur
+    de: Flur
+    synonyme: [Diele, Gang]
+  - id: treppenhaus_raum
+    de: Treppenhaus
+    folgeinfos: [raumhoehe]
+  - id: buero_raum
+    de: Büroraum
+  - id: abstellraum
+    de: Abstellraum
+    synonyme: [Kammer]
+  - id: keller_hobby
+    de: Hobby-/Kellerraum
+    folgeinfos: [feucht]
+
+bauteile:
+  - id: wand
+    de: Wand
+    synonyme: [Wände, Wandfläche]
+    umgangssprache: ["die Wände", "alles weiß"]
+    folgeinfos: [flaeche, untergrund, farbton, anzahl_arbeitsgaenge]
+  - id: decke
+    de: Decke
+    synonyme: [Decken, Deckenfläche]
+    umgangssprache: ["die Decke", "oben"]
+    folgeinfos: [flaeche, raumhoehe, anzahl_arbeitsgaenge]
+  - id: tuer
+    de: Tür
+    synonyme: [Türen, Türblatt]
+    umgangssprache: ["die Türen"]
+    verwechslung: [zarge]
+    folgeinfos: [anzahl, glanzgrad]
+  - id: zarge
+    de: Zarge
+    synonyme: [Türzarge, Türrahmen]
+    umgangssprache: ["die Zargen", "Rahmen"]
+    verwechslung: [tuer]
+    folgeinfos: [anzahl]
+  - id: fenster
+    de: Fenster
+    umgangssprache: ["die Fenster"]
+    verwechslung: [fensterlaibung, fensterbank]
+    folgeinfos: [anzahl]
+  - id: fensterlaibung
+    de: Fensterlaibung
+    synonyme: [Laibung, Leibung]
+    umgangssprache: ["um die Fenster rum", "die Laibungen"]
+    verwechslung: [fenster]
+    folgeinfos: [anzahl, laenge]
+  - id: fensterbank
+    de: Fensterbank
+    synonyme: [Fensterbrett]
+  - id: heizkoerper
+    de: Heizkörper
+    synonyme: [Heizung]
+    umgangssprache: ["die Heizkörper"]
+    verwechslung: [rohr]
+    folgeinfos: [anzahl, zugaenglichkeit, glanzgrad]
+  - id: rohr
+    de: Rohr/Leitung
+    synonyme: [Heizungsrohre, Leitungen]
+    folgeinfos: [laenge]
+  - id: sockelleiste
+    de: Sockelleiste
+    synonyme: [Fußleiste, Scheuerleiste]
+    umgangssprache: ["die Leisten unten"]
+    folgeinfos: [laenge]
+  - id: treppe
+    de: Treppe
+    folgeinfos: [zugaenglichkeit]
+  - id: gelaender
+    de: Geländer
+    synonyme: [Handlauf]
+  - id: nische
+    de: Nische
+  - id: stuetze
+    de: Stütze/Pfeiler
+    synonyme: [Säule]
+  - id: einbaumoebel
+    de: Einbaumöbel
+    synonyme: [Einbauschrank]
+    folgeinfos: [schutzbedarf]
+
+untergruende:
+  - id: dispersion_vorhanden
+    de: Vorhandene Dispersionsbeschichtung
+    umgangssprache: ["ist schon gestrichen", "alter Anstrich"]
+    folgeinfos: [zustand, farbwechsel]
+  - id: raufaser
+    de: Raufaser
+    synonyme: [Raufasertapete, Rauhfaser]
+    umgangssprache: ["Raufaser", "die raue Tapete"]
+    folgeinfos: [zustand, farbwechsel, anzahl_arbeitsgaenge]
+  - id: glattvlies
+    de: Glattvlies
+    synonyme: [Renoviervlies, Vlies]
+    umgangssprache: ["Vlies"]
+  - id: tapete_unbekannt
+    de: Tapete unbekannter Art
+    umgangssprache: ["irgendeine Tapete"]
+    folgeinfos: [altbelag_entfernen]
+  - id: gipskarton
+    de: Gipskarton
+    synonyme: [Rigips, Trockenbau, GK]
+    umgangssprache: ["Rigips", "Trockenbau"]
+    folgeinfos: [spachteln, grundieren, qualitaetsstufe]
+  - id: innenputz
+    de: Innenputz
+    synonyme: [Putz, Kalkputz, Gipsputz]
+    folgeinfos: [saugend, grundieren]
+  - id: beton
+    de: Beton
+    umgangssprache: ["Betondecke"]
+    folgeinfos: [absperren, grundieren]
+  - id: holz
+    de: Holz
+    umgangssprache: ["Holzverkleidung"]
+    folgeinfos: [schleifen, glanzgrad]
+  - id: metall
+    de: Metall
+    verwechslung: [heizkoerper]
+    folgeinfos: [glanzgrad]
+  - id: fliesen
+    de: Fliesen
+    umgangssprache: ["die Fliesen überstreichen"]
+    folgeinfos: [grundieren]
+  - id: altbeschichtung_unbekannt
+    de: Altbeschichtung unbekannter Art
+    umgangssprache: ["weiß nicht, was da drauf ist"]
+    folgeinfos: [untergrund_pruefen]
+  - id: nicht_beschrieben
+    de: Untergrund nicht beschrieben
+    umgangssprache: []
+    folgeinfos: [untergrund_pruefen]
+
+zustaende:
+  - id: tragfaehig
+    de: Tragfähig
+    umgangssprache: ["hält gut", "ist in Ordnung"]
+  - id: kreidend
+    de: Kreidend
+    umgangssprache: ["kreidet", "färbt ab"]
+    folgeinfos: [grundieren]
+  - id: saugend
+    de: Saugend
+    umgangssprache: ["saugt stark"]
+    folgeinfos: [grundieren]
+  - id: verschmutzt
+    de: Verschmutzt
+    umgangssprache: ["dreckig", "verstaubt"]
+    folgeinfos: [reinigen]
+  - id: fettig
+    de: Fettig
+    umgangssprache: ["speckig", "in der Küche fettig"]
+    folgeinfos: [reinigen]
+  - id: gerissen
+    de: Gerissen
+    umgangssprache: ["hat Risse", "Haarrisse"]
+    folgeinfos: [risse_bearbeiten]
+  - id: uneben
+    de: Uneben
+    umgangssprache: ["wellig", "nicht glatt"]
+    folgeinfos: [spachteln]
+  - id: schadhaft
+    de: Schadhaft
+    umgangssprache: ["kaputt", "lose Stellen", "bröckelt"]
+    folgeinfos: [untergrund_pruefen, ausfuehrungsrisiko]
+  - id: fleckig
+    de: Fleckig
+    umgangssprache: ["Flecken"]
+    folgeinfos: [absperren]
+  - id: nikotinbelastung
+    de: Nikotinbelastung
+    umgangssprache: ["Raucherwohnung", "vergilbt"]
+    folgeinfos: [absperren]
+  - id: wasserflecken
+    de: Wasserflecken
+    umgangssprache: ["Wasserschaden", "Ränder von Wasser"]
+    folgeinfos: [absperren, ausfuehrungsrisiko]
+  - id: schimmelverdacht
+    de: Schimmelverdacht
+    umgangssprache: ["schwarze Flecken", "schimmelt"]
+    folgeinfos: [ausfuehrungsrisiko]
+  - id: feucht
+    de: Feucht
+    umgangssprache: ["feuchte Wand"]
+    folgeinfos: [ausfuehrungsrisiko]
+  - id: unbekannt
+    de: Zustand unbekannt
+    umgangssprache: []
+
+leistungen:
+  - id: baustelle_einrichten
+    de: Baustelle einrichten
+  - id: boden_schuetzen
+    de: Bodenflächen schützen
+    umgangssprache: ["Boden abdecken", "Folie auslegen"]
+  - id: moebel_abdecken
+    de: Möbel abdecken
+    umgangssprache: ["Möbel zudecken"]
+  - id: moebel_bewegen
+    de: Möbel rücken
+    umgangssprache: ["Möbel wegräumen", "in die Mitte rücken"]
+  - id: bauteile_abkleben
+    de: Bauteile abkleben
+    umgangssprache: ["abkleben", "Kanten abkleben"]
+  - id: altbelag_entfernen
+    de: Altbelag entfernen
+  - id: tapete_entfernen
+    de: Tapete entfernen
+    umgangssprache: ["Tapete runter", "enttapezieren"]
+    folgeinfos: [abfall_entsorgen]
+  - id: reinigen
+    de: Flächen reinigen
+  - id: untergrund_pruefen
+    de: Untergrund prüfen
+  - id: grundieren
+    de: Grundieren
+    synonyme: [Grundierung, Tiefengrund]
+    umgangssprache: ["grundieren", "vorstreichen"]
+  - id: absperren
+    de: Absperren (Isolieranstrich)
+    umgangssprache: ["absperren", "Flecken isolieren"]
+  - id: spachteln
+    de: Spachteln
+    umgangssprache: ["spachteln", "verspachteln", "glätten"]
+    folgeinfos: [qualitaetsstufe, schleifen]
+  - id: schleifen
+    de: Schleifen
+    umgangssprache: ["anschleifen", "abschleifen"]
+  - id: risse_bearbeiten
+    de: Risse bearbeiten
+  - id: tapezieren
+    de: Tapezieren
+    umgangssprache: ["tapezieren", "neue Tapete"]
+  - id: vlies_kleben
+    de: Renoviervlies anbringen
+    umgangssprache: ["Vlies kleben"]
+  - id: wand_beschichten
+    de: Wandflächen beschichten
+    synonyme: [Wände streichen, Wandanstrich]
+    umgangssprache: ["Wände streichen", "weiß machen"]
+    folgeinfos: [farbton, anzahl_arbeitsgaenge]
+  - id: decke_beschichten
+    de: Deckenflächen beschichten
+    umgangssprache: ["Decke streichen"]
+  - id: tueren_lackieren
+    de: Türen lackieren
+    umgangssprache: ["Türen streichen", "Türen lackieren"]
+  - id: zargen_lackieren
+    de: Zargen lackieren
+    umgangssprache: ["Zargen extra"]
+  - id: heizkoerper_lackieren
+    de: Heizkörper lackieren
+    umgangssprache: ["Heizung streichen"]
+  - id: sockelleisten_beschichten
+    de: Sockelleisten beschichten
+    umgangssprache: ["Leisten streichen"]
+  - id: material_bereitstellen
+    de: Material bereitstellen
+    folgeinfos: [materialstellung]
+  - id: abfall_entsorgen
+    de: Abfall entsorgen
+    umgangssprache: ["Müll wegbringen", "Entsorgung"]
+  - id: abschlussreinigung
+    de: Abschlussreinigung
+    umgangssprache: ["besenrein", "sauber machen"]
+  - id: anfahrt
+    de: Anfahrt
+    umgangssprache: ["Anfahrt", "Fahrtkosten"]
+
+parameter:
+  - id: flaeche
+    de: Fläche
+    synonyme: [Quadratmeter, m2, qm]
+    umgangssprache: ["45 Quadratmeter", "so ungefähr 40 qm"]
+  - id: anzahl
+    de: Anzahl
+    umgangssprache: ["fünf Türen", "drei Stück"]
+  - id: laenge
+    de: Länge
+    synonyme: [laufende Meter, lfm]
+    umgangssprache: ["12 Meter Leisten"]
+  - id: raumhoehe
+    de: Raumhöhe
+    umgangssprache: ["Deckenhöhe", "hohe Decken", "2,50 m"]
+  - id: qualitaetsstufe
+    de: Qualitätsstufe
+    synonyme: [Q2, Q3, Q4]
+    umgangssprache: ["Q3", "glatt gespachtelt"]
+    validierung: FACHLICHE_VALIDIERUNG_ERFORDERLICH
+  - id: farbton
+    de: Farbton
+    umgangssprache: ["weiß", "in einem Grauton"]
+  - id: farbwechsel
+    de: Farbwechsel
+    umgangssprache: ["von dunkel auf weiß", "war vorher rot"]
+    folgeinfos: [anzahl_arbeitsgaenge]
+  - id: glanzgrad
+    de: Glanzgrad
+    synonyme: [seidenmatt, glänzend, matt]
+    umgangssprache: ["seidenmatt", "glänzend"]
+  - id: anzahl_arbeitsgaenge
+    de: Anzahl Arbeitsgänge
+    synonyme: [Anstriche]
+    umgangssprache: ["zweimal drüber", "einmal reicht"]
+  - id: moeblierungszustand
+    de: Möblierungszustand
+    umgangssprache: ["möbliert", "Möbel stehen noch drin", "leer geräumt"]
+  - id: zugaenglichkeit
+    de: Zugänglichkeit
+    umgangssprache: ["schlecht zugänglich", "hinter der Heizung"]
+  - id: schutzbedarf
+    de: Schutzbedarf
+    umgangssprache: ["muss gut abgedeckt werden"]
+  - id: materialstellung
+    de: Materialstellung
+    umgangssprache: ["Material kommt von mir", "Farbe stellt der Kunde"]
+  - id: ausfuehrungstermin
+    de: Ausführungstermin
+    umgangssprache: ["nächste Woche", "außerhalb der Öffnungszeiten"]
+  - id: ausfuehrungsrisiko
+    de: Ausführungsrisiko
+    umgangssprache: ["schwierig", "weiß nicht, was drunter ist"]

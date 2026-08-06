@@ -1,0 +1,236 @@
+# Maler-Positionsbibliothek v0 (Innenrenovierung). Strukturierte Positionstypen,
+# kein Prompt-Text. "nicht_enthalten" listet Leistungen, die NIE automatisch als
+# enthalten angenommen werden dürfen (Brief §1.4). "preisquellen" sind die einzig
+# zulässigen Quellen für einen Preis; sonst bleibt das Preisfeld leer.
+# ERSTER ENTWURF aus dem Briefing — von Malermeistern zu validieren.
+
+positionen:
+  - position_id: baustelle_einrichten
+    kategorie: vorbereitung
+    titel: Baustelle einrichten
+    beschreibung: Arbeitsplatz einrichten, Material und Geräte bereitstellen.
+    einheiten: [pauschal]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: boden_schuetzen
+    kategorie: schutz
+    titel: Bodenflächen schützen
+    alt_titel: [Boden abdecken]
+    beschreibung: Böden mit Folie/Vlies abdecken und gegen Verschmutzung schützen.
+    einheiten: [pauschal, m2]
+    vorschlag_wenn: ["moeblierungszustand:moebliert", "moeblierungszustand:bewohnt"]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: moebel_abdecken
+    kategorie: schutz
+    titel: Möbel abdecken
+    einheiten: [pauschal]
+    vorschlag_wenn: ["moeblierungszustand:moebliert", "moeblierungszustand:bewohnt"]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: moebel_bewegen
+    kategorie: schutz
+    titel: Möbel rücken und schützen
+    einheiten: [pauschal]
+    vorschlag_wenn: ["moeblierungszustand:moebliert", "moeblierungszustand:bewohnt"]
+    nicht_enthalten: [Demontage von Einbaumöbeln]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: bauteile_abkleben
+    kategorie: schutz
+    titel: Bauteile abkleben und abdecken
+    einheiten: [pauschal, lfm]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: tapete_entfernen
+    kategorie: untergrund
+    titel: Alte Tapete entfernen
+    alt_titel: [Enttapezieren]
+    beschreibung: Vorhandene Tapete entfernen und Untergrund grob säubern.
+    einheiten: [m2, pauschal]
+    erforderliche_fakten: [flaeche]
+    mengenquellen: [explicit_current_input, derived_from_explicit_measurements]
+    wichtige_parameter: [ausfuehrungsrisiko]
+    nicht_enthalten: [Entsorgung, Untergrundvorbereitung]
+    folgepositionen: [abfall_entsorgen, untergrund_pruefen]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: altbelag_entfernen
+    kategorie: untergrund
+    titel: Altbelag entfernen
+    einheiten: [m2, pauschal]
+    erforderliche_fakten: [flaeche]
+    nicht_enthalten: [Entsorgung]
+    folgepositionen: [abfall_entsorgen]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: untergrund_pruefen
+    kategorie: untergrund
+    titel: Untergrund prüfen und vorbereiten
+    beschreibung: Untergrund auf Tragfähigkeit und Saugverhalten prüfen, Vorarbeiten festlegen.
+    einheiten: [pauschal, m2]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: reinigen
+    kategorie: untergrund
+    titel: Flächen reinigen
+    einheiten: [m2, pauschal]
+    vorschlag_wenn: ["zustand:verschmutzt", "zustand:fettig"]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: grundieren
+    kategorie: untergrund
+    titel: Grundierung auftragen
+    alt_titel: [Vorstrich, Tiefengrund]
+    beschreibung: Passende Grundierung auf den Untergrund auftragen.
+    einheiten: [m2]
+    erforderliche_fakten: [flaeche]
+    wichtige_parameter: [qualitaetsstufe]
+    nicht_enthalten: [Material sofern nicht genannt]
+    vorschlag_wenn: ["zustand:saugend", "zustand:kreidend", "untergrund:gipskarton"]
+    validierung: FACHLICHE_VALIDIERUNG_ERFORDERLICH
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: absperren
+    kategorie: untergrund
+    titel: Flecken absperren (Isolieranstrich)
+    einheiten: [m2, pauschal]
+    erforderliche_fakten: [flaeche]
+    vorschlag_wenn: ["zustand:fleckig", "zustand:nikotinbelastung", "zustand:wasserflecken"]
+    validierung: FACHLICHE_VALIDIERUNG_ERFORDERLICH
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: spachteln
+    kategorie: untergrund
+    titel: Spachtel- und Ausbesserungsarbeiten
+    einheiten: [m2, pauschal]
+    erforderliche_fakten: [flaeche]
+    wichtige_parameter: [qualitaetsstufe]
+    nicht_enthalten: [Material sofern nicht genannt]
+    vorschlag_wenn: ["zustand:uneben", "untergrund:gipskarton"]
+    folgepositionen: [schleifen]
+    validierung: FACHLICHE_VALIDIERUNG_ERFORDERLICH
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: schleifen
+    kategorie: untergrund
+    titel: Schleifen
+    einheiten: [m2, pauschal]
+    erforderliche_fakten: [flaeche]
+    vorgaenger: [spachteln]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: risse_bearbeiten
+    kategorie: untergrund
+    titel: Risse bearbeiten
+    einheiten: [lfm, pauschal]
+    vorschlag_wenn: ["zustand:gerissen"]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: tapezieren
+    kategorie: tapezieren
+    titel: Tapezieren
+    beschreibung: Wand-/Deckenflächen tapezieren inkl. Ansetzen und Andrücken.
+    einheiten: [m2]
+    erforderliche_fakten: [flaeche]
+    mengenquellen: [explicit_current_input, derived_from_explicit_measurements]
+    wichtige_parameter: [materialstellung]
+    nicht_enthalten: [Tapete/Material sofern nicht genannt, Untergrundvorbereitung]
+    vorgaenger: [tapete_entfernen, grundieren]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: vlies_kleben
+    kategorie: tapezieren
+    titel: Renoviervlies anbringen
+    einheiten: [m2]
+    erforderliche_fakten: [flaeche]
+    nicht_enthalten: [Material sofern nicht genannt]
+    folgepositionen: [wand_beschichten]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: wand_beschichten
+    kategorie: beschichtung
+    titel: Wandflächen beschichten
+    alt_titel: [Wände streichen, Wandanstrich]
+    beschreibung: Wandflächen mit Dispersionsfarbe beschichten.
+    einheiten: [m2]
+    erforderliche_fakten: [flaeche]
+    mengenquellen: [explicit_current_input, derived_from_explicit_measurements]
+    wichtige_parameter: [farbton, farbwechsel, anzahl_arbeitsgaenge, qualitaetsstufe]
+    nicht_enthalten: [Untergrundvorbereitung, Grundierung, Abdeckarbeiten, Material sofern nicht genannt]
+    vorgaenger: [grundieren, spachteln]
+    validierung: FACHLICHE_VALIDIERUNG_ERFORDERLICH
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: decke_beschichten
+    kategorie: beschichtung
+    titel: Deckenflächen beschichten
+    alt_titel: [Decke streichen]
+    einheiten: [m2]
+    erforderliche_fakten: [flaeche]
+    mengenquellen: [explicit_current_input, derived_from_explicit_measurements]
+    wichtige_parameter: [farbton, anzahl_arbeitsgaenge, raumhoehe]
+    nicht_enthalten: [Untergrundvorbereitung, Grundierung, Abdeckarbeiten, Material sofern nicht genannt]
+    validierung: FACHLICHE_VALIDIERUNG_ERFORDERLICH
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: tueren_lackieren
+    kategorie: lackieren
+    titel: Türen lackieren
+    beschreibung: Türblätter reinigen, anschleifen und lackieren.
+    einheiten: [Stk, pauschal]
+    erforderliche_fakten: [anzahl]
+    wichtige_parameter: [glanzgrad, farbton, ausfuehrungsrisiko]
+    nicht_enthalten: [Zargen, Beschläge demontieren]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: zargen_lackieren
+    kategorie: lackieren
+    titel: Zargen lackieren
+    einheiten: [Stk, pauschal]
+    erforderliche_fakten: [anzahl]
+    wichtige_parameter: [glanzgrad, farbton]
+    nicht_enthalten: [Türblätter]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: heizkoerper_lackieren
+    kategorie: lackieren
+    titel: Heizkörper lackieren
+    einheiten: [Stk, pauschal]
+    erforderliche_fakten: [anzahl]
+    wichtige_parameter: [glanzgrad, zugaenglichkeit]
+    nicht_enthalten: [Demontage des Heizkörpers]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: sockelleisten_beschichten
+    kategorie: lackieren
+    titel: Sockelleisten beschichten
+    einheiten: [lfm, pauschal]
+    erforderliche_fakten: [laenge]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: abfall_entsorgen
+    kategorie: nebenleistung
+    titel: Abfall fachgerecht entsorgen
+    einheiten: [pauschal]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: abschlussreinigung
+    kategorie: nebenleistung
+    titel: Abschlussreinigung
+    einheiten: [pauschal]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: anfahrt
+    kategorie: nebenleistung
+    titel: Anfahrt
+    einheiten: [pauschal]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]
+
+  - position_id: nachtrag
+    kategorie: nebenleistung
+    titel: Nachtrag / Zusatzleistung
+    beschreibung: Nachträglich beauftragte Zusatzleistung, ergänzt ein bestehendes Angebot.
+    einheiten: [pauschal, m2, lfm, Stk]
+    nicht_enthalten: [im ursprünglichen Auftrag enthaltene Leistungen]
+    preisquellen: [explicit_current_input, confirmed_private_historical_offer, manual_current_editor_input]

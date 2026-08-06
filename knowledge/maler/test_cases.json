@@ -1,0 +1,219 @@
+{
+  "_hinweis": "Goldstandard v0 (Brief §6.9). Erwartete Zielwerte für die spätere Rule-Engine/Speech-Parser-Prüfung (Phase D/E). validator: approved | approved_with_open_items | blocked_question_required | blocked_outside_scope. ERSTER ENTWURF, von Malermeistern zu validieren.",
+  "faelle": [
+    {
+      "id": "tc_wohnzimmer_raufaser_weiss",
+      "nachricht": "Wohnzimmer, ungefähr 45 Quadratmeter Wandfläche, vorhandene Raufaser bleibt, weiß streichen, Raum ist möbliert.",
+      "fakten": { "object": "einzelner_raum", "raumstatus": "moebliert", "components": [{ "component": "wand", "quantity": 45, "unit": "m2", "substrate": "raufaser", "target_color": "weiss" }] },
+      "unbekannt": ["substrate_condition", "anzahl_arbeitsgaenge"],
+      "pflicht_rueckfragen": ["ask_substrate_condition", "ask_anzahl_arbeitsgaenge"],
+      "positionsvorschlaege": ["wand_beschichten", "boden_schuetzen", "moebel_abdecken"],
+      "unzulaessige_annahmen": ["untergrund_tragfaehig", "ein_anstrich_reicht"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_decke_moebliert",
+      "nachricht": "Nur die Decke im Schlafzimmer streichen, circa 18 Quadratmeter, Möbel bleiben stehen.",
+      "fakten": { "raumstatus": "moebliert", "components": [{ "component": "decke", "quantity": 18, "unit": "m2" }] },
+      "unbekannt": ["anzahl_arbeitsgaenge", "raumhoehe"],
+      "pflicht_rueckfragen": ["ask_moebliert"],
+      "positionsvorschlaege": ["decke_beschichten", "moebel_abdecken", "boden_schuetzen"],
+      "unzulaessige_annahmen": ["ein_anstrich_reicht"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_tapete_runter_neu",
+      "nachricht": "Im Flur die alte Tapete runter und die Wände neu streichen, ungefähr 30 Quadratmeter.",
+      "fakten": { "components": [{ "component": "wand", "quantity": 30, "unit": "m2" }] },
+      "unbekannt": ["entsorgung", "substrate_condition"],
+      "pflicht_rueckfragen": ["ask_entsorgung", "ask_substrate_condition"],
+      "positionsvorschlaege": ["tapete_entfernen", "untergrund_pruefen", "wand_beschichten", "abfall_entsorgen"],
+      "unzulaessige_annahmen": ["entsorgung_inklusive", "untergrund_tragfaehig"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_glattvlies",
+      "nachricht": "Wohnzimmer Glattvlies anbringen und weiß streichen, 40 Quadratmeter, Material stelle ich.",
+      "fakten": { "materialstellung": "betrieb", "components": [{ "component": "wand", "quantity": 40, "unit": "m2", "target_color": "weiss" }] },
+      "unbekannt": ["anzahl_arbeitsgaenge"],
+      "positionsvorschlaege": ["vlies_kleben", "wand_beschichten", "grundieren"],
+      "unzulaessige_annahmen": ["materialverbrauch_fix"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_rigips_spachteln",
+      "nachricht": "Neue Rigipswand spachteln und streichen, etwa 12 Quadratmeter.",
+      "fakten": { "components": [{ "component": "wand", "quantity": 12, "unit": "m2", "substrate": "gipskarton" }] },
+      "unbekannt": ["qualitaetsstufe", "anzahl_arbeitsgaenge"],
+      "pflicht_rueckfragen": ["ask_qualitaetsstufe"],
+      "positionsvorschlaege": ["spachteln", "schleifen", "grundieren", "wand_beschichten"],
+      "warnungen": ["Qualitätsstufe erfragen"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_tueren_zargen",
+      "nachricht": "Fünf Türen und die Zargen lackieren, seidenmatt weiß.",
+      "fakten": { "components": [{ "component": "tuer", "quantity": 5 }], "glanzgrad": "seidenmatt", "target_color": "weiss" },
+      "positionsvorschlaege": ["tueren_lackieren", "zargen_lackieren"],
+      "unzulaessige_annahmen": ["bauteil_enthalten"],
+      "validator": "approved"
+    },
+    {
+      "id": "tc_nikotin",
+      "nachricht": "Raucherwohnung, alles vergilbt, zwei Zimmer weiß machen, ungefähr 60 Quadratmeter Wand.",
+      "fakten": { "components": [{ "component": "wand", "quantity": 60, "unit": "m2", "target_color": "weiss" }], "zustand": "nikotinbelastung" },
+      "unbekannt": ["anzahl_arbeitsgaenge"],
+      "positionsvorschlaege": ["reinigen", "absperren", "wand_beschichten"],
+      "warnungen": ["Nikotin durchschlägt, Absperrung einplanen"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_wasserflecken",
+      "nachricht": "An der Decke im Bad sind Wasserflecken, sollen überstrichen werden, etwa 8 Quadratmeter.",
+      "fakten": { "components": [{ "component": "decke", "quantity": 8, "unit": "m2" }], "zustand": "wasserflecken" },
+      "pflicht_rueckfragen": ["ask_untergrund_risiko"],
+      "positionsvorschlaege": ["absperren", "decke_beschichten"],
+      "warnungen": ["Ursache der Feuchte offen, Hinweis an Kunden"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_treppenhaus",
+      "nachricht": "Treppenhaus im Mehrfamilienhaus renovieren, Wände und Decke.",
+      "fakten": { "object": "treppenhaus" },
+      "unbekannt": ["flaeche", "raumhoehe", "zugaenglichkeit"],
+      "pflicht_rueckfragen": ["ask_flaeche_pflicht", "ask_raumhoehe"],
+      "positionsvorschlaege": ["wand_beschichten", "decke_beschichten", "baustelle_einrichten"],
+      "warnungen": ["Höhe/Zugänglichkeit im Treppenauge erfragen"],
+      "validator": "blocked_question_required"
+    },
+    {
+      "id": "tc_kundenmaterial",
+      "nachricht": "Nur die Wände im Kinderzimmer streichen, Farbe stellt der Kunde, 25 Quadratmeter.",
+      "fakten": { "materialstellung": "kunde", "components": [{ "component": "wand", "quantity": 25, "unit": "m2" }] },
+      "unbekannt": ["anzahl_arbeitsgaenge", "farbton"],
+      "positionsvorschlaege": ["wand_beschichten"],
+      "unzulaessige_annahmen": ["material_vom_betrieb"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_nachtrag_sockelleisten",
+      "nachricht": "Ach, die Sockelleisten sollen auch noch gestrichen werden, ungefähr 20 Meter.",
+      "fakten": { "components": [{ "component": "sockelleiste", "quantity": 20, "unit": "lfm" }] },
+      "positionsvorschlaege": ["nachtrag", "sockelleisten_beschichten"],
+      "warnungen": ["Als Nachtrag zum bestehenden Angebot behandeln"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_widerspruch_menge",
+      "nachricht": "Die Wand ist 80 Quadratmeter, ach nein, eher 60.",
+      "fakten": { "components": [{ "component": "wand", "quantity": 60, "unit": "m2" }] },
+      "widersprueche": ["menge_wand"],
+      "pflicht_rueckfragen": ["ask_menge_widerspruch"],
+      "positionsvorschlaege": ["wand_beschichten"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_ausschluss_fenster",
+      "nachricht": "Alles weiß streichen im Wohnzimmer, 45 Quadratmeter, Fenster aber nicht.",
+      "fakten": { "excluded": ["fenster"], "components": [{ "component": "wand", "quantity": 45, "unit": "m2", "target_color": "weiss" }] },
+      "positionsvorschlaege": ["wand_beschichten"],
+      "unzulaessige_annahmen": ["bauteil_enthalten"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_unklar_leistung",
+      "nachricht": "Bei Familie Meier muss mal was gemacht werden.",
+      "unbekannt": ["leistung", "flaeche"],
+      "pflicht_rueckfragen": ["ask_leistung_unklar"],
+      "validator": "blocked_question_required"
+    },
+    {
+      "id": "tc_buero_termin",
+      "nachricht": "Büroräume streichen, 90 Quadratmeter, muss außerhalb der Öffnungszeiten passieren.",
+      "fakten": { "object": "buero", "components": [{ "component": "wand", "quantity": 90, "unit": "m2" }], "ausfuehrungstermin": "ausserhalb_oeffnungszeiten" },
+      "positionsvorschlaege": ["wand_beschichten", "boden_schuetzen"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_heizkoerper",
+      "nachricht": "Die Heizkörper im Flur lackieren, sind vier Stück.",
+      "fakten": { "components": [{ "component": "heizkoerper", "quantity": 4 }] },
+      "unbekannt": ["glanzgrad", "zugaenglichkeit"],
+      "positionsvorschlaege": ["heizkoerper_lackieren"],
+      "unzulaessige_annahmen": ["bauteil_enthalten"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_risse",
+      "nachricht": "Wand hat ein paar Risse, ausbessern und streichen, 20 Quadratmeter.",
+      "fakten": { "components": [{ "component": "wand", "quantity": 20, "unit": "m2" }], "zustand": "gerissen" },
+      "positionsvorschlaege": ["risse_bearbeiten", "spachteln", "wand_beschichten"],
+      "unzulaessige_annahmen": ["materialverbrauch_fix"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_ganze_wohnung_auszug",
+      "nachricht": "Komplette Wohnung zum Auszug renovieren, drei Zimmer, Küche, Bad.",
+      "fakten": { "object": "wohnung" },
+      "unbekannt": ["flaeche"],
+      "pflicht_rueckfragen": ["ask_flaeche_pflicht"],
+      "positionsvorschlaege": ["wand_beschichten", "decke_beschichten", "abschlussreinigung"],
+      "haeufig_vergessen": ["decke_beschichten", "heizkoerper_lackieren"],
+      "validator": "blocked_question_required"
+    },
+    {
+      "id": "tc_farbwechsel",
+      "nachricht": "Wände waren dunkelrot, sollen jetzt weiß werden, 35 Quadratmeter.",
+      "fakten": { "components": [{ "component": "wand", "quantity": 35, "unit": "m2", "target_color": "weiss" }], "farbwechsel": "stark" },
+      "pflicht_rueckfragen": ["ask_anzahl_arbeitsgaenge"],
+      "positionsvorschlaege": ["wand_beschichten"],
+      "unzulaessige_annahmen": ["ein_anstrich_reicht"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_saugend_grundieren",
+      "nachricht": "Alter Putz saugt stark, Wand streichen, 28 Quadratmeter.",
+      "fakten": { "components": [{ "component": "wand", "quantity": 28, "unit": "m2", "substrate": "innenputz" }], "zustand": "saugend" },
+      "positionsvorschlaege": ["grundieren", "wand_beschichten"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_kein_mass",
+      "nachricht": "Wände im Wohnzimmer streichen, Größe muss ich noch nachmessen.",
+      "fakten": { "components": [{ "component": "wand" }] },
+      "unbekannt": ["flaeche"],
+      "positionsvorschlaege": ["wand_beschichten"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_fensterlaibungen",
+      "nachricht": "Um die Fenster rum die Laibungen streichen, sind sechs Fenster.",
+      "fakten": { "components": [{ "component": "fensterlaibung", "quantity": 6 }] },
+      "positionsvorschlaege": ["wand_beschichten"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_scope_wdvs",
+      "nachricht": "Wir sollen die komplette Fassade dämmen mit WDVS und verputzen.",
+      "fakten": { "scope": "outside_v0" },
+      "warnungen": ["Außerhalb v0 (WDVS), manuelle Prüfung"],
+      "validator": "blocked_outside_scope"
+    },
+    {
+      "id": "tc_scope_schimmel",
+      "nachricht": "In der Ecke ist schwarzer Schimmel, was können Sie da machen?",
+      "fakten": { "scope": "eingeschraenkt", "zustand": "schimmelverdacht" },
+      "warnungen": ["Keine Schimmelbewertung, nur Hinweis, Ursache offen"],
+      "validator": "approved_with_open_items"
+    },
+    {
+      "id": "tc_selbstkorrektur_ausschluss",
+      "nachricht": "Alle Räume streichen, das Kinderzimmer machen wir doch nicht.",
+      "fakten": { "excluded": ["kinderzimmer"] },
+      "unbekannt": ["flaeche"],
+      "pflicht_rueckfragen": ["ask_flaeche_pflicht"],
+      "positionsvorschlaege": ["wand_beschichten"],
+      "validator": "blocked_question_required"
+    }
+  ]
+}

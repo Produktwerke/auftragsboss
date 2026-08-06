@@ -1,0 +1,168 @@
+# Typische Sprachmuster aus Handwerker-Diktaten v0 (Brief §6.8).
+# Hilft dem Speech Parser, Umgangssprache, Negationen, Ausschlüsse, Ergänzungen
+# und Selbstkorrekturen zu erkennen. effekt: normal | negation | ausschluss |
+# ergaenzung | korrektur. zuordnung = strukturierter Hinweis (feld:wert), wenn eindeutig.
+# ERSTER ENTWURF — von Malermeistern zu validieren.
+
+muster:
+  - muster: "einmal alles weiß machen"
+    bedeutung: Alle Wandflächen (und meist Decke) weiß beschichten.
+    mehrdeutig: true
+    rueckfrage: "Wände und Decke, oder nur die Wände?"
+  - muster: "die Decke auch"
+    bedeutung: Deckenbeschichtung zusätzlich.
+    effekt: ergaenzung
+    zuordnung: "leistung:decke_beschichten"
+  - muster: "Fenster nicht"
+    bedeutung: Fenster ausdrücklich ausgeschlossen.
+    effekt: ausschluss
+    zuordnung: "ausschluss:fenster"
+  - muster: "Zargen extra"
+    bedeutung: Zargen separate Position, nicht in Türen enthalten.
+    zuordnung: "leistung:zargen_lackieren"
+  - muster: "Material kommt von mir"
+    bedeutung: Betrieb stellt das Material.
+    zuordnung: "materialstellung:betrieb"
+  - muster: "Farbe stellt der Kunde"
+    bedeutung: Kunde stellt Material.
+    zuordnung: "materialstellung:kunde"
+  - muster: "Möbel stehen noch drin"
+    bedeutung: Raum ist möbliert, Schutz-/Abdeckarbeiten nötig.
+    zuordnung: "moeblierungszustand:moebliert"
+  - muster: "die Wohnung ist leer"
+    bedeutung: Unmöbliert.
+    zuordnung: "moeblierungszustand:leer"
+  - muster: "Tapete runter"
+    bedeutung: Alte Tapete entfernen.
+    zuordnung: "leistung:tapete_entfernen"
+  - muster: "ein bisschen spachteln"
+    bedeutung: Kleinere Spachtelarbeiten, Umfang unklar.
+    mehrdeutig: true
+    rueckfrage: "Nur kleine Stellen oder die ganze Fläche spachteln?"
+  - muster: "zweimal drüber"
+    bedeutung: Zwei Arbeitsgänge/Anstriche.
+    zuordnung: "anzahl_arbeitsgaenge:2"
+  - muster: "einmal reicht"
+    bedeutung: Ein Arbeitsgang.
+    zuordnung: "anzahl_arbeitsgaenge:1"
+  - muster: "den Flur noch dazu"
+    bedeutung: Weiterer Raum ergänzt.
+    effekt: ergaenzung
+  - muster: "nein, nicht 80, 60 Quadratmeter"
+    bedeutung: Selbstkorrektur der Fläche auf 60.
+    effekt: korrektur
+    zuordnung: "flaeche:60"
+  - muster: "so ungefähr 40 Quadratmeter"
+    bedeutung: Geschätzte Fläche ~40 m².
+    zuordnung: "flaeche:40"
+  - muster: "Raufaser bleibt"
+    bedeutung: Vorhandene Raufaser wird überstrichen, nicht entfernt.
+    zuordnung: "untergrund:raufaser"
+  - muster: "die raue Tapete"
+    bedeutung: Raufaser.
+    zuordnung: "untergrund:raufaser"
+  - muster: "Rigips"
+    bedeutung: Gipskarton, meist spachteln + grundieren nötig.
+    zuordnung: "untergrund:gipskarton"
+  - muster: "Trockenbau fertig machen"
+    bedeutung: Gipskarton spachteln, schleifen, grundieren, beschichten.
+    zuordnung: "untergrund:gipskarton"
+  - muster: "war vorher dunkelrot"
+    bedeutung: Starker Farbwechsel, ggf. mehr Arbeitsgänge.
+    zuordnung: "farbwechsel:stark"
+  - muster: "vergilbt vom Rauchen"
+    bedeutung: Nikotinbelastung, Absperrung nötig.
+    zuordnung: "zustand:nikotinbelastung"
+  - muster: "gelbe Ränder an der Decke"
+    bedeutung: Wasserflecken, Absperrung, Ursache offen.
+    zuordnung: "zustand:wasserflecken"
+  - muster: "schwarze Flecken in der Ecke"
+    bedeutung: Schimmelverdacht, keine Bewertung, Hinweis.
+    zuordnung: "zustand:schimmelverdacht"
+  - muster: "die Wand ist rissig"
+    bedeutung: Risse, Rissbearbeitung.
+    zuordnung: "zustand:gerissen"
+  - muster: "ziemlich uneben"
+    bedeutung: Spachteln nötig.
+    zuordnung: "zustand:uneben"
+  - muster: "saugt wie verrückt"
+    bedeutung: Saugender Untergrund, Grundierung.
+    zuordnung: "zustand:saugend"
+  - muster: "kreidet ab"
+    bedeutung: Kreidender Altanstrich, Grundierung.
+    zuordnung: "zustand:kreidend"
+  - muster: "hohe Decken"
+    bedeutung: Große Raumhöhe, Gerüst/Leiter.
+    zuordnung: "raumhoehe:hoch"
+  - muster: "die fünf Türen"
+    bedeutung: Anzahl Türen = 5.
+    zuordnung: "anzahl:5"
+  - muster: "alle Heizkörper"
+    bedeutung: Heizkörper lackieren, Anzahl offen.
+    mehrdeutig: true
+    rueckfrage: "Wie viele Heizkörper sind es?"
+  - muster: "die Leisten unten"
+    bedeutung: Sockelleisten.
+    zuordnung: "leistung:sockelleisten_beschichten"
+  - muster: "um die Fenster rum"
+    bedeutung: Fensterlaibungen.
+    zuordnung: "bauteil:fensterlaibung"
+  - muster: "seidenmatt"
+    bedeutung: Glanzgrad seidenmatt (Lack).
+    zuordnung: "glanzgrad:seidenmatt"
+  - muster: "glänzend"
+    bedeutung: Glanzgrad glänzend.
+    zuordnung: "glanzgrad:glaenzend"
+  - muster: "Q3"
+    bedeutung: Oberflächenqualität Q3.
+    zuordnung: "qualitaetsstufe:Q3"
+  - muster: "besenrein übergeben"
+    bedeutung: Abschlussreinigung.
+    zuordnung: "leistung:abschlussreinigung"
+  - muster: "den Müll nehmen wir mit"
+    bedeutung: Entsorgung enthalten.
+    zuordnung: "leistung:abfall_entsorgen"
+  - muster: "Entsorgung macht der Kunde"
+    bedeutung: Entsorgung ausgeschlossen.
+    effekt: ausschluss
+  - muster: "nur streichen, sonst nichts"
+    bedeutung: Nur Beschichtung, keine Vorarbeiten beauftragt.
+    mehrdeutig: true
+  - muster: "wie letztes Mal"
+    bedeutung: Verweis auf früheres Angebot desselben Betriebs.
+    mehrdeutig: true
+    rueckfrage: "Soll ich es wie beim letzten Auftrag ansetzen?"
+  - muster: "das Übliche"
+    bedeutung: Betriebsstandard gemeint.
+    mehrdeutig: true
+  - muster: "Anfahrt wie immer"
+    bedeutung: Anfahrt nach Betriebsstandard.
+    zuordnung: "leistung:anfahrt"
+  - muster: "muss ich nachmessen"
+    bedeutung: Maß derzeit unbekannt, Vertagung.
+    effekt: normal
+  - muster: "keine Ahnung, was drunter ist"
+    bedeutung: Untergrund unbekannt, Prüfung nötig.
+    zuordnung: "untergrund:altbeschichtung_unbekannt"
+  - muster: "die eine Wand nicht"
+    bedeutung: Teilausschluss einer Fläche.
+    effekt: ausschluss
+    mehrdeutig: true
+    rueckfrage: "Welche Wand soll ausgenommen werden?"
+  - muster: "und die Decke lassen wir"
+    bedeutung: Decke ausgeschlossen.
+    effekt: ausschluss
+    zuordnung: "ausschluss:decke"
+  - muster: "erstmal nur ein Angebot"
+    bedeutung: Nur Angebot, kein Auftrag.
+    effekt: normal
+  - muster: "das Kinderzimmer extra"
+    bedeutung: Ein Raum getrennt ausweisen.
+    effekt: ergaenzung
+  - muster: "grundieren nicht vergessen"
+    bedeutung: Grundierung ausdrücklich gewünscht.
+    zuordnung: "leistung:grundieren"
+  - muster: "zwei Räume gleich groß"
+    bedeutung: Mehrere Räume, ähnliche Fläche.
+    mehrdeutig: true
+    rueckfrage: "Wie groß ist ein Raum ungefähr?"

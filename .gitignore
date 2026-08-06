@@ -29,6 +29,10 @@ transkript.txt
 *.mp3
 *.wav
 
+# Echte Kundenangebote zum Testen des Imports (enthalten Personendaten)
+alte Angebote/
+tmp-*.ts
+
 # Logs & OS
 *.log
 .DS_Store

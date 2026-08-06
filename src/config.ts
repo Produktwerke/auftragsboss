@@ -158,6 +158,15 @@ export const emailConfig = lade(
  * "auch als E-Mail senden"-Weg sauber mit einer Meldung ablehnen, statt
  * den Prozess mitzureißen.
  */
+/**
+ * Prüft, OB ein Anthropic-Key hinterlegt ist — ohne bei Fehlen den Server zu
+ * beenden (anders als anthropicConfig()). So kann der Import die KI-Auslese
+ * nutzen, wenn ein Key da ist, und sonst sauber auf den Regel-Parser zurückfallen.
+ */
+export function anthropicKonfiguriert(): boolean {
+  return Boolean(process.env.ANTHROPIC_API_KEY?.startsWith("sk-ant-"));
+}
+
 export function smtpKonfiguriert(): boolean {
   return Boolean(
     process.env.SMTP_HOST?.trim() &&

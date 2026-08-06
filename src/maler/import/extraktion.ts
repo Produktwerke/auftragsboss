@@ -10,6 +10,19 @@
 // sicher zu behandeln (Dokumentqualität nie überschätzen).
 import mammoth from "mammoth";
 
+// Polyfill: das in unpdf gebündelte pdf.js nutzt Math.sumPrecise (sehr neuer
+// JS-Vorschlag), das Node 24 noch nicht kennt. Ohne Polyfill flutet es die Logs
+// mit Warnungen und lässt manche PDFs sogar hart scheitern. Präzise genug für
+// die Textextraktion ist eine einfache Summe.
+const M = Math as unknown as { sumPrecise?: (werte: Iterable<number>) => number };
+if (typeof M.sumPrecise !== "function") {
+  M.sumPrecise = (werte: Iterable<number>) => {
+    let summe = 0;
+    for (const w of werte) summe += w;
+    return summe;
+  };
+}
+
 /** Woher der Text stammt und wie sicher die Extraktion war. */
 export type Extraktionsmethode = "text" | "ocr";
 export type Konfidenz = "high" | "medium" | "low" | "unknown";

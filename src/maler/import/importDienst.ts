@@ -6,9 +6,11 @@
 // erfunden — nur gespeichert, was Extraktion/Parser aus der Datei gelesen haben.
 import type { PrismaClient } from "@prisma/client";
 import { erzwingeTenant } from "../../mandant.js";
+import { anthropicKonfiguriert } from "../../config.js";
 import { spurEvent } from "../../analytics/event.js";
 import { extrahiereText } from "./extraktion.js";
-import { parseAngebotstext, type ParsePosition } from "./parser.js";
+import { parseAngebotstext, type ParseErgebnis, type ParsePosition } from "./parser.js";
+import { kiAusleseAngebotstext } from "./kiAuslese.js";
 import { ordneTypZu } from "./typzuordnung.js";
 
 export interface ImportErgebnis {
@@ -35,8 +37,25 @@ export async function importiereAltangebot(
   // 1) Reinen Text aus der Datei holen (DOCX/PDF; kein Layout).
   const extraktion = await extrahiereText(buffer, dateiname, mimetype);
 
-  // 2) Deterministisch in Kopfdaten + Positionen zerlegen.
-  const { kopf, positionen, warnungen } = parseAngebotstext(extraktion.text);
+  // 2) Text in Kopfdaten + Positionen zerlegen. Bevorzugt per Claude (robust
+  //    bei echten, mehrspaltigen Angeboten); ohne API-Key oder bei KI-Fehler
+  //    fällt es auf den deterministischen Regel-Parser zurück. Leerer Text
+  //    (Scan) wird gar nicht erst an die KI geschickt.
+  let zerlegung: ParseErgebnis;
+  let ausleseMethode: "ki" | "regel" = "regel";
+  const hatText = extraktion.text.replace(/\s/g, "").length >= 10;
+  if (hatText && anthropicKonfiguriert()) {
+    try {
+      zerlegung = await kiAusleseAngebotstext(extraktion.text);
+      ausleseMethode = "ki";
+    } catch (err) {
+      console.error("KI-Auslese fehlgeschlagen, nutze Regel-Parser:", err);
+      zerlegung = parseAngebotstext(extraktion.text);
+    }
+  } else {
+    zerlegung = parseAngebotstext(extraktion.text);
+  }
+  const { kopf, positionen, warnungen } = zerlegung;
 
   // Gesamtkonfidenz konservativ: die schwächere von Extraktion und Parser.
   const parserKonfidenz = positionsKonfidenz(positionen);
@@ -85,6 +104,7 @@ export async function importiereAltangebot(
     data: {
       positionen: positionen.length,
       methode: extraktion.methode,
+      auslese: ausleseMethode,
       konfidenz: gesamtKonfidenz,
       pruefenNoetig,
     },

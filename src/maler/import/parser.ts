@@ -67,6 +67,30 @@ const EINHEITEN: Record<string, string> = {
   stg: "Stg", // Gerüst-Standgerüst o.ä. — kein Pipeline-Pendant, Rohwert
 };
 
+/** Rohe Einheit (Token oder Freitext) → KANONISCHE Pipeline-Schreibweise.
+ *  Damit stimmen die Preisgedächtnis-Schlüssel zwischen Import und Angebot
+ *  überein — egal ob eine Zeile "m²", "qm" oder "m2" schrieb. */
+export function kanonischeEinheit(roh: string | null | undefined): string | null {
+  if (!roh) return null;
+  const key = roh.trim().toLowerCase().replace(/\.$/, "");
+  return EINHEITEN[key] ?? (roh.trim() || null);
+}
+
+/** Bewertet, wie belastbar eine Position ist: rechnerisch stimmig = high. */
+export function bewerteKonfidenz(
+  menge: number | null,
+  einheit: string | null,
+  einzelpreis: number | null,
+  gesamtpreis: number | null,
+): Konfidenz {
+  if (menge !== null && einheit !== null && einzelpreis !== null && gesamtpreis !== null) {
+    const erwartet = Math.round(menge * einzelpreis * 100) / 100;
+    return Math.abs(erwartet - gesamtpreis) <= 0.02 ? "high" : "medium";
+  }
+  if ((menge !== null && einheit !== null) || gesamtpreis !== null) return "medium";
+  return "low";
+}
+
 /** Deutsche Zahl ("1.234,56" / "45,00" / "12") → number. Null bei Unsinn. */
 function zahl(roh: string): number | null {
   const t = roh.trim().replace(/\./g, "").replace(",", ".");
@@ -152,7 +176,7 @@ function parsePosition(zeile: string): ParsePosition {
   const meM = rest.match(MENGE_EINHEIT);
   if (meM) {
     menge = zahl(meM[1]);
-    einheit = EINHEITEN[meM[2].toLowerCase()] ?? meM[2];
+    einheit = kanonischeEinheit(meM[2]);
   }
 
   // 3) Preise: letzter Geldbetrag = Gesamtpreis; ein zweiter, davor stehender,
@@ -182,15 +206,7 @@ function parsePosition(zeile: string): ParsePosition {
   if (!titel) titel = roh; // im Zweifel den Rohtext behalten, nie leer
 
   // 5) Konfidenz: je vollständiger und rechnerisch stimmiger, desto höher.
-  let konfidenz: Konfidenz = "low";
-  const vollstaendig = menge !== null && einheit !== null && einzelpreis !== null && gesamtpreis !== null;
-  if (vollstaendig) {
-    // Stimmt Menge × Einzelpreis (auf 2 Cent genau) mit dem Gesamtpreis?
-    const erwartet = Math.round(menge! * einzelpreis! * 100) / 100;
-    konfidenz = Math.abs(erwartet - gesamtpreis!) <= 0.02 ? "high" : "medium";
-  } else if ((menge !== null && einheit !== null) || gesamtpreis !== null) {
-    konfidenz = "medium";
-  }
+  const konfidenz = bewerteKonfidenz(menge, einheit, einzelpreis, gesamtpreis);
 
   return { originalNummer, originalTitel: titel, menge, einheit, einzelpreis, gesamtpreis, konfidenz };
 }
@@ -245,19 +261,25 @@ export function parseAngebotstext(text: string): ParseErgebnis {
     if (istPositionsZeile(z)) positionen.push(parsePosition(z));
   }
 
+  return { kopf, positionen, warnungen: pruefeSummen(kopf, positionen) };
+}
+
+/**
+ * Sicherheitsnetz nach der Zerlegung (egal ob Regel-Parser oder KI-Auslese):
+ * meldet fehlende Positionen und eine Positionssumme, die nicht zum Netto passt.
+ */
+export function pruefeSummen(kopf: ParseKopf, positionen: ParsePosition[]): string[] {
   const warnungen: string[] = [];
   if (positionen.length === 0) {
     warnungen.push("Keine Positionen erkannt — Struktur unklar, bitte manuell prüfen.");
   }
   if (kopf.nettoSumme !== null && positionen.some((p) => p.gesamtpreis !== null)) {
     const summe = positionen.reduce((s, p) => s + (p.gesamtpreis ?? 0), 0);
-    // Große Abweichung → Zerlegung womöglich unvollständig (nur Hinweis).
     if (Math.abs(summe - kopf.nettoSumme) > Math.max(1, kopf.nettoSumme * 0.02)) {
       warnungen.push(
         `Summe der erkannten Positionen (${summe.toFixed(2)}) weicht vom Netto (${kopf.nettoSumme.toFixed(2)}) ab.`,
       );
     }
   }
-
-  return { kopf, positionen, warnungen };
+  return warnungen;
 }

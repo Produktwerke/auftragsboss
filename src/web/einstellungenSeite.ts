@@ -94,7 +94,25 @@ export function einstellungenSeite(args: {
   :root { --akzent: ${akzent}; }
   * { box-sizing: border-box; }
   body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:#eef0f3; color:#1a1a1a; line-height:1.5; }
-  .rahmen { max-width:820px; margin:0 auto; padding:16px; }
+  .rahmen { max-width:1140px; margin:0 auto; padding:16px; }
+  /* Zwei Spalten: links Eingaben, rechts sticky Live-Angebotsblatt */
+  .layout { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap:20px; align-items:start; }
+  .spalte-vorschau { position:sticky; top:16px; }
+  /* Angebotsblatt (Live-Vorschau des ganzen Angebots) */
+  .blatt { background:#fff; border:1px solid #dfe3e7; border-radius:8px; padding:24px 24px 18px; box-shadow:0 2px 14px rgba(0,0,0,.07); }
+  .bl-meta { display:flex; justify-content:space-between; gap:16px; margin-top:16px; font-size:11.5px; color:#333; line-height:1.5; }
+  .bl-nr { text-align:right; color:#555; white-space:nowrap; }
+  .bl-titel { font-size:17px; font-weight:700; margin:16px 0 6px; }
+  .bl-text { font-size:12px; color:#333; white-space:pre-wrap; margin:8px 0; }
+  .blatt table { margin:10px 0; }
+  .bl-tab th { padding:6px 7px; font-size:11px; }
+  .bl-tab td { padding:6px 7px; font-size:11.5px; border-bottom:1px solid #eef1f3; }
+  .bl-sum { width:62%; margin-left:38%; }
+  .bl-sum td { padding:3px 7px; font-size:11.5px; border:none; }
+  .bl-sum tr.ges td { font-weight:700; color:var(--akzent); border-top:2px solid var(--akzent); padding-top:6px; }
+  .bl-gueltig { font-size:10.5px; color:#666; margin-top:10px; }
+  .bl-fuss { font-size:10px; color:#8a8a8a; margin-top:16px; padding-top:8px; border-top:1px solid #eceff2; line-height:1.6; }
+  .vorschau-hinweis { color:#777; font-size:13px; margin:0 0 12px; }
   h1 { font-size:22px; margin:8px 2px 2px; }
   .unter { color:#666; font-size:14px; margin:0 2px 16px; }
   .karte { background:#fff; border-radius:12px; padding:22px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
@@ -139,6 +157,11 @@ export function einstellungenSeite(args: {
   .aktionen { position:sticky; bottom:0; background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 -2px 10px rgba(0,0,0,.08);
               display:flex; align-items:center; gap:12px; }
   .status { font-size:13px; color:#2e7d32; margin-left:auto; }
+  @media (max-width:900px){
+    .layout{ grid-template-columns:1fr; }
+    /* Vorschau nach oben, nicht mehr klebend */
+    .spalte-vorschau{ position:static; order:-1; }
+  }
   @media (max-width:640px){
     .zwei{grid-template-columns:1fr;}
     .karte{padding:15px;}
@@ -158,22 +181,9 @@ export function einstellungenSeite(args: {
   <h1>Betriebseinstellungen</h1>
   <p class="unter">Diese Angaben erscheinen auf jedem Angebot. Einmal einstellen — danach passt alles automatisch.</p>
 
-  <!-- Live-Vorschau des Briefkopfs -->
-  <div class="karte">
-    <h2>So sieht Ihr Briefkopf aus</h2>
-    <p class="hint">Ändert sich sofort, während Sie unten tippen.</p>
-    <div class="vorschau">
-      <div class="vk">
-        <div>
-          <div class="firma" id="pvFirma">${escapeHtml(f.firma.wert || f.firma.ph)}</div>
-          <div class="adr" id="pvAdr"></div>
-        </div>
-        <div id="pvLogoBox">
-          ${logoDataUrl ? `<img id="pvLogo" src="${logoDataUrl}" alt="Logo">` : `<div class="kein-logo" id="pvLogoLeer">noch kein Logo</div>`}
-        </div>
-      </div>
-    </div>
-  </div>
+  <div class="layout">
+   <!-- Linke Spalte: Eingaben -->
+   <div class="spalte-eingabe">
 
   <!-- Logo & Farbe -->
   <div class="karte">
@@ -272,6 +282,54 @@ export function einstellungenSeite(args: {
     </div>
   </div>
 
+   </div><!-- /spalte-eingabe -->
+
+   <!-- Rechte Spalte: Live-Angebotsblatt -->
+   <div class="spalte-vorschau">
+    <div class="karte">
+      <h2>Live-Vorschau Ihres Angebots</h2>
+      <p class="vorschau-hinweis">So sieht ein Angebot mit Ihren Angaben aus. Ändert sich sofort, während Sie links tippen. (Positionen und Preise sind Beispiele.)</p>
+      <div class="blatt">
+        <div class="vk">
+          <div>
+            <div class="firma" id="pvFirma">${escapeHtml(f.firma.wert || f.firma.ph)}</div>
+            <div class="adr" id="pvAdr"></div>
+          </div>
+          <div id="pvLogoBox">
+            ${logoDataUrl ? `<img id="pvLogo" src="${logoDataUrl}" alt="Logo">` : `<div class="kein-logo" id="pvLogoLeer">noch kein Logo</div>`}
+          </div>
+        </div>
+
+        <div class="bl-meta">
+          <div>Familie Mustermann<br>Musterstraße 12<br>70000 Musterstadt</div>
+          <div class="bl-nr">Angebot Nr. 2026-0001<br>Datum: ${datumDE(new Date())}</div>
+        </div>
+
+        <div class="bl-titel">Angebot</div>
+        <div class="bl-text" id="pvEinleitung"></div>
+
+        <table class="bl-tab">
+          <thead><tr><th>Pos.</th><th>Leistung</th><th class="r">Menge</th><th class="r">Einzelpreis</th><th class="r">Gesamt</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Wände und Decken streichen</td><td class="r">pauschal</td><td class="r">850,00 €</td><td class="r">850,00 €</td></tr>
+            <tr><td>2</td><td>Alte Tapete entfernen</td><td class="r">pauschal</td><td class="r">220,00 €</td><td class="r">220,00 €</td></tr>
+            <tr><td>3</td><td>Dispersionsfarbe (Material)</td><td class="r">4 Rolle</td><td class="r">45,00 €</td><td class="r">180,00 €</td></tr>
+          </tbody>
+        </table>
+        <table class="bl-sum">
+          <tr><td class="r">Nettosumme</td><td class="r">1.250,00 €</td></tr>
+          <tr><td class="r">zzgl. 19 % MwSt.</td><td class="r">237,50 €</td></tr>
+          <tr class="ges"><td class="r">Gesamtbetrag</td><td class="r">1.487,50 €</td></tr>
+        </table>
+
+        <div class="bl-text" id="pvSchluss"></div>
+        <div class="bl-gueltig">Dieses Angebot ist gültig bis ${datumDE(new Date(Date.now() + 30 * 864e5))}. Zahlungsziel: ${escapeHtml(vorgabe.konditionen?.zahlungsziel ?? "14 Tage")}.</div>
+        <div class="bl-fuss" id="pvFuss"></div>
+      </div>
+    </div>
+   </div><!-- /spalte-vorschau -->
+  </div><!-- /layout -->
+
   <div class="aktionen">
     <span style="font-size:14px;color:#555;">Änderungen werden automatisch gespeichert.</span>
     <span class="status" id="status"></span>
@@ -283,14 +341,34 @@ const TOKEN = ${JSON.stringify(token)};
 const FELDER = ["firma","name","strasse","plz","ort","telefon","email","ustIdNr","bank","standardEinleitung","standardSchlusstext"];
 const val = id => document.getElementById(id).value;
 
-// ── Live-Vorschau ─────────────────────────────────────
+// ── Live-Vorschau des ganzen Angebots ─────────────────
 function aktualisiereVorschau(){
-  const firma = val("firma") || document.getElementById("firma").placeholder;
+  const ph = id => document.getElementById(id).placeholder;
+  // Leeres Feld: fällt auf den Platzhalter (Vorgabe) zurück, damit das
+  // Blatt nie leer wirkt — genau wie das echte Angebot die Vorgaben nutzt.
+  const wert = id => val(id).trim() || ph(id);
+  const firma = wert("firma");
+
   document.getElementById("pvFirma").textContent = firma;
-  const teile = [val("strasse"), [val("plz"), val("ort")].filter(Boolean).join(" "), val("telefon")].filter(Boolean);
-  document.getElementById("pvAdr").textContent = teile.join("  ·  ");
-  const farbe = document.getElementById("farbe").value;
-  document.documentElement.style.setProperty("--akzent", farbe);
+
+  // Briefkopf-Adresszeile: Straße · PLZ Ort · Telefon · E-Mail
+  const kopf = [wert("strasse"), [wert("plz"), wert("ort")].filter(Boolean).join(" "), wert("telefon"), wert("email")].filter(Boolean);
+  document.getElementById("pvAdr").textContent = kopf.join("  ·  ");
+
+  // Anschreiben und Schlusstext (mit sinnvollen Vorgaben)
+  document.getElementById("pvEinleitung").textContent =
+    val("standardEinleitung").trim() || "Sehr geehrte Familie Mustermann,\\nvielen Dank für Ihre Anfrage. Gerne biete ich Ihnen folgende Leistungen an:";
+  document.getElementById("pvSchluss").textContent =
+    val("standardSchlusstext").trim() || ("Mit freundlichen Grüßen\\n" + firma);
+
+  // Fußzeile: Firma, Adresse · Ansprechpartner · USt-IdNr · Bank
+  const fuss = [[firma, wert("strasse"), [wert("plz"), wert("ort")].filter(Boolean).join(" ")].filter(Boolean).join(", ")];
+  const name = wert("name"); if(name) fuss.push("Ansprechpartner: " + name);
+  const ust = wert("ustIdNr"); if(ust) fuss.push("USt-IdNr.: " + ust);
+  const bank = wert("bank"); if(bank) fuss.push("Bank: " + bank);
+  document.getElementById("pvFuss").textContent = fuss.join("   ·   ");
+
+  document.documentElement.style.setProperty("--akzent", document.getElementById("farbe").value);
 }
 
 // ── Speichern (entprellt) ─────────────────────────────

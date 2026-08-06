@@ -18,13 +18,17 @@ import { merkePreiseAusImport } from "../betrieb/preisgedaechtnis.js";
 import { cockpitLink } from "./tokens.js";
 
 const MAX_BYTES = 15 * 1024 * 1024; // 15 MB — großzügig für gescannte Angebote
+const MAX_DATEIEN = 20; // pro Upload
 
 export async function importRoutes(app: FastifyInstance): Promise<void> {
   // Baustein komplett aus: keine Routen registrieren.
   if (!featureConfig().FEATURE_IMPORT) return;
 
   await app.register(multipart, {
-    limits: { files: 1, fileSize: MAX_BYTES },
+    // Mehrere Dateien je Upload. throwFileSizeLimit=false: eine zu große Datei
+    // bricht nicht den ganzen Stapel ab, sie wird als abgeschnitten markiert.
+    limits: { files: MAX_DATEIEN, fileSize: MAX_BYTES },
+    throwFileSizeLimit: false,
   });
 
   // ── Upload-Seite ──────────────────────────────────────
@@ -39,7 +43,7 @@ export async function importRoutes(app: FastifyInstance): Promise<void> {
       .send(importSeite(req.params.token, handwerker.firma, handwerker.preisGedaechtnisAktiv));
   });
 
-  // ── Upload verarbeiten ────────────────────────────────
+  // ── Upload verarbeiten (mehrere Dateien je Stapel) ────
   app.post<{ Params: { token: string } }>("/api/import/:token", async (req, reply) => {
     const handwerker = await prisma.handwerker.findUnique({
       where: { einstellungenToken: req.params.token },
@@ -47,31 +51,31 @@ export async function importRoutes(app: FastifyInstance): Promise<void> {
     });
     if (!handwerker) return reply.code(404).send({ fehler: "nicht gefunden" });
 
-    const datei = await req.file();
-    if (!datei) return reply.code(400).send({ fehler: "Keine Datei hochgeladen." });
-
-    const buffer = await datei.toBuffer();
-    // @fastify/multipart markiert bei Überschreitung das Feld als abgeschnitten.
-    if (datei.file.truncated) {
-      return reply.code(413).send({ fehler: `Datei zu groß (max. ${MAX_BYTES / 1024 / 1024} MB).` });
-    }
-
-    try {
-      const ergebnis = await importiereAltangebot(
-        prisma,
-        handwerker.id,
-        buffer,
-        datei.filename,
-        datei.mimetype,
-      );
-      return reply.send({ ok: true, ...ergebnis });
-    } catch (err) {
-      if (err instanceof ImportFormatFehler) {
-        return reply.code(415).send({ fehler: err.message });
+    // Jede Datei einzeln verarbeiten; ein Fehler bei einer Datei stoppt die
+    // übrigen nicht (er wird pro Datei zurückgemeldet).
+    const ergebnisse: Array<Record<string, unknown>> = [];
+    for await (const teil of req.files()) {
+      const dateiname = teil.filename;
+      try {
+        const buffer = await teil.toBuffer();
+        if (teil.file.truncated) {
+          ergebnisse.push({ dateiname, fehler: `Datei zu groß (max. ${MAX_BYTES / 1024 / 1024} MB).` });
+          continue;
+        }
+        const ergebnis = await importiereAltangebot(prisma, handwerker.id, buffer, dateiname, teil.mimetype);
+        ergebnisse.push({ dateiname, ...ergebnis });
+      } catch (err) {
+        if (err instanceof ImportFormatFehler) {
+          ergebnisse.push({ dateiname, fehler: err.message });
+          continue;
+        }
+        req.log.error(err, "Altangebot-Import fehlgeschlagen");
+        ergebnisse.push({ dateiname, fehler: "Import fehlgeschlagen." });
       }
-      req.log.error(err, "Altangebot-Import fehlgeschlagen");
-      return reply.code(500).send({ fehler: "Import fehlgeschlagen. Bitte später erneut versuchen." });
     }
+
+    if (ergebnisse.length === 0) return reply.code(400).send({ fehler: "Keine Datei hochgeladen." });
+    return reply.send({ ok: true, ergebnisse });
   });
 
   // ── Import bestätigen ("kontrolliertes Lernen") ───────
@@ -128,60 +132,71 @@ function importSeite(token: string, firma: string, preisGedaechtnisAktiv: boolea
   .hinweis{color:#555;font-size:.9rem}
   .zurueck{display:inline-block;margin-bottom:1rem;color:#0B5CAD;text-decoration:none;font-size:.95rem}
   .zurueck:hover{text-decoration:underline}
-  #ergebnis{margin-top:1rem;white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:.85rem}
-  #bestaetigen{display:none}
+  #liste{margin-top:1rem}
+  .zeile{border-top:1px solid #eee;padding:.5rem 0;font-size:.9rem}
+  .zeile:first-child{border-top:0}
+  .zeile .dn{font-weight:600}
   .ok{color:#0a7d33}.warn{color:#b26a00}.err{color:#c0261a}
 </style></head><body>
 <a class="zurueck" href="${cockpitLink(token)}">← Übersicht</a>
 <h1>Altes Angebot importieren</h1>
-<p class="hinweis">Betrieb: <strong>${sicher(firma)}</strong>. Nur Ihre Texte werden gelesen &mdash; das neue Angebot entsteht immer im AuftragsBoss-Stil. PDF oder Word (.docx), max. 15&nbsp;MB.</p>
+<p class="hinweis">Betrieb: <strong>${sicher(firma)}</strong>. Nur Ihre Texte werden gelesen &mdash; das neue Angebot entsteht immer im AuftragsBoss-Stil. Sie können mehrere Dateien auf einmal wählen. PDF oder Word (.docx), je max. 15&nbsp;MB.</p>
 <div class="karte">
-  <input id="datei" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+  <input id="datei" type="file" multiple accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
   <button id="btn" onclick="hochladen()">Hochladen &amp; auslesen</button>
-  <div id="ergebnis"></div>
-  <button id="bestaetigen" class="zweit" onclick="bestaetigen()">Bestätigen</button>
+  <div id="liste"></div>
+  <div id="status" class="hinweis" style="margin-top:.8rem"></div>
+  <button id="bestaetigen" class="zweit" onclick="bestaetigen()" style="display:none">Alle bestätigen</button>
   <p id="gedaechtnis" class="hinweis" style="display:none">${gedaechtnisHinweis}</p>
 </div>
 <script>
-let importId=null;
+const TOKEN=${JSON.stringify(token)};
+let importIds=[];
 const $=(id)=>document.getElementById(id);
+const esc=(s)=>String(s).replace(/[&<>]/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 async function hochladen(){
-  const inp=$('datei'),btn=$('btn'),out=$('ergebnis');
-  $('bestaetigen').style.display='none';$('gedaechtnis').style.display='none';importId=null;
-  if(!inp.files.length){out.className='warn';out.textContent='Bitte zuerst eine Datei wählen.';return;}
-  const fd=new FormData();fd.append('datei',inp.files[0]);
-  btn.disabled=true;out.className='';out.textContent='Wird ausgelesen …';
+  const inp=$('datei'),btn=$('btn'),liste=$('liste'),st=$('status');
+  $('bestaetigen').style.display='none';$('gedaechtnis').style.display='none';importIds=[];liste.innerHTML='';st.textContent='';
+  if(!inp.files.length){st.className='hinweis warn';st.textContent='Bitte zuerst eine oder mehrere Dateien wählen.';return;}
+  const fd=new FormData();
+  for(const f of inp.files) fd.append('datei',f);
+  btn.disabled=true;st.className='hinweis';st.textContent='Wird ausgelesen … ('+inp.files.length+' Datei(en))';
   try{
-    const r=await fetch(${JSON.stringify(`/api/import/${token}`)},{method:'POST',body:fd});
+    const r=await fetch('/api/import/'+TOKEN,{method:'POST',body:fd});
     const j=await r.json();
-    if(!r.ok){out.className='err';out.textContent='Fehler: '+(j.fehler||r.status);}
-    else{
-      out.className=j.manuellePruefungNoetig?'warn':'ok';
-      let t=j.anzahlPositionen+' Position(en) erkannt.';
-      if(j.manuellePruefungNoetig)t+='\\nBitte manuell prüfen.';
-      if(j.warnungen&&j.warnungen.length)t+='\\n- '+j.warnungen.join('\\n- ');
-      out.textContent=t;
-      importId=j.importDokumentId;
-      if(importId){$('bestaetigen').style.display='inline-block';$('gedaechtnis').style.display='block';}
-    }
-  }catch(e){out.className='err';out.textContent='Netzwerkfehler: '+e;}
+    if(!r.ok){st.className='hinweis err';st.textContent='Fehler: '+(j.fehler||r.status);return;}
+    let ok=0;
+    liste.innerHTML=(j.ergebnisse||[]).map((e)=>{
+      if(e.fehler) return '<div class="zeile err"><span class="dn">'+esc(e.dateiname)+'</span> — '+esc(e.fehler)+'</div>';
+      ok++; if(e.importDokumentId) importIds.push(e.importDokumentId);
+      const cls=e.manuellePruefungNoetig?'warn':'ok';
+      const extra=e.manuellePruefungNoetig?' · bitte prüfen':'';
+      return '<div class="zeile '+cls+'"><span class="dn">'+esc(e.dateiname)+'</span> — '+e.anzahlPositionen+' Position(en)'+extra+'</div>';
+    }).join('');
+    st.className='hinweis';st.textContent=ok+' von '+(j.ergebnisse||[]).length+' Datei(en) eingelesen.';
+    if(importIds.length){$('bestaetigen').style.display='inline-block';$('gedaechtnis').style.display='block';}
+  }catch(e){st.className='hinweis err';st.textContent='Netzwerkfehler: '+e;}
   finally{btn.disabled=false;}
 }
 async function bestaetigen(){
-  if(!importId)return;
-  const b=$('bestaetigen'),out=$('ergebnis');
-  b.disabled=true;
-  try{
-    const r=await fetch(${JSON.stringify(`/api/import/${token}/bestaetigen/`)}+encodeURIComponent(importId),{method:'POST'});
-    const j=await r.json();
-    if(!r.ok){out.className='err';out.textContent='Fehler: '+(j.fehler||r.status);}
-    else{
-      out.className='ok';
-      out.textContent=j.preisgedaechtnisAus?j.hinweis:('Bestätigt. '+j.uebernommen+' Preis(e) ins Preisgedächtnis übernommen (datiert).');
-      b.style.display='none';$('gedaechtnis').style.display='none';
-    }
-  }catch(e){out.className='err';out.textContent='Netzwerkfehler: '+e;}
-  finally{b.disabled=false;}
+  if(!importIds.length)return;
+  const b=$('bestaetigen'),st=$('status');
+  b.disabled=true;st.className='hinweis';st.textContent='Wird bestätigt …';
+  let summe=0,aus=false,fehler=0;const anzahl=importIds.length;
+  for(const id of importIds){
+    try{
+      const r=await fetch('/api/import/'+TOKEN+'/bestaetigen/'+encodeURIComponent(id),{method:'POST'});
+      const j=await r.json();
+      if(!r.ok){fehler++;continue;}
+      if(j.preisgedaechtnisAus)aus=true; else summe+=(j.uebernommen||0);
+    }catch(e){fehler++;}
+  }
+  st.className='hinweis ok';
+  st.textContent = aus
+    ? (anzahl+' Angebot(e) bestätigt. Preisgedächtnis ist aus — es wurden keine Preise gemerkt.')
+    : (anzahl+' Angebot(e) bestätigt · '+summe+' Preis(e) ins Preisgedächtnis übernommen (datiert).');
+  if(fehler) st.textContent+=' ('+fehler+' mit Fehler)';
+  b.style.display='none';$('gedaechtnis').style.display='none';importIds=[];
 }
 </script>
 </body></html>`;

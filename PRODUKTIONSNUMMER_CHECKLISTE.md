@@ -4,19 +4,28 @@ Nummer: **+49 174 936 4823** · Anzeigename **AuftragsBoss**
 
 ## 1. Bei Meta (dein Teil)
 
-1. **WhatsApp-Manager** öffnen: https://business.facebook.com/wa/manage/phone-numbers
-   (NICHT „Autorisierungen/Verifizierung der Telefonnummer" — das ist für Werbekonten.)
-2. Richtiges **WhatsApp-Konto (WABA)** wählen → Reiter **Telefonnummern** →
-   **Telefonnummer hinzufügen** → +49 174 936 4823 → per **SMS/Anruf-Code** verifizieren.
-3. **Anzeigename** „AuftragsBoss" setzen.
-4. **Zahlungsmethode** bei der WABA hinterlegen (Abrechnung/Zahlungen) — ohne
-   Zahlungsmethode sendet die Produktionsnummer nicht.
-5. Die **Phone Number ID** dieser Nummer kopieren (lange Zahl, steht im
-   WhatsApp-Manager bzw. unter Developers → App → WhatsApp → API-Einrichtung).
+> **WICHTIG:** Das aktuelle Konto ist ein **„Test WhatsApp Business Account"** mit
+> Limit von 1 Nummer (US-Testnummer). Deshalb ist „Telefonnummer hinzufügen"
+> ausgegraut. Die **US-Testnummer NICHT löschen** — die Produktionsnummer gehört
+> in ein **echtes (Produktions-)WABA**, nicht ins Test-Konto.
 
-> Falls „echte" Nachrichten nicht ankommen: die App muss mit der WABA verbunden
-> sein (`subscribed_apps`) und der Webhook auf
-> `https://api.auftragsboss.de/webhook/whatsapp` zeigen (ist bereits gesetzt).
+1. **Produktions-WABA anlegen** (falls noch keins da):
+   - Weg A: `developers.facebook.com` → deine App → **WhatsApp → API-Einrichtung**
+     → **Telefonnummer hinzufügen** (führt durch WABA-Anlage + Nummer, da Firma verifiziert).
+   - Weg B: `business.facebook.com/settings` → **Konten → WhatsApp-Konten** →
+     **Hinzufügen** → neues WABA anlegen.
+2. Im WhatsApp-Manager oben rechts vom **Test**- aufs **Produktions-Konto** umschalten.
+   Dann **Telefonnummern → Telefonnummer hinzufügen** → +49 174 936 4823 → per
+   **SMS/Anruf-Code** verifizieren.
+3. **Anzeigename** „AuftragsBoss" setzen.
+4. **Zahlungsmethode** beim Produktions-WABA hinterlegen — ohne sendet die Nummer nicht.
+5. Die **Phone Number ID** dieser Nummer kopieren (lange Zahl, im WhatsApp-Manager
+   bzw. unter Developers → App → WhatsApp → API-Einrichtung).
+
+> **Umzug vom Test- aufs Produktions-WABA:** Die App muss mit dem neuen WABA
+> verbunden werden (`subscribed_apps`) und der Systembenutzer-Token muss das neue
+> WABA abdecken. Webhook bleibt `https://api.auftragsboss.de/webhook/whatsapp`.
+> Bei diesem Schritt gemeinsam durchgehen.
 
 ## 2. Server-Konfig (dein Teil, 2 Zeilen)
 

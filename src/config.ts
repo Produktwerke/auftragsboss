@@ -115,6 +115,13 @@ export const featureConfig = lade(
     FEATURE_MALER_SCOPE: flagge(false),
     // Zusammenfassung "das habe ich verstanden" vor dem Angebot (mit Skip).
     FEATURE_ZUSAMMENFASSUNG: flagge(false),
+    // Maler-Fachengine v1 — je Baustein einzeln scharfschaltbar.
+    FEATURE_IMPORT: flagge(false), // Altangebots-Import
+    FEATURE_BETRIEBSPROFIL: flagge(false), // privates Betriebsprofil + Retrieval
+    FEATURE_LERNEN: flagge(false), // Lernen aus Korrekturen (Regelkandidaten)
+    // Umgang mit historischen Preisen. v1-Sicherheit: nur vorschlagen, nie
+    // automatisch setzen (erst eine bestätigte Betriebsregel dürfte "auto" erlauben).
+    HISTORICAL_PRICE_BEHAVIOR: z.enum(["suggest_only", "auto"]).default("suggest_only"),
   }),
 );
 

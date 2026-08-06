@@ -120,6 +120,33 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 06.08.2026 — Maler-Fachengine v1 (Import + Preisgedächtnis), Cockpit, Fachwissen ins Angebot, Produktionsnummer vorbereitet:**
+> - **Altangebots-Import** (`src/maler/import/`, hinter `FEATURE_IMPORT`, **live an**): Upload mehrerer PDF/DOCX
+>   (`web/importRoutes.ts`, `@fastify/multipart`, je 15 MB), Textextraktion (`extraktion.ts`: **unpdf** für PDF,
+>   **mammoth** für DOCX; Scans erkannt → „prüfen"). Auslese per **Claude** (`kiAuslese.ts`, wie `structure.ts`) —
+>   erfindet/rechnet nichts; Regel-Parser (`parser.ts`) als Fallback ohne Key. An **14 echten Angeboten** verifiziert.
+>   Ergebnis → `ImportDokument`/`ImportPosition`, streng tenant-gebunden (`src/mandant.ts`). Deps: mammoth, unpdf,
+>   @fastify/multipart (pdfjs-dist raus wg. **Smart App Control** — nicht ändern). **Math.sumPrecise-Polyfill** in extraktion.ts.
+> - **Preisgedächtnis aus Import** (kontrolliertes Lernen): erst **nach Bestätigung** wandern Preise ins Gedächtnis,
+>   **datiert aufs Angebotsdatum**, mit **Frische-Schutz** (neuerer eigener Preis wird nicht überschrieben), `quelle IMPORT`
+>   (`merkePreiseAusImport`). Wirkungskette Import→bestätigt→neues Angebot schlägt eigenen Preis vor: gegen echte DB verifiziert.
+> - **Cockpit** `/start/<token>` (`web/cockpitSeite.ts`, `navigation.ts`): Startseite für registrierte Betriebe mit
+>   Kennzahlen + durchsuchbarer Angebotsliste; gemeinsame Reiter-Navigation (Übersicht/Import/Einstellungen). Die
+>   Angebotsliste ist aus den Einstellungen ins Cockpit gewandert; Editor-„Zurück"-Link zeigt aufs Cockpit.
+> - **Einstellungen**: zweispaltige **Live-Angebotsvorschau** (ganzes Blatt inkl. Summen + Fußzeile, färbt sich live);
+>   **Hex-Farbeingabe**; **Feld-Hinweise** (wo jedes Feld im Angebot erscheint). **Word + PDF Fußzeile** konsistent
+>   **zweizeilig** (Firma/Anschrift/Ansprechpartner // USt-IdNr. + Bank) — Ansprechpartner + Bank jetzt in **beiden** Formaten.
+> - **Maler-Fachwissen ins Angebot** (`src/maler/prompt.ts`, hinter `FEATURE_MALER_SCOPE`, **noch AUS**): speist die
+>   YAML-Wissensbasis in den KI-Systemprompt (Positionsbibliothek + fachliche Reihenfolge, A-Pflicht-Rückfragen, Scope).
+>   An einem Maler-Diktat verifiziert (korrekte Reihenfolge/Benennung, Materialketten, Fassade korrekt ausgelassen).
+> - **Deploy:** tar enthält jetzt den **`knowledge/`-Ordner** + neue Deps. `npx prisma db push` für die Import-Tabellen nötig.
+>   **65 Tests grün.** Registrierter-Tester-Konten: `src/import-link.ts` / `src/tester-einladen.ts` (entfernen `istTest`).
+> - **Produktionsnummer +49 174 936 4823 vorbereitet:** Landingpage (`marketing/index.html`) auf `wa.me/491749364823`
+>   + echter QR-Code (**muss noch bei IONOS hoch**). `src/tester-einladen.ts` + `PRODUKTIONSNUMMER_CHECKLISTE.md`.
+>   **Meta-Stand:** Produktions-WABA „AuftragsBoss" (WABA-ID `1680177866376806`, Phone-Number-ID `1186887661184567`)
+>   angelegt. Offen bei Meta: Nummer **registrieren**, **Webhooks abonnieren**, **Zahlungsmethode** (Test-WABA/US-Nummer
+>   NICHT löschen). Server-`.env`: `WHATSAPP_PHONE_NUMBER_ID=1186887661184567` (+ Systembenutzer-Token muss neues WABA abdecken).
+
 > **Update 05.08.2026 (abends) — Eingabewege, Zusammenfassung, Aufnahme-Knopf (live auf VPS):**
 > - **Foto/Screenshot-Upload:** WhatsApp-Bildnachricht (Aufmaß-Zettel, Handy-Notiz) → Claude Vision
 >   (`src/ai/bildLesen.ts`) liest den Inhalt als Text → dieselbe Pipeline wie beim Diktat.

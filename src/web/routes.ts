@@ -18,7 +18,8 @@ import { adminSeite } from "./adminSeite.js";
 import { einladungSeite } from "./einladungSeite.js";
 import { dokumentZuDaten, editorZuPositionen, type EditorPosition } from "./dokumentDaten.js";
 import { effektivePreisliste, einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
-import { bearbeitenLink, einstellungenLink, cockpitLink } from "./tokens.js";
+import { bearbeitenLink, einstellungenLink, cockpitLink, werbeLink } from "./tokens.js";
+import { werbeCodeBereit, empfehlungsEinladungMail } from "../empfehlung.js";
 import { ladeLogo } from "../betrieb/logo.js";
 import { speichereLogo, entferneLogo, LogoFehler } from "../betrieb/logoUpload.js";
 import { smtpKonfiguriert, featureConfig, webtestConfig } from "../config.js";
@@ -381,14 +382,50 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       offen: dokumente.filter((d) => d.anzahlOffen > 0).length,
       volumen: dokumente.reduce((s, d) => s + (d.anzahlOffen === 0 ? d.brutto : 0), 0),
     };
+    const werbeUrl = werbeLink(await werbeCodeBereit(prisma, handwerker));
 
     return reply.type("text/html; charset=utf-8").send(
       cockpitSeite({
         handwerker, logoDataUrl: logo?.dataUrl ?? null, akzent,
-        dokumente: uebersicht, kennzahlen, token: req.params.token,
+        dokumente: uebersicht, kennzahlen, token: req.params.token, werbeUrl,
       }),
     );
   });
+
+  // ── Empfehlung: Kollege per E-Mail einladen (aus dem Cockpit) ──
+  // Wir dürfen niemanden per WhatsApp kalt anschreiben — deshalb E-Mail.
+  // Einmalige, klar gekennzeichnete persönliche Empfehlung.
+  app.post<{ Params: { token: string }; Body: { name?: string; email?: string } }>(
+    "/api/empfehlung/:token/email",
+    async (req, reply) => {
+      const handwerker = await prisma.handwerker.findUnique({
+        where: { einstellungenToken: req.params.token },
+      });
+      if (!handwerker) return reply.code(404).send({ fehler: "nicht gefunden" });
+      if (!smtpKonfiguriert()) return reply.code(503).send({ fehler: "E-Mail-Versand ist nicht eingerichtet." });
+
+      const name = (req.body.name ?? "").trim();
+      const email = (req.body.email ?? "").trim();
+      if (name.length < 2 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        return reply.code(400).send({ fehler: "Bitte Name und gültige E-Mail angeben." });
+      }
+
+      const werbeUrl = werbeLink(await werbeCodeBereit(prisma, handwerker));
+      const { betreff, html } = empfehlungsEinladungMail(handwerker.firma, name, werbeUrl);
+      try {
+        await sendeMail(email, betreff, html);
+      } catch (err) {
+        req.log.error(err, "Empfehlungs-E-Mail fehlgeschlagen");
+        return reply.code(502).send({ fehler: "E-Mail konnte nicht gesendet werden." });
+      }
+
+      // Als Lead festhalten (whatsappNummer unbekannt bei E-Mail-Einladung).
+      await prisma.empfehlung.create({
+        data: { werberId: handwerker.id, firma: "", name, whatsappNummer: "", email },
+      });
+      return reply.send({ ok: true });
+    },
+  );
 
   // ── Einstellungsseite (passwortloser Zugang per Token) ─
   app.get<{ Params: { token: string } }>("/einstellungen/:token", async (req, reply) => {

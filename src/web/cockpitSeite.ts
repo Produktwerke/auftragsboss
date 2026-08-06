@@ -10,6 +10,7 @@
 import type { Handwerker } from "@prisma/client";
 import { bearbeitenLink } from "./tokens.js";
 import { navLeiste, navStyles, topBar } from "./navigation.js";
+import { empfehlungsText } from "../empfehlung.js";
 import type { DokUebersicht } from "./einstellungenSeite.js";
 
 function escapeHtml(s: string): string {
@@ -31,8 +32,12 @@ export function cockpitSeite(args: {
   dokumente: DokUebersicht[];
   kennzahlen: Kennzahlen;
   token: string;
+  werbeUrl: string;
 }): string {
-  const { handwerker: h, logoDataUrl, akzent, dokumente, kennzahlen, token } = args;
+  const { handwerker: h, logoDataUrl, akzent, dokumente, kennzahlen, token, werbeUrl } = args;
+  const teilenText = empfehlungsText(h.firma || "Ein Kollege", werbeUrl);
+  const waHref = `https://wa.me/?text=${encodeURIComponent(teilenText)}`;
+  const mailHref = `mailto:?subject=${encodeURIComponent("Empfehlung: AuftragsBoss")}&body=${encodeURIComponent(teilenText)}`;
 
   const zeilen =
     dokumente.length === 0
@@ -78,6 +83,20 @@ export function cockpitSeite(args: {
   .fassung { color:#888; font-size:12px; }
   .offen { color:#b7791f; font-weight:600; }
   .leer-such { text-align:center; color:#999; padding:20px; display:none; }
+  .werbe-hint { color:#667; font-size:13px; margin:0 0 12px; }
+  .link-zeile { display:flex; gap:8px; margin-bottom:12px; }
+  .link-zeile input { flex:1; padding:9px 11px; border:1px solid #cfd4da; border-radius:8px; font-size:14px; background:#f7f9fb; color:#333; }
+  .werbe-btns { display:flex; gap:8px; flex-wrap:wrap; }
+  .tbtn { text-decoration:none; border:none; border-radius:8px; padding:9px 14px; font-size:14px; font-weight:600; cursor:pointer; }
+  .tbtn.wa { background:#25D366; color:#fff; }
+  .tbtn.mail { background:#e7eaef; color:#333; }
+  .tbtn.copy { background:#e7eaef; color:#333; }
+  .werbe-form { margin-top:16px; padding-top:14px; border-top:1px solid #eef1f3; }
+  .werbe-form h3 { font-size:14px; margin:0 0 8px; }
+  .werbe-form .reihe { display:flex; gap:8px; flex-wrap:wrap; }
+  .werbe-form input { flex:1; min-width:150px; padding:9px 11px; border:1px solid #cfd4da; border-radius:8px; font-size:14px; }
+  .werbe-form button { background:var(--akzent); color:#fff; border:none; border-radius:8px; padding:9px 16px; font-weight:600; cursor:pointer; }
+  .werbe-status { font-size:13px; margin-top:8px; }
   @media (max-width:720px){
     .kennzahlen{ grid-template-columns:1fr; }
     thead{ display:none; }
@@ -111,9 +130,32 @@ export function cockpitSeite(args: {
     </div>
     <div class="leer-such" id="leerSuch">Keine Angebote gefunden.</div>
   </div>
+
+  <div class="karte">
+    <h2>Kollegen empfehlen</h2>
+    <p class="werbe-hint">Empfehle AuftragsBoss weiter &mdash; <strong>ihr bekommt beide 1 Monat gratis</strong>. Teile deinen persönlichen Link (kommt dann von dir) oder lass uns eine Einladung per E-Mail schicken.</p>
+    <div class="link-zeile">
+      <input id="werbeUrl" type="text" readonly value="${escapeHtml(werbeUrl)}">
+    </div>
+    <div class="werbe-btns">
+      <a class="tbtn wa" href="${escapeHtml(waHref)}" target="_blank" rel="noopener">Per WhatsApp teilen</a>
+      <a class="tbtn mail" href="${escapeHtml(mailHref)}">Per E-Mail teilen</a>
+      <button class="tbtn copy" onclick="linkKopieren()">Link kopieren</button>
+    </div>
+    <div class="werbe-form">
+      <h3>Oder: Kollege per E-Mail einladen</h3>
+      <div class="reihe">
+        <input id="wName" type="text" placeholder="Name des Kollegen">
+        <input id="wEmail" type="email" placeholder="E-Mail-Adresse">
+        <button onclick="perMailEinladen()">Einladen</button>
+      </div>
+      <div class="werbe-status" id="werbeStatus"></div>
+    </div>
+  </div>
 </div>
 
 <script>
+const TOKEN = ${JSON.stringify(token)};
 const suche = document.getElementById("suche");
 if (suche) suche.addEventListener("input", () => {
   const q = suche.value.trim().toLowerCase();
@@ -125,6 +167,28 @@ if (suche) suche.addEventListener("input", () => {
   }
   document.getElementById("leerSuch").style.display = sichtbar === 0 ? "block" : "none";
 });
+
+function setWerbeStatus(text, farbe){ const s=document.getElementById("werbeStatus"); s.textContent=text; s.style.color=farbe; }
+
+async function linkKopieren(){
+  const inp=document.getElementById("werbeUrl");
+  try{ await navigator.clipboard.writeText(inp.value); setWerbeStatus("✓ Link kopiert","#2e7d32"); }
+  catch(e){ inp.select(); document.execCommand("copy"); setWerbeStatus("✓ Link kopiert","#2e7d32"); }
+}
+
+async function perMailEinladen(){
+  const name=document.getElementById("wName").value.trim();
+  const email=document.getElementById("wEmail").value.trim();
+  if(name.length<2 || !/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email)){ setWerbeStatus("Bitte Name und gültige E-Mail eingeben.","#b7791f"); return; }
+  setWerbeStatus("Wird gesendet …","#667");
+  try{
+    const r=await fetch("/api/empfehlung/"+TOKEN+"/email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,email})});
+    const j=await r.json();
+    if(!r.ok){ setWerbeStatus("Fehler: "+(j.fehler||r.status),"#c0261a"); return; }
+    document.getElementById("wName").value=""; document.getElementById("wEmail").value="";
+    setWerbeStatus("✓ Einladung an "+email+" gesendet.","#2e7d32");
+  }catch(e){ setWerbeStatus("Netzwerkfehler: "+e,"#c0261a"); }
+}
 </script>
 </body>
 </html>`;

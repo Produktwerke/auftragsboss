@@ -120,6 +120,15 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 07.08.2026 — Produktionsnummer LIVE, Landingpage-Ausbau, Test-Schutz, Empfehlung, Helfer:**
+> - **Produktionsnummer +49 174 9364823 ist LIVE und funktioniert end-to-end** (Sprachnachricht → Angebot am 07.08. echt verifiziert). Meta: Produktions-WABA „AuftragsBoss" (WABA-ID 1680177866376806) angelegt, Nummer **registriert**, **Webhooks abonniert**, **Zahlungsmethode** gesetzt. Server-`.env`: `WHATSAPP_PHONE_NUMBER_ID=1186887661184567`. **`FEATURE_MALER_SCOPE` ist AN** (Maler-Fachqualität live).
+> - **Display-Name „AuftragsBoss" von Meta ABGELEHNT** (Marke↔Firma-Beziehung nicht offensichtlich, WABA/Business = DAG Deutsche Automotive GmbH). **Fix:** „AuftragsBoss ist eine Marke der DAG Deutsche Automotive GmbH." steht jetzt auf **Startseite + Footer + Impressum** (`marketing/index.html`, `impressum.html`). → Nummer erneut einreichen (Fallback-Name: „AuftragsBoss von DAG Deutsche Automotive GmbH").
+> - **Landingpage stark ausgebaut** (`marketing/`): Hero mit **rundem Aufnahme-Knopf** (→ /testen) + **animierter Chat-Demo** (`chat-animation.html`, reines HTML/CSS/JS als iframe, frei fliegend), echtes WhatsApp-Logo, QR/Nummer, fetter Lead, **verlinkte Studien-Belege** (FirstKnock „bis zu 50 %", InsideSales „21× häufiger"). Foto `Zettel.jpg` im Chat. **MUSS bei IONOS hochgeladen werden:** `index.html`, `chat-animation.html`, `Zettel.jpg`.
+> - **Test-Angebot (Website-Knopf, istTest):** PDF/Word-Download + E-Mail **gesperrt** → Hinweis „nur über WhatsApp/registrierte Betriebe" + Nummer + WhatsApp-CTA (auch serverseitig 403). **Warte-Animation** auf `/testen` (Meldungen laufen EINMAL durch, kein Loop). **Missbrauchsschutz gehärtet** (`webtest.ts`): Audio-Prüfung (Größe/Typ), **Monats-Deckel**, engere Limits — `WEBTEST` Defaults 2/IP · 50/Tag · 800/Monat · 12 MB. Website-Test = **IP-basiert**; WhatsApp-Direkttest = **nummernbasiert** (`DIREKTTEST_*`).
+> - **Empfehlung:** Cockpit-Bereich „Kollegen empfehlen" — Teilen-Knöpfe (WhatsApp/E-Mail/Kopieren, aus eigener App) + Formular „per E-Mail einladen" (`POST /api/empfehlung/:token/email`). Grund: WhatsApp darf niemanden **kalt** anschreiben.
+> - **Helfer-Skripte:** `src/env-check.ts` (prüft `.env`: Pflichtfelder/Tippfehler/Format, Werte maskiert), `src/tester-einladen.ts` (Tester-Konto + Einladungstext), `src/import-link.ts`. `.env.example` auf **reines ASCII** umgestellt (Mojibake-Fix bei Windows-Editoren).
+> - **OFFEN (nach dem Komprimieren als Nächstes):** großer **Hero-Redesign** — voller Brief in Memory `[[hero-redesign-brief]]`.
+
 > **Update 06.08.2026 — Maler-Fachengine v1 (Import + Preisgedächtnis), Cockpit, Fachwissen ins Angebot, Produktionsnummer vorbereitet:**
 > - **Altangebots-Import** (`src/maler/import/`, hinter `FEATURE_IMPORT`, **live an**): Upload mehrerer PDF/DOCX
 >   (`web/importRoutes.ts`, `@fastify/multipart`, je 15 MB), Textextraktion (`extraktion.ts`: **unpdf** für PDF,

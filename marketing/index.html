@@ -53,60 +53,57 @@
   }
 
   /* Hero */
-  .hero{position:relative;padding:56px 0 30px;}
-  .hero::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.5;
+  .hero{position:relative;padding:52px 0 0;}
+  .hero::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.45;
     background:
-      radial-gradient(900px 380px at 80% -10%,rgba(255,196,38,.10),transparent 60%),
+      radial-gradient(900px 400px at 82% -12%,rgba(255,196,38,.10),transparent 60%),
       linear-gradient(transparent 0,transparent 39px,var(--hair) 39px,transparent 40px),
       linear-gradient(90deg,transparent 0,transparent 39px,var(--hair) 39px,transparent 40px);
-    background-size:auto,40px 40px,40px 40px;mask:linear-gradient(#000,transparent 88%);}
-  .hero-top{max-width:780px;margin-bottom:30px;}
-  .hero-top .stat{margin-bottom:0;}
-  .hero-row{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;align-items:stretch;}
+    background-size:auto,40px 40px,40px 40px;mask:linear-gradient(#000,transparent 90%);}
+  .hero-inner{max-width:1460px;margin:0 auto;padding:0 32px;
+    display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:60px;align-items:center;}
+  .hero-copy{max-width:640px;}
   .eyebrow{display:inline-flex;align-items:center;gap:9px;margin-bottom:20px;}
   .eyebrow::before,.eyebrow::after{content:"";width:26px;height:2px;background:var(--signal);flex:0 0 auto;}
-  h1{font-size:clamp(34px,5.6vw,58px);line-height:1.02;letter-spacing:-.02em;font-weight:900;margin:0 0 16px;
+  h1{font-size:clamp(34px,4.4vw,60px);line-height:1.02;letter-spacing:-.02em;font-weight:900;margin:0 0 18px;
     text-transform:uppercase;text-wrap:balance;}
   h1 .u{color:var(--signal);}
-  .lead{font-size:clamp(16px,2vw,18.5px);color:var(--muted);margin:0 0 20px;max-width:54ch;}
-  .stat{display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:15px;color:var(--ink);
-    background:var(--bg3);border:1px solid var(--steel);border-left:3px solid var(--signal);
-    padding:9px 15px;border-radius:var(--r);margin-bottom:24px;}
-  .stat b{color:var(--signal);}
+  .lead{font-size:clamp(16px,1.5vw,19px);color:var(--muted);margin:0 0 20px;max-width:50ch;}
+  /* dezenter Zeit-Hinweis (früher große Badge-Box) */
+  .stat{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-weight:600;font-size:12.5px;
+    letter-spacing:.03em;color:var(--muted);margin:0 0 26px;}
+  .stat::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--signal);flex:0 0 auto;
+    box-shadow:0 0 0 4px rgba(255,196,38,.14);}
+  .stat b{color:var(--ink);font-weight:700;}
 
-  .testbox{background:linear-gradient(180deg,var(--bg3),var(--bg2));border:1px solid var(--steel);
-    border-radius:var(--r-lg);padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.5);position:relative;overflow:hidden;}
-  .testbox::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--hazard);opacity:.9;}
-  .testbox .h{font-weight:800;font-size:17px;margin:6px 0 3px;text-transform:uppercase;letter-spacing:.01em;}
-  .testbox .s{color:var(--muted);font-size:13.5px;margin:0 0 15px;}
+  /* Hero-CTAs */
+  .hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 20px;}
+  .btn-primary,.btn-wa{display:inline-flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;
+    font-weight:800;font-size:15.5px;padding:15px 24px;border-radius:var(--r);text-transform:uppercase;letter-spacing:.02em;
+    transition:filter .15s,transform .06s,background .15s,border-color .15s;}
+  .btn-primary{background:var(--signal);color:var(--signal-ink);box-shadow:0 10px 26px rgba(255,196,38,.26);}
+  .btn-primary:hover{filter:brightness(1.06);} .btn-primary:active{transform:translateY(1px);}
+  .btn-wa{background:var(--bg3);color:var(--ink);border:1px solid var(--steel2);}
+  .btn-wa:hover{background:var(--bg4);border-color:var(--wa);} .btn-wa:active{transform:translateY(1px);}
+  .btn-wa svg{width:20px;height:20px;flex:0 0 auto;}
+
+  /* Hero-Trust-Zeile */
+  .hero-trust{display:flex;flex-wrap:wrap;gap:7px 22px;font-family:var(--mono);font-size:12px;letter-spacing:.03em;color:var(--muted);}
+  .hero-trust span{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
+  .hero-trust b{color:var(--signal);font-weight:700;}
+
+  /* Hero-Visual (Chat-Animation, freifliegend, ohne Rahmen) */
+  .hero-visual{position:relative;justify-self:center;width:100%;}
+
+  /* WhatsApp-CTA (noch im Schlussband verwendet) */
   .wa-cta{display:flex;align-items:center;justify-content:center;gap:11px;background:var(--signal);color:var(--signal-ink);
     text-decoration:none;font-weight:800;font-size:16.5px;padding:15px 18px;border-radius:var(--r);
     box-shadow:0 8px 24px rgba(255,196,38,.28);transition:filter .15s,transform .06s;text-transform:uppercase;letter-spacing:.02em;}
   .wa-cta:hover{filter:brightness(1.06);} .wa-cta:active{transform:translateY(1px);}
   .wa-cta svg{width:22px;height:22px;fill:var(--signal-ink);flex:0 0 auto;}
-  .tmeta{display:flex;align-items:center;gap:20px;margin-top:20px;flex-wrap:wrap;}
-  .nr{font-weight:800;font-size:19px;font-family:var(--mono);}
-  .nr small{display:block;color:var(--dim);font-weight:600;font-size:10.5px;letter-spacing:.14em;font-family:var(--mono);margin-bottom:3px;}
-  .qr-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--dim);font-size:11px;text-align:center;font-family:var(--mono);}
-  .qr{width:98px;height:98px;border-radius:8px;border:1px solid var(--steel2);background:#fff;padding:6px;flex:0 0 auto;}
-  .qr svg{width:100%;height:100%;display:block;}
-  .fineprint{margin:12px 0 0;font-size:12px;color:var(--dim);}
-  .fineprint b{color:var(--muted);}
 
-  /* Video */
-  .video{position:relative;height:100%;min-height:300px;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--steel);
-    background:linear-gradient(150deg,#1a1d23,#0b0c0f);box-shadow:0 24px 60px rgba(0,0,0,.55);display:grid;place-items:center;}
-  .video::after{content:"";position:absolute;inset:0;background:
-    repeating-linear-gradient(90deg,transparent 0 6px,rgba(255,255,255,.012) 6px 7px);pointer-events:none;}
-  .video .play{width:78px;height:78px;border-radius:50%;background:var(--signal);display:grid;place-items:center;
-    box-shadow:0 10px 30px rgba(255,196,38,.35);}
-  .video .play::after{content:"";border-left:24px solid var(--signal-ink);border-top:15px solid transparent;border-bottom:15px solid transparent;margin-left:6px;}
-  .video .cap{position:absolute;left:0;right:0;bottom:0;padding:16px 18px;color:#fff;font-weight:700;font-size:14px;
-    background:linear-gradient(transparent,rgba(0,0,0,.7));}
-  .video .tag{position:absolute;top:12px;left:14px;font-family:var(--mono);color:var(--dim);font-size:10.5px;letter-spacing:.18em;}
-
-  /* Hazard divider */
-  .haz{height:8px;background:var(--hazard);margin:8px 0 0;opacity:.85;}
+  /* Hazard divider (nur noch sehr subtil) */
+  .haz{height:3px;background:var(--hazard);margin:44px 0 0;opacity:.32;}
 
   /* Trust strip */
   .trust{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;
@@ -258,7 +255,7 @@
   footer b{color:var(--muted);}
 
   @media (max-width:780px){
-    .hero-row{grid-template-columns:1fr;} .hero-top{margin-bottom:22px;} .video{min-height:210px;}
+    .hero-inner{grid-template-columns:1fr;gap:36px;padding:0 20px;} .hero-chat{height:510px;}
     .grid4{grid-template-columns:1fr 1fr;}
     .steps,.karten,.vgrid{grid-template-columns:1fr;}
     .shots{grid-template-columns:1fr;max-width:300px;margin:0 auto;}
@@ -266,22 +263,15 @@
     .karte.top{margin-top:14px;}
     .vlist{grid-template-columns:1fr;}
   }
+  @media (max-width:560px){
+    .hero-cta{flex-direction:column;align-items:stretch;}
+    .btn-primary,.btn-wa{width:100%;}
+    .hero-chat{height:500px;}
+  }
   @media (max-width:460px){ .grid4{grid-template-columns:1fr;} }
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;} *{transition:none!important;}}
-  /* Hero: eingebettete Chat-Animation (iframe, kollisionsfrei) */
-  .hero-chat{width:100%;height:100%;min-height:470px;border:0;background:transparent;display:block;}
-  /* Runder Aufnahme-Knopf im Hero */
-  .rec-wrap{display:flex;justify-content:center;margin:10px 0 28px;}
-  .rec{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
-       width:158px;height:158px;border-radius:50%;background:var(--signal);color:var(--signal-ink);
-       text-decoration:none;font-weight:800;text-align:center;line-height:1.15;
-       box-shadow:0 10px 30px rgba(255,196,38,.28);animation:recpuls 2.4s ease-out infinite;}
-  .rec:hover{filter:brightness(1.05);} .rec:active{transform:translateY(1px);}
-  .rec .mic{font-size:38px;line-height:1;}
-  .rec .t{font-size:15px;}
-  @keyframes recpuls{0%{box-shadow:0 10px 30px rgba(255,196,38,.28),0 0 0 0 rgba(255,196,38,.45);}
-                     70%{box-shadow:0 10px 30px rgba(255,196,38,.28),0 0 0 24px rgba(255,196,38,0);}
-                     100%{box-shadow:0 10px 30px rgba(255,196,38,.28),0 0 0 0 rgba(255,196,38,0);}}
+  /* Hero: eingebettete Chat-Animation (iframe, kollisionsfrei, freifliegend) */
+  .hero-chat{width:100%;height:520px;border:0;background:transparent;display:block;}
   /* Belege / Studien (Warum-Sektion) */
   .belege{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:860px;margin:0 auto 34px;}
   .beleg{display:block;text-decoration:none;background:var(--bg2);border:1px solid var(--steel);border-radius:14px;padding:18px 20px;transition:border-color .15s,transform .15s;}
@@ -303,41 +293,35 @@
   </div>
 </header>
 
-<div class="wrap">
-  <!-- HERO -->
-  <section class="hero" id="testen">
-    <div class="hero-top">
-        <span class="eyebrow lbl">Für Handwerksbetriebe</span>
-        <h1>Du bist der Boss.<br><span class="u">Nicht der Papierkram.</span></h1>
-        <p class="lead"><b>Sprich dein Angebot per WhatsApp ein</b> oder schick deine <b>Notizen als Foto</b>. AuftragsBoss erstellt daraus ein professionelles Angebot, das du prüfen, bearbeiten und direkt als PDF oder Word versenden kannst.</p>
-        <div class="stat">Angebot in <b>2&nbsp;Minuten</b> statt in 30.</div>
+<!-- HERO -->
+<section class="hero" id="testen">
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <span class="eyebrow lbl">Für Handwerksbetriebe</span>
+      <h1>Du bist der Boss.<br><span class="u">Nicht der Papierkram.</span></h1>
+      <p class="lead"><b>Sprich dein Angebot per WhatsApp ein</b> oder schick deine <b>Notizen als Foto</b>. AuftragsBoss erstellt daraus ein professionelles Angebot, das du prüfen, bearbeiten und direkt als PDF oder Word versenden kannst.</p>
+      <div class="stat">Angebot in <b>2&nbsp;Minuten</b> statt in 30.</div>
+      <div class="hero-cta">
+        <a class="btn-primary" href="https://api.auftragsboss.de/testen" target="_blank" rel="noopener">Jetzt kostenlos testen</a>
+        <a class="btn-wa" href="https://wa.me/491749364823?text=Hallo%20AuftragsBoss%2C%20ich%20m%C3%B6chte%20kostenlos%20ein%20Angebot%20testen." target="_blank" rel="noopener">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#25D366" d="M16 0C7.2 0 0 7.2 0 16c0 2.8.7 5.5 2.1 7.9L0 32l8.3-2.2C10.6 31.2 13.2 32 16 32c8.8 0 16-7.2 16-16S24.8 0 16 0z"/><path fill="#fff" d="M23.5 19.3c-.4-.2-2.3-1.1-2.6-1.2-.3-.1-.6-.2-.9.2-.3.4-1 1.2-1.2 1.5-.2.2-.4.3-.8.1-2.3-1.1-3.8-2-5.3-4.6-.4-.7.4-.6 1.1-2 .1-.2 0-.4 0-.6-.1-.2-.9-2.1-1.2-2.9-.3-.8-.6-.7-.9-.7h-.7c-.2 0-.6.1-.9.5-.3.4-1.2 1.2-1.2 2.9s1.2 3.4 1.4 3.6c.2.2 2.4 3.7 5.9 5.2 3.5 1.5 3.5 1 4.1.9.6-.1 2-.8 2.3-1.6.3-.8.3-1.5.2-1.6-.1-.2-.3-.2-.7-.4z"/></svg>
+          Per WhatsApp testen
+        </a>
+      </div>
+      <div class="hero-trust">
+        <span><b>✓</b> 3 Angebote gratis</span>
+        <span><b>✓</b> Keine App</span>
+        <span><b>✓</b> Kein Login</span>
+        <span><b>✓</b> Keine Kreditkarte</span>
+      </div>
     </div>
 
-    <div class="hero-row">
-        <div class="testbox">
-          <p class="h">Jetzt kostenlos testen</p>
-          <p class="s">Sprich deinen Auftrag direkt hier im Browser ein, dein erstes Angebot kommt in Sekunden. Kein Login, kein Download.</p>
-          <div class="rec-wrap">
-            <a class="rec" href="https://api.auftragsboss.de/testen" target="_blank" rel="noopener">
-              <span class="mic" aria-hidden="true">🎙️</span><span class="t">Jetzt<br>testen</span>
-            </a>
-          </div>
-          <a class="wa-cta" href="https://wa.me/491749364823?text=Hallo%20AuftragsBoss%2C%20ich%20m%C3%B6chte%20kostenlos%20ein%20Angebot%20testen." target="_blank" rel="noopener" style="background:transparent;color:var(--signal);border:1px solid var(--signal);box-shadow:none;">
-            <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#25D366" d="M16 0C7.2 0 0 7.2 0 16c0 2.8.7 5.5 2.1 7.9L0 32l8.3-2.2C10.6 31.2 13.2 32 16 32c8.8 0 16-7.2 16-16S24.8 0 16 0z"/><path fill="#fff" d="M23.5 19.3c-.4-.2-2.3-1.1-2.6-1.2-.3-.1-.6-.2-.9.2-.3.4-1 1.2-1.2 1.5-.2.2-.4.3-.8.1-2.3-1.1-3.8-2-5.3-4.6-.4-.7.4-.6 1.1-2 .1-.2 0-.4 0-.6-.1-.2-.9-2.1-1.2-2.9-.3-.8-.6-.7-.9-.7h-.7c-.2 0-.6.1-.9.5-.3.4-1.2 1.2-1.2 2.9s1.2 3.4 1.4 3.6c.2.2 2.4 3.7 5.9 5.2 3.5 1.5 3.5 1 4.1.9.6-.1 2-.8 2.3-1.6.3-.8.3-1.5.2-1.6-.1-.2-.3-.2-.7-.4z"/></svg>
-            oder per WhatsApp testen
-          </a>
-          <div class="tmeta">
-            <div class="qr-wrap"><div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 27 27" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h27v27H0z"/><path stroke="#0b0f14" d="M1 1.5h7m3 0h2m1 0h2m3 0h7M1 2.5h1m5 0h1m2 0h5m2 0h1m1 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m1 0h4m2 0h1m3 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m1 0h2m2 0h3m1 0h1m1 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h2m3 0h1m1 0h1M1 9.5h1m1 0h5m4 0h2m1 0h3m1 0h5M2 10.5h1m1 0h1m7 0h3m5 0h1m3 0h1M1 11.5h3m1 0h1m1 0h3m2 0h1m2 0h2m2 0h4m1 0h2M3 12.5h4m1 0h2m3 0h2m1 0h1m1 0h3m4 0h1M2 13.5h1m1 0h4m3 0h1m1 0h1m1 0h3m1 0h3m1 0h3M1 14.5h1m1 0h1m1 0h2m1 0h1m1 0h1m3 0h3m3 0h1m1 0h1m1 0h1M1 15.5h1m5 0h2m1 0h1m1 0h2m1 0h4m1 0h3m1 0h2M1 16.5h1m1 0h1m1 0h2m1 0h1m1 0h3m4 0h1m2 0h2m3 0h1M1 17.5h1m4 0h5m1 0h1m4 0h5m1 0h1M9 18.5h3m1 0h2m1 0h2m3 0h2M1 19.5h7m2 0h2m2 0h2m1 0h1m1 0h1m1 0h1m1 0h3M1 20.5h1m5 0h1m1 0h1m1 0h1m1 0h2m1 0h2m3 0h2M1 21.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h7m1 0h2M1 22.5h1m1 0h3m1 0h1m1 0h2m7 0h2m1 0h3m1 0h1M1 23.5h1m1 0h3m1 0h1m1 0h1m2 0h2m8 0h2m1 0h1M1 24.5h1m5 0h1m4 0h1m2 0h4m1 0h3m2 0h1M1 25.5h7m1 0h2m1 0h1m5 0h8"/></svg></div><span>QR scannen</span></div>
-            <div class="nr"><small>oder Nachricht an</small>+49 174 9364823</div>
-          </div>
-          <p class="fineprint"><b>Erste 3 Angebote gratis</b> · keine Kreditkarte · keine Anmeldung</p>
-        </div>
-
-        <iframe class="hero-chat" src="chat-animation.html" title="AuftragsBoss: Sprache und Foto rein, Angebot zurück" loading="lazy" scrolling="no"></iframe>
+    <div class="hero-visual">
+      <iframe class="hero-chat" src="chat-animation.html" title="AuftragsBoss: Sprache und Foto rein, Angebot zurück" loading="lazy" scrolling="no"></iframe>
     </div>
-    <div class="haz"></div>
-  </section>
-</div>
+  </div>
+  <div class="haz"></div>
+</section>
 
 <div class="trust">
   <span><b>✓</b> Keine App</span><span><b>✓</b> Kein Login</span>

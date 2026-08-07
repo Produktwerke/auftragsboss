@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AuftragsBoss — animierter Chat (Vorschau)</title>
+<style>
+  :root{
+    --bg:#0E0F12; --bg3:#1B1E24; --steel:#2C313A; --ink:#ECEDEA; --muted:#969CA6;
+    --dim:#6B7079; --signal:#FFC426; --wa:#25D366; --mono:ui-monospace,"Cascadia Mono","Consolas",monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#12341f 0%,transparent 55%),var(--bg);
+       font-family:-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);
+       min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .chat{width:370px;max-width:100%;background:linear-gradient(180deg,#12151b,#0f1217);
+        border:1px solid var(--steel);border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,.5);overflow:hidden}
+  .head{display:flex;align-items:center;gap:11px;padding:14px 16px;background:#11151b;border-bottom:1px solid var(--steel)}
+  .av{width:40px;height:40px;border-radius:11px;overflow:hidden;background:#0E0F12;border:1px solid var(--steel);flex:0 0 auto}
+  .av img{width:100%;height:100%;object-fit:cover}
+  .who b{font-size:15px;display:block;line-height:1.2}
+  .who span{font-size:12px;color:var(--wa)}
+  .head .ico{margin-left:auto;color:var(--wa);font-size:18px}
+  .body{padding:16px 14px 20px;height:470px;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:10px;
+        background:radial-gradient(circle at 12% 8%,rgba(255,196,38,.04),transparent 40%),#0c0f14}
+  .body::-webkit-scrollbar{display:none}
+  /* schiebt die Nachrichten an den unteren Rand; beim Überlaufen wird normal gescrollt */
+  .body::before{content:"";margin-top:auto}
+  [data-s]{display:none}
+  .show{animation:pop .38s ease both}
+  @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .msg{max-width:84%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.45}
+  .in.show{display:block}
+  .done.show{display:block}
+  .in{align-self:flex-start;background:var(--bg3);border:1px solid var(--steel);border-bottom-left-radius:5px}
+  .out{align-self:flex-end;background:#14351f;border:1px solid #1f6b3d;border-bottom-right-radius:5px}
+  .sum ul{margin:7px 0 4px;padding-left:17px}
+  .sum li{margin:2px 0}
+  .sum .q{margin-top:6px;color:var(--muted)}
+  /* Sprachnachricht */
+  .voice.show{display:flex;align-items:center;gap:10px;min-width:200px}
+  .play{width:30px;height:30px;border-radius:50%;background:var(--wa);color:#04180c;border:0;flex:0 0 auto;
+        display:flex;align-items:center;justify-content:center;font-size:13px}
+  .wave{display:flex;align-items:center;gap:2.5px;height:26px;flex:1}
+  .wave i{width:3px;height:40%;background:#8fe6b3;border-radius:3px;transform-origin:center}
+  .voice.show .wave i{animation:pulse var(--d,1s) ease-in-out infinite;animation-delay:var(--dl,0s)}
+  @keyframes pulse{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1)}}
+  .time{font-family:var(--mono);font-size:12px;color:#bfeccf}
+  /* Foto der Notiz */
+  .photo.show{display:block;align-self:flex-end;padding:5px;background:#14351f;border:1px solid #1f6b3d;
+              border-radius:14px;border-bottom-right-radius:5px}
+  .photo img{display:block;width:180px;max-width:58vw;border-radius:10px}
+  .photo .cap{font-family:var(--mono);font-size:11px;color:#bfeccf;padding:5px 4px 2px}
+  /* Tipp-Punkte */
+  .typing.show{display:flex;gap:5px;align-items:center;padding:13px 15px}
+  .typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 1.2s infinite}
+  .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+  /* Fertig */
+  .done{border-color:#4a3d12;background:linear-gradient(180deg,#1c1a10,#141118)}
+  .done .ok{color:var(--signal);font-weight:700}
+  .done .pdf{display:inline-flex;align-items:center;gap:7px;margin-top:9px;background:var(--signal);color:#1A1400;
+             font-weight:700;font-size:12.5px;padding:7px 12px;border-radius:8px}
+  .caption{margin-top:14px;text-align:center;color:var(--dim);font-family:var(--mono);font-size:12px;letter-spacing:.04em}
+</style></head>
+<body>
+  <div>
+    <div class="chat">
+      <div class="head">
+        <div class="av"><img src="auftragsboss-logo.png" alt="AuftragsBoss"></div>
+        <div class="who"><b>AuftragsBoss</b><span>online</span></div>
+        <div class="ico">📞</div>
+      </div>
+      <div class="body" id="body">
+        <div class="msg in" data-s>Schick mir einfach alles zum Auftrag: Sprachnachricht, Foto oder Notiz.</div>
+
+        <div class="voice out" data-s>
+          <button class="play">▶</button><div class="wave"></div><span class="time">0:24</span>
+        </div>
+
+        <div class="photo out" data-s>
+          <img src="Zettel.jpg" alt="Handschriftliche Notiz">
+          <div class="cap">📷 Foto · gerade eben</div>
+        </div>
+
+        <div class="msg in" data-s>Ich habe deine Sprachnachricht und die Notiz zusammengeführt.</div>
+
+        <div class="msg in sum" data-s>
+          Ich habe Folgendes verstanden:
+          <ul>
+            <li>Kunde: Herr Schmidt</li>
+            <li>Wohnzimmer und Flur streichen</li>
+            <li>ca. 85 m² Wandfläche</li>
+            <li>Decken ebenfalls streichen</li>
+            <li>alte Tapete im Wohnzimmer entfernen</li>
+            <li>kleinere Risse ausbessern</li>
+            <li>Möbel und Boden abdecken</li>
+            <li>4 Türzargen zusätzlich lackieren</li>
+          </ul>
+          <div class="q">Stimmt das so?</div>
+        </div>
+
+        <div class="voice out" data-s>
+          <button class="play">▶</button><div class="wave"></div><span class="time">0:05</span>
+        </div>
+
+        <div class="msg in" data-s>Alles klar. Die Sockelleisten nehme ich noch dazu. Ich erstelle jetzt dein Angebot.</div>
+
+        <div class="msg in typing" data-s><i></i><i></i><i></i></div>
+
+        <div class="msg in done" data-s>
+          <span class="ok">✅ Dein Angebotsentwurf ist fertig.</span>
+          <div><span class="pdf">📄 Angebot öffnen →</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Sprache + Foto rein — fertiges Angebot zurück.</div>
+  </div>
+<script>
+  // Wellenform-Balken mit unterschiedlichen Höhen (wie eine echte Sprachaufnahme)
+  document.querySelectorAll('.wave').forEach(w=>{
+    for(let i=0;i<26;i++){
+      const b=document.createElement('i');
+      const h=22 + Math.round(Math.abs(Math.sin(i*0.7))*55 + Math.random()*22);
+      b.style.height=Math.min(h,96)+'%';
+      b.style.setProperty('--d',(0.7+Math.random()*0.7).toFixed(2)+'s');
+      b.style.setProperty('--dl',(Math.random()*0.6).toFixed(2)+'s');
+      w.appendChild(b);
+    }
+  });
+  const body=document.getElementById('body');
+  const steps=[...document.querySelectorAll('[data-s]')];
+  const show=el=>{ el.classList.add('show'); body.scrollTo({top:body.scrollHeight,behavior:'smooth'}); };
+  const hide=el=>el.classList.remove('show');
+
+  // Reveal-Zeitpunkte (ms) je Schritt
+  const takt=[500, 2800, 5200, 6600, 7900, 10800, 12000, 13300, 14800];
+  // Schritte: 0 in, 1 voice0:24, 2 foto, 3 merged, 4 summary, 5 voice0:05, 6 sockelleisten, 7 typing, 8 done
+
+  function lauf(){
+    steps.forEach(hide);
+    body.scrollTop=0;
+    takt.forEach((t,i)=>{
+      if(i===8){ // vor "fertig" die Tipp-Punkte wieder ausblenden
+        setTimeout(()=>{ hide(steps[7]); show(steps[8]); }, t);
+      } else {
+        setTimeout(()=>show(steps[i]), t);
+      }
+    });
+    setTimeout(lauf, 18000);
+  }
+  lauf();
+</script>
+</body></html>

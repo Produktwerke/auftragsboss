@@ -41,6 +41,8 @@
   .wave{display:flex;align-items:center;gap:2.5px;height:26px;flex:1}
   .wave i{width:3px;height:40%;background:#8fe6b3;border-radius:3px;transform-origin:center}
   .voice.show .wave i{animation:pulse var(--d,1s) ease-in-out infinite;animation-delay:var(--dl,0s)}
+  /* eingefroren, sobald die nächste Nachricht kommt (wie eine fertig abgespielte Sprachnachricht) */
+  .voice.stop .wave i{animation:none}
   @keyframes pulse{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1)}}
   .time{font-family:var(--mono);font-size:12px;color:#bfeccf}
   /* Foto der Notiz */
@@ -127,8 +129,13 @@
   });
   const body=document.getElementById('body');
   const steps=[...document.querySelectorAll('[data-s]')];
-  const show=el=>{ el.classList.add('show'); body.scrollTo({top:body.scrollHeight,behavior:'smooth'}); };
-  const hide=el=>el.classList.remove('show');
+  const show=el=>{
+    // Sobald eine neue Nachricht kommt, laufende Sprachnachrichten einfrieren
+    document.querySelectorAll('.voice.show').forEach(v=>{ if(v!==el) v.classList.add('stop'); });
+    el.classList.add('show');
+    body.scrollTo({top:body.scrollHeight,behavior:'smooth'});
+  };
+  const hide=el=>{ el.classList.remove('show'); el.classList.remove('stop'); };
 
   // Reveal-Zeitpunkte (ms) je Schritt
   const takt=[500, 2800, 5200, 6600, 7900, 10800, 12000, 13300, 14800];

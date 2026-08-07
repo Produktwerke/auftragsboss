@@ -38,6 +38,9 @@
   header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0;
     border-bottom:1px solid var(--hair);position:sticky;top:0;background:rgba(14,15,18,.82);
     backdrop-filter:blur(10px);z-index:50;}
+  /* Header-Inhalt auf Hero-Breite ausrichten -> Logo bündig mit der Headline */
+  .head-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;max-width:1500px;margin:0 auto;padding:0 32px;}
+  @media (max-width:780px){ .head-inner{padding:0 20px;} }
   .brand{display:flex;align-items:center;gap:11px;font-weight:800;font-size:19px;letter-spacing:.01em;}
   .brand .mark{width:32px;height:32px;border-radius:7px;object-fit:cover;display:block;
     box-shadow:0 0 0 1px rgba(0,0,0,.4),0 4px 14px rgba(255,196,38,.25);}
@@ -293,7 +296,7 @@
 <body>
 
 <header>
-  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding:0 22px;width:100%;max-width:1120px;">
+  <div class="head-inner">
     <div class="brand"><img class="mark" src="auftragsboss-logo.png" alt="AuftragsBoss Logo" width="32" height="32"><span>AUFTRAGS<b>BOSS</b></span></div>
     <nav class="nav">
       <a href="#warum">Warum</a><a href="#so">So geht's</a><a href="#preise">Preise</a>

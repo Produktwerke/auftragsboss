@@ -39,7 +39,7 @@
     border-bottom:1px solid var(--hair);position:sticky;top:0;background:rgba(14,15,18,.82);
     backdrop-filter:blur(10px);z-index:50;}
   /* Header-Inhalt auf Hero-Breite ausrichten -> Logo bündig mit der Headline */
-  .head-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;max-width:1500px;margin:0 auto;padding:0 32px;}
+  .head-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;max-width:1400px;margin:0 auto;padding:0 40px;}
   @media (max-width:780px){ .head-inner{padding:0 20px;} }
   .brand{display:flex;align-items:center;gap:11px;font-weight:800;font-size:19px;letter-spacing:.01em;}
   .brand .mark{width:32px;height:32px;border-radius:7px;object-fit:cover;display:block;
@@ -55,56 +55,68 @@
     .nav{display:none;}
   }
 
-  /* Hero */
-  .hero{position:relative;padding:52px 0 0;}
-  .hero::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.62;
+  /* ---------- HERO ---------- */
+  .hero{position:relative;padding:44px 0 0;}
+  /* sehr zurückhaltendes Grid + dezenter warmer Glow oben rechts */
+  .hero::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.4;
     background:
-      radial-gradient(1000px 460px at 78% -8%,rgba(255,196,38,.14),transparent 62%),
+      radial-gradient(1100px 500px at 82% -6%,rgba(255,190,60,.10),transparent 60%),
       linear-gradient(transparent 0,transparent 39px,var(--hair) 39px,transparent 40px),
       linear-gradient(90deg,transparent 0,transparent 39px,var(--hair) 39px,transparent 40px);
-    background-size:auto,40px 40px,40px 40px;mask:linear-gradient(#000,transparent 92%);}
-  .hero-inner{max-width:1500px;margin:0 auto;padding:0 32px;
-    display:grid;grid-template-columns:minmax(0,740px) minmax(0,1fr);gap:44px;align-items:start;}
-  .hero-copy{max-width:740px;}
-  .eyebrow{display:inline-flex;align-items:center;gap:9px;margin-bottom:20px;}
+    background-size:auto,40px 40px,40px 40px;mask:linear-gradient(#000,transparent 86%);}
+  .hero-inner{max-width:1400px;margin:0 auto;padding:0 40px;
+    display:grid;grid-template-columns:1.1fr 0.9fr;gap:36px;align-items:start;}
+  .hero-copy{max-width:700px;}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;margin-bottom:18px;}
   .eyebrow::before,.eyebrow::after{content:"";width:26px;height:2px;background:var(--signal);flex:0 0 auto;}
-  h1{font-size:clamp(34px,4vw,56px);line-height:1.03;letter-spacing:-.02em;font-weight:900;margin:0 0 18px;
+  h1{font-size:clamp(34px,3.7vw,54px);line-height:1.03;letter-spacing:-.02em;font-weight:900;margin:0 0 16px;
     text-transform:uppercase;text-wrap:balance;}
   h1 .u{color:var(--signal);}
-  .lead{font-size:clamp(16px,1.5vw,19px);color:var(--muted);margin:0 0 22px;max-width:720px;}
-  /* dezenter Zeit-Hinweis (früher große Badge-Box) */
-  .stat{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-weight:600;font-size:12.5px;
-    letter-spacing:.03em;color:var(--muted);margin:0 0 26px;}
-  .stat::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--signal);flex:0 0 auto;
-    box-shadow:0 0 0 4px rgba(255,196,38,.14);}
-  .stat b{color:var(--ink);font-weight:700;}
+  .lead{font-size:clamp(16px,1.35vw,18px);color:var(--muted);margin:0 0 22px;max-width:560px;}
 
-  /* Hero-CTAs */
-  .hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 20px;}
-  .btn-primary,.btn-wa{display:inline-flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;
-    font-weight:800;font-size:15.5px;padding:15px 24px;border-radius:var(--r);text-transform:uppercase;letter-spacing:.02em;
-    transition:filter .15s,transform .06s,background .15s,border-color .15s;}
-  .btn-primary{background:var(--signal);color:var(--signal-ink);box-shadow:0 10px 26px rgba(255,196,38,.26);}
-  .btn-primary:hover{filter:brightness(1.06);} .btn-primary:active{transform:translateY(1px);}
-  .btn-wa{background:var(--bg3);color:var(--ink);border:1px solid var(--steel2);}
+  /* Zeit-Hinweis: dezent, aber gut lesbar (kein Mikrotext) */
+  .stat{display:inline-flex;align-items:center;gap:10px;font-weight:600;font-size:14.5px;color:var(--ink);
+    background:var(--bg3);border:1px solid var(--steel);border-radius:999px;padding:8px 16px 8px 13px;margin:0 0 24px;}
+  .stat::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--signal);flex:0 0 auto;
+    box-shadow:0 0 0 4px rgba(255,196,38,.16);}
+  .stat b{color:var(--signal);font-weight:800;}
+
+  /* CTA: runder Mikro-Hauptbutton (Browser-Test) + WhatsApp als zweiter Weg */
+  .hero-cta{display:flex;align-items:center;gap:24px;margin:0 0 20px;}
+  .rec{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;flex:0 0 auto;
+    width:152px;height:152px;border-radius:50%;background:radial-gradient(circle at 50% 32%,#FFD657,var(--signal) 60%);
+    color:var(--signal-ink);text-decoration:none;font-weight:900;text-align:center;line-height:1.1;
+    box-shadow:0 16px 36px rgba(255,196,38,.34);animation:recpuls 2.6s ease-out infinite;}
+  .rec:hover{filter:brightness(1.05);} .rec:active{transform:translateY(1px);}
+  .rec .mic{font-size:36px;line-height:1;}
+  .rec .t{font-size:14px;text-transform:uppercase;letter-spacing:.02em;}
+  @keyframes recpuls{0%{box-shadow:0 16px 36px rgba(255,196,38,.34),0 0 0 0 rgba(255,196,38,.4);}
+                     70%{box-shadow:0 16px 36px rgba(255,196,38,.34),0 0 0 20px rgba(255,196,38,0);}
+                     100%{box-shadow:0 16px 36px rgba(255,196,38,.34),0 0 0 0 rgba(255,196,38,0);}}
+  .cta-alt{display:flex;flex-direction:column;align-items:flex-start;gap:9px;}
+  .cta-or{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);}
+  .cta-nr{font-family:var(--mono);font-size:12.5px;color:var(--muted);letter-spacing:.01em;}
+  .cta-nr b{color:var(--ink);font-weight:700;}
+  .btn-wa{display:inline-flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;
+    font-weight:800;font-size:14.5px;padding:13px 20px;border-radius:var(--r);text-transform:uppercase;letter-spacing:.02em;
+    background:var(--bg3);color:var(--ink);border:1px solid var(--steel2);
+    transition:background .15s,border-color .15s,transform .06s;}
   .btn-wa:hover{background:var(--bg4);border-color:var(--wa);} .btn-wa:active{transform:translateY(1px);}
-  .btn-wa svg{width:20px;height:20px;flex:0 0 auto;}
-  .btn-primary .mic-ic{font-size:18px;line-height:1;}
+  .btn-wa svg{width:19px;height:19px;flex:0 0 auto;}
 
-  /* Kompakte Trust-Zeile direkt unter den Buttons (nur 3 knackige Punkte) */
-  .hero-trust{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:16px;font-family:var(--mono);font-size:12px;letter-spacing:.03em;color:var(--muted);}
+  /* Trust-Zeile: ruhig, kleiner als CTA */
+  .hero-trust{display:flex;flex-wrap:wrap;gap:6px 20px;margin-top:2px;font-family:var(--mono);font-size:11.5px;letter-spacing:.03em;color:var(--muted);}
   .hero-trust span{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
   .hero-trust b{color:var(--signal);font-weight:700;}
 
-  /* Hero-Visual (Chat-Animation, freifliegend, ohne Rahmen) */
-  /* margin-top schiebt die Animation-Oberkante auf Höhe der Headline (unter das Eyebrow) */
-  .hero-visual{position:relative;justify-self:start;width:100%;margin-top:44px;}
-  /* Gelber Glow hinter dem Chat-Mockup (Struktur/Tiefe, wie ein Produkt-Window) */
-  .hero-visual::before{content:"";position:absolute;z-index:-1;left:-10%;right:-6%;top:-9%;bottom:-2%;
+  /* Hero-Visual (Chat als Produkt-Window, freifliegend, rechtsbündig zur Nav) */
+  .hero-visual{position:relative;justify-self:stretch;width:100%;margin-top:40px;}
+  /* sehr dezenter, warmer gelb/oranger Glow hinter dem Chat */
+  .hero-visual::before{content:"";position:absolute;z-index:-1;left:0;right:0;top:-3%;bottom:-3%;
     background:
-      radial-gradient(52% 40% at 45% 38%,rgba(255,196,38,.42),rgba(255,196,38,.12) 52%,transparent 70%),
-      radial-gradient(85% 62% at 50% 46%,rgba(255,196,38,.16),transparent 74%);
-    filter:blur(10px);pointer-events:none;}
+      radial-gradient(48% 42% at 52% 44%,rgba(255,182,52,.20),rgba(255,196,38,.06) 56%,transparent 72%),
+      radial-gradient(76% 58% at 54% 52%,rgba(228,166,0,.10),transparent 76%);
+    filter:blur(18px);pointer-events:none;}
 
   /* WhatsApp-CTA (noch im Schlussband verwendet) */
   .wa-cta{display:flex;align-items:center;justify-content:center;gap:11px;background:var(--signal);color:var(--signal-ink);
@@ -263,7 +275,7 @@
   footer b{color:var(--muted);}
 
   @media (max-width:780px){
-    .hero-inner{grid-template-columns:1fr;gap:36px;padding:0 20px;} .hero-chat{height:510px;} .hero-visual{margin-top:0;}
+    .hero-inner{grid-template-columns:1fr;gap:30px;padding:0 20px;} .hero-chat{height:540px;margin:0 auto;} .hero-visual{margin-top:0;margin-left:0;}
     .grid4{grid-template-columns:1fr 1fr;}
     .steps,.karten,.vgrid{grid-template-columns:1fr;}
     .shots{grid-template-columns:1fr;max-width:300px;margin:0 auto;}
@@ -272,16 +284,16 @@
     .vlist{grid-template-columns:1fr;}
   }
   @media (max-width:560px){
-    .hero-cta{flex-direction:column;align-items:stretch;}
-    .btn-primary,.btn-wa{width:100%;}
-    .hero-chat{height:500px;}
+    .hero-cta{flex-direction:column;align-items:stretch;gap:16px;}
+    .btn-wa{width:100%;}
+    .hero-chat{height:540px;}
   }
   @media (max-width:460px){ .grid4{grid-template-columns:1fr;} }
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;} *{transition:none!important;}}
   /* Hero: eingebettete Chat-Animation (iframe, kollisionsfrei, freifliegend) */
-  .hero-chat{width:100%;max-width:580px;height:560px;border:0;background:transparent;display:block;}
+  .hero-chat{width:100%;max-width:620px;height:530px;margin-left:auto;border:0;background:transparent;display:block;}
   /* Trennlinie zwischen Hero und erstem Abschnitt */
-  .hero-sep-wrap{max-width:1436px;margin:0 auto;padding:40px 32px 0;}
+  .hero-sep-wrap{max-width:1400px;margin:0 auto;padding:26px 40px 0;}
   .hero-sep{height:1px;background:linear-gradient(90deg,transparent,var(--steel2) 12%,var(--steel2) 88%,transparent);}
   /* Belege / Studien (Warum-Sektion) */
   .belege{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:860px;margin:0 auto 34px;}
@@ -310,14 +322,20 @@
     <div class="hero-copy">
       <span class="eyebrow lbl">Speziell für Malerbetriebe</span>
       <h1>Du bist der Boss.<br><span class="u">Nicht der Papierkram.</span></h1>
-      <p class="lead">AuftragsBoss ist speziell auf Malerbetriebe zugeschnitten. Sprich einfach ein, was beim Kunden anfällt, oder schick ein Foto deiner Notiz — daraus wird ein fertiges Angebot als PDF oder Word, mit den passenden Positionen für dein Gewerk.</p>
+      <p class="lead">AuftragsBoss ist speziell auf Malerbetriebe zugeschnitten. Sprich einfach ein, was beim Kunden anfällt, oder schick ein Foto deiner Notiz. Daraus wird ein fertiges Angebot als PDF oder Word, mit den passenden Positionen für dein Gewerk.</p>
       <div class="stat">Angebot in <b>2&nbsp;Minuten</b> statt in 30.</div>
       <div class="hero-cta">
-        <a class="btn-primary" href="https://api.auftragsboss.de/testen" target="_blank" rel="noopener"><span class="mic-ic" aria-hidden="true">🎙️</span>Jetzt live testen</a>
-        <a class="btn-wa" href="https://wa.me/491749364823?text=Hallo%20AuftragsBoss%2C%20ich%20m%C3%B6chte%20kostenlos%20ein%20Angebot%20testen." target="_blank" rel="noopener">
-          <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#25D366" d="M16 0C7.2 0 0 7.2 0 16c0 2.8.7 5.5 2.1 7.9L0 32l8.3-2.2C10.6 31.2 13.2 32 16 32c8.8 0 16-7.2 16-16S24.8 0 16 0z"/><path fill="#fff" d="M23.5 19.3c-.4-.2-2.3-1.1-2.6-1.2-.3-.1-.6-.2-.9.2-.3.4-1 1.2-1.2 1.5-.2.2-.4.3-.8.1-2.3-1.1-3.8-2-5.3-4.6-.4-.7.4-.6 1.1-2 .1-.2 0-.4 0-.6-.1-.2-.9-2.1-1.2-2.9-.3-.8-.6-.7-.9-.7h-.7c-.2 0-.6.1-.9.5-.3.4-1.2 1.2-1.2 2.9s1.2 3.4 1.4 3.6c.2.2 2.4 3.7 5.9 5.2 3.5 1.5 3.5 1 4.1.9.6-.1 2-.8 2.3-1.6.3-.8.3-1.5.2-1.6-.1-.2-.3-.2-.7-.4z"/></svg>
-          Per WhatsApp testen
+        <a class="rec" href="https://api.auftragsboss.de/testen" target="_blank" rel="noopener">
+          <span class="mic" aria-hidden="true">🎙️</span><span class="t">Jetzt live<br>testen</span>
         </a>
+        <div class="cta-alt">
+          <span class="cta-or">oder</span>
+          <a class="btn-wa" href="https://wa.me/491749364823?text=Hallo%20AuftragsBoss%2C%20ich%20m%C3%B6chte%20kostenlos%20ein%20Angebot%20testen." target="_blank" rel="noopener">
+            <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#25D366" d="M16 0C7.2 0 0 7.2 0 16c0 2.8.7 5.5 2.1 7.9L0 32l8.3-2.2C10.6 31.2 13.2 32 16 32c8.8 0 16-7.2 16-16S24.8 0 16 0z"/><path fill="#fff" d="M23.5 19.3c-.4-.2-2.3-1.1-2.6-1.2-.3-.1-.6-.2-.9.2-.3.4-1 1.2-1.2 1.5-.2.2-.4.3-.8.1-2.3-1.1-3.8-2-5.3-4.6-.4-.7.4-.6 1.1-2 .1-.2 0-.4 0-.6-.1-.2-.9-2.1-1.2-2.9-.3-.8-.6-.7-.9-.7h-.7c-.2 0-.6.1-.9.5-.3.4-1.2 1.2-1.2 2.9s1.2 3.4 1.4 3.6c.2.2 2.4 3.7 5.9 5.2 3.5 1.5 3.5 1 4.1.9.6-.1 2-.8 2.3-1.6.3-.8.3-1.5.2-1.6-.1-.2-.3-.2-.7-.4z"/></svg>
+            Per WhatsApp testen
+          </a>
+          <span class="cta-nr">Nachricht an <b>+49&nbsp;174&nbsp;9364823</b></span>
+        </div>
       </div>
       <div class="hero-trust">
         <span><b>✓</b> 3 Angebote gratis</span>

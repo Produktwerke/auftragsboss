@@ -277,6 +277,9 @@
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;} *{transition:none!important;}}
   /* Hero: eingebettete Chat-Animation (iframe, kollisionsfrei, freifliegend) */
   .hero-chat{width:100%;max-width:580px;height:560px;border:0;background:transparent;display:block;}
+  /* Trennlinie zwischen Hero und erstem Abschnitt */
+  .hero-sep-wrap{max-width:1436px;margin:0 auto;padding:40px 32px 0;}
+  .hero-sep{height:1px;background:linear-gradient(90deg,transparent,var(--steel2) 12%,var(--steel2) 88%,transparent);}
   /* Belege / Studien (Warum-Sektion) */
   .belege{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:860px;margin:0 auto 34px;}
   .beleg{display:block;text-decoration:none;background:var(--bg2);border:1px solid var(--steel);border-radius:14px;padding:18px 20px;transition:border-color .15s,transform .15s;}
@@ -325,6 +328,8 @@
     </div>
   </div>
 </section>
+
+<div class="hero-sep-wrap"><div class="hero-sep"></div></div>
 
 <div class="wrap">
   <!-- WARUM -->

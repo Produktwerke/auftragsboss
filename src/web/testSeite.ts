@@ -105,27 +105,45 @@ export function testSeite(): string {
     });
   }
 
+  // Wechselnde Warte-Meldungen, damit man beim Verarbeiten nicht auf eine
+  // starre Zeile schaut — vermittelt, was AuftragsBoss gerade tut.
+  var warteTimer = null;
+  var warteTexte = [
+    'Ich höre mir deine Nachricht an …',
+    'Ich lese heraus, was gemacht werden soll …',
+    'Ich sortiere die Leistungen …',
+    'Ich schlage passendes Material vor …',
+    'Ich bringe dein Angebot in Form …',
+    'Fast fertig …'
+  ];
+  function warteStart(){
+    var i = 0; setStatus(warteTexte[0], true);
+    warteTimer = setInterval(function(){ i = (i + 1) % warteTexte.length; setStatus(warteTexte[i], true); }, 2200);
+  }
+  function warteStop(){ if(warteTimer){ clearInterval(warteTimer); warteTimer = null; } }
+
   async function sendeAudio(blob, typ){
-    busy = true; setStatus('Ich erstelle dein Angebot, einen kurzen Moment', true);
+    busy = true; warteStart();
     try{
       var b64 = await blobZuBase64(blob);
       var r = await fetch('/api/testen/audio', { method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ audio:b64, mime:typ }) });
       await weiter(r);
-    }catch(e){ setStatus('Das hat leider nicht geklappt. Versuch es noch einmal.'); busy=false; }
+    }catch(e){ warteStop(); setStatus('Das hat leider nicht geklappt. Versuch es noch einmal.'); busy=false; }
   }
 
   beispielBtn.addEventListener('click', async function(){
-    if(busy) return; busy = true; setStatus('Ich erstelle ein Beispiel-Angebot, einen kurzen Moment', true);
+    if(busy) return; busy = true; warteStart();
     try{
       var r = await fetch('/api/testen/beispiel', { method:'POST' });
       await weiter(r);
-    }catch(e){ setStatus('Das hat leider nicht geklappt. Versuch es noch einmal.'); busy=false; }
+    }catch(e){ warteStop(); setStatus('Das hat leider nicht geklappt. Versuch es noch einmal.'); busy=false; }
   });
 
   async function weiter(r){
     var j = {};
     try{ j = await r.json(); }catch(e){}
+    warteStop();
     if(r.ok && j.editorUrl){ setStatus('Fertig! Ich öffne dein Angebot', true); location.href = j.editorUrl; }
     else { setStatus(j.fehler || 'Das hat leider nicht geklappt. Versuch es noch einmal.'); busy = false; }
   }

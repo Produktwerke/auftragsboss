@@ -268,6 +268,20 @@
   }
   @media (max-width:460px){ .grid4{grid-template-columns:1fr;} }
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;} *{transition:none!important;}}
+  /* Hero: eingebettete Chat-Animation (iframe, kollisionsfrei) */
+  .hero-chat{width:100%;height:100%;min-height:470px;border:1px solid var(--steel);border-radius:var(--r-lg);background:#0c0f14;display:block;}
+  /* Runder Aufnahme-Knopf im Hero */
+  .rec-wrap{display:flex;justify-content:center;margin:4px 0 14px;}
+  .rec{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+       width:158px;height:158px;border-radius:50%;background:var(--signal);color:var(--signal-ink);
+       text-decoration:none;font-weight:800;text-align:center;line-height:1.15;
+       box-shadow:0 10px 30px rgba(255,196,38,.28);animation:recpuls 2.4s ease-out infinite;}
+  .rec:hover{filter:brightness(1.05);} .rec:active{transform:translateY(1px);}
+  .rec .mic{font-size:38px;line-height:1;}
+  .rec .t{font-size:15px;}
+  @keyframes recpuls{0%{box-shadow:0 10px 30px rgba(255,196,38,.28),0 0 0 0 rgba(255,196,38,.45);}
+                     70%{box-shadow:0 10px 30px rgba(255,196,38,.28),0 0 0 24px rgba(255,196,38,0);}
+                     100%{box-shadow:0 10px 30px rgba(255,196,38,.28),0 0 0 0 rgba(255,196,38,0);}}
 </style>
 </head>
 <body>
@@ -287,7 +301,7 @@
     <div class="hero-top">
         <span class="eyebrow lbl">Für Handwerksbetriebe</span>
         <h1>Du bist der Boss.<br><span class="u">Nicht der Papierkram.</span></h1>
-        <p class="lead">Sprich dein Angebot einfach per WhatsApp ein. AuftragsBoss erstellt daraus ein professionelles Angebot, das du prüfen, bearbeiten und direkt als PDF oder Word versenden kannst.</p>
+        <p class="lead">Sprich dein Angebot per WhatsApp ein oder schick deine Notizen als Foto. AuftragsBoss erstellt daraus ein professionelles Angebot, das du prüfen, bearbeiten und direkt als PDF oder Word versenden kannst.</p>
         <div class="stat">⚡ Angebot in <b>2&nbsp;Minuten</b>&nbsp;statt in 30.</div>
     </div>
 
@@ -295,26 +309,23 @@
         <div class="testbox">
           <p class="h">Jetzt kostenlos testen</p>
           <p class="s">Sprich deinen Auftrag direkt hier im Browser ein, dein erstes Angebot kommt in Sekunden. Kein Login, kein Download.</p>
-          <a class="wa-cta" href="https://api.auftragsboss.de/testen" target="_blank" rel="noopener" style="margin-bottom:10px;">
-            <span style="font-size:22px;line-height:1;" aria-hidden="true">🎙️</span>
-            Jetzt im Browser testen
-          </a>
+          <div class="rec-wrap">
+            <a class="rec" href="https://api.auftragsboss.de/testen" target="_blank" rel="noopener">
+              <span class="mic" aria-hidden="true">🎙️</span><span class="t">Jetzt<br>testen</span>
+            </a>
+          </div>
           <a class="wa-cta" href="https://wa.me/491749364823?text=Hallo%20AuftragsBoss%2C%20ich%20m%C3%B6chte%20kostenlos%20ein%20Angebot%20testen." target="_blank" rel="noopener" style="background:transparent;color:var(--signal);border:1px solid var(--signal);box-shadow:none;">
             <svg viewBox="0 0 24 24" aria-hidden="true" style="fill:var(--signal);"><path d="M17.5 14.4c-.3-.2-1.7-.9-2-1-.3-.1-.5-.2-.7.1-.2.3-.7 1-.9 1.2-.2.2-.3.2-.6.1-1.7-.9-2.9-1.6-4-3.6-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5 0-.2-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.3 5.2 4.6 2 .8 2.7.9 3.7.8.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.4 1.3 4.9L2 22l5.3-1.3c1.4.8 3 1.2 4.7 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2z"/></svg>
             oder per WhatsApp testen
           </a>
           <div class="tmeta">
-            <div class="nr"><small>oder Nachricht an</small>+49 1512 3456789</div>
+            <div class="nr"><small>oder Nachricht an</small>+49 174 9364823</div>
             <div class="qr-wrap"><div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 27 27" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h27v27H0z"/><path stroke="#0b0f14" d="M1 1.5h7m3 0h2m1 0h2m3 0h7M1 2.5h1m5 0h1m2 0h5m2 0h1m1 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m1 0h4m2 0h1m3 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m1 0h2m2 0h3m1 0h1m1 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h2m3 0h1m1 0h1M1 9.5h1m1 0h5m4 0h2m1 0h3m1 0h5M2 10.5h1m1 0h1m7 0h3m5 0h1m3 0h1M1 11.5h3m1 0h1m1 0h3m2 0h1m2 0h2m2 0h4m1 0h2M3 12.5h4m1 0h2m3 0h2m1 0h1m1 0h3m4 0h1M2 13.5h1m1 0h4m3 0h1m1 0h1m1 0h3m1 0h3m1 0h3M1 14.5h1m1 0h1m1 0h2m1 0h1m1 0h1m3 0h3m3 0h1m1 0h1m1 0h1M1 15.5h1m5 0h2m1 0h1m1 0h2m1 0h4m1 0h3m1 0h2M1 16.5h1m1 0h1m1 0h2m1 0h1m1 0h3m4 0h1m2 0h2m3 0h1M1 17.5h1m4 0h5m1 0h1m4 0h5m1 0h1M9 18.5h3m1 0h2m1 0h2m3 0h2M1 19.5h7m2 0h2m2 0h2m1 0h1m1 0h1m1 0h1m1 0h3M1 20.5h1m5 0h1m1 0h1m1 0h1m1 0h2m1 0h2m3 0h2M1 21.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h7m1 0h2M1 22.5h1m1 0h3m1 0h1m1 0h2m7 0h2m1 0h3m1 0h1M1 23.5h1m1 0h3m1 0h1m1 0h1m2 0h2m8 0h2m1 0h1M1 24.5h1m5 0h1m4 0h1m2 0h4m1 0h3m2 0h1M1 25.5h7m1 0h2m1 0h1m5 0h8"/></svg></div>Am Rechner?<br>QR scannen</div>
           </div>
           <p class="fineprint"><b>Erste 3 Angebote gratis</b> · keine Kreditkarte · keine Anmeldung</p>
         </div>
 
-        <div class="video">
-          <span class="tag">▶ VIDEO · 0:60</span>
-          <div class="play"></div>
-          <div class="cap">In 60 Sekunden: vom Diktat zum fertigen Angebot</div>
-        </div>
+        <iframe class="hero-chat" src="chat-animation.html" title="AuftragsBoss: Sprache und Foto rein, Angebot zurück" loading="lazy" scrolling="no"></iframe>
     </div>
     <div class="haz"></div>
   </section>

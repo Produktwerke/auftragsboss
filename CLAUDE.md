@@ -120,6 +120,14 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 07.08.2026 (Feierabend) — Landingpage-Hero komplett neu aufgebaut (Maler-Fokus, SaaS-Niveau):**
+> - **Hero von `marketing/index.html` neu** (viele Iterationen mit Dirk): **2-Spalten** (~1400px, 1.1/0.9). Headline „Du bist der Boss. Nicht der Papierkram." **bewusst behalten** (emotionaler Haken); Maler-Positionierung in **Eyebrow „Speziell für Malerbetriebe"** + längerem Lead (statt Headline zu tauschen).
+> - **CTA-Bereich neu:** runder gelber **Mikro-Hauptbutton „Jetzt live testen"** (→ https://api.auftragsboss.de/testen, Puls-Animation) als Hauptelement, daneben „oder" + **WhatsApp-Sekundärbutton** + **Telefonnummer** darunter. Kein zweiter rechteckiger Primary. Trust-Zeile darunter (3 Angebote gratis / Keine Anmeldung / Keine Kreditkarte). Zeit-Badge als lesbare Pill.
+> - **Chat-Demo** (`chat-animation.html`) als großes **rechtsbündiges Produkt-Window** (~35 % größer), **warmer dezenter gelb/oranger Glow** dahinter, Grid zurückhaltend. Pixel-genau ausgerichtet: **Chat-Oberkante = Headline**, **Unterkante/Caption = Trust-Zeile**, **Nav rechtsbündig zur Animation**, **Logo linksbündig zur Copy** (Header/Trennlinie auf Hero-Breite 1400).
+> - **Trust-Strip** (Keine App/Login/EU/DSGVO/kündbar) aus dem Hero **nach unten vor den Schluss-CTA** verschoben; dezente Trennlinie Hero↔erster Abschnitt; toter Schwarzraum unter dem Hero entfernt.
+> - Animation im iframe **oben+rechts** ausgerichtet (`align-items:flex-start;justify-content:flex-end`), Body-Höhe steuert das Alignment. In der **statischen Vorschau teils leer** — läuft nur im echten Browser (JS).
+> - **MUSS bei IONOS hochgeladen werden:** `index.html`, `chat-animation.html` (Zettel.jpg/Logo liegen schon dort). Memory `[[hero-redesign-brief]]` = **erledigt**.
+>
 > **Update 07.08.2026 — Produktionsnummer LIVE, Landingpage-Ausbau, Test-Schutz, Empfehlung, Helfer:**
 > - **Produktionsnummer +49 174 9364823 ist LIVE und funktioniert end-to-end** (Sprachnachricht → Angebot am 07.08. echt verifiziert). Meta: Produktions-WABA „AuftragsBoss" (WABA-ID 1680177866376806) angelegt, Nummer **registriert**, **Webhooks abonniert**, **Zahlungsmethode** gesetzt. Server-`.env`: `WHATSAPP_PHONE_NUMBER_ID=1186887661184567`. **`FEATURE_MALER_SCOPE` ist AN** (Maler-Fachqualität live).
 > - **Display-Name „AuftragsBoss" von Meta ABGELEHNT** (Marke↔Firma-Beziehung nicht offensichtlich, WABA/Business = DAG Deutsche Automotive GmbH). **Fix:** „AuftragsBoss ist eine Marke der DAG Deutsche Automotive GmbH." steht jetzt auf **Startseite + Footer + Impressum** (`marketing/index.html`, `impressum.html`). → Nummer erneut einreichen (Fallback-Name: „AuftragsBoss von DAG Deutsche Automotive GmbH").
@@ -127,7 +135,7 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 > - **Test-Angebot (Website-Knopf, istTest):** PDF/Word-Download + E-Mail **gesperrt** → Hinweis „nur über WhatsApp/registrierte Betriebe" + Nummer + WhatsApp-CTA (auch serverseitig 403). **Warte-Animation** auf `/testen` (Meldungen laufen EINMAL durch, kein Loop). **Missbrauchsschutz gehärtet** (`webtest.ts`): Audio-Prüfung (Größe/Typ), **Monats-Deckel**, engere Limits — `WEBTEST` Defaults 2/IP · 50/Tag · 800/Monat · 12 MB. Website-Test = **IP-basiert**; WhatsApp-Direkttest = **nummernbasiert** (`DIREKTTEST_*`).
 > - **Empfehlung:** Cockpit-Bereich „Kollegen empfehlen" — Teilen-Knöpfe (WhatsApp/E-Mail/Kopieren, aus eigener App) + Formular „per E-Mail einladen" (`POST /api/empfehlung/:token/email`). Grund: WhatsApp darf niemanden **kalt** anschreiben.
 > - **Helfer-Skripte:** `src/env-check.ts` (prüft `.env`: Pflichtfelder/Tippfehler/Format, Werte maskiert), `src/tester-einladen.ts` (Tester-Konto + Einladungstext), `src/import-link.ts`. `.env.example` auf **reines ASCII** umgestellt (Mojibake-Fix bei Windows-Editoren).
-> - **OFFEN (nach dem Komprimieren als Nächstes):** großer **Hero-Redesign** — voller Brief in Memory `[[hero-redesign-brief]]`.
+> - ~~OFFEN: großer Hero-Redesign~~ → **ERLEDIGT**, siehe Update „Feierabend" oben.
 
 > **Update 06.08.2026 — Maler-Fachengine v1 (Import + Preisgedächtnis), Cockpit, Fachwissen ins Angebot, Produktionsnummer vorbereitet:**
 > - **Altangebots-Import** (`src/maler/import/`, hinter `FEATURE_IMPORT`, **live an**): Upload mehrerer PDF/DOCX

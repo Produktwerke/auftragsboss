@@ -61,7 +61,7 @@
       linear-gradient(90deg,transparent 0,transparent 39px,var(--hair) 39px,transparent 40px);
     background-size:auto,40px 40px,40px 40px;mask:linear-gradient(#000,transparent 90%);}
   .hero-inner{max-width:1500px;margin:0 auto;padding:0 32px;
-    display:grid;grid-template-columns:minmax(0,740px) minmax(0,1fr);gap:44px;align-items:center;}
+    display:grid;grid-template-columns:minmax(0,740px) minmax(0,1fr);gap:44px;align-items:start;}
   .hero-copy{max-width:740px;}
   .eyebrow{display:inline-flex;align-items:center;gap:9px;margin-bottom:20px;}
   .eyebrow::before,.eyebrow::after{content:"";width:26px;height:2px;background:var(--signal);flex:0 0 auto;}
@@ -86,9 +86,11 @@
   .btn-wa{background:var(--bg3);color:var(--ink);border:1px solid var(--steel2);}
   .btn-wa:hover{background:var(--bg4);border-color:var(--wa);} .btn-wa:active{transform:translateY(1px);}
   .btn-wa svg{width:20px;height:20px;flex:0 0 auto;}
+  .btn-primary .mic-ic{font-size:18px;line-height:1;}
 
   /* Hero-Visual (Chat-Animation, freifliegend, ohne Rahmen) */
-  .hero-visual{position:relative;justify-self:start;width:100%;}
+  /* margin-top schiebt die Animation-Oberkante auf Höhe der Headline (unter das Eyebrow) */
+  .hero-visual{position:relative;justify-self:start;width:100%;margin-top:38px;}
 
   /* WhatsApp-CTA (noch im Schlussband verwendet) */
   .wa-cta{display:flex;align-items:center;justify-content:center;gap:11px;background:var(--signal);color:var(--signal-ink);
@@ -247,7 +249,7 @@
   footer b{color:var(--muted);}
 
   @media (max-width:780px){
-    .hero-inner{grid-template-columns:1fr;gap:36px;padding:0 20px;} .hero-chat{height:510px;}
+    .hero-inner{grid-template-columns:1fr;gap:36px;padding:0 20px;} .hero-chat{height:510px;} .hero-visual{margin-top:0;}
     .grid4{grid-template-columns:1fr 1fr;}
     .steps,.karten,.vgrid{grid-template-columns:1fr;}
     .shots{grid-template-columns:1fr;max-width:300px;margin:0 auto;}
@@ -294,7 +296,7 @@
       <p class="lead"><b>Sprich dein Angebot per WhatsApp ein</b> oder schick deine <b>Notizen als Foto</b>. AuftragsBoss erstellt daraus ein professionelles Angebot, das du prüfen, bearbeiten und direkt als PDF oder Word versenden kannst.</p>
       <div class="stat">Angebot in <b>2&nbsp;Minuten</b> statt in 30.</div>
       <div class="hero-cta">
-        <a class="btn-primary" href="https://api.auftragsboss.de/testen" target="_blank" rel="noopener">Jetzt kostenlos testen</a>
+        <a class="btn-primary" href="https://api.auftragsboss.de/testen" target="_blank" rel="noopener"><span class="mic-ic" aria-hidden="true">🎙️</span>Jetzt live testen</a>
         <a class="btn-wa" href="https://wa.me/491749364823?text=Hallo%20AuftragsBoss%2C%20ich%20m%C3%B6chte%20kostenlos%20ein%20Angebot%20testen." target="_blank" rel="noopener">
           <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#25D366" d="M16 0C7.2 0 0 7.2 0 16c0 2.8.7 5.5 2.1 7.9L0 32l8.3-2.2C10.6 31.2 13.2 32 16 32c8.8 0 16-7.2 16-16S24.8 0 16 0z"/><path fill="#fff" d="M23.5 19.3c-.4-.2-2.3-1.1-2.6-1.2-.3-.1-.6-.2-.9.2-.3.4-1 1.2-1.2 1.5-.2.2-.4.3-.8.1-2.3-1.1-3.8-2-5.3-4.6-.4-.7.4-.6 1.1-2 .1-.2 0-.4 0-.6-.1-.2-.9-2.1-1.2-2.9-.3-.8-.6-.7-.9-.7h-.7c-.2 0-.6.1-.9.5-.3.4-1.2 1.2-1.2 2.9s1.2 3.4 1.4 3.6c.2.2 2.4 3.7 5.9 5.2 3.5 1.5 3.5 1 4.1.9.6-.1 2-.8 2.3-1.6.3-.8.3-1.5.2-1.6-.1-.2-.3-.2-.7-.4z"/></svg>
           Per WhatsApp testen

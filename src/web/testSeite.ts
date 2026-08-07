@@ -113,12 +113,17 @@ export function testSeite(): string {
     'Ich lese heraus, was gemacht werden soll …',
     'Ich sortiere die Leistungen …',
     'Ich schlage passendes Material vor …',
-    'Ich bringe dein Angebot in Form …',
-    'Fast fertig …'
+    'Ich bringe alles in Form …',
+    'Ich stelle dein Angebot fertig …'
   ];
+  // Läuft die Meldungen EINMAL durch und bleibt dann auf der letzten stehen
+  // (kein Loop) — wirkt logisch, egal wie lange die Verarbeitung dauert.
   function warteStart(){
     var i = 0; setStatus(warteTexte[0], true);
-    warteTimer = setInterval(function(){ i = (i + 1) % warteTexte.length; setStatus(warteTexte[i], true); }, 2200);
+    warteTimer = setInterval(function(){
+      if(i < warteTexte.length - 1){ i++; setStatus(warteTexte[i], true); }
+      else { clearInterval(warteTimer); warteTimer = null; }
+    }, 2200);
   }
   function warteStop(){ if(warteTimer){ clearInterval(warteTimer); warteTimer = null; } }
 

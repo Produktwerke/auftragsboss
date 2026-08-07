@@ -133,11 +133,15 @@ export const webtestConfig = lade(
   z.object({
     WEBTEST_AKTIV: flagge(false),
     // Kostenlose Test-Angebote pro IP (danach Hinweis auf Anmeldung).
-    WEBTEST_MAX_PRO_IP: z.coerce.number().int().min(1).default(3),
+    WEBTEST_MAX_PRO_IP: z.coerce.number().int().min(1).default(2),
     // Tages-Gesamtdeckel über alle Besucher (Kostenobergrenze).
-    WEBTEST_MAX_PRO_TAG: z.coerce.number().int().min(1).default(100),
+    WEBTEST_MAX_PRO_TAG: z.coerce.number().int().min(1).default(50),
+    // Monats-Gesamtdeckel über alle Besucher (zusätzliche Kostenobergrenze).
+    WEBTEST_MAX_PRO_MONAT: z.coerce.number().int().min(1).default(800),
     // Mindestabstand zwischen zwei Versuchen derselben IP, in Sekunden.
     WEBTEST_MIN_ABSTAND_SEKUNDEN: z.coerce.number().int().min(0).default(5),
+    // Größenobergrenze für eine Test-Aufnahme (dekodiert), in MB.
+    WEBTEST_MAX_AUDIO_MB: z.coerce.number().min(1).default(12),
   }),
 );
 

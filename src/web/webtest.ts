@@ -34,10 +34,28 @@ interface IpStand {
 const proIp = new Map<string, IpStand>();
 let tag = "";
 let tagesAnzahl = 0;
+let monat = "";
+let monatsAnzahl = 0;
 
 function heuteSchluessel(): string {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+function monatSchluessel(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}`;
+}
+
+/**
+ * Prüft eine hochgeladene Test-Aufnahme grob (Größe/Typ), bevor sie teuer
+ * transkribiert wird — hält Junk-Spam von der API fern.
+ */
+export function pruefeAudio(audio: Buffer, mime?: string): { ok: boolean; grund?: string } {
+  if (audio.length < 2000) return { ok: false, grund: "Die Aufnahme ist zu kurz. Sprich einen Moment und versuch es noch einmal." };
+  const maxBytes = webtestConfig().WEBTEST_MAX_AUDIO_MB * 1024 * 1024;
+  if (audio.length > maxBytes) return { ok: false, grund: "Die Aufnahme ist zu groß." };
+  if (mime && !/^audio\//i.test(mime)) return { ok: false, grund: "Bitte eine Sprachaufnahme senden." };
+  return { ok: true };
 }
 
 /** Prüft die IP-Limits (ohne zu zählen). */
@@ -50,8 +68,16 @@ export function testErlaubt(ip: string): { ok: boolean; grund?: string } {
     tag = t;
     tagesAnzahl = 0;
   }
+  const m = monatSchluessel();
+  if (m !== monat) {
+    monat = m;
+    monatsAnzahl = 0;
+  }
   if (tagesAnzahl >= cfg.WEBTEST_MAX_PRO_TAG) {
     return { ok: false, grund: "Das kostenlose Test-Kontingent für heute ist aufgebraucht. Bitte morgen wieder." };
+  }
+  if (monatsAnzahl >= cfg.WEBTEST_MAX_PRO_MONAT) {
+    return { ok: false, grund: "Das kostenlose Test-Kontingent ist gerade aufgebraucht. Leg direkt über WhatsApp los." };
   }
   const stand = proIp.get(ip);
   if (stand) {
@@ -74,6 +100,7 @@ function zaehle(ip: string): void {
   s.letzte = Date.now();
   proIp.set(ip, s);
   tagesAnzahl += 1;
+  monatsAnzahl += 1;
 }
 
 async function holeTestBetrieb() {

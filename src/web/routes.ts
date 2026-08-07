@@ -27,7 +27,7 @@ import { sendeMail, WORD_MIME } from "../email/send.js";
 import { dokumentMail, logoAnhang } from "../email/templates.js";
 import { merkePreise } from "../betrieb/preisgedaechtnis.js";
 import { testSeite } from "./testSeite.js";
-import { testErlaubt, testAngebotAusAudio, testAngebotBeispiel } from "./webtest.js";
+import { testErlaubt, testAngebotAusAudio, testAngebotBeispiel, pruefeAudio } from "./webtest.js";
 
 interface SpeicherKoerper {
   kundeName?: string;
@@ -169,8 +169,10 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       if (!erlaubt.ok) return reply.code(429).send({ fehler: erlaubt.grund });
       const b64 = (req.body?.audio ?? "").split(",").pop() ?? "";
       if (!b64) return reply.code(400).send({ fehler: "Keine Aufnahme empfangen." });
+      const audio = Buffer.from(b64, "base64");
+      const audioOk = pruefeAudio(audio, req.body?.mime);
+      if (!audioOk.ok) return reply.code(400).send({ fehler: audioOk.grund });
       try {
-        const audio = Buffer.from(b64, "base64");
         const editorUrl = await testAngebotAusAudio(audio, "aufnahme." + endungFuerMime(req.body?.mime), ip);
         return reply.send({ editorUrl });
       } catch (err) {

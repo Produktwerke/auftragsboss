@@ -60,15 +60,15 @@
       linear-gradient(transparent 0,transparent 39px,var(--hair) 39px,transparent 40px),
       linear-gradient(90deg,transparent 0,transparent 39px,var(--hair) 39px,transparent 40px);
     background-size:auto,40px 40px,40px 40px;mask:linear-gradient(#000,transparent 90%);}
-  .hero-inner{max-width:1460px;margin:0 auto;padding:0 32px;
-    display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:60px;align-items:center;}
-  .hero-copy{max-width:640px;}
+  .hero-inner{max-width:1500px;margin:0 auto;padding:0 32px;
+    display:grid;grid-template-columns:minmax(0,740px) minmax(0,1fr);gap:44px;align-items:center;}
+  .hero-copy{max-width:740px;}
   .eyebrow{display:inline-flex;align-items:center;gap:9px;margin-bottom:20px;}
   .eyebrow::before,.eyebrow::after{content:"";width:26px;height:2px;background:var(--signal);flex:0 0 auto;}
-  h1{font-size:clamp(34px,4.4vw,60px);line-height:1.02;letter-spacing:-.02em;font-weight:900;margin:0 0 18px;
+  h1{font-size:clamp(34px,4vw,56px);line-height:1.03;letter-spacing:-.02em;font-weight:900;margin:0 0 18px;
     text-transform:uppercase;text-wrap:balance;}
   h1 .u{color:var(--signal);}
-  .lead{font-size:clamp(16px,1.5vw,19px);color:var(--muted);margin:0 0 20px;max-width:50ch;}
+  .lead{font-size:clamp(16px,1.5vw,19px);color:var(--muted);margin:0 0 22px;max-width:720px;}
   /* dezenter Zeit-Hinweis (früher große Badge-Box) */
   .stat{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-weight:600;font-size:12.5px;
     letter-spacing:.03em;color:var(--muted);margin:0 0 26px;}
@@ -87,13 +87,8 @@
   .btn-wa:hover{background:var(--bg4);border-color:var(--wa);} .btn-wa:active{transform:translateY(1px);}
   .btn-wa svg{width:20px;height:20px;flex:0 0 auto;}
 
-  /* Hero-Trust-Zeile */
-  .hero-trust{display:flex;flex-wrap:wrap;gap:7px 22px;font-family:var(--mono);font-size:12px;letter-spacing:.03em;color:var(--muted);}
-  .hero-trust span{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
-  .hero-trust b{color:var(--signal);font-weight:700;}
-
   /* Hero-Visual (Chat-Animation, freifliegend, ohne Rahmen) */
-  .hero-visual{position:relative;justify-self:center;width:100%;}
+  .hero-visual{position:relative;justify-self:start;width:100%;}
 
   /* WhatsApp-CTA (noch im Schlussband verwendet) */
   .wa-cta{display:flex;align-items:center;justify-content:center;gap:11px;background:var(--signal);color:var(--signal-ink);
@@ -101,9 +96,6 @@
     box-shadow:0 8px 24px rgba(255,196,38,.28);transition:filter .15s,transform .06s;text-transform:uppercase;letter-spacing:.02em;}
   .wa-cta:hover{filter:brightness(1.06);} .wa-cta:active{transform:translateY(1px);}
   .wa-cta svg{width:22px;height:22px;fill:var(--signal-ink);flex:0 0 auto;}
-
-  /* Hazard divider (nur noch sehr subtil) */
-  .haz{height:3px;background:var(--hazard);margin:44px 0 0;opacity:.32;}
 
   /* Trust strip */
   .trust{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;
@@ -271,7 +263,7 @@
   @media (max-width:460px){ .grid4{grid-template-columns:1fr;} }
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;} *{transition:none!important;}}
   /* Hero: eingebettete Chat-Animation (iframe, kollisionsfrei, freifliegend) */
-  .hero-chat{width:100%;height:520px;border:0;background:transparent;display:block;}
+  .hero-chat{width:100%;max-width:580px;height:560px;border:0;background:transparent;display:block;}
   /* Belege / Studien (Warum-Sektion) */
   .belege{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:860px;margin:0 auto 34px;}
   .beleg{display:block;text-decoration:none;background:var(--bg2);border:1px solid var(--steel);border-radius:14px;padding:18px 20px;transition:border-color .15s,transform .15s;}
@@ -308,19 +300,12 @@
           Per WhatsApp testen
         </a>
       </div>
-      <div class="hero-trust">
-        <span><b>✓</b> 3 Angebote gratis</span>
-        <span><b>✓</b> Keine App</span>
-        <span><b>✓</b> Kein Login</span>
-        <span><b>✓</b> Keine Kreditkarte</span>
-      </div>
     </div>
 
     <div class="hero-visual">
       <iframe class="hero-chat" src="chat-animation.html" title="AuftragsBoss: Sprache und Foto rein, Angebot zurück" loading="lazy" scrolling="no"></iframe>
     </div>
   </div>
-  <div class="haz"></div>
 </section>
 
 <div class="trust">

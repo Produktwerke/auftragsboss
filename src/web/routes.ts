@@ -205,6 +205,9 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       const handwerker = await prisma.handwerker.findUniqueOrThrow({
         where: { id: dokument.handwerkerId },
       });
+      // Test-Angebote: kein Download. Nur über WhatsApp / für registrierte Betriebe.
+      if (handwerker.istTest) return reply.code(403).type("text/html; charset=utf-8").send(nurUeberWhatsApp());
+
       const preisliste = effektivePreisliste(handwerker, ladePreisliste());
       const daten = dokumentZuDaten(dokument);
       const summe = berechneAngebot(daten.positionen, preisliste, dokument.datum);
@@ -287,6 +290,8 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       const handwerker = await prisma.handwerker.findUniqueOrThrow({
         where: { id: dokument.handwerkerId },
       });
+      // Test-Angebote: kein E-Mail-Versand.
+      if (handwerker.istTest) return reply.code(403).send({ fehler: "Im Test nicht verfügbar — nur über WhatsApp." });
 
       // SMTP muss eingerichtet sein — sonst würde emailConfig() den Server
       // beenden. Deshalb hier höflich ablehnen statt abzustürzen.
@@ -608,6 +613,17 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       return reply.send({ ok: true });
     },
   );
+}
+
+/** Sperr-Seite für Test-Angebote: Export nur über WhatsApp / für registrierte Betriebe. */
+function nurUeberWhatsApp(): string {
+  return `<!doctype html><html lang="de"><meta charset="utf-8"><title>Nur über WhatsApp</title>
+    <body style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:520px;margin:60px auto;padding:0 20px;color:#333;text-align:center;line-height:1.6;">
+    <h1 style="color:#0b5cad;font-size:22px;">Nur über WhatsApp</h1>
+    <p>Der Download als PDF/Word steht im kostenlosen Test nicht zur Verfügung — nur für registrierte Betriebe über WhatsApp.</p>
+    <p style="margin:26px 0;"><a href="https://wa.me/491749364823?text=Hallo%20AuftragsBoss%2C%20ich%20m%C3%B6chte%20loslegen." style="display:inline-block;background:#25D366;color:#fff;text-decoration:none;font-weight:700;padding:13px 22px;border-radius:9px;">▶ Jetzt über WhatsApp testen</a></p>
+    <p style="color:#666;font-size:14px;">oder schreib direkt an: <b>+49 174 9364823</b></p>
+    </body></html>`;
 }
 
 function dateiname(art: string, nummer: string, endung: string): string {

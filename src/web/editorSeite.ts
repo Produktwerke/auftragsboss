@@ -222,6 +222,14 @@ export function editorSeite(args: {
   .hk-dik{ background:#eef2f5; color:#5a636b; }
   .hk-lst{ background:#eef7ee; color:#2e7d32; }
   .hk-man{ background:#f0f0f2; color:#555; }
+  /* Test-Angebot: Export gesperrt, Hinweis auf WhatsApp */
+  .btn.locked{ opacity:.5; cursor:not-allowed; }
+  .test-note{ margin-top:10px; padding:14px 16px; background:#fff8e6; border:1px solid #f0d98a; border-radius:10px; }
+  .test-note p{ margin:0 0 10px; font-size:14px; color:#5c4d00; line-height:1.5; }
+  .test-note .wa-btn{ display:inline-flex; align-items:center; gap:8px; background:#25D366; color:#fff; text-decoration:none;
+                      font-weight:700; padding:11px 18px; border-radius:9px; font-size:15px; }
+  .test-note .wa-btn:hover{ filter:brightness(.96); }
+  .test-note .nr{ margin-top:10px; font-size:13px; color:#6a5d1f; }
 </style>
 </head>
 <body>
@@ -287,7 +295,21 @@ export function editorSeite(args: {
     <textarea id="schlusstext">${escapeHtml(startDaten.schlusstext)}</textarea>
   </div>
 
-  <div class="aktionen">
+  ${
+    handwerker.istTest
+      ? `<div class="aktionen">
+    <div class="zeile1">
+      <span class="dl-label">Herunterladen als:</span>
+      <button class="btn locked" disabled title="Im Test nicht verfügbar">PDF</button>
+      <button class="btn locked" disabled title="Im Test nicht verfügbar">Word</button>
+    </div>
+    <div class="test-note">
+      <p><b>Das ist ein kostenloses Testangebot.</b> Download als PDF/Word und der E-Mail-Versand stehen nur für registrierte Betriebe über WhatsApp zur Verfügung.</p>
+      <a class="wa-btn" href="https://wa.me/491749364823?text=Hallo%20AuftragsBoss%2C%20ich%20m%C3%B6chte%20mein%20Angebot%20als%20PDF%20und%20loslegen." target="_blank" rel="noopener">▶ Jetzt über WhatsApp testen</a>
+      <div class="nr">oder schreib direkt an: <b>+49 174 9364823</b></div>
+    </div>
+  </div>`
+      : `<div class="aktionen">
     <div class="zeile1">
       <span class="dl-label">Herunterladen als:</span>
       <button class="btn" onclick="exportieren('pdf')">PDF</button>
@@ -304,7 +326,8 @@ export function editorSeite(args: {
       </div>
       <div class="mail-status" id="mailStatus"></div>
     </div>
-  </div>
+  </div>`
+  }
 
 </div>
 
@@ -658,7 +681,9 @@ async function mailSpeichern(){
   }catch(e){ mailStatus(e.message,'#c0392b'); }
 }
 function mailInit(){
-  document.getElementById('mailChk').checked = !!MAIL.standard;
+  const chk=document.getElementById('mailChk');
+  if(!chk) return; // Test-Konto: Export/Mail-Bereich ist gesperrt, nichts zu tun
+  chk.checked = !!MAIL.standard;
   mailLabelAktualisieren();
   // Haken gesetzt, aber noch keine Adresse? Direkt Eingabe anbieten.
   if(MAIL.standard && !MAIL.email) mailEingabeZeigen();

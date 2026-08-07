@@ -282,6 +282,14 @@
   @keyframes recpuls{0%{box-shadow:0 10px 30px rgba(255,196,38,.28),0 0 0 0 rgba(255,196,38,.45);}
                      70%{box-shadow:0 10px 30px rgba(255,196,38,.28),0 0 0 24px rgba(255,196,38,0);}
                      100%{box-shadow:0 10px 30px rgba(255,196,38,.28),0 0 0 0 rgba(255,196,38,0);}}
+  /* Belege / Studien (Warum-Sektion) */
+  .belege{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:860px;margin:0 auto 34px;}
+  .beleg{display:block;text-decoration:none;background:var(--bg2);border:1px solid var(--steel);border-radius:14px;padding:18px 20px;transition:border-color .15s,transform .15s;}
+  .beleg:hover{border-color:var(--signal);transform:translateY(-2px);}
+  .beleg b{display:block;font-size:27px;color:var(--signal);font-weight:800;line-height:1.05;}
+  .beleg span{display:block;color:var(--muted);font-size:14px;margin-top:7px;line-height:1.5;}
+  .beleg small{display:inline-block;color:var(--dim);font-size:11px;margin-top:11px;font-family:var(--mono);letter-spacing:.02em;}
+  @media(max-width:640px){ .belege{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
@@ -343,6 +351,18 @@
       <span class="eyebrow lbl">Warum AuftragsBoss</span>
       <h2>Wer zuerst anbietet, gewinnt.</h2>
       <p>Ein sauberes Angebot noch am selben Tag entscheidet oft den Zuschlag.<br>AuftragsBoss macht das aus einer Sprachnachricht.</p>
+    </div>
+    <div class="belege">
+      <a class="beleg" href="https://firstknock.co.uk/research" target="_blank" rel="noopener">
+        <b>bis zu 50 %</b>
+        <span>der Aufträge gehen an den Betrieb, der zuerst ein Angebot abgibt.</span>
+        <small>Quelle: FirstKnock ↗</small>
+      </a>
+      <a class="beleg" href="https://www.insidesales.com/response-time-matters/" target="_blank" rel="noopener">
+        <b>21× häufiger</b>
+        <span>erreichst du einen qualifizierten Interessenten, wenn du in 5 statt 30&nbsp;Minuten reagierst.</span>
+        <small>Quelle: InsideSales ↗</small>
+      </a>
     </div>
     <div class="grid4">
       <div class="tile"><div class="ic">🏆</div><h3>Mehr Aufträge</h3><p>Angebot noch am selben Tag beim Kunden, statt Tage später.</p></div>

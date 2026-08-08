@@ -30,6 +30,18 @@
   html{scroll-behavior:smooth;}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.55;
     -webkit-font-smoothing:antialiased;}
+  /* Dezente, hochwertige Hintergrund-Textur über alle Abschnitte: warme Glows (li/re/unten)
+     + feines und großes Karo. Fixiert, damit die ganze Seite Struktur bekommt statt flachem Schwarz. */
+  body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(760px 600px at -6% 18%,rgba(255,196,38,.06),transparent 66%),
+      radial-gradient(840px 660px at 106% 54%,rgba(255,190,70,.05),transparent 66%),
+      radial-gradient(700px 580px at 44% 112%,rgba(255,196,38,.045),transparent 68%),
+      linear-gradient(transparent 159px,rgba(255,255,255,.012) 160px),
+      linear-gradient(90deg,transparent 159px,rgba(255,255,255,.012) 160px),
+      linear-gradient(transparent 39px,rgba(255,255,255,.016) 40px),
+      linear-gradient(90deg,transparent 39px,rgba(255,255,255,.016) 40px);
+    background-size:100% 100%,100% 100%,100% 100%,160px 160px,160px 160px,40px 40px,40px 40px;}
   .wrap{max-width:1120px;margin:0 auto;padding:0 22px;}
   a{color:inherit;} .num{font-variant-numeric:tabular-nums;}
   section{scroll-margin-top:16px;}
@@ -286,7 +298,7 @@
   @media (max-width:780px){
     .hero-inner{padding:0 20px;}
     .grid4{grid-template-columns:1fr 1fr;}
-    .steps,.karten,.vgrid{grid-template-columns:1fr;}
+    .steps,.karten,.vgrid,.vs{grid-template-columns:1fr;}
     .shots{grid-template-columns:1fr;max-width:300px;margin:0 auto;}
     .demo{grid-template-columns:1fr;text-align:left;} .demo .arrow{transform:rotate(90deg);justify-self:center;}
     .karte.top{margin-top:14px;}
@@ -305,6 +317,57 @@
   /* Trennlinie zwischen Hero und erstem Abschnitt */
   .hero-sep-wrap{max-width:1238px;margin:0 auto;padding:26px 40px 0;}
   .hero-sep{height:1px;background:linear-gradient(90deg,transparent,var(--steel2) 12%,var(--steel2) 88%,transparent);}
+
+  /* Maler-Spezialisierung: Vergleich Allround vs. AuftragsBoss */
+  .vs{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:960px;margin:0 auto;}
+  .vs-card{border-radius:var(--r-lg);padding:24px;border:1px solid var(--hair);background:var(--bg2);}
+  .vs-card .vs-h{font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:15px;}
+  .vs-card ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px;}
+  .vs-card li{position:relative;padding-left:27px;font-size:14.5px;color:var(--muted);line-height:1.5;}
+  .vs-card li b{color:var(--ink);}
+  .vs-bad .vs-h{color:var(--dim);}
+  .vs-bad li::before{content:"✕";position:absolute;left:0;top:0;color:var(--dim);font-weight:800;}
+  .vs-good{border-color:var(--steel2);background:linear-gradient(180deg,var(--bg3),var(--bg2));box-shadow:0 20px 50px rgba(0,0,0,.4);}
+  .vs-good .vs-h{color:var(--signal);}
+  .vs-good li::before{content:"✓";position:absolute;left:0;top:0;color:var(--signal);font-weight:900;}
+  @media (max-width:780px){ .vs{grid-template-columns:1fr;} }
+
+  /* DIN-A4-Angebot (Demo rechts) + Klick-zum-Vergrößern */
+  .a4-thumb{cursor:zoom-in;display:inline-flex;flex-direction:column;align-items:center;gap:11px;border:0;background:none;padding:0;}
+  .a4-thumb:focus-visible{outline:2px solid var(--signal);outline-offset:6px;border-radius:6px;}
+  .a4{width:33em;max-width:100%;font-size:10px;background:#fff;color:#20242b;border-radius:.4em;line-height:1.4;
+    box-shadow:0 24px 60px rgba(0,0,0,.55);padding:2.4em 2.4em 2em;overflow:hidden;font-family:var(--font);}
+  .a4-thumb .a4{transition:transform .15s;}
+  .a4-thumb:hover .a4{transform:translateY(-4px);}
+  .a4-hint{font-family:var(--mono);font-size:11.5px;color:var(--dim);letter-spacing:.03em;}
+  .a4 .a4-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:1em;border-bottom:.22em solid var(--signal);padding-bottom:.9em;margin-bottom:.9em;}
+  .a4 .a4-firma{font-weight:800;font-size:1.55em;letter-spacing:-.01em;line-height:1.1;}
+  .a4 .a4-firma small{display:block;font-weight:500;font-size:.46em;color:#6b7079;letter-spacing:.02em;margin-top:.5em;line-height:1.5;}
+  .a4 .a4-typ{text-align:right;flex:0 0 auto;}
+  .a4 .a4-typ b{font-size:1.55em;letter-spacing:.14em;}
+  .a4 .a4-typ small{display:block;font-size:.62em;color:#6b7079;margin-top:.35em;line-height:1.5;}
+  .a4 .a4-kunde{font-size:.86em;color:#3a3f47;margin-bottom:1.1em;line-height:1.55;}
+  .a4 .a4-kunde b{color:#20242b;}
+  .a4 table{width:100%;border-collapse:collapse;font-size:.84em;}
+  .a4 th{text-align:left;font-size:.82em;text-transform:uppercase;letter-spacing:.05em;color:#8a9099;border-bottom:1px solid #d7dae0;padding:0 .5em .5em 0;font-weight:700;}
+  .a4 th.r,.a4 td.r{text-align:right;padding-right:0;white-space:nowrap;}
+  .a4 td{padding:.5em .5em .5em 0;border-bottom:1px solid #eef0f3;vertical-align:top;}
+  .a4 tr.grp td{background:#f4f6f8;font-weight:700;color:#5a616b;font-size:.86em;text-transform:uppercase;letter-spacing:.05em;padding:.42em .5em;}
+  .a4 .a4-sum{margin:.9em 0 0 auto;width:62%;font-size:.86em;}
+  .a4 .a4-sum div{display:flex;justify-content:space-between;padding:.26em 0;color:#3a3f47;}
+  .a4 .a4-sum .tot{border-top:.16em solid #20242b;margin-top:.35em;padding-top:.5em;font-weight:800;font-size:1.18em;color:#20242b;}
+  .a4 .a4-foot{margin-top:1.4em;border-top:1px solid #e2e5ea;padding-top:.75em;font-size:.62em;color:#8a9099;display:flex;justify-content:space-between;gap:1.2em;line-height:1.55;}
+  #lightbox{position:fixed;inset:0;z-index:200;display:none;place-items:center;padding:24px;background:rgba(6,7,9,.86);cursor:zoom-out;}
+  #lightbox.on{display:grid;}
+  #lightbox .a4{font-size:clamp(9px,2.4vw,17px);cursor:default;}
+  #lightbox .lb-x{position:fixed;top:16px;right:22px;color:#fff;font-family:var(--mono);font-size:26px;opacity:.75;cursor:pointer;}
+
+  /* Tablet-Mockup (Screenshots: „im Büro") */
+  .shots-lead{max-width:560px;margin:0 auto 30px;text-align:center;}
+  .tab{width:100%;aspect-ratio:4/3;background:#050608;border-radius:20px;padding:11px;border:1px solid var(--steel2);
+    box-shadow:0 34px 70px rgba(0,0,0,.6),inset 0 0 0 2px rgba(255,255,255,.03);position:relative;}
+  .tab::after{content:"";position:absolute;right:7px;top:50%;transform:translateY(-50%);width:5px;height:5px;border-radius:50%;background:#1a1f26;}
+  .tab .screen{width:100%;height:100%;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;}
   /* Belege / Studien (Warum-Sektion) */
   .belege{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:860px;margin:0 auto 34px;}
   .beleg{display:block;text-decoration:none;background:var(--bg2);border:1px solid var(--steel);border-radius:14px;padding:18px 20px;transition:border-color .15s,transform .15s;}
@@ -390,19 +453,38 @@
     </div>
   </section>
 
-  <!-- SO GEHT'S -->
-  <section class="sec" id="so">
-    <div class="sec-h"><span class="eyebrow lbl">So geht's</span><h2>Einsprechen, senden, fertig.</h2></div>
-    <div class="steps">
-      <div class="step"><div class="n">SCHRITT 01</div><h3>Einsprechen</h3><p>Nach dem Termin eine WhatsApp-Sprachnachricht diktieren: Kunde, Adresse, was gemacht werden soll.</p></div>
-      <div class="step"><div class="n">SCHRITT 02</div><h3>Angebot kommt zurück</h3><p>AuftragsBoss versteht dein Diktat, sortiert die Positionen und schlägt sogar passendes Material vor.</p></div>
-      <div class="step"><div class="n">SCHRITT 03</div><h3>Prüfen &amp; senden</h3><p>Kurz durchsehen, Preise ergänzen, als PDF oder Word an den Kunden. Fertig.</p></div>
+  <!-- SPEZIALISIERUNG MALER -->
+  <section class="sec" id="maler">
+    <div class="sec-h">
+      <span class="eyebrow lbl">Speziell für Maler</span>
+      <h2>Nicht für alle. Für Maler gemacht.</h2>
+      <p>Die meisten Angebots-Tools sind für „irgendein Gewerk". AuftragsBoss kennt Malerarbeiten und denkt mit, statt dich mit leeren Vorlagen allein zu lassen.</p>
+    </div>
+    <div class="vs">
+      <div class="vs-card vs-bad">
+        <div class="vs-h">Software „für alle Gewerke"</div>
+        <ul>
+          <li>Leere Vorlage, du tippst jede Position selbst</li>
+          <li>Kennt weder Tapete noch Grundierung oder Sockelleisten</li>
+          <li>Kein Gespür für Reihenfolge und Materialketten</li>
+          <li>Vorschläge passen mal zum Fliesenleger, mal zum Elektriker</li>
+        </ul>
+      </div>
+      <div class="vs-card vs-good">
+        <div class="vs-h">AuftragsBoss für Maler</div>
+        <ul>
+          <li><b>Kennt Maler-Positionen</b>: Untergrund, Grundierung, Tapete, Anstrich, Lack</li>
+          <li><b>Schlägt passendes Material vor</b> (Farbe, Kleister, Vlies …)</li>
+          <li><b>Richtige Reihenfolge</b> und malertypische Einheiten (m², lfm, pauschal)</li>
+          <li><b>Lernt deine Preise</b> und schlägt sie beim nächsten Mal vor</li>
+        </ul>
+      </div>
     </div>
   </section>
 
-  <!-- DEMO -->
-  <section class="sec">
-    <div class="sec-h"><span class="eyebrow lbl">Echtes Beispiel</span><h2>Das macht AuftragsBoss daraus.</h2></div>
+  <!-- SO GEHT'S / echtes Beispiel (3-Schritte-Block entfernt: doppelte sich mit Hero + Demo) -->
+  <section class="sec" id="so">
+    <div class="sec-h"><span class="eyebrow lbl">So geht's</span><h2>Das macht AuftragsBoss daraus.</h2></div>
     <div class="demo">
       <div class="box">
         <span class="lbl">Das diktiert der Handwerker</span>
@@ -410,16 +492,35 @@
       </div>
       <div class="arrow">→</div>
       <div class="box">
-        <span class="lbl">Das kommt zurück</span>
-        <ul class="poslist">
-          <li><span class="d">Alten Teppich entfernen</span><span class="q">60 m²</span><span class="pr offen">___ €</span></li>
-          <li><span class="d">Laminat verlegen</span><span class="q">60 m²</span><span class="pr offen">___ €</span></li>
-          <li><span class="d">Innentüren kürzen</span><span class="q">3 Stk</span><span class="pr">90,00 €</span></li>
-          <div class="grp">Material</div>
-          <li><span class="d">Laminat</span><span class="q">60 m²</span><span class="pr">22,00 €</span></li>
-          <li><span class="d">Entsorgung Teppich</span><span class="q">pausch.</span><span class="pr offen">___ €</span></li>
-        </ul>
-        <p class="hint"><b>___ €</b> = nicht genannte Preise bleiben offen. Und du kannst alles anpassen: Preise, Mengen, Positionen und Texte.</p>
+        <span class="lbl">Das fertige Angebot</span>
+        <button class="a4-thumb" data-zoom aria-label="Angebot vergrößern">
+          <div class="a4">
+            <div class="a4-hd">
+              <div class="a4-firma">Mein Malerbetrieb<small>Musterstraße 5 · 12345 Musterstadt</small></div>
+              <div class="a4-typ"><b>ANGEBOT</b><small>Nr. ANG-2026-0002<br>08.08.2026</small></div>
+            </div>
+            <div class="a4-kunde"><b>Familie Berg</b><br>Lindenweg 4 · 12345 Musterstadt</div>
+            <table>
+              <thead><tr><th>Pos</th><th>Beschreibung</th><th class="r">Menge</th><th class="r">Einzel</th><th class="r">Gesamt</th></tr></thead>
+              <tbody>
+                <tr class="grp"><td colspan="5">Arbeit</td></tr>
+                <tr><td>1</td><td>Alten Teppich entfernen &amp; entsorgen</td><td class="r">60 m²</td><td class="r">6,00</td><td class="r">360,00</td></tr>
+                <tr><td>2</td><td>Laminat verlegen</td><td class="r">60 m²</td><td class="r">18,00</td><td class="r">1.080,00</td></tr>
+                <tr><td>3</td><td>Innentüren kürzen</td><td class="r">3 Stk</td><td class="r">90,00</td><td class="r">270,00</td></tr>
+                <tr class="grp"><td colspan="5">Material</td></tr>
+                <tr><td>4</td><td>Laminat (Eiche, 8 mm)</td><td class="r">60 m²</td><td class="r">22,00</td><td class="r">1.320,00</td></tr>
+                <tr><td>5</td><td>Trittschalldämmung</td><td class="r">60 m²</td><td class="r">2,00</td><td class="r">120,00</td></tr>
+              </tbody>
+            </table>
+            <div class="a4-sum">
+              <div><span>Netto</span><span>3.150,00 €</span></div>
+              <div><span>MwSt. 19 %</span><span>598,50 €</span></div>
+              <div class="tot"><span>Gesamt</span><span>3.748,50 €</span></div>
+            </div>
+            <div class="a4-foot"><span>Mein Malerbetrieb · Musterstraße 5<br>Ansprechpartner: M. Mustermann</span><span>USt-IdNr. DE123456789<br>Musterbank · DE00 0000 0000 0000</span></div>
+          </div>
+          <span class="a4-hint">🔍 Klicken zum Vergrößern</span>
+        </button>
       </div>
     </div>
   </section>
@@ -427,9 +528,22 @@
   <!-- SCREENSHOTS -->
   <section class="sec">
     <div class="sec-h">
-      <span class="eyebrow lbl">Ein Blick aufs Handy</span>
-      <h2>Alles läuft auf deinem Handy.</h2>
-      <p>Platzhalter. Hier kommen später echte Screenshots aus der App.</p>
+      <span class="eyebrow lbl">Handy oder Büro</span>
+      <h2>Unterwegs am Handy. Im Büro am Tablet.</h2>
+      <p>Angebote entstehen per Sprachnachricht &mdash; prüfen und feinschleifen kannst du, wo es dir passt.</p>
+    </div>
+    <div class="shots-lead">
+      <div class="tab"><div class="screen s-doc">
+        <div class="doc-hd"><div><b>Mein Malerbetrieb</b><small>Angebot ANG-2026-0002 · Familie Berg</small></div><div class="lg"></div></div>
+        <div class="doc-b">
+          <div class="drow"><span>Alten Teppich entfernen &amp; entsorgen</span><span class="m">60 m²</span></div>
+          <div class="drow"><span>Laminat verlegen</span><span class="m">60 m²</span></div>
+          <div class="drow"><span>Innentüren kürzen</span><span class="m">3 Stk</span></div>
+          <div class="drow"><span>Laminat, Trittschalldämmung</span><span class="m">Material</span></div>
+        </div>
+        <div class="dsum"><span>Gesamt (Beispiel)</span><b>3.748,50 €</b></div>
+      </div></div>
+      <div class="pcap">Am Tablet im Büro<small>Positionen und Preise in Ruhe prüfen</small></div>
     </div>
     <div class="shots">
       <div class="pcol">
@@ -568,5 +682,22 @@
     <span style="flex-basis:100%;order:3;">AuftragsBoss ist eine Marke der DAG Deutsche Automotive GmbH.</span>
   </footer>
 </div>
+
+<!-- Zoom-Overlay fürs Angebot -->
+<div id="lightbox" aria-hidden="true"><span class="lb-x" aria-hidden="true">✕</span><div class="lb-inner"></div></div>
+<script>
+(function(){
+  var lb=document.getElementById('lightbox');
+  var inner=lb.querySelector('.lb-inner');
+  function open(html){inner.innerHTML=html;lb.classList.add('on');lb.setAttribute('aria-hidden','false');}
+  function close(){lb.classList.remove('on');inner.innerHTML='';lb.setAttribute('aria-hidden','true');}
+  document.addEventListener('click',function(e){
+    var z=e.target.closest('[data-zoom]');
+    if(z){var a=z.querySelector('.a4');if(a){open(a.outerHTML);}return;}
+    if(lb.classList.contains('on') && !e.target.closest('.lb-inner')){close();}
+  });
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){close();}});
+})();
+</script>
 </body>
 </html>

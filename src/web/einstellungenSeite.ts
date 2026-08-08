@@ -25,6 +25,7 @@ export interface DokUebersicht {
   vollstaendig: boolean;
   bearbeitenToken: string;
   version: number;
+  versendetAm: Date | null;
 }
 
 const datumDE = (d: Date) => d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -118,7 +119,7 @@ export function einstellungenSeite(args: {
           </div>
 
           <div class="section">
-            <div class="section-h"><h2>Angebots-Texte</h2><p>Feste Textbausteine für jedes Angebot — im Angebot jederzeit überschreibbar.</p></div>
+            <div class="section-h"><h2>Angebots-Texte</h2><p>Feste Textbausteine für jedes Angebot. Im Angebot jederzeit überschreibbar.</p></div>
             <div class="section-b">
               <div class="field"><label>Standard-Anschreiben <span style="font-weight:400;color:var(--faint);">(optional)</span></label>
                 <textarea id="standardEinleitung" placeholder="z.B. Sehr geehrte Damen und Herren, vielen Dank für Ihr Interesse …">${escapeHtml(f.standardEinleitung.wert)}</textarea>

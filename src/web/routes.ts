@@ -94,6 +94,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     });
     if (!dokument) return reply.code(404).send({ fehler: "nicht gefunden" });
     if (dokument.eingefroren) return reply.code(409).send({ fehler: "angenommen, eingefroren" });
+    if (dokument.versendetAm) return reply.code(409).send({ fehler: "versendet, schreibgeschützt" });
 
     const k = req.body;
     const positionen = k.positionen ? editorZuPositionen(k.positionen) : undefined;
@@ -139,6 +140,39 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       }
     }
 
+    return reply.send({ ok: true });
+  });
+
+  // ── Angebot als "versendet" markieren / wieder freigeben ──
+  // Markiert schützt das Angebot vor Änderungen (Speichern gibt 409); ansehen
+  // und exportieren bleibt möglich. Aufheben macht es wieder editierbar.
+  app.post<{ Params: { token: string }; Body: { versendet?: boolean } }>(
+    "/api/a/:token/versendet",
+    async (req, reply) => {
+      const dokument = await prisma.dokument.findUnique({
+        where: { bearbeitenToken: req.params.token },
+        select: { id: true },
+      });
+      if (!dokument) return reply.code(404).send({ fehler: "nicht gefunden" });
+      const versendet = req.body?.versendet !== false; // Default: markieren
+      await prisma.dokument.update({
+        where: { id: dokument.id },
+        data: { versendetAm: versendet ? new Date() : null },
+      });
+      return reply.send({ ok: true, versendet });
+    },
+  );
+
+  // ── Angebot löschen (der Betrieb selbst, über seinen Bearbeiten-Link) ──
+  app.post<{ Params: { token: string } }>("/api/a/:token/loeschen", async (req, reply) => {
+    const dokument = await prisma.dokument.findUnique({
+      where: { bearbeitenToken: req.params.token },
+      select: { id: true },
+    });
+    if (!dokument) return reply.code(404).send({ fehler: "nicht gefunden" });
+    // Abhängige Datensätze zuerst entfernen (FK), dann das Dokument.
+    await prisma.gewaehrleistung.deleteMany({ where: { dokumentId: dokument.id } });
+    await prisma.dokument.delete({ where: { id: dokument.id } });
     return reply.send({ ok: true });
   });
 
@@ -383,6 +417,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     const uebersicht: DokUebersicht[] = dokumente.map((d) => ({
       art: d.art, nummer: d.nummer, kundeName: d.kundeName, datum: d.datum, brutto: d.brutto,
       vollstaendig: d.anzahlOffen === 0, bearbeitenToken: d.bearbeitenToken, version: d.version,
+      versendetAm: d.versendetAm,
     }));
     const kennzahlen = {
       anzahl: dokumente.length,
@@ -460,6 +495,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       vollstaendig: d.anzahlOffen === 0,
       bearbeitenToken: d.bearbeitenToken,
       version: d.version,
+      versendetAm: d.versendetAm,
     }));
 
     return reply.type("text/html; charset=utf-8").send(

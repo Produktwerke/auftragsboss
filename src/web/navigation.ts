@@ -9,10 +9,24 @@
 // und professionell.
 //
 // Selbsttragend: eingebettetes CSS, kein Framework, kein Build.
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { cockpitLink, einstellungenLink, importLink } from "./tokens.js";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// AuftragsBoss-Produktlogo (Bildmarke) einmalig als Data-URI einbetten — so ist
+// die Shell selbsttragend, ohne extra Static-Route. Fällt bei Fehler auf die
+// Buchstaben-Marke zurück.
+let LOGO_DATA_URI: string | null = null;
+try {
+  const buf = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../assets/auftragsboss-logo-mail.png"));
+  LOGO_DATA_URI = "data:image/png;base64," + buf.toString("base64");
+} catch {
+  LOGO_DATA_URI = null;
 }
 
 export type NavAktiv = "start" | "import" | "einstellungen";
@@ -64,10 +78,10 @@ ${opts.headExtra ?? ""}
   <input type="checkbox" id="navToggle" class="nav-toggle" hidden>
 
   <aside class="sidebar" aria-label="Hauptnavigation">
-    <div class="brand">
-      <span class="brand-mark">A</span>
+    <a class="brand" href="${esc(cockpit)}" aria-label="AuftragsBoss — zur Übersicht">
+      ${LOGO_DATA_URI ? `<img class="brand-logo" src="${LOGO_DATA_URI}" alt="">` : `<span class="brand-mark">A</span>`}
       <span class="brand-name">Auftrags<b>Boss</b></span>
-    </div>
+    </a>
     <nav class="side-nav">
       <div class="side-cap">Arbeitsbereich</div>
       ${navPunkt(cockpit, IC.uebersicht, "Übersicht", aktiv === "start")}
@@ -140,8 +154,9 @@ export function dashStyles(): string {
   .app{display:flex;min-height:100vh;}
   .sidebar{width:250px;flex:0 0 250px;background:var(--side-bg);color:var(--side-ink);
     display:flex;flex-direction:column;position:sticky;top:0;height:100vh;border-right:1px solid var(--side-line);z-index:40;}
-  .brand{display:flex;align-items:center;gap:11px;padding:20px 20px 18px;border-bottom:1px solid var(--side-line);}
-  .brand-logo{height:30px;max-width:150px;object-fit:contain;background:#fff;border-radius:6px;padding:3px 5px;}
+  .brand{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--side-line);text-decoration:none;transition:background .12s;}
+  .brand:hover{background:var(--side-bg-2);}
+  .brand-logo{height:32px;width:32px;object-fit:contain;border-radius:8px;display:block;flex:0 0 auto;}
   .brand-mark{width:30px;height:30px;border-radius:8px;background:var(--brand,#FFC426);color:#1a1400;display:grid;place-items:center;font-weight:900;font-size:16px;}
   .brand-name{font-size:16px;font-weight:800;color:#fff;letter-spacing:.01em;}
   .brand-name b{color:var(--brand,#FFC426);font-weight:800;}

@@ -184,6 +184,10 @@ model Dokument {
   angenommenIp   String?
   eingefroren    Boolean   @default(false)
 
+  // Vom Handwerker selbst als "versendet" markiert → schreibgeschützt
+  // (ansehen ja, ändern nein). Jederzeit wieder aufhebbar; dann editierbar.
+  versendetAm    DateTime?
+
   // Rückfragen des Kunden über die Angebotsseite
   kundenRueckfrage   String?
   kundenRueckfrageAm DateTime?

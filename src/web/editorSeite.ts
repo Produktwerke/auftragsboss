@@ -55,6 +55,7 @@ export function editorSeite(args: {
     schlusstext: dokument.schlusstext,
     positionen,
     angenommen: dokument.angenommenAm !== null,
+    versendet: dokument.versendetAm !== null,
   };
 
   return `<!doctype html>
@@ -224,6 +225,9 @@ export function editorSeite(args: {
   .hk-man{ background:#f0f0f2; color:#555; }
   /* Test-Angebot: Export gesperrt, Hinweis auf WhatsApp */
   .btn.locked{ opacity:.5; cursor:not-allowed; }
+  /* Versendet = schreibgeschützt: Eingaben gesperrt, Export bleibt möglich */
+  .gesperrt input, .gesperrt textarea, .gesperrt select,
+  .gesperrt .neu, .gesperrt .loeschen { pointer-events:none; opacity:.55; }
   .test-note{ margin-top:10px; padding:14px 16px; background:#fff8e6; border:1px solid #f0d98a; border-radius:10px; }
   .test-note p{ margin:0 0 10px; font-size:14px; color:#5c4d00; line-height:1.5; }
   .test-note .wa-btn{ display:inline-flex; align-items:center; gap:8px; background:#25D366; color:#fff; text-decoration:none;
@@ -245,6 +249,12 @@ export function editorSeite(args: {
     startDaten.angenommen
       ? `<div class="hinweis warn">🔒 Dieses Angebot wurde vom Kunden bereits angenommen und ist eingefroren.
          Änderungen erzeugen eine neue Fassung.</div>`
+      : ""
+  }
+
+  ${
+    startDaten.versendet
+      ? `<div class="hinweis warn">🔒 Als <b>versendet</b> markiert und schreibgeschützt. Ansehen und Export gehen weiterhin, Ändern nicht. Zum Bearbeiten den Versand-Status in der Übersicht wieder aufheben.</div>`
       : ""
   }
 
@@ -595,6 +605,8 @@ let aenderungsTimer=null;
 ['kundeName','kundenNummer','kundeStrasse','kundePlzOrt','nummer','datum','objekt','einleitung','schlusstext'].forEach(id=>{
   document.getElementById(id).addEventListener('input',markiereGeaendert);
 });
+// Versendet = schreibgeschützt: Eingaben sperren (Export/Ansehen bleibt).
+if(START.versendet){ document.body.classList.add('gesperrt'); }
 function markiereGeaendert(){
   document.getElementById('status').textContent='Nicht gespeichert';
   document.getElementById('status').style.color='#b7791f';
@@ -603,6 +615,7 @@ function markiereGeaendert(){
 }
 
 async function speichern(){
+  if(START.versendet) return; // schreibgeschützt: Server würde ohnehin 409 liefern
   const daten={
     kundeName:val('kundeName'), kundenNummer:val('kundenNummer'),
     kundeStrasse:val('kundeStrasse'), kundePlzOrt:val('kundePlzOrt'),

@@ -10,13 +10,13 @@
   html,body{background:transparent}
   body{margin:0;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);
        min-height:100vh;display:flex;align-items:flex-start;justify-content:flex-end;padding:2px 2px 14px}
-  .chat{width:580px;max-width:100%;background:linear-gradient(180deg,#12151b,#0f1217);
+  .chat{width:410px;max-width:100%;background:linear-gradient(180deg,#12151b,#0f1217);
         border:1px solid var(--steel);border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,.5);overflow:hidden}
   .head{display:flex;align-items:center;gap:11px;padding:14px 16px;background:#11151b;border-bottom:1px solid var(--steel)}
   .av{width:40px;height:40px;border-radius:11px;overflow:hidden;background:#0E0F12;border:1px solid var(--steel);flex:0 0 auto}
   .av img{width:100%;height:100%;object-fit:cover}
-  .who b{font-size:15px;display:block;line-height:1.2}
-  .who span{font-size:12px;color:var(--wa)}
+  .who b{font-size:17px;display:block;line-height:1.2}
+  .who span{font-size:13px;color:var(--wa)}
   .head .ico{margin-left:auto;color:var(--wa);font-size:18px}
   .body{padding:16px 16px 20px;height:417px;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:10px;
         background:radial-gradient(circle at 12% 8%,rgba(255,196,38,.04),transparent 40%),#0c0f14}
@@ -26,7 +26,7 @@
   [data-s]{display:none}
   .show{animation:pop .38s ease both}
   @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-  .msg{max-width:84%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.45}
+  .msg{max-width:88%;padding:11px 14px;border-radius:14px;font-size:16.5px;line-height:1.5}
   .in.show{display:block}
   .done.show{display:block}
   .in{align-self:flex-start;background:var(--bg3);border:1px solid var(--steel);border-bottom-left-radius:5px}
@@ -44,7 +44,7 @@
   /* eingefroren, sobald die nächste Nachricht kommt (wie eine fertig abgespielte Sprachnachricht) */
   .voice.stop .wave i{animation:none}
   @keyframes pulse{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1)}}
-  .time{font-family:var(--mono);font-size:12px;color:#bfeccf}
+  .time{font-family:var(--mono);font-size:13.5px;color:#bfeccf}
   /* Foto der Notiz */
   .photo.show{display:block;align-self:flex-end;padding:5px;background:#14351f;border:1px solid #1f6b3d;
               border-radius:14px;border-bottom-right-radius:5px}
@@ -59,8 +59,8 @@
   .done{border-color:#4a3d12;background:linear-gradient(180deg,#1c1a10,#141118)}
   .done .ok{color:var(--signal);font-weight:700}
   .done .pdf{display:inline-flex;align-items:center;gap:7px;margin-top:9px;background:var(--signal);color:#1A1400;
-             font-weight:700;font-size:12.5px;padding:7px 12px;border-radius:8px}
-  .caption{margin-top:14px;text-align:center;color:var(--dim);font-family:var(--mono);font-size:12px;letter-spacing:.04em}
+             font-weight:700;font-size:14px;padding:8px 13px;border-radius:8px}
+  .caption{margin-top:14px;text-align:center;color:var(--dim);font-family:var(--mono);font-size:13px;letter-spacing:.04em}
 </style></head>
 <body>
   <div>

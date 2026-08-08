@@ -39,7 +39,7 @@
     border-bottom:1px solid var(--hair);position:sticky;top:0;background:rgba(14,15,18,.82);
     backdrop-filter:blur(10px);z-index:50;}
   /* Header-Inhalt auf Hero-Breite ausrichten -> Logo bündig mit der Headline */
-  .head-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;max-width:1400px;margin:0 auto;padding:0 40px;}
+  .head-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;max-width:1238px;margin:0 auto;padding:0 40px;}
   @media (max-width:780px){ .head-inner{padding:0 20px;} }
   .brand{display:flex;align-items:center;gap:11px;font-weight:800;font-size:19px;letter-spacing:.01em;}
   .brand .mark{width:32px;height:32px;border-radius:7px;object-fit:cover;display:block;
@@ -64,8 +64,8 @@
       linear-gradient(transparent 0,transparent 39px,var(--hair) 39px,transparent 40px),
       linear-gradient(90deg,transparent 0,transparent 39px,var(--hair) 39px,transparent 40px);
     background-size:auto,40px 40px,40px 40px;mask:linear-gradient(#000,transparent 86%);}
-  .hero-inner{max-width:1400px;margin:0 auto;padding:0 40px;
-    display:grid;grid-template-columns:1.1fr 0.9fr;gap:36px;align-items:start;}
+  .hero-inner{max-width:1238px;margin:0 auto;padding:0 40px;
+    display:grid;grid-template-columns:minmax(0,1fr) 410px;gap:48px;align-items:start;}
   .hero-copy{max-width:700px;}
   .eyebrow{display:inline-flex;align-items:center;gap:9px;margin-bottom:18px;}
   .eyebrow::before,.eyebrow::after{content:"";width:26px;height:2px;background:var(--signal);flex:0 0 auto;}
@@ -274,8 +274,15 @@
     display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-family:var(--mono);}
   footer b{color:var(--muted);}
 
+  /* Hero stapelt einspaltig, sobald das 2-Spalten-Layout nicht mehr sauber passt */
+  @media (max-width:1238px){
+    .hero-inner{grid-template-columns:1fr;gap:34px;padding:0 28px;justify-items:start;}
+    .hero-copy{max-width:760px;}
+    .hero-visual{margin-top:0;margin-left:0;justify-self:stretch;}
+    .hero-chat{height:540px;margin:0 auto;max-width:430px;}
+  }
   @media (max-width:780px){
-    .hero-inner{grid-template-columns:1fr;gap:30px;padding:0 20px;} .hero-chat{height:540px;margin:0 auto;} .hero-visual{margin-top:0;margin-left:0;}
+    .hero-inner{padding:0 20px;}
     .grid4{grid-template-columns:1fr 1fr;}
     .steps,.karten,.vgrid{grid-template-columns:1fr;}
     .shots{grid-template-columns:1fr;max-width:300px;margin:0 auto;}
@@ -291,9 +298,9 @@
   @media (max-width:460px){ .grid4{grid-template-columns:1fr;} }
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;} *{transition:none!important;}}
   /* Hero: eingebettete Chat-Animation (iframe, kollisionsfrei, freifliegend) */
-  .hero-chat{width:100%;max-width:620px;height:530px;margin-left:auto;border:0;background:transparent;display:block;}
+  .hero-chat{width:100%;max-width:430px;height:530px;margin-left:auto;border:0;background:transparent;display:block;}
   /* Trennlinie zwischen Hero und erstem Abschnitt */
-  .hero-sep-wrap{max-width:1400px;margin:0 auto;padding:26px 40px 0;}
+  .hero-sep-wrap{max-width:1238px;margin:0 auto;padding:26px 40px 0;}
   .hero-sep{height:1px;background:linear-gradient(90deg,transparent,var(--steel2) 12%,var(--steel2) 88%,transparent);}
   /* Belege / Studien (Warum-Sektion) */
   .belege{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:860px;margin:0 auto 34px;}

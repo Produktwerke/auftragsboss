@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AuftragsBoss · Angebote per Sprachnachricht</title>
-<link rel="icon" type="image/png" href="auftragsboss-logo.png">
-<link rel="apple-touch-icon" href="auftragsboss-logo.png">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="auftragsboss-favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="auftragsboss-favicon-180.png">
 <style>
   /* Hausschriften, DSGVO-sicher selbst gehostet (kein Google-CDN). OFL-Lizenz. */
   @font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/inter-latin-400-normal.woff2') format('woff2');}
@@ -73,6 +74,7 @@
     text-transform:uppercase;text-wrap:balance;}
   h1 .u{color:var(--signal);}
   .lead{font-size:clamp(16px,1.35vw,18px);color:var(--muted);margin:0 0 22px;max-width:560px;}
+  .lead .mlr{color:var(--ink);font-weight:700;}
 
   /* Zeit-Hinweis: dezent, aber gut lesbar (kein Mikrotext) */
   .stat{display:inline-flex;align-items:center;gap:10px;font-weight:600;font-size:14.5px;color:var(--ink);
@@ -292,6 +294,7 @@
   }
   @media (max-width:560px){
     .hero-cta{flex-direction:column;align-items:stretch;gap:16px;}
+    .rec{align-self:center;}
     .btn-wa{width:100%;}
     .hero-chat{height:540px;}
   }
@@ -329,7 +332,7 @@
     <div class="hero-copy">
       <span class="eyebrow lbl">Speziell für Malerbetriebe</span>
       <h1>Du bist der Boss.<br><span class="u">Nicht der Papierkram.</span></h1>
-      <p class="lead">AuftragsBoss ist speziell auf Malerbetriebe zugeschnitten. Sprich einfach ein, was beim Kunden anfällt, oder schick ein Foto deiner Notiz. Daraus wird ein fertiges Angebot als PDF oder Word, mit den passenden Positionen für dein Gewerk.</p>
+      <p class="lead">AuftragsBoss ist <b class="mlr">speziell auf Malerbetriebe</b> zugeschnitten. Sprich einfach ein, was beim Kunden anfällt, oder schick ein Foto deiner Notiz. Daraus wird ein fertiges Angebot als PDF oder Word, mit den passenden Positionen für dein Gewerk.</p>
       <div class="stat">Angebot in <b>2&nbsp;Minuten</b> statt in 30.</div>
       <div class="hero-cta">
         <a class="rec" href="https://api.auftragsboss.de/testen" target="_blank" rel="noopener">
@@ -383,7 +386,7 @@
       <div class="tile"><div class="ic">🏆</div><h3>Mehr Aufträge</h3><p>Angebot noch am selben Tag beim Kunden, statt Tage später.</p></div>
       <div class="tile"><div class="ic">🌙</div><h3>Feierabend zurück</h3><p>Angebote entstehen im Auto, nicht abends am Schreibtisch.</p></div>
       <div class="tile"><div class="ic">📄</div><h3>Professioneller Eindruck</h3><p>Dein Logo, sauberer Briefkopf, einzelne Positionen. PDF oder Word.</p></div>
-      <div class="tile hl"><div class="ic">📵</div><h3>Keine App nötig</h3><p>Nichts zu installieren. AuftragsBoss läuft direkt über WhatsApp.</p></div>
+      <div class="tile"><div class="ic">💬</div><h3>Keine App nötig</h3><p>Nichts zu installieren. AuftragsBoss läuft direkt über WhatsApp.</p></div>
     </div>
   </section>
 

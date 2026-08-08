@@ -15,7 +15,7 @@ import { featureConfig } from "../config.js";
 import { importiereAltangebot } from "../maler/import/importDienst.js";
 import { ImportFormatFehler } from "../maler/import/extraktion.js";
 import { merkePreiseAusImport } from "../betrieb/preisgedaechtnis.js";
-import { cockpitLink } from "./tokens.js";
+import { appShell } from "./navigation.js";
 
 const MAX_BYTES = 15 * 1024 * 1024; // 15 MB — großzügig für gescannte Angebote
 const MAX_DATEIEN = 20; // pro Upload
@@ -35,12 +35,18 @@ export async function importRoutes(app: FastifyInstance): Promise<void> {
   app.get<{ Params: { token: string } }>("/import/:token", async (req, reply) => {
     const handwerker = await prisma.handwerker.findUnique({
       where: { einstellungenToken: req.params.token },
-      select: { id: true, firma: true, preisGedaechtnisAktiv: true },
+      select: { id: true, firma: true, name: true, preisGedaechtnisAktiv: true },
     });
     if (!handwerker) return reply.code(404).type("text/html").send("<h1>Nicht gefunden</h1>");
     return reply
       .type("text/html; charset=utf-8")
-      .send(importSeite(req.params.token, handwerker.firma, handwerker.preisGedaechtnisAktiv));
+      .send(
+        importSeite(
+          req.params.token,
+          { firma: handwerker.firma, name: handwerker.name },
+          handwerker.preisGedaechtnisAktiv,
+        ),
+      );
   });
 
   // ── Upload verarbeiten (mehrere Dateien je Stapel) ────
@@ -112,76 +118,101 @@ export async function importRoutes(app: FastifyInstance): Promise<void> {
   );
 }
 
-/** Minimale, in sich geschlossene Upload-Seite (kein Framework). */
-function importSeite(token: string, firma: string, preisGedaechtnisAktiv: boolean): string {
-  const sicher = (s: string) => s.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]!));
+/** Upload-Seite für Altangebote — im modernen App-Shell-Layout. */
+function importSeite(
+  token: string,
+  handwerker: { firma: string | null; name: string | null },
+  preisGedaechtnisAktiv: boolean,
+): string {
   const gedaechtnisHinweis = preisGedaechtnisAktiv
-    ? "Nach dem Bestätigen merkt sich AuftragsBoss Ihre Preise (datiert) und schlägt sie beim nächsten Angebot vor."
-    : "Ihr Preisgedächtnis ist ausgeschaltet — Preise werden beim Bestätigen nicht gemerkt. In den Einstellungen aktivierbar.";
-  return `<!doctype html><html lang="de"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Altes Angebot importieren</title>
-<style>
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:640px;margin:2rem auto;padding:0 1rem;color:#1c1c1c;background:#fafafa}
-  h1{font-size:1.4rem}
-  .karte{background:#fff;border:1px solid #e2e2e2;border-radius:12px;padding:1.5rem;margin-top:1rem}
-  input[type=file]{width:100%;padding:.75rem;border:1px dashed #bbb;border-radius:8px;background:#fafafa}
-  button{margin-top:1rem;background:#0B5CAD;color:#fff;border:0;border-radius:8px;padding:.75rem 1.25rem;font-size:1rem;cursor:pointer}
-  button.zweit{background:#0a7d33}
-  button:disabled{opacity:.5;cursor:default}
-  .hinweis{color:#555;font-size:.9rem}
-  .zurueck{display:inline-block;margin-bottom:1rem;color:#0B5CAD;text-decoration:none;font-size:.95rem}
-  .zurueck:hover{text-decoration:underline}
-  #liste{margin-top:1rem}
-  .zeile{border-top:1px solid #eee;padding:.5rem 0;font-size:.9rem}
-  .zeile:first-child{border-top:0}
-  .zeile .dn{font-weight:600}
-  .ok{color:#0a7d33}.warn{color:#b26a00}.err{color:#c0261a}
-</style></head><body>
-<a class="zurueck" href="${cockpitLink(token)}">← Übersicht</a>
-<h1>Altes Angebot importieren</h1>
-<p class="hinweis">Betrieb: <strong>${sicher(firma)}</strong>. Nur Ihre Texte werden gelesen &mdash; das neue Angebot entsteht immer im AuftragsBoss-Stil. Sie können mehrere Dateien auf einmal wählen. PDF oder Word (.docx), je max. 15&nbsp;MB.</p>
-<div class="karte">
-  <input id="datei" type="file" multiple accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
-  <button id="btn" onclick="hochladen()">Hochladen &amp; auslesen</button>
-  <div id="liste"></div>
-  <div id="status" class="hinweis" style="margin-top:.8rem"></div>
-  <button id="bestaetigen" class="zweit" onclick="bestaetigen()" style="display:none">Alle bestätigen</button>
-  <p id="gedaechtnis" class="hinweis" style="display:none">${gedaechtnisHinweis}</p>
-</div>
-<script>
+    ? "Nach dem Bestätigen merkt sich AuftragsBoss deine Preise (datiert) und schlägt sie beim nächsten Angebot vor."
+    : "Dein Preisgedächtnis ist ausgeschaltet — Preise werden beim Bestätigen nicht gemerkt. In den Einstellungen aktivierbar.";
+
+  const content = `
+      <div class="page-head">
+        <div>
+          <h1 class="greet">Angebot importieren</h1>
+          <p class="sub">Lies alte Angebote ein — AuftragsBoss übernimmt daraus deine Preise und Positionen.</p>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-h"><h2>Alte Angebote einlesen</h2><p>Nur deine Texte werden gelesen — das neue Angebot entsteht immer im AuftragsBoss-Stil. Mehrere Dateien auf einmal möglich. PDF oder Word (.docx), je max. 15&nbsp;MB.</p></div>
+        <div class="section-b">
+          <label class="dropzone" id="dz" for="datei">
+            <input id="datei" type="file" multiple accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+            <span class="dz-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span>
+            <span class="dz-title">Dateien hierher ziehen oder <u>auswählen</u></span>
+            <span class="dz-sub">PDF oder Word · bis 15 MB je Datei</span>
+          </label>
+          <div id="dateiliste" class="dz-picked"></div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap;">
+            <button class="btn prim" id="btn" onclick="hochladen()">Hochladen &amp; auslesen</button>
+            <button class="btn" id="bestaetigen" onclick="bestaetigen()" style="display:none">Alle bestätigen</button>
+            <span class="statusmsg" id="status"></span>
+          </div>
+          <p id="gedaechtnis" class="hint" style="display:none;margin-top:12px;">${gedaechtnisHinweis}</p>
+          <div id="liste" class="import-results"></div>
+        </div>
+      </div>`;
+
+  const headExtra = `
+  .dropzone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;
+    border:1.5px dashed var(--line-2);border-radius:var(--r-lg);background:var(--panel-2);padding:36px 20px;cursor:pointer;transition:border-color .15s,background .15s;}
+  .dropzone:hover{border-color:var(--ink-2);}
+  .dropzone.over{border-color:var(--primary);background:#eef1f5;}
+  .dz-ic{color:var(--faint);} .dz-ic svg{width:34px;height:34px;}
+  .dz-title{font-size:15px;font-weight:600;color:var(--ink-2);} .dz-title u{color:var(--ink);text-decoration:none;border-bottom:1.5px solid var(--ink-2);}
+  .dz-sub{font-size:12.5px;color:var(--faint);}
+  .dz-picked{font-size:13px;color:var(--muted);margin-top:12px;}
+  .import-results{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
+  .ir-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel-2);}
+  .ir-row .ir-name{font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px;}`;
+
+  const scriptExtra = `
 const TOKEN=${JSON.stringify(token)};
 let importIds=[];
 const $=(id)=>document.getElementById(id);
 const esc=(s)=>String(s).replace(/[&<>]/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+// Drag & Drop
+const dz=$('dz'), inp=$('datei');
+['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over');}));
+['dragleave','dragend'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('over');}));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer&&e.dataTransfer.files.length){inp.files=e.dataTransfer.files;zeigeDateien();}});
+inp.addEventListener('change',zeigeDateien);
+function zeigeDateien(){
+  const n=inp.files.length;
+  $('dateiliste').innerHTML = n ? (n+' Datei(en) gewählt: '+[].map.call(inp.files,f=>esc(f.name)).join(', ')) : '';
+}
+
 async function hochladen(){
-  const inp=$('datei'),btn=$('btn'),liste=$('liste'),st=$('status');
+  const btn=$('btn'),liste=$('liste'),st=$('status');
   $('bestaetigen').style.display='none';$('gedaechtnis').style.display='none';importIds=[];liste.innerHTML='';st.textContent='';
-  if(!inp.files.length){st.className='hinweis warn';st.textContent='Bitte zuerst eine oder mehrere Dateien wählen.';return;}
+  if(!inp.files.length){st.textContent='Bitte zuerst Dateien wählen.';st.style.color='var(--warn)';return;}
   const fd=new FormData();
   for(const f of inp.files) fd.append('datei',f);
-  btn.disabled=true;st.className='hinweis';st.textContent='Wird ausgelesen … ('+inp.files.length+' Datei(en))';
+  btn.disabled=true;st.style.color='var(--muted)';st.textContent='Wird ausgelesen … ('+inp.files.length+' Datei(en))';
   try{
     const r=await fetch('/api/import/'+TOKEN,{method:'POST',body:fd});
     const j=await r.json();
-    if(!r.ok){st.className='hinweis err';st.textContent='Fehler: '+(j.fehler||r.status);return;}
+    if(!r.ok){st.style.color='#c0261a';st.textContent='Fehler: '+(j.fehler||r.status);return;}
     let ok=0;
     liste.innerHTML=(j.ergebnisse||[]).map((e)=>{
-      if(e.fehler) return '<div class="zeile err"><span class="dn">'+esc(e.dateiname)+'</span> — '+esc(e.fehler)+'</div>';
+      if(e.fehler) return '<div class="ir-row"><span class="ir-name">'+esc(e.dateiname)+'</span><span class="badge warn">'+esc(e.fehler)+'</span></div>';
       ok++; if(e.importDokumentId) importIds.push(e.importDokumentId);
-      const cls=e.manuellePruefungNoetig?'warn':'ok';
-      const extra=e.manuellePruefungNoetig?' · bitte prüfen':'';
-      return '<div class="zeile '+cls+'"><span class="dn">'+esc(e.dateiname)+'</span> — '+e.anzahlPositionen+' Position(en)'+extra+'</div>';
+      const badge=e.manuellePruefungNoetig?'<span class="badge warn">bitte prüfen</span>':'<span class="badge ok">'+e.anzahlPositionen+' Position(en)</span>';
+      return '<div class="ir-row"><span class="ir-name">'+esc(e.dateiname)+'</span>'+badge+'</div>';
     }).join('');
-    st.className='hinweis';st.textContent=ok+' von '+(j.ergebnisse||[]).length+' Datei(en) eingelesen.';
-    if(importIds.length){$('bestaetigen').style.display='inline-block';$('gedaechtnis').style.display='block';}
-  }catch(e){st.className='hinweis err';st.textContent='Netzwerkfehler: '+e;}
+    st.style.color='var(--muted)';st.textContent=ok+' von '+(j.ergebnisse||[]).length+' Datei(en) eingelesen.';
+    if(importIds.length){$('bestaetigen').style.display='inline-flex';$('gedaechtnis').style.display='block';}
+  }catch(e){st.style.color='#c0261a';st.textContent='Netzwerkfehler: '+e;}
   finally{btn.disabled=false;}
 }
 async function bestaetigen(){
   if(!importIds.length)return;
   const b=$('bestaetigen'),st=$('status');
-  b.disabled=true;st.className='hinweis';st.textContent='Wird bestätigt …';
+  b.disabled=true;st.style.color='var(--muted)';st.textContent='Wird bestätigt …';
   let summe=0,aus=false,fehler=0;const anzahl=importIds.length;
   for(const id of importIds){
     try{
@@ -191,13 +222,23 @@ async function bestaetigen(){
       if(j.preisgedaechtnisAus)aus=true; else summe+=(j.uebernommen||0);
     }catch(e){fehler++;}
   }
-  st.className='hinweis ok';
+  st.style.color='var(--ok)';
   st.textContent = aus
     ? (anzahl+' Angebot(e) bestätigt. Preisgedächtnis ist aus — es wurden keine Preise gemerkt.')
     : (anzahl+' Angebot(e) bestätigt · '+summe+' Preis(e) ins Preisgedächtnis übernommen (datiert).');
   if(fehler) st.textContent+=' ('+fehler+' mit Fehler)';
   b.style.display='none';$('gedaechtnis').style.display='none';importIds=[];
 }
-</script>
-</body></html>`;
+window.hochladen=hochladen; window.bestaetigen=bestaetigen;
+`;
+
+  return appShell({
+    token,
+    aktiv: "import",
+    handwerker,
+    titel: "Angebot importieren",
+    content,
+    headExtra,
+    scriptExtra,
+  });
 }

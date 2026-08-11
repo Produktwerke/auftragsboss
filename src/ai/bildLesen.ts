@@ -23,7 +23,11 @@ Wichtig:
 - Antworte nur mit dem Inhalt, ohne Vorrede.`;
 
 /** Wertet ein Bild aus und liefert den erkannten Notiz-Text. */
-export async function liesBildNotiz(bild: { daten: Buffer; mimeType: string }): Promise<string> {
+export async function liesBildNotiz(
+  bild: { daten: Buffer; mimeType: string },
+  /** Optional: meldet den Token-Verbrauch (Kosten-Tracking im Betreiber-Cockpit). */
+  verbrauch?: (tokensEin: number, tokensAus: number) => void,
+): Promise<string> {
   const mime: BildMime = ERLAUBTE_MIMES.includes(bild.mimeType as BildMime)
     ? (bild.mimeType as BildMime)
     : "image/jpeg";
@@ -43,6 +47,8 @@ export async function liesBildNotiz(bild: { daten: Buffer; mimeType: string }): 
       },
     ],
   });
+
+  verbrauch?.(response.usage?.input_tokens ?? 0, response.usage?.output_tokens ?? 0);
 
   return response.content
     .filter((b): b is Anthropic.TextBlock => b.type === "text")

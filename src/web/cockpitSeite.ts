@@ -252,15 +252,18 @@ window.linkKopieren = linkKopieren; window.perMailEinladen = perMailEinladen;
   .promo-head h2{font-size:19px;font-weight:800;margin:0 0 6px;letter-spacing:-.01em;}
   .promo-head p{margin:0;color:var(--muted);font-size:14px;line-height:1.55;max-width:62ch;}
   @media (max-width:720px){
+    .dtable-wrap{overflow-x:visible;}
+    .dtable,.dtable tbody{display:block;width:100%;}
     .dtable thead{display:none;}
-    .dtable tbody tr{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:13px 16px;align-items:center;}
-    .dtable td{border:none;padding:0;}
+    .dtable tbody tr{display:grid;grid-template-columns:1fr auto;gap:5px 12px;padding:14px 4px;align-items:center;border-bottom:1px solid var(--line);}
+    .dtable tbody tr:last-child{border-bottom:none;}
+    .dtable td{border:none;padding:0;min-width:0;}
     .dtable td:nth-child(1){grid-column:1;grid-row:1;}
     .dtable td:nth-child(3){grid-column:2;grid-row:1;justify-self:end;}
     .dtable td:nth-child(2){grid-column:1;grid-row:2;color:var(--muted);font-size:13px;}
     .dtable td:nth-child(5){grid-column:2;grid-row:2;justify-self:end;}
     .dtable td:nth-child(4){grid-column:1;grid-row:3;font-size:12px;color:var(--faint);}
-    .dtable td:nth-child(6){grid-column:2;grid-row:3;justify-self:end;}
+    .dtable td.t-actions{grid-column:2;grid-row:3;justify-self:end;width:auto;}
   }`,
     scriptExtra,
   });

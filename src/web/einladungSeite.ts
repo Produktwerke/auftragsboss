@@ -48,14 +48,14 @@ export function einladungSeite(args: { code: string; werberFirma: string }): str
   <div class="karte" id="karte">
     <div class="gruss"><strong>${escapeHtml(werberFirma)}</strong> lädt dich ein zu</div>
     <h1>Angebote diktieren statt tippen.</h1>
-    <p>Sprich nach dem Kundentermin einfach eine WhatsApp-Sprachnachricht — du bekommst ein fertiges Angebot zurück. Keine App, kein Login.</p>
+    <p>Sprich nach dem Kundentermin einfach eine WhatsApp-Sprachnachricht. Du bekommst ein fertiges Angebot zurück. Keine App, kein Login.</p>
 
     <div class="geschenk">🎁 Ihr bekommt beide 1 Monat gratis.</div>
 
     <ul class="nutzen">
       <li>Fertiges Angebot aus einer Sprachnachricht</li>
       <li>Mit deinem Logo und Briefkopf, als PDF oder Word</li>
-      <li>Läuft komplett über WhatsApp — nichts zu installieren</li>
+      <li>Läuft komplett über WhatsApp, nichts zu installieren</li>
     </ul>
 
     <label>Firma</label>
@@ -92,7 +92,7 @@ btn.addEventListener("click", async () => {
     if (!r.ok) throw 0;
     document.getElementById("karte").innerHTML =
       '<div class="danke"><div class="haken">✅</div><h2>Geschafft!</h2>' +
-      '<p>Danke, ' + (daten.name.split(" ")[0] || "") + '. Wir melden uns in Kürze und schalten dich frei — dein Gratis-Monat ist reserviert.</p></div>';
+      '<p>Danke, ' + (daten.name.split(" ")[0] || "") + '. Wir melden uns in Kürze und schalten dich frei. Dein Gratis-Monat ist reserviert.</p></div>';
   } catch(e) {
     btn.disabled = false; btn.textContent = "Gratis-Monat sichern";
     fehler.textContent = "Das hat nicht geklappt. Bitte versuche es gleich noch einmal.";

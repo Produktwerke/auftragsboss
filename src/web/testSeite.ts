@@ -11,7 +11,7 @@ export function testSeite(): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AuftragsBoss — Jetzt kostenlos testen</title>
+<title>AuftragsBoss · Jetzt kostenlos testen</title>
 <style>
   :root{ --anthra:#14171a; --karte:#1e2329; --gelb:#ffd60a; --text:#f2f4f6; --grau:#9aa3ad; }
   *{ box-sizing:border-box; }
@@ -33,6 +33,8 @@ export function testSeite(): string {
   .beispiel:hover{ border-color:var(--gelb); }
   .status{ margin-top:22px; min-height:22px; text-align:center; color:var(--gelb); font-size:15px; max-width:460px; }
   .trust{ margin-top:40px; color:var(--grau); font-size:13px; text-align:center; max-width:420px; }
+  .hinweis-ki{ margin-top:20px; color:var(--grau); font-size:12.5px; line-height:1.55; text-align:center; max-width:480px; }
+  .hinweis-ki a{ color:var(--gelb); text-decoration:underline; }
   .laden{ display:inline-block; width:16px; height:16px; border:2px solid var(--gelb); border-top-color:transparent; border-radius:50%; animation:dreh .8s linear infinite; vertical-align:-3px; margin-right:8px; }
   @keyframes dreh{ to{ transform:rotate(360deg);} }
 </style>
@@ -48,7 +50,11 @@ export function testSeite(): string {
   <button class="beispiel" id="beispiel">Kein Mikro? Beispiel ansehen</button>
   <div class="status" id="status"></div>
 
-  <p class="trust">Kein Login, kein Download. Nicht genannte Preise bleiben leer, AuftragsBoss erfindet keine Preise.</p>
+  <p class="hinweis-ki">🔒 KI-gestützter Dienst: Deine Aufnahme wird verarbeitet, um ein
+    Beispiel-Angebot zu erstellen (Transkription über OpenAI, Strukturierung über Anthropic).
+    Das Audio bleibt nur im Arbeitsspeicher und wird nicht dauerhaft gespeichert. Bitte nutze
+    zum Testen erfundene Beispieldaten.
+    <a href="https://auftragsboss.de/datenschutz.html" target="_blank" rel="noopener">Datenschutz</a></p>
 
 <script>
   var knopf = document.getElementById('knopf');

@@ -37,3 +37,21 @@ tmp-*.ts
 *.log
 .DS_Store
 Thumbs.db
+
+# Geschäftsunterlagen von Dirk (leben im OneDrive-Ordner, kein Repo-Inhalt)
+*.xlsx
+*.docx
+Datenschutz/
+Logo und CI/
+Telefonnummer/
+Video/
+Screenshots/
+
+# Build-/Arbeitsartefakte
+deploy.tar.gz
+scratchpad/
+*.bak-*
+index.html.bak-*
+_plztest.ts
+_permtest.ts
+_kostentest.ts

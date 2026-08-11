@@ -21,7 +21,7 @@ import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
 import { ladePreisliste } from "./preisliste.js";
 import { dokumentMail, logoAnhang } from "./email/templates.js";
 import { sendeMail, WORD_MIME } from "./email/send.js";
-import { bearbeitenLink, einstellungenLink, erzeugeToken, kundenLink, werbeLink } from "./web/tokens.js";
+import { bearbeitenLink, einstellungenLink, registrierLink, erzeugeToken, erzeugeKurzToken, kundenLink, werbeLink } from "./web/tokens.js";
 import { effektivePreisliste, einstellungenTokenBereit } from "./betrieb/betriebsdaten.js";
 import { willFeedback, extrahiereFeedback, FEEDBACK_FENSTER_MINUTEN } from "./feedback.js";
 import { werbeCodeBereit, EMPFEHLUNG_AB_ANGEBOT } from "./empfehlung.js";
@@ -30,6 +30,7 @@ import { direkttestConfig, featureConfig } from "./config.js";
 import { validierePositionen } from "./validierung/validator.js";
 import { schlagePreiseVor } from "./betrieb/preisgedaechtnis.js";
 import { spurEvent } from "./analytics/event.js";
+import { schaetzeAudioSekunden, kostenAudioCent, kostenClaudeCent } from "./analytics/kikosten.js";
 import {
   MAX_RUNDEN,
   alsDialog,
@@ -49,7 +50,21 @@ function willEinstellungen(text: string): boolean {
   );
 }
 
+/** Erkennt den Wunsch, sich als Betrieb anzumelden (Selbst-Registrierung).
+ *  Tolerant, aber kurz — ein Diktat ist keine Anmeldung. */
+function willAnmelden(text: string): boolean {
+  const t = text.toLowerCase();
+  if (t.length > 40) return false;
+  return /\b(anmelden|registrieren|registrier|mein konto|eigenes konto|richtig nutzen|betrieb anlegen)\b/.test(t);
+}
+
 export const prisma = new PrismaClient();
+
+// Feedback-Nudge & -Erfassung: Nachrichten bis zu dieser Länge gelten als
+// kurze Rückmeldung; alles Längere ist ein Diktat (Auftrag) und wird NIE als
+// Feedback „verschluckt". Nudge kommt einmalig nach dem 2. Angebot.
+const FEEDBACK_MAX_LEN = 400;
+const FEEDBACK_NUDGE_AB_ANGEBOT = 2;
 
 function addiereJahre(datum: Date, jahre: number): Date {
   const d = new Date(datum);
@@ -86,6 +101,7 @@ export async function verarbeiteNachricht(args: {
   text?: string; // Textnachricht
 }): Promise<void> {
   const { vonNummer, mediaId, bildMediaId, text } = args;
+  const kanal = mediaId ? "sprache" : bildMediaId ? "foto" : "text";
 
   // 1. Absender kennen wir? (Kein Login — die Nummer IST die Identität)
   let handwerker = await prisma.handwerker.findUnique({ where: { whatsappNummer: vonNummer } });
@@ -102,10 +118,39 @@ export async function verarbeiteNachricht(args: {
     handwerker = start.handwerker;
   }
 
+  // Blockierte Konten (Betreiber-Cockpit): freundlicher Hinweis, sonst nichts —
+  // keine Transkription, keine KI, kein Kontingent-Verbrauch.
+  if (handwerker.blockiert) {
+    await spurEvent(prisma, "NACHRICHT_BLOCKIERT", { handwerkerId: handwerker.id, data: { kanal } });
+    await sendeWhatsAppText(
+      vonNummer,
+      "⏸️ Dein AuftragsBoss-Konto ist gerade pausiert. Melde dich bitte kurz bei uns, dann klären wir das: kontakt@auftragsboss.de",
+    );
+    return;
+  }
+
+  // Produktmetrik (PII-frei): eingehende Nachricht + Kanal (Sprache/Text/Foto).
+  // Erlaubt später Auswertungen wie „2./3. Nachricht?", „Sprache vs. Text".
+  await spurEvent(prisma, "NACHRICHT_EMPFANGEN", {
+    handwerkerId: handwerker.id,
+    data: { kanal, istTest: handwerker.istTest },
+  });
+
   // Test-Konten: vor JEDER Nachricht die Grenzen prüfen (Kostenschutz). Beim
   // ersten Kontakt einmal begrüßen und dann normal weiterverarbeiten — schickt
   // der Interessent gleich einen Auftrag, entsteht sofort ein Beispiel-Angebot.
   if (handwerker.istTest) {
+    // Selbst-Anmeldung: Schreibt ein Test-Konto „anmelden", schicken wir den
+    // persönlichen Registrier-Link — verbraucht bewusst KEIN Test-Kontingent.
+    if (text && featureConfig().FEATURE_SELBSTREGISTRIERUNG && willAnmelden(text)) {
+      const token = await einstellungenTokenBereit(prisma, handwerker);
+      await sendeWhatsAppText(
+        vonNummer,
+        `👍 Stark! Hier meldest du deinen Betrieb an (Firma, Name, E-Mail). Danach gehören dir Logo, Adresse und alle Angebote:\n${registrierLink(token)}`,
+      );
+      return;
+    }
+
     const blockiert = await testNachrichtBlockiert(prisma, handwerker);
     if (blockiert) {
       await sendeWhatsAppText(vonNummer, blockiert);
@@ -114,10 +159,14 @@ export async function verarbeiteNachricht(args: {
     // handwerker.testNachrichten trägt hier noch den Stand VOR dieser Nachricht:
     // 0 = allererste Nachricht dieser Nummer → einmal begrüßen.
     if (handwerker.testNachrichten === 0) {
+      const anmeldeHinweis = featureConfig().FEATURE_SELBSTREGISTRIERUNG
+        ? `\n\nWillst du AuftragsBoss richtig nutzen? Schreib einfach *anmelden*.`
+        : "";
       await sendeWhatsAppText(
         vonNummer,
         `🤖 AuftragsBoss ist ein KI-gestützter Dienst. Deine Sprach- oder Textnachricht wird automatisiert verarbeitet, um daraus ein Angebot zu erstellen.\n\n` +
-          `👋 Willkommen beim AuftragsBoss-Test!\n\nSprich einfach eine kurze *Sprachnachricht*: Kunde, Adresse und was gemacht werden soll. Ich mache in Sekunden ein fertiges Angebot draus.\n\nDu hast ${direkttestConfig().DIREKTTEST_GRATIS_ANGEBOTE} Gratis-Tests frei. 🎙️`,
+          `👋 Willkommen beim AuftragsBoss-Test!\n\nSprich einfach eine kurze *Sprachnachricht*: Kunde, Adresse und was gemacht werden soll. Ich mache in Sekunden ein fertiges Angebot draus.\n\nDu hast ${direkttestConfig().DIREKTTEST_GRATIS_ANGEBOTE} Gratis-Tests frei. 🎙️` +
+          anmeldeHinweis,
       );
       // kein return — die eigentliche Nachricht wird gleich weiterverarbeitet
     }
@@ -131,12 +180,22 @@ export async function verarbeiteNachricht(args: {
     const imFenster =
       wartetSeit !== null && Date.now() - wartetSeit.getTime() < FEEDBACK_FENSTER_MINUTEN * 60_000;
     if (imFenster) {
-      await prisma.feedback.create({
-        data: { handwerkerId: handwerker.id, text: text.trim(), quelle: "WHATSAPP" },
-      });
+      if (text.trim().length <= FEEDBACK_MAX_LEN) {
+        await prisma.feedback.create({
+          data: { handwerkerId: handwerker.id, text: text.trim(), quelle: "WHATSAPP" },
+        });
+        await prisma.handwerker.update({ where: { id: handwerker.id }, data: { feedbackWartetSeit: null } });
+        await sendeWhatsAppText(vonNummer, "🙏 Danke für deine Rückmeldung, ist notiert!");
+        await spurEvent(prisma, "FEEDBACK_ERHALTEN", {
+          handwerkerId: handwerker.id,
+          data: { kanal: "text", laenge: text.trim().length },
+        });
+        return;
+      }
+      // Langer Text trotz offenem Feedback-Fenster = ein Auftrag, kein Feedback:
+      // Fenster schließen und normal weiterverarbeiten (nichts „verschlucken").
       await prisma.handwerker.update({ where: { id: handwerker.id }, data: { feedbackWartetSeit: null } });
-      await sendeWhatsAppText(vonNummer, "🙏 Danke für deine Rückmeldung, ist notiert!");
-      return;
+      handwerker.feedbackWartetSeit = null;
     }
     if (willFeedback(text)) {
       const direkt = extrahiereFeedback(text);
@@ -194,31 +253,82 @@ export async function verarbeiteNachricht(args: {
     let inhalt: string;
     let zweitfassung: string | undefined;
     let art: "sprache" | "text";
+    // Läuft schon ein Dialog (offene Rückfrage/Zusammenfassung)? Dann ist diese
+    // Nachricht eine Antwort darin, keine neue Bestellung — die Eingangsbestätigung
+    // fällt dann neutraler aus ("arbeite weiter" statt "erstelle dein Angebot").
+    // Den Vorgang laden wir hier einmal und nutzen ihn unten weiter.
+    let vorgang = await holeOffenenVorgang(prisma, handwerker.id);
+    const imDialog = !!vorgang;
     if (mediaId) {
       // Sprachnachricht sofort kurz bestätigen — Transkription + KI brauchen ein
       // paar Sekunden; so weiß der Absender, dass im Hintergrund schon gearbeitet
       // wird, und wartet nicht auf eine scheinbar stumme Leitung.
-      await sendeWhatsAppText(vonNummer, "🎙️ Hab' ich! Ich erstelle dein Angebot, einen kurzen Moment …");
-      const t = await transkribiereAudio(await ladeAudio(mediaId));
+      await sendeWhatsAppText(
+        vonNummer,
+        imDialog
+          ? "🎙️ Hab ich! Einen kurzen Moment, ich arbeite im Hintergrund weiter …"
+          : "🎙️ Hab ich! Ich erstelle dein Angebot, einen kurzen Moment …",
+      );
+      const audio = await ladeAudio(mediaId);
+      const t = await transkribiereAudio(audio);
       inhalt = t.haupttext;
       zweitfassung = t.varianten[1];
       art = "sprache";
+      // Kosten-Tracking: Audiodauer aus der Dateigröße geschätzt (Opus ~16 kbit/s).
+      const sekunden = schaetzeAudioSekunden(audio.length);
+      await spurEvent(prisma, "KI_AUFRUF", {
+        handwerkerId: handwerker.id,
+        data: { dienst: "transkription", sekunden, kostenCent: kostenAudioCent(sekunden) },
+      });
     } else if (bildMediaId) {
       // Foto/Screenshot: der Handwerker fotografiert seinen Aufmaß-Zettel oder
       // schickt einen Notiz-Screenshot. Claude Vision liest den Inhalt als Text,
       // der Rest der Pipeline behandelt ihn wie ein Diktat.
-      await sendeWhatsAppText(vonNummer, "📷 Foto hab' ich! Ich lese deine Notizen und mache ein Angebot, einen kurzen Moment …");
-      inhalt = await liesBildNotiz(await ladeBild(bildMediaId));
+      await sendeWhatsAppText(
+        vonNummer,
+        imDialog
+          ? "📷 Foto hab ich! Ich schau es mir an, einen kurzen Moment …"
+          : "📷 Foto hab ich! Ich lese deine Notizen und mache ein Angebot, einen kurzen Moment …",
+      );
+      inhalt = await liesBildNotiz(await ladeBild(bildMediaId), (ein, aus) => {
+        void spurEvent(prisma, "KI_AUFRUF", {
+          handwerkerId: handwerker.id,
+          data: { dienst: "bild", tokensEin: ein, tokensAus: aus, kostenCent: kostenClaudeCent(ein, aus) },
+        });
+      });
       art = "text";
     } else {
       inhalt = (text ?? "").trim();
       art = "text";
     }
 
-    // Laufender Dialog? Sonst prüfen, ob es ein Nachtrag zum eben erstellten
-    // Dokument ist ("ach, die Fenster auch noch…").
-    let vorgang = await holeOffenenVorgang(prisma, handwerker.id);
+    // Kein offener Dialog? Dann prüfen, ob es ein Nachtrag zum eben erstellten
+    // Dokument ist ("ach, die Fenster auch noch…"). Den offenen Vorgang haben wir
+    // oben für die Eingangsbestätigung schon geladen.
     if (!vorgang) vorgang = await holeNachtragsVorgang(prisma, handwerker.id);
+
+    // Proaktiver Feedback-Reply per Sprache/Foto: Warten wir nach dem Nudge auf
+    // Feedback, ist kein Dialog offen und die Nachricht KURZ (kein Diktat), als
+    // Feedback erfassen. (Text ist oben schon behandelt.) Langes Diktat oder
+    // abgelaufenes Fenster → Fenster schließen und normal als Auftrag weiter.
+    if (!handwerker.istTest && !text && !vorgang && handwerker.feedbackWartetSeit) {
+      const aktiv =
+        Date.now() - handwerker.feedbackWartetSeit.getTime() < FEEDBACK_FENSTER_MINUTEN * 60_000;
+      if (aktiv && inhalt.trim().length <= FEEDBACK_MAX_LEN) {
+        await prisma.feedback.create({
+          data: { handwerkerId: handwerker.id, text: inhalt.trim(), quelle: "WHATSAPP" },
+        });
+        await prisma.handwerker.update({ where: { id: handwerker.id }, data: { feedbackWartetSeit: null } });
+        await sendeWhatsAppText(vonNummer, "🙏 Danke für deine Rückmeldung, ist notiert!");
+        await spurEvent(prisma, "FEEDBACK_ERHALTEN", {
+          handwerkerId: handwerker.id,
+          data: { kanal, laenge: inhalt.trim().length },
+        });
+        return;
+      }
+      await prisma.handwerker.update({ where: { id: handwerker.id }, data: { feedbackWartetSeit: null } });
+      handwerker.feedbackWartetSeit = null;
+    }
 
     // Kürze-Sperre NUR ohne laufenden Vorgang: Bei einer offenen Rückfrage oder
     // Zusammenfassung ist ein kurzes "ja" (oder "ok") eine gültige Antwort und
@@ -258,7 +368,25 @@ export async function verarbeiteNachricht(args: {
       await sendeWhatsAppText(vonNummer, "🎙️ Mir fehlt noch der Auftrag, diktier mir kurz, worum es geht.");
       return;
     }
-    const daten = await strukturiereDialog(dialog, preisliste);
+    // Kurze Eingangsbestätigung bei TEXT-Nachrichten. Sprache/Foto sind oben schon
+    // bestätigt; eine Textantwort (Rückfrage beantworten oder Zusammenfassung mit
+    // "ja" bestätigen) lief bisher stumm in die mehrsekündige KI-Auswertung, das
+    // wirkt schnell wie eingefroren. Nach der Zusammenfassung folgt meist das
+    // Angebot, deshalb dort eine passendere Formulierung.
+    if (!mediaId && !bildMediaId) {
+      await sendeWhatsAppText(
+        vonNummer,
+        vorgang.zusammenfassungGezeigt
+          ? "⏳ Super, ich stelle dein Angebot jetzt fertig, einen kurzen Moment …"
+          : "👍 Hab ich! Einen kurzen Moment, ich arbeite im Hintergrund weiter …",
+      );
+    }
+    const daten = await strukturiereDialog(dialog, preisliste, (ein, aus) => {
+      void spurEvent(prisma, "KI_AUFRUF", {
+        handwerkerId: handwerker.id,
+        data: { dienst: "struktur", tokensEin: ein, tokensAus: aus, kostenCent: kostenClaudeCent(ein, aus) },
+      });
+    });
 
     // 5. Nachfragen oder abschließen? Das entscheidet die KI aus dem Verlauf —
     //    kein Stichwort, das der Handwerker kennen müsste. Das Rundenlimit ist
@@ -469,7 +597,7 @@ export async function erstelleDokument(args: {
       nummer,
       version,
       ersetztId: istNachtrag ? vorher.id : null,
-      bearbeitenToken: erzeugeToken(),
+      bearbeitenToken: erzeugeKurzToken(),
       kundenToken: erzeugeToken(),
       transkript,
       kundeName: daten.kunde.name,
@@ -616,6 +744,30 @@ export async function erstelleDokument(args: {
         `🎉 Schon ${anzahl} Angebote mit AuftragsBoss! Kennst du Kollegen, die auch ständig Angebote schreiben?\n\n` +
           `Lade sie ein, *ihr bekommt beide 1 Monat gratis*:\n${werbeLink(code)}`,
       );
+    }
+  }
+
+  // Nach dem 2. Angebot einmalig um kurzes Feedback bitten — NUR echte (Nicht-
+  // Test-)Betriebe, garantiert nur EINMAL (über ein Event gemerkt, kein Schema-
+  // Umbau). Setzt das Feedback-Fenster: die nächste kurze Sprach-/Textnachricht
+  // wird dann als Feedback erfasst (ein langes Diktat bleibt ein Auftrag).
+  if (!handwerker.istTest && !istNachtrag) {
+    const anzahlV1 = await prisma.dokument.count({ where: { handwerkerId, version: 1 } });
+    if (anzahlV1 === FEEDBACK_NUDGE_AB_ANGEBOT) {
+      const schonGefragt = await prisma.event.count({
+        where: { handwerkerId, typ: "FEEDBACK_NUDGE" },
+      });
+      if (schonGefragt === 0) {
+        await prisma.handwerker.update({
+          where: { id: handwerkerId },
+          data: { feedbackWartetSeit: new Date() },
+        });
+        await sendeWhatsAppText(
+          vonNummer,
+          `🙏 Kurze Frage: Wie läuft AuftragsBoss bisher für dich? Antworte einfach mit einer kurzen *Sprachnachricht*. Ich lese jede Rückmeldung und verbessere das Produkt damit.`,
+        );
+        await spurEvent(prisma, "FEEDBACK_NUDGE", { handwerkerId, data: { nachAngebot: anzahlV1 } });
+      }
     }
   }
 

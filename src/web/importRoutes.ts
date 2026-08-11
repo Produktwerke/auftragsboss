@@ -108,7 +108,7 @@ export async function importRoutes(app: FastifyInstance): Promise<void> {
           ok: true,
           uebernommen: 0,
           preisgedaechtnisAus: true,
-          hinweis: "Import bestätigt. Das Preisgedächtnis ist ausgeschaltet — es wurden keine Preise gemerkt.",
+          hinweis: "Import bestätigt. Das Preisgedächtnis ist ausgeschaltet, es wurden keine Preise gemerkt.",
         });
       }
 
@@ -126,18 +126,18 @@ function importSeite(
 ): string {
   const gedaechtnisHinweis = preisGedaechtnisAktiv
     ? "Nach dem Bestätigen merkt sich AuftragsBoss deine Preise (datiert) und schlägt sie beim nächsten Angebot vor."
-    : "Dein Preisgedächtnis ist ausgeschaltet — Preise werden beim Bestätigen nicht gemerkt. In den Einstellungen aktivierbar.";
+    : "Dein Preisgedächtnis ist ausgeschaltet. Preise werden beim Bestätigen nicht gemerkt. In den Einstellungen aktivierbar.";
 
   const content = `
       <div class="page-head">
         <div>
           <h1 class="greet">Angebot importieren</h1>
-          <p class="sub">Lies alte Angebote ein — AuftragsBoss übernimmt daraus deine Preise und Positionen.</p>
+          <p class="sub">Lies alte Angebote ein. AuftragsBoss übernimmt daraus deine Preise und Positionen.</p>
         </div>
       </div>
 
       <div class="section">
-        <div class="section-h"><h2>Alte Angebote einlesen</h2><p>Nur deine Texte werden gelesen — das neue Angebot entsteht immer im AuftragsBoss-Stil. Mehrere Dateien auf einmal möglich. PDF oder Word (.docx), je max. 15&nbsp;MB.</p></div>
+        <div class="section-h"><h2>Alte Angebote einlesen</h2><p>Nur deine Texte werden gelesen, das neue Angebot entsteht immer im AuftragsBoss-Stil. Mehrere Dateien auf einmal möglich. PDF oder Word (.docx), je max. 15&nbsp;MB.</p></div>
         <div class="section-b">
           <label class="dropzone" id="dz" for="datei">
             <input id="datei" type="file" multiple accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
@@ -224,7 +224,7 @@ async function bestaetigen(){
   }
   st.style.color='var(--ok)';
   st.textContent = aus
-    ? (anzahl+' Angebot(e) bestätigt. Preisgedächtnis ist aus — es wurden keine Preise gemerkt.')
+    ? (anzahl+' Angebot(e) bestätigt. Preisgedächtnis ist aus, es wurden keine Preise gemerkt.')
     : (anzahl+' Angebot(e) bestätigt · '+summe+' Preis(e) ins Preisgedächtnis übernommen (datiert).');
   if(fehler) st.textContent+=' ('+fehler+' mit Fehler)';
   b.style.display='none';$('gedaechtnis').style.display='none';importIds=[];

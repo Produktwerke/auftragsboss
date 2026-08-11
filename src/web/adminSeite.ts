@@ -37,7 +37,7 @@ function posListe(positionen: Pos[]): string {
   return `<ul class="pos">${positionen.map(posZeile).join("")}</ul>`;
 }
 
-export function adminSeite(args: { dokumente: Dokument[] }): string {
+export function adminSeite(args: { dokumente: Dokument[]; basis?: string }): string {
   const eintraege = args.dokumente
     .map((d) => {
       const orig: Snapshot | null = d.kiOriginalJson ? (JSON.parse(d.kiOriginalJson) as Snapshot) : null;
@@ -83,7 +83,7 @@ export function adminSeite(args: { dokumente: Dokument[] }): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AuftragsBoss — Lern-Auswertung</title>
+<title>AuftragsBoss · Lern-Auswertung</title>
 <style>
   * { box-sizing:border-box; }
   body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:#eef0f3; color:#1a1a1a; line-height:1.5; }
@@ -117,7 +117,7 @@ export function adminSeite(args: { dokumente: Dokument[] }): string {
 <body>
 <div class="rahmen">
   <h1>Lern-Auswertung</h1>
-  <p class="unter">KI-Original gegenüber dem, was der Handwerker daraus gemacht hat. Nur intern; ohne Kundennamen und Anschriften, nur Positionen.</p>
+  <p class="unter">KI-Original gegenüber dem, was der Handwerker daraus gemacht hat. Nur intern; ohne Kundennamen und Anschriften, nur Positionen.${args.basis ? ` <a href="${args.basis}/betriebe">Zum Betreiber-Cockpit (Kunden)</a>` : ""}</p>
 
   <div class="kennz">
     <div class="kachel"><div class="wert">${eintraege.length}</div><div class="lab">Angebote mit KI-Original</div></div>

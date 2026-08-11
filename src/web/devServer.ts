@@ -8,6 +8,7 @@ import Fastify from "fastify";
 import { prisma } from "../pipeline.js";
 import { ladePreisliste } from "../preisliste.js";
 import { editorRoutes } from "./routes.js";
+import { betreiberRoutes } from "./betreiberRoutes.js";
 import { basisUrl, bearbeitenLink, einstellungenLink, erzeugeToken, kundenLink, werbeLink } from "./tokens.js";
 import { einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
 import { werbeCodeBereit } from "../empfehlung.js";
@@ -98,6 +99,7 @@ async function main(): Promise<void> {
 
   const app = Fastify({ logger: false });
   await app.register(editorRoutes);
+  await app.register(betreiberRoutes);
 
   const tokens = await stelleDemoDokumentBereit();
   const port = Number(process.env.PORT ?? 3000);
@@ -111,6 +113,7 @@ async function main(): Promise<void> {
   console.log(`  Einstellungen:\n  ${einstellungenLink(tokens.einstellungen)}\n`);
   console.log(`  Kundenansicht: ${kundenLink(tokens.kunde)}\n`);
   console.log(`  Lern-Auswertung (Admin):\n  ${basisUrl()}/admin/${process.env.ADMIN_TOKEN}\n`);
+  console.log(`  Betreiber-Cockpit (Kunden):\n  ${basisUrl()}/admin/${process.env.ADMIN_TOKEN}/betriebe\n`);
   console.log(`  Einladung (Empfehlung):\n  ${werbeLink(tokens.werbe)}`);
   console.log("\n  Beenden mit Strg+C");
   console.log(linie + "\n");

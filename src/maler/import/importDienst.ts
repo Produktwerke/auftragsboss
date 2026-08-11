@@ -8,6 +8,7 @@ import type { PrismaClient } from "@prisma/client";
 import { erzwingeTenant } from "../../mandant.js";
 import { anthropicKonfiguriert } from "../../config.js";
 import { spurEvent } from "../../analytics/event.js";
+import { kostenClaudeCent } from "../../analytics/kikosten.js";
 import { extrahiereText } from "./extraktion.js";
 import { parseAngebotstext, type ParseErgebnis, type ParsePosition } from "./parser.js";
 import { kiAusleseAngebotstext } from "./kiAuslese.js";
@@ -46,7 +47,12 @@ export async function importiereAltangebot(
   const hatText = extraktion.text.replace(/\s/g, "").length >= 10;
   if (hatText && anthropicKonfiguriert()) {
     try {
-      zerlegung = await kiAusleseAngebotstext(extraktion.text);
+      zerlegung = await kiAusleseAngebotstext(extraktion.text, (ein, aus) => {
+        void spurEvent(prisma, "KI_AUFRUF", {
+          handwerkerId: tenant,
+          data: { dienst: "import", tokensEin: ein, tokensAus: aus, kostenCent: kostenClaudeCent(ein, aus) },
+        });
+      });
       ausleseMethode = "ki";
     } catch (err) {
       console.error("KI-Auslese fehlgeschlagen, nutze Regel-Parser:", err);

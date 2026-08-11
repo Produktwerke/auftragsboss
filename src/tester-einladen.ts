@@ -64,7 +64,7 @@ console.log("=".repeat(70));
 console.log("\n— Fertiger Einladungstext zum Kopieren ——————————————————\n");
 console.log(`Hallo${name ? " " + name.split(" ")[0] : ""},
 
-du testest AuftragsBoss – dein Angebot per WhatsApp-Sprachnachricht.
+du testest AuftragsBoss, dein Angebot per WhatsApp-Sprachnachricht.
 
 So geht's:
 1) Speichere diese Nummer als Kontakt: ${PRODUKTIONSNUMMER}
@@ -77,7 +77,7 @@ Dein persönlicher Bereich (kein Login nötig, einfach den Link speichern):
 • Alte Angebote hochladen (dann schlägt AuftragsBoss beim nächsten Mal deine
   eigenen Preise vor):  ${importLink(token)}
 
-Tipp: Lade zuerst 2–3 deiner letzten Angebote hoch. Dann kennt AuftragsBoss
+Tipp: Lade zuerst 2 bis 3 deiner letzten Angebote hoch. Dann kennt AuftragsBoss
 deine Preise, sobald du dein erstes Angebot einsprichst.
 
 Bei Fragen einfach zurückschreiben. Danke fürs Testen!`);

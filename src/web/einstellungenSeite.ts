@@ -64,7 +64,7 @@ export function einstellungenSeite(args: {
       <div class="page-head">
         <div>
           <h1 class="greet">Einstellungen</h1>
-          <p class="sub">Diese Angaben erscheinen auf jedem Angebot. Einmal einstellen — danach passt alles automatisch.</p>
+          <p class="sub">Diese Angaben erscheinen auf jedem Angebot. Einmal einstellen, danach passt alles automatisch.</p>
         </div>
         <div class="save-hint">Automatisch gespeichert <span class="statusmsg" id="status"></span></div>
       </div>
@@ -73,7 +73,7 @@ export function einstellungenSeite(args: {
         <div class="settings-forms">
 
           <div class="section">
-            <div class="section-h"><h2>Logo &amp; Erscheinungsbild</h2><p>PNG oder JPG mit möglichst transparentem Hintergrund, max. 3 MB. Die Akzentfarbe erscheint nur auf deinen Angeboten — nicht im Cockpit.</p></div>
+            <div class="section-h"><h2>Logo &amp; Erscheinungsbild</h2><p>PNG oder JPG mit möglichst transparentem Hintergrund, max. 3 MB. Die Akzentfarbe erscheint nur auf deinen Angeboten, nicht im Cockpit.</p></div>
             <div class="section-b">
               <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                 <label class="btn prim" for="logoDatei" style="cursor:pointer;">Logo hochladen<input type="file" id="logoDatei" accept="image/png,image/jpeg" hidden></label>
@@ -159,9 +159,10 @@ export function einstellungenSeite(args: {
         </div><!-- /settings-forms -->
 
         <aside class="settings-preview">
-          <div class="preview-head">
+          <div class="preview-head" id="pvHead">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
             Live-Vorschau
+            <svg class="pv-caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
           </div>
           <div class="doc">
             <div class="d-head">
@@ -203,6 +204,7 @@ export function einstellungenSeite(args: {
   .settings-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:24px;align-items:start;}
   .settings-preview{position:sticky;top:80px;}
   .preview-head{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px;}
+  .pv-caret{display:none;}
   .preview-note{font-size:12px;color:var(--faint);margin:12px 2px 0;line-height:1.5;}
   /* A4-Dokument (nur hier die Kundenfarbe) */
   .doc{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 34px rgba(16,24,40,.12);padding:26px 26px 20px;color:#222;}
@@ -224,7 +226,27 @@ export function einstellungenSeite(args: {
   .doc tr.ges td{font-weight:800;color:var(--akzent);border-top:2px solid var(--akzent);border-bottom:none;padding-top:7px;}
   .doc .d-gueltig{font-size:10.5px;color:#666;margin-top:11px;}
   .doc .d-fuss{font-size:9.5px;color:#8a8a8a;margin-top:15px;padding-top:9px;border-top:1px solid #eceff2;line-height:1.6;}
-  @media (max-width:960px){ .settings-layout{grid-template-columns:1fr;} .settings-preview{position:static;order:-1;margin-bottom:6px;} }`;
+  @media (max-width:960px){ .settings-layout{grid-template-columns:1fr;} .settings-preview{position:static;order:-1;margin-bottom:6px;} }
+  /* Handy: Live-Vorschau als fixes, scrollbares Panel unten (bleibt beim Bearbeiten sichtbar) */
+  @media (max-width:760px){
+    .settings-layout{padding-bottom:46vh;transition:padding-bottom .22s ease;}
+    .settings-preview{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:40;order:0;margin:0;height:44vh;
+      background:var(--panel);border-top:1px solid var(--line-2);border-radius:16px 16px 0 0;
+      box-shadow:0 -12px 32px rgba(16,24,40,.20);overflow-y:auto;overflow-x:hidden;padding:0 14px 16px;
+      -webkit-overflow-scrolling:touch;transition:height .22s ease;}
+    /* Kopf als volle, deckende Leiste: Inhalt scrollt sauber darunter, nichts blitzt oben durch.
+       Gleichzeitig Griff/Tipp-Fläche zum Auf-/Zuklappen. */
+    .settings-preview .preview-head{position:sticky;top:0;z-index:2;margin:0 -14px 8px;padding:17px 16px 9px;
+      background:var(--panel);cursor:pointer;user-select:none;}
+    .settings-preview .preview-head::before{content:"";position:absolute;top:7px;left:50%;transform:translateX(-50%);
+      width:38px;height:4px;background:var(--line-2);border-radius:3px;}
+    .settings-preview .pv-caret{display:block;margin-left:auto;transition:transform .22s ease;}
+    .settings-preview .preview-note{display:none;}
+    /* Zugeklappt: nur die Kopf-Leiste bleibt sichtbar, mehr Platz für die Einstellungen. */
+    .settings-layout.vorschau-zu{padding-bottom:66px;}
+    .settings-layout.vorschau-zu .settings-preview{height:52px;overflow:hidden;}
+    .settings-layout.vorschau-zu .pv-caret{transform:rotate(180deg);}
+  }`;
 
   const scriptExtra = `
 const TOKEN = ${JSON.stringify(token)};
@@ -338,6 +360,14 @@ document.getElementById("feedbackSenden").addEventListener("click", async () => 
     setStatus("feedbackStatus","✓ Danke für dein Feedback!","var(--ok)");
   } catch(e){ setStatus("feedbackStatus","Senden fehlgeschlagen","#c0392b"); }
 });
+
+// Live-Vorschau (Handy) per Tipp auf die Kopfleiste auf-/zuklappen.
+var pvHead = document.getElementById("pvHead");
+if (pvHead) {
+  pvHead.addEventListener("click", function(){
+    document.querySelector(".settings-layout").classList.toggle("vorschau-zu");
+  });
+}
 
 aktualisiereVorschau();
 `;

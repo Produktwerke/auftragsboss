@@ -157,7 +157,7 @@ export const DokumentSchema = z.object({
   einleitung: z
     .string()
     .describe(
-      "Anrede und 1–3 einleitende Sätze für das Kundendokument. Sie-Form, professionell, freundlich. " +
+      "Anrede und 1 bis 3 einleitende Sätze für das Kundendokument. Sie-Form, professionell, freundlich. " +
         "Bei ANGEBOT: Bezug auf das Gespräch/den Termin, Freude über die Anfrage. " +
         "Bei PROTOKOLL: Dank für den Auftrag, Hinweis auf die Dokumentation. " +
         "KEINE Positionsliste und KEINE Summen — die fügt das Programm selbst ein.",
@@ -328,6 +328,8 @@ export interface DialogNachricht {
 export async function strukturiereDialog(
   nachrichten: DialogNachricht[],
   preisliste: Preisliste,
+  /** Optional: meldet den Token-Verbrauch (Kosten-Tracking im Betreiber-Cockpit). */
+  verbrauch?: (tokensEin: number, tokensAus: number) => void,
 ): Promise<DokumentDaten> {
   const anthropic = new Anthropic({ apiKey: anthropicConfig().ANTHROPIC_API_KEY });
   const b = preisliste.betrieb;
@@ -368,6 +370,9 @@ export async function strukturiereDialog(
   // Fable 5 kann Anfragen aus Sicherheitsgründen ablehnen (stop_reason
   // "refusal") — bei Handwerker-Diktaten praktisch ausgeschlossen, aber
   // sauber abfangen statt kryptisch scheitern.
+  // Verbrauch auch bei refusal melden — die Token sind trotzdem angefallen.
+  verbrauch?.(response.usage?.input_tokens ?? 0, response.usage?.output_tokens ?? 0);
+
   if (response.stop_reason === "refusal") {
     throw new Error("Die KI hat die Verarbeitung abgelehnt (refusal) — bitte Diktat prüfen.");
   }

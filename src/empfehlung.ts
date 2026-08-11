@@ -20,7 +20,7 @@ export async function werbeCodeBereit(prisma: PrismaClient, handwerker: Handwerk
 /** Vorgefertigter Text zum Selbst-Teilen (WhatsApp/E-Mail), inkl. Link. */
 export function empfehlungsText(werberFirma: string, werbeUrl: string): string {
   return (
-    `Hi, ich nutze AuftragsBoss – damit sprichst du dein Angebot einfach per WhatsApp ` +
+    `Hi, ich nutze AuftragsBoss, damit sprichst du dein Angebot einfach per WhatsApp ` +
     `ein und bekommst ein fertiges Angebot als PDF/Word. Spart mir richtig Zeit. ` +
     `Wenn du dich über meinen Link anmeldest, bekommen wir beide 1 Monat gratis: ${werbeUrl}`
   );

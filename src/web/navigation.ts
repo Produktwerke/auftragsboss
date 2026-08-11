@@ -67,7 +67,7 @@ export function appShell(opts: {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(titel)} — AuftragsBoss</title>
+<title>${esc(titel)} · AuftragsBoss</title>
 <style>
 ${dashStyles()}
 ${opts.headExtra ?? ""}
@@ -78,7 +78,7 @@ ${opts.headExtra ?? ""}
   <input type="checkbox" id="navToggle" class="nav-toggle" hidden>
 
   <aside class="sidebar" aria-label="Hauptnavigation">
-    <a class="brand" href="${esc(cockpit)}" aria-label="AuftragsBoss — zur Übersicht">
+    <a class="brand" href="${esc(cockpit)}" aria-label="AuftragsBoss, zur Übersicht">
       ${LOGO_DATA_URI ? `<img class="brand-logo" src="${LOGO_DATA_URI}" alt="">` : `<span class="brand-mark">A</span>`}
       <span class="brand-name">Auftrags<b>Boss</b></span>
     </a>
@@ -299,5 +299,11 @@ export function dashStyles(): string {
     .acct-text{display:none;}
     .grid2{grid-template-columns:1fr;}
     .page-head{align-items:flex-start;}
+    /* KPI-Kacheln als 2x2-Quartett statt gestapelt */
+    .stats{grid-template-columns:1fr 1fr;gap:12px;}
+    .stat{padding:13px 13px;}
+    .stat .v{font-size:22px;margin-top:6px;}
+    .stat .k{font-size:11.5px;}
+    .stat .m{font-size:11px;}
   }`;
 }

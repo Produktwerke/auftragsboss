@@ -15,6 +15,15 @@ export interface EventOptionen {
   data?: Record<string, unknown>;
 }
 
+/**
+ * Grobe Geräteklasse aus dem User-Agent — PII-frei, nur "mobil"/"desktop".
+ * Für Auswertungen wie „Link am Handy oder am Laptop geöffnet?". Kein Fingerprint.
+ */
+export function geraetAusUA(ua: string | undefined): "mobil" | "desktop" | "unbekannt" {
+  if (!ua) return "unbekannt";
+  return /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(ua) ? "mobil" : "desktop";
+}
+
 export async function spurEvent(
   prisma: PrismaClient,
   typ: string,

@@ -19,7 +19,9 @@
 // Tempo-Limit laufen im Arbeitsspeicher; das reicht als Kostenbremse, denn nach
 // einem (seltenen) Neustart greifen die DB-Grenzen pro Nummer ohnehin weiter.
 import type { Handwerker, PrismaClient } from "@prisma/client";
-import { direkttestConfig } from "./config.js";
+import { direkttestConfig, featureConfig } from "./config.js";
+import { einstellungenTokenBereit } from "./betrieb/betriebsdaten.js";
+import { registrierLink } from "./web/tokens.js";
 
 const KONTAKT = "Melde dich beim AuftragsBoss-Team, dann richten wir dir dein eigenes Konto ein.";
 
@@ -111,6 +113,15 @@ export async function testNachrichtBlockiert(
     where: { handwerkerId: handwerker.id, version: 1 },
   });
   if (fertige >= cfg.DIREKTTEST_GRATIS_ANGEBOTE) {
+    // Ist die Selbst-Anmeldung an, ist genau JETZT der beste Moment: statt „melde
+    // dich beim Team" bekommt der Interessent seinen persönlichen Anmelde-Link.
+    if (featureConfig().FEATURE_SELBSTREGISTRIERUNG) {
+      const token = await einstellungenTokenBereit(prisma, handwerker);
+      return (
+        `🎉 Das waren deine ${cfg.DIREKTTEST_GRATIS_ANGEBOTE} Gratis-Test-Angebote. Stark, dass du AuftragsBoss ausprobiert hast!\n\n` +
+        `Melde jetzt in 1 Minute deinen Betrieb an. Dann gehören dir Logo, Adresse und alle Angebote, und du legst richtig los:\n${registrierLink(token)}`
+      );
+    }
     return (
       `🎉 Das waren deine ${cfg.DIREKTTEST_GRATIS_ANGEBOTE} Gratis-Test-Angebote. ` +
       `Stark, dass du AuftragsBoss ausprobiert hast! Wenn du damit richtig arbeiten willst: ${KONTAKT}`

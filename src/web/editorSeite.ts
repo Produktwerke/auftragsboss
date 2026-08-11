@@ -27,8 +27,10 @@ export function editorSeite(args: {
   preisliste: Preisliste;
   /** Link zurück zu den Betriebseinstellungen inkl. Angebotsübersicht. */
   einstellungenUrl?: string;
+  /** PLZ-Nachschlag-Knopf anzeigen (Feature-Flag FEATURE_PLZ_LOOKUP). */
+  plzLookup?: boolean;
 }): string {
-  const { dokument, preisliste, einstellungenUrl, handwerker } = args;
+  const { dokument, preisliste, einstellungenUrl, handwerker, plzLookup } = args;
   const b = preisliste.betrieb;
   const akzent = `#${/^[0-9a-fA-F]{6}$/.test(b.farbe) ? b.farbe : "0B5CAD"}`;
   const logo = ladeLogo(b.logo);
@@ -264,7 +266,7 @@ export function editorSeite(args: {
         <div class="firma">${escapeHtml(b.firma)}</div>
         <div class="adr">${escapeHtml([b.strasse, `${b.plz} ${b.ort}`.trim(), b.telefon].filter(Boolean).join(" · "))}</div>
       </div>
-      ${logo ? `<img src="${logo.dataUrl}" alt="Logo">` : `<div class="logo-platzhalter">Ihr Logo</div>`}
+      ${logo ? `<img src="${logo.dataUrl}" alt="Logo">` : `<div class="logo-platzhalter">Dein Logo</div>`}
     </div>
 
     <div class="zwei">
@@ -273,7 +275,13 @@ export function editorSeite(args: {
     </div>
     <div class="zwei">
       <div><label>Straße und Hausnummer</label><input id="kundeStrasse" value="${escapeHtml(startDaten.kundeStrasse)}" placeholder="z. B. Musterstraße 5"></div>
-      <div><label>PLZ und Ort</label><input id="kundePlzOrt" value="${escapeHtml(startDaten.kundePlzOrt)}" placeholder="z. B. 12345 Musterstadt"></div>
+      <div><label>PLZ und Ort</label>
+        <div style="display:flex;gap:8px;align-items:stretch">
+          <input id="kundePlzOrt" value="${escapeHtml(startDaten.kundePlzOrt)}" placeholder="z. B. 12345 Musterstadt" style="flex:1">
+          ${plzLookup ? `<button type="button" id="plzBtn" title="PLZ aus Straße und Ort suchen" style="white-space:nowrap;padding:0 12px;border:1px solid #cbd2da;border-radius:8px;background:#f3f4f6;cursor:pointer">🔍 PLZ</button>` : ``}
+        </div>
+        ${plzLookup ? `<div id="plzHint" style="font-size:12px;color:#6b7280;margin-top:4px;min-height:16px"></div>` : ``}
+      </div>
     </div>
     <div class="zwei">
       <div><label>${istAngebot ? "Angebotsnummer" : "Protokollnummer"}</label><input id="nummer" value="${escapeHtml(startDaten.nummer)}"></div>
@@ -605,6 +613,32 @@ let aenderungsTimer=null;
 ['kundeName','kundenNummer','kundeStrasse','kundePlzOrt','nummer','datum','objekt','einleitung','schlusstext'].forEach(id=>{
   document.getElementById(id).addEventListener('input',markiereGeaendert);
 });
+// PLZ-Nachschlag (nur wenn der Knopf da ist, Feature-Flag FEATURE_PLZ_LOOKUP).
+const plzBtn=document.getElementById('plzBtn');
+if(plzBtn){
+  const plzHint=document.getElementById('plzHint');
+  const setzeHinweis=(t,c)=>{ if(plzHint){ plzHint.style.color=c||'#6b7280'; plzHint.textContent=t; } };
+  plzBtn.addEventListener('click',async()=>{
+    const strasse=val('kundeStrasse');
+    const ort=val('kundePlzOrt').replace(/^\\s*\\d{5}\\s*/,'').trim();
+    if(strasse.length<2||ort.length<2){ setzeHinweis('Bitte erst Straße und Ort eingeben.','#b7791f'); return; }
+    plzBtn.disabled=true; const alt=plzBtn.textContent; plzBtn.textContent='…'; setzeHinweis('Suche PLZ …');
+    try{
+      const r=await fetch('/api/plz?strasse='+encodeURIComponent(strasse)+'&ort='+encodeURIComponent(ort));
+      const data=await r.json().catch(()=>({}));
+      if(data&&data.plz){
+        document.getElementById('kundePlzOrt').value=data.plz+' '+ort;
+        markiereGeaendert();
+        setzeHinweis('PLZ '+data.plz+' ergänzt.','#3a9d5d');
+      } else {
+        setzeHinweis('Keine PLZ gefunden, bitte selbst eintragen.','#b7791f');
+      }
+    }catch(_){
+      setzeHinweis('Suche fehlgeschlagen, bitte selbst eintragen.','#b7791f');
+    }
+    plzBtn.disabled=false; plzBtn.textContent=alt;
+  });
+}
 // Versendet = schreibgeschützt: Eingaben sperren (Export/Ansehen bleibt).
 if(START.versendet){ document.body.classList.add('gesperrt'); }
 function markiereGeaendert(){

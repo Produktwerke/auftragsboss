@@ -5,7 +5,7 @@
 //   GET  /api/a/:token/export.word|pdf → Datei herunterladen
 //
 // Kein Login: Der Zufallstoken IST die Zugangsberechtigung.
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "../pipeline.js";
 import { ladePreisliste } from "../preisliste.js";
 import { berechneAngebot } from "../angebot/berechnung.js";
@@ -26,8 +26,20 @@ import { smtpKonfiguriert, featureConfig, webtestConfig } from "../config.js";
 import { sendeMail, WORD_MIME } from "../email/send.js";
 import { dokumentMail, logoAnhang } from "../email/templates.js";
 import { merkePreise } from "../betrieb/preisgedaechtnis.js";
+import { spurEvent, geraetAusUA } from "../analytics/event.js";
+import { findePlz } from "../betrieb/plzLookup.js";
 import { testSeite } from "./testSeite.js";
 import { testErlaubt, testAngebotAusAudio, testAngebotBeispiel, pruefeAudio } from "./webtest.js";
+import { schleuseSeite } from "./schleuseSeite.js";
+import {
+  darfZugreifen,
+  hatGeraetevertrauen,
+  setzeGeraetevertrauen,
+  nummerPasst,
+  zugangGesperrt,
+  merkeFehlversuch,
+  setzeVersucheZurueck,
+} from "./geraetevertrauen.js";
 
 interface SpeicherKoerper {
   kundeName?: string;
@@ -62,7 +74,14 @@ interface EinstellungenKoerper {
 
 export async function editorRoutes(app: FastifyInstance): Promise<void> {
   // ── Bearbeitungsseite ─────────────────────────────────
-  app.get<{ Params: { token: string } }>("/a/:token", async (req, reply) => {
+  // Kurzer Wurzel-Link "/:token" (neue Angebote) UND weiterhin "/a/:token"
+  // (ältere, schon verschickte Links). Beide Pfade, ein Handler. Fastify räumt
+  // statischen Routen (/testen, /health) Vorrang vor dem Parameter ein, daher
+  // verschluckt "/:token" nichts anderes; unbekannte Pfade landen im 404.
+  const editorAnzeigen = async (
+    req: FastifyRequest<{ Params: { token: string } }>,
+    reply: FastifyReply,
+  ) => {
     const dokument = await prisma.dokument.findUnique({
       where: { bearbeitenToken: req.params.token },
     });
@@ -71,6 +90,15 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     const handwerker = await prisma.handwerker.findUniqueOrThrow({
       where: { id: dokument.handwerkerId },
     });
+
+    // Zugangs-Schleuse (Stufe A): Beim ersten Öffnen auf einem Gerät muss sich
+    // der Betrieb per Handynummer ausweisen — schützt den per E-Mail
+    // weitergeleiteten Link. Danach vertraut das Gerät dauerhaft (Cookie).
+    // Test-Konten werden nie geschleust.
+    if (!darfZugreifen(req, handwerker.id, handwerker.istTest)) {
+      return reply.type("text/html; charset=utf-8").send(schleuseSeite({ token: req.params.token }));
+    }
+
     // Betriebsdaten des Handwerkers über die Vorgaben legen — so erscheinen
     // sein Logo, seine Farbe und seine Adresse im Editor-Briefkopf.
     const preisliste = effektivePreisliste(handwerker, ladePreisliste());
@@ -82,10 +110,61 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       ? undefined
       : cockpitLink(await einstellungenTokenBereit(prisma, handwerker));
 
+    // Produktmetrik (PII-frei): Bearbeiten-Link geöffnet — Gerät (Handy/Desktop)
+    // und Zeitpunkt. Erlaubt „abends am Laptop oder später am Handy?"-Auswertungen.
+    await spurEvent(prisma, "LINK_GEOEFFNET", {
+      handwerkerId: handwerker.id,
+      data: { ziel: "editor", geraet: geraetAusUA(req.headers["user-agent"]), istTest: handwerker.istTest },
+    });
+
     return reply.type("text/html; charset=utf-8").send(
-      editorSeite({ dokument, handwerker, preisliste, einstellungenUrl }),
+      editorSeite({
+        dokument,
+        handwerker,
+        preisliste,
+        einstellungenUrl,
+        plzLookup: featureConfig().FEATURE_PLZ_LOOKUP,
+      }),
     );
-  });
+  };
+  app.get<{ Params: { token: string } }>("/a/:token", editorAnzeigen);
+  app.get<{ Params: { token: string } }>("/:token", editorAnzeigen);
+
+  // ── Zugang bestätigen (Schleuse) ──────────────────────
+  // Nimmt die eingegebene Handynummer, vergleicht sie mit der WhatsApp-Nummer
+  // des Betriebs. Passt sie, wird das Gerät dauerhaft vertraut (Cookie).
+  app.post<{ Params: { token: string }; Body: { nummer?: string } }>(
+    "/a/:token/zugang",
+    async (req, reply) => {
+      const sperre = zugangGesperrt(req.params.token);
+      if (sperre.gesperrt) {
+        return reply
+          .code(429)
+          .send({ fehler: `Zu viele Versuche. Bitte ${Math.ceil(sperre.sekunden / 60)} Min. warten.` });
+      }
+
+      const dokument = await prisma.dokument.findUnique({
+        where: { bearbeitenToken: req.params.token },
+        select: { handwerkerId: true },
+      });
+      if (!dokument) return reply.code(404).send({ fehler: "nicht gefunden" });
+
+      const handwerker = await prisma.handwerker.findUnique({
+        where: { id: dokument.handwerkerId },
+        select: { id: true, whatsappNummer: true },
+      });
+      if (!handwerker) return reply.code(404).send({ fehler: "nicht gefunden" });
+
+      if (!nummerPasst(req.body?.nummer ?? "", handwerker.whatsappNummer)) {
+        merkeFehlversuch(req.params.token);
+        return reply.code(401).send({ fehler: "Diese Nummer passt nicht zum Betrieb." });
+      }
+
+      setzeVersucheZurueck(req.params.token);
+      setzeGeraetevertrauen(reply, handwerker.id);
+      return reply.send({ ok: true });
+    },
+  );
 
   // ── Speichern ─────────────────────────────────────────
   app.put<{ Params: { token: string }; Body: SpeicherKoerper }>("/api/a/:token", async (req, reply) => {
@@ -93,6 +172,16 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       where: { bearbeitenToken: req.params.token },
     });
     if (!dokument) return reply.code(404).send({ fehler: "nicht gefunden" });
+
+    // Zugangs-Schleuse: nur vertraute Geräte (oder Test-Konten) dürfen speichern.
+    const zugangHw = await prisma.handwerker.findUnique({
+      where: { id: dokument.handwerkerId },
+      select: { istTest: true },
+    });
+    if (!darfZugreifen(req, dokument.handwerkerId, zugangHw?.istTest ?? false)) {
+      return reply.code(401).send({ fehler: "Bitte zuerst den Zugang bestätigen." });
+    }
+
     if (dokument.eingefroren) return reply.code(409).send({ fehler: "angenommen, eingefroren" });
     if (dokument.versendetAm) return reply.code(409).send({ fehler: "versendet, schreibgeschützt" });
 
@@ -151,9 +240,12 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     async (req, reply) => {
       const dokument = await prisma.dokument.findUnique({
         where: { bearbeitenToken: req.params.token },
-        select: { id: true },
+        select: { id: true, handwerkerId: true },
       });
       if (!dokument) return reply.code(404).send({ fehler: "nicht gefunden" });
+      if (!hatGeraetevertrauen(req, dokument.handwerkerId)) {
+        return reply.code(401).send({ fehler: "Bitte zuerst den Zugang bestätigen." });
+      }
       const versendet = req.body?.versendet !== false; // Default: markieren
       await prisma.dokument.update({
         where: { id: dokument.id },
@@ -167,13 +259,24 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
   app.post<{ Params: { token: string } }>("/api/a/:token/loeschen", async (req, reply) => {
     const dokument = await prisma.dokument.findUnique({
       where: { bearbeitenToken: req.params.token },
-      select: { id: true },
+      select: { id: true, handwerkerId: true },
     });
     if (!dokument) return reply.code(404).send({ fehler: "nicht gefunden" });
+    if (!hatGeraetevertrauen(req, dokument.handwerkerId)) {
+      return reply.code(401).send({ fehler: "Bitte zuerst den Zugang bestätigen." });
+    }
     // Abhängige Datensätze zuerst entfernen (FK), dann das Dokument.
     await prisma.gewaehrleistung.deleteMany({ where: { dokumentId: dokument.id } });
     await prisma.dokument.delete({ where: { id: dokument.id } });
     return reply.send({ ok: true });
+  });
+
+  // ── PLZ-Nachschlag (OpenPLZ, EU/DE) ───────────────────
+  // Manueller Knopf im Editor: liefert die PLZ zu Straße + Ort. Hinter Flag.
+  app.get<{ Querystring: { strasse?: string; ort?: string } }>("/api/plz", async (req, reply) => {
+    if (!featureConfig().FEATURE_PLZ_LOOKUP) return reply.code(404).send({ fehler: "nicht aktiv" });
+    const plz = await findePlz(req.query.strasse ?? "", req.query.ort ?? "");
+    return reply.send({ plz });
   });
 
   // ── Öffentlicher "Jetzt testen"-Aufnahmeknopf ─────────
@@ -241,8 +344,18 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       const handwerker = await prisma.handwerker.findUniqueOrThrow({
         where: { id: dokument.handwerkerId },
       });
+      // Zugangs-Schleuse: Ohne vertrautes Gerät kein Direkt-Download der Datei
+      // (schützt den Export-Weg genauso wie die Editor-Seite).
+      if (!darfZugreifen(req, handwerker.id, handwerker.istTest)) {
+        return reply.type("text/html; charset=utf-8").send(schleuseSeite({ token: req.params.token }));
+      }
       // Test-Angebote: kein Download. Nur über WhatsApp / für registrierte Betriebe.
       if (handwerker.istTest) return reply.code(403).type("text/html; charset=utf-8").send(nurUeberWhatsApp());
+
+      await spurEvent(prisma, "EXPORT", {
+        handwerkerId: handwerker.id,
+        data: { format: req.params.format, geraet: geraetAusUA(req.headers["user-agent"]) },
+      });
 
       const preisliste = effektivePreisliste(handwerker, ladePreisliste());
       const daten = dokumentZuDaten(dokument);
@@ -327,7 +440,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
         where: { id: dokument.handwerkerId },
       });
       // Test-Angebote: kein E-Mail-Versand.
-      if (handwerker.istTest) return reply.code(403).send({ fehler: "Im Test nicht verfügbar — nur über WhatsApp." });
+      if (handwerker.istTest) return reply.code(403).send({ fehler: "Im Test nicht verfügbar, nur über WhatsApp." });
 
       // SMTP muss eingerichtet sein — sonst würde emailConfig() den Server
       // beenden. Deshalb hier höflich ablehnen statt abzustürzen.
@@ -426,6 +539,16 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     };
     const werbeUrl = werbeLink(await werbeCodeBereit(prisma, handwerker));
 
+    // Wer den Einstellungs-/Cockpit-Link hat, ist nachweislich der Betrieb:
+    // Gerät als vertraut markieren, damit Angebote von hier aus ohne Schleuse
+    // öffnen und die Cockpit-Aktionen (Löschen/Versendet) greifen.
+    setzeGeraetevertrauen(reply, handwerker.id);
+
+    await spurEvent(prisma, "LINK_GEOEFFNET", {
+      handwerkerId: handwerker.id,
+      data: { ziel: "cockpit", geraet: geraetAusUA(req.headers["user-agent"]) },
+    });
+
     return reply.type("text/html; charset=utf-8").send(
       cockpitSeite({
         handwerker, logoDataUrl: logo?.dataUrl ?? null, akzent,
@@ -497,6 +620,9 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       version: d.version,
       versendetAm: d.versendetAm,
     }));
+
+    // Einstellungs-Token-Halter = nachweislich der Betrieb → Gerät vertrauen.
+    setzeGeraetevertrauen(reply, handwerker.id);
 
     return reply.type("text/html; charset=utf-8").send(
       einstellungenSeite({
@@ -618,7 +744,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       orderBy: { erstelltAm: "desc" },
       take: 50,
     });
-    return reply.type("text/html; charset=utf-8").send(adminSeite({ dokumente }));
+    return reply.type("text/html; charset=utf-8").send(adminSeite({ dokumente, basis: `/admin/${req.params.token}` }));
   });
 
   // ── Empfehlung: Einladungs-Landingpage ────────────────
@@ -658,7 +784,7 @@ function nurUeberWhatsApp(): string {
   return `<!doctype html><html lang="de"><meta charset="utf-8"><title>Nur über WhatsApp</title>
     <body style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:520px;margin:60px auto;padding:0 20px;color:#333;text-align:center;line-height:1.6;">
     <h1 style="color:#0b5cad;font-size:22px;">Nur über WhatsApp</h1>
-    <p>Der Download als PDF/Word steht im kostenlosen Test nicht zur Verfügung — nur für registrierte Betriebe über WhatsApp.</p>
+    <p>Der Download als PDF/Word steht im kostenlosen Test nicht zur Verfügung, nur für registrierte Betriebe über WhatsApp.</p>
     <p style="margin:26px 0;"><a href="https://wa.me/491749364823?text=Hallo%20AuftragsBoss%2C%20ich%20m%C3%B6chte%20loslegen." style="display:inline-block;background:#25D366;color:#fff;text-decoration:none;font-weight:700;padding:13px 22px;border-radius:9px;">▶ Jetzt über WhatsApp testen</a></p>
     <p style="color:#666;font-size:14px;">oder schreib direkt an: <b>+49 174 9364823</b></p>
     </body></html>`;

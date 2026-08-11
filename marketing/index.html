@@ -161,17 +161,68 @@
   .tile.hl{border-color:var(--steel2);}
   .tile.hl .ic{background:var(--signal);border-color:var(--signal);}
 
-  /* Steps */
-  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
-  .step{background:var(--bg2);border:1px solid var(--hair);border-radius:var(--r-lg);padding:26px 24px;position:relative;}
-  .step .n{font-family:var(--mono);font-size:13px;color:var(--signal);font-weight:700;letter-spacing:.1em;margin-bottom:12px;}
-  .step h3{margin:0 0 7px;font-size:18px;letter-spacing:-.01em;}
-  .step p{margin:0;color:var(--muted);font-size:14.5px;}
+  /* ===== Neue Conversion-Sektionen (11.08.) ===== */
+  /* 4 Differenzierer, ruhig/hochwertig statt Karten */
+  .diff{display:grid;grid-template-columns:repeat(4,1fr);background:var(--bg2);border:1px solid var(--hair);border-radius:var(--r-lg);overflow:hidden;}
+  .diff-i{padding:24px 22px;border-left:1px solid var(--hair);}
+  .diff-i:first-child{border-left:0;}
+  .diff-n{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--signal);letter-spacing:.12em;}
+  .diff-i h3{margin:9px 0 6px;font-size:15.5px;letter-spacing:-.01em;}
+  .diff-i p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.5;}
+  .diff-i p b{color:var(--ink);}
+  /* Maler-Erklärung + Mini-Nutzen */
+  .maler-erkl{max-width:820px;margin:0 auto 22px;text-align:center;color:var(--muted);font-size:15.5px;line-height:1.65;}
+  .maler-erkl b{color:var(--ink);}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .minibenefit{max-width:920px;margin:0 auto 26px;}
+  .mb{display:flex;align-items:center;gap:11px;background:var(--bg2);border:1px solid var(--hair);border-radius:var(--r);padding:14px 16px;font-size:14px;color:var(--ink);line-height:1.4;}
+  .mb-i{font-size:19px;flex:0 0 auto;}
+  /* 3-Schritt-Prozess */
+  .steps{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:stretch;gap:14px;}
+  .step{background:var(--bg2);border:1px solid var(--hair);border-radius:var(--r-lg);padding:24px 20px;}
+  .step-n{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--signal);line-height:1;}
+  .step h3{margin:12px 0 6px;font-size:16px;letter-spacing:-.01em;}
+  .step p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.5;}
+  .step-arrow{align-self:center;color:var(--signal);font-size:26px;font-weight:900;}
+  .lern-claim{max-width:820px;margin:24px auto 0;text-align:center;font-size:16px;color:var(--muted);line-height:1.6;}
+  .lern-claim b{color:var(--ink);}
+  .lern-claim .opt{display:block;margin-top:8px;font-size:13px;color:var(--dim);font-family:var(--mono);}
+  /* Betriebliches Gedächtnis */
+  .mem{max-width:820px;margin:0 auto;}
+  .mem-list{display:flex;flex-direction:column;gap:12px;margin-bottom:22px;}
+  .mem-q{background:var(--bg2);border:1px solid var(--hair);border-left:3px solid var(--signal);border-radius:var(--r);padding:15px 18px;color:var(--ink);font-size:15px;line-height:1.5;}
+  .mem-note{text-align:center;color:var(--muted);font-size:15px;line-height:1.65;margin:0;}
+  .mem-note b{color:var(--ink);}
+  /* Nichts lernen. Einfach WhatsApp. */
+  .einfach{max-width:820px;margin:0 auto;text-align:center;background:var(--bg2);border:1px solid var(--hair);border-radius:var(--r-lg);padding:40px 28px;}
+  .einfach .eyebrow{justify-content:center;}
+  .einfach h2{font-size:clamp(24px,3.4vw,34px);letter-spacing:-.015em;margin:0 0 10px;font-weight:800;text-transform:uppercase;text-wrap:balance;}
+  .ef-lead{color:var(--muted);font-size:16px;line-height:1.6;margin:0 auto 22px;max-width:620px;}
+  .ef-flow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;font-family:var(--mono);font-size:13px;color:var(--ink);}
+  .ef-flow span{background:var(--bg3);border:1px solid var(--steel);border-radius:20px;padding:8px 14px;}
+  .ef-flow .ef-x{background:none;border:0;padding:0 1px;color:var(--signal);font-size:18px;}
+  .ef-flow .ef-done{background:var(--signal);border-color:var(--signal);color:var(--signal-ink);font-weight:700;}
+  @media(max-width:820px){
+    .diff{grid-template-columns:1fr 1fr;}
+    .diff-i:nth-child(2n+1){border-left:0;}
+    .diff-i:nth-child(n+3){border-top:1px solid var(--hair);}
+    .grid3{grid-template-columns:1fr;}
+    .steps{grid-template-columns:1fr;}
+    .step-arrow{transform:rotate(90deg);justify-self:center;}
+  }
+  @media(max-width:520px){
+    .diff{grid-template-columns:1fr;}
+    .diff-i{border-left:0;border-top:1px solid var(--hair);}
+    .diff-i:first-child{border-top:0;}
+  }
 
   /* Demo */
-  .demo{display:grid;grid-template-columns:1fr auto 1fr;gap:22px;align-items:center;
+  .demo{display:flex;justify-content:center;align-items:center;gap:clamp(26px,4vw,54px);
     background:var(--bg2);border:1px solid var(--hair);border-radius:var(--r-lg);padding:28px;}
+  .demo .box{flex:0 1 auto;min-width:0;}
+  .demo .box-diktat{flex:0 1 400px;}
   .demo .box .lbl{margin-bottom:12px;display:block;}
+  .demo .box-angebot{text-align:center;}
   .bubble{background:var(--bg4);border:1px solid var(--steel);border-radius:var(--r);padding:16px 18px;font-size:15px;
     line-height:1.6;color:var(--ink);position:relative;}
   .bubble .mic{font-size:20px;margin-right:6px;}
@@ -187,7 +238,9 @@
   .poslist .hint b{color:var(--signal);font-family:var(--mono);}
 
   /* Screenshots */
-  .shots{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;justify-items:center;}
+  .shots{display:flex;justify-content:center;align-items:center;gap:14px;flex-wrap:nowrap;}
+  .shots .pcol{flex:0 1 250px;min-width:0;}
+  .flow{flex:0 0 auto;color:var(--signal);font-size:34px;font-weight:900;line-height:1;transform:translateY(-26px);}
   .pcol{width:100%;max-width:264px;text-align:center;}
   .phone{width:100%;aspect-ratio:9/19;background:#050608;border-radius:34px;padding:8px;
     border:1px solid var(--steel2);box-shadow:0 34px 70px rgba(0,0,0,.6),inset 0 0 0 2px rgba(255,255,255,.03);position:relative;}
@@ -222,6 +275,56 @@
   .s-pdf .ph{height:2px;background:#0B5CAD;margin:1px 0 6px;}
   .s-pdf .l{height:6px;border-radius:2px;background:#cfccc4;} .s-pdf .l.s{width:58%;} .s-pdf .l.m{width:82%;}
   .s-pdf .prow{display:flex;justify-content:space-between;gap:8px;font-size:8.5px;color:#333;border-bottom:1px solid #d6d3cb;padding-bottom:3px;margin-top:2px;}
+
+  /* Echte, scrollbare Screenshots im Geräterahmen */
+  .shot{position:relative;width:100%;height:100%;border-radius:27px;overflow:hidden;display:flex;flex-direction:column;}
+  .tab .shot{border-radius:12px;}
+  /* Einheitliche Handy-Statusleiste (bleibt beim Scrollen oben) */
+  .statusbar{flex:0 0 auto;height:22px;background:#050608;color:#fff;display:flex;align-items:center;justify-content:space-between;
+    padding:0 11px 0 13px;font-size:10px;font-weight:600;letter-spacing:.02em;z-index:3;user-select:none;}
+  .statusbar .si{display:flex;align-items:center;gap:5px;}
+  .statusbar .sig{display:inline-flex;align-items:flex-end;gap:1.5px;height:8px;}
+  .statusbar .sig i{width:2px;background:#fff;border-radius:1px;}
+  .statusbar .sig i:nth-child(1){height:3px;} .statusbar .sig i:nth-child(2){height:5px;}
+  .statusbar .sig i:nth-child(3){height:6.5px;} .statusbar .sig i:nth-child(4){height:8px;}
+  .statusbar .bat{width:16px;height:8px;border:1px solid rgba(255,255,255,.85);border-radius:2px;position:relative;padding:1px;}
+  .statusbar .bat::before{content:"";display:block;width:70%;height:100%;background:#fff;border-radius:1px;}
+  .statusbar .bat::after{content:"";position:absolute;right:-3px;top:50%;transform:translateY(-50%);width:2px;height:4px;background:rgba(255,255,255,.85);border-radius:0 1px 1px 0;}
+  .shot-screen{width:100%;height:100%;overflow-y:auto;overflow-x:hidden;background:#050608;
+    scrollbar-width:thin;scrollbar-color:var(--signal) rgba(255,255,255,.10);-webkit-overflow-scrolling:touch;}
+  .shot-screen::-webkit-scrollbar{width:6px;}
+  .shot-screen::-webkit-scrollbar-track{background:rgba(255,255,255,.08);border-radius:6px;}
+  .shot-screen::-webkit-scrollbar-thumb{background:var(--signal);border-radius:6px;}
+  .shot-screen img{width:100%;height:auto;display:block;-webkit-user-drag:none;user-select:none;}
+  /* Direkt anfassen und ziehen zum Scrollen (Maus); Scrollbalken bleibt zusaetzlich nutzbar */
+  .shot:not(.zoom) .shot-screen{cursor:grab;}
+  .shot:not(.zoom) .shot-screen.grabbing{cursor:grabbing;}
+  /* „mehr unten"-Verlauf + wippende Scroll-Pille */
+  .shot::after{content:"";position:absolute;left:0;right:0;bottom:0;height:70px;pointer-events:none;z-index:2;
+    background:linear-gradient(to top,rgba(5,6,8,.93),rgba(5,6,8,0));}
+  .scrollpille{position:absolute;left:50%;bottom:14px;z-index:3;pointer-events:none;
+    background:var(--signal);color:var(--signal-ink);font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.03em;
+    padding:4px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;box-shadow:0 6px 16px rgba(0,0,0,.45);
+    animation:bob 1.5s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,4px);}}
+  @media(prefers-reduced-motion:reduce){.scrollpille{animation:none;}}
+  .shots-lead.shots-tab{max-width:640px;margin:84px auto 0;text-align:center;}
+  .shots-tab .tab{aspect-ratio:4/3;}
+  .tab .statusbar{height:27px;padding:0 18px;font-size:11.5px;}
+  .tab .statusbar .sig{height:9px;} .tab .statusbar .bat{width:19px;height:9px;}
+  .shots-tab .tab::after{right:auto;top:9px;left:50%;transform:translateX(-50%);}
+  .scroll-tip{color:var(--dim);font-size:13px;font-family:var(--mono);margin-top:10px;}
+  /* Scroll-Hinweise ausblenden, wenn nicht (mehr) scrollbar */
+  .shot.ended::after,.shot.ended .scrollpille{opacity:0;}
+  .shot::after,.scrollpille{transition:opacity .25s;}
+  /* PDF-Handy: nicht scrollen, sondern zoomen */
+  .shot.zoom{cursor:zoom-in;}
+  .shot.zoom::after{display:none;}
+  .shot.zoom .shot-screen{overflow:hidden;background:#f4f2ee;}
+  .shot.zoom .shot-screen img{width:100%;height:100%;object-fit:contain;}
+  .zoompille{animation:none;background:#0d0f13;color:var(--signal);border:1px solid var(--signal);}
+  #lightbox .lb-img{max-width:min(92vw,460px);max-height:90vh;width:auto;height:auto;display:block;border-radius:16px;
+    box-shadow:0 30px 80px rgba(0,0,0,.6);cursor:default;}
 
   /* Pricing */
   .karten{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:stretch;}
@@ -299,8 +402,10 @@
     .hero-inner{padding:0 20px;}
     .grid4{grid-template-columns:1fr 1fr;}
     .steps,.karten,.vgrid,.vs{grid-template-columns:1fr;}
-    .shots{grid-template-columns:1fr;max-width:300px;margin:0 auto;}
-    .demo{grid-template-columns:1fr;text-align:left;} .demo .arrow{transform:rotate(90deg);justify-self:center;}
+    .shots{flex-direction:column;max-width:300px;margin:0 auto;}
+    .shots .pcol{flex:0 1 auto;width:100%;max-width:100%;}
+    .flow{transform:rotate(90deg);}
+    .demo{flex-direction:column;text-align:left;} .demo .box-diktat{flex:0 1 auto;width:100%;} .demo .arrow{transform:rotate(90deg);}
     .karte.top{margin-top:14px;}
     .vlist{grid-template-columns:1fr;}
   }
@@ -335,8 +440,13 @@
   /* DIN-A4-Angebot (Demo rechts) + Klick-zum-Vergrößern */
   .a4-thumb{cursor:zoom-in;display:inline-flex;flex-direction:column;align-items:center;gap:11px;border:0;background:none;padding:0;}
   .a4-thumb:focus-visible{outline:2px solid var(--signal);outline-offset:6px;border-radius:6px;}
-  .a4{width:33em;max-width:100%;font-size:10px;background:#fff;color:#20242b;border-radius:.4em;line-height:1.4;
+  .a4{position:relative;width:33em;max-width:100%;font-size:10px;background:#fff;color:#20242b;border-radius:.4em;line-height:1.4;text-align:left;
     box-shadow:0 24px 60px rgba(0,0,0,.55);padding:2.4em 2.4em 2em;overflow:hidden;font-family:var(--font);}
+  /* „Einfach anzupassen"-Fähnchen: signalisiert, dass das Angebot frei bearbeitbar ist */
+  .a4-flag{position:absolute;top:7.05em;right:1.3em;z-index:4;display:inline-flex;align-items:center;gap:.5em;
+    background:var(--signal);color:var(--signal-ink);font-family:var(--mono);font-weight:700;font-size:1.1em;
+    letter-spacing:.01em;padding:.6em .9em;border-radius:.6em;transform:rotate(-5deg);transform-origin:center;
+    border:1px solid rgba(0,0,0,.12);box-shadow:0 .9em 1.9em rgba(0,0,0,.34),0 .12em .3em rgba(0,0,0,.18);white-space:nowrap;}
   .a4-thumb .a4{transition:transform .15s;}
   .a4-thumb:hover .a4{transform:translateY(-4px);}
   .a4-hint{font-family:var(--mono);font-size:11.5px;color:var(--dim);letter-spacing:.03em;}
@@ -370,11 +480,11 @@
   .tab .screen{width:100%;height:100%;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;}
   /* Belege / Studien (Warum-Sektion) */
   .belege{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:860px;margin:0 auto 34px;}
-  .beleg{display:block;text-decoration:none;background:var(--bg2);border:1px solid var(--steel);border-radius:14px;padding:18px 20px;transition:border-color .15s,transform .15s;}
-  .beleg:hover{border-color:var(--signal);transform:translateY(-2px);}
+  .beleg{background:var(--bg2);border:1px solid var(--steel);border-radius:14px;padding:18px 20px;}
   .beleg b{display:block;font-size:27px;color:var(--signal);font-weight:800;line-height:1.05;}
   .beleg span{display:block;color:var(--muted);font-size:14px;margin-top:7px;line-height:1.5;}
-  .beleg small{display:inline-block;color:var(--dim);font-size:11px;margin-top:11px;font-family:var(--mono);letter-spacing:.02em;}
+  .beleg .quelle{display:inline-block;color:var(--dim);font-size:11px;margin-top:11px;font-family:var(--mono);letter-spacing:.02em;text-decoration:none;transition:color .15s;}
+  .beleg .quelle:hover{color:var(--signal);text-decoration:underline;}
   @media(max-width:640px){ .belege{grid-template-columns:1fr;} }
 </style>
 </head>
@@ -395,7 +505,7 @@
     <div class="hero-copy">
       <span class="eyebrow lbl">Speziell für Malerbetriebe</span>
       <h1>Du bist der Boss.<br><span class="u">Nicht der Papierkram.</span></h1>
-      <p class="lead">AuftragsBoss ist <b class="mlr">speziell auf Malerbetriebe</b> zugeschnitten. Sprich einfach ein, was beim Kunden anfällt, oder schick ein Foto deiner Notiz. Daraus wird ein fertiges Angebot als PDF oder Word, mit den passenden Positionen für dein Gewerk.</p>
+      <p class="lead">Sprich dein Angebot per <b class="mlr">WhatsApp</b> ein oder schick deine Notizen als Foto. AuftragsBoss versteht typische Malerarbeiten und macht daraus ein professionelles Angebot als PDF oder Word. Es lernt aus deinen bisherigen Angeboten sogar deinen Stil.</p>
       <div class="stat">Angebot in <b>2&nbsp;Minuten</b> statt in 30.</div>
       <div class="hero-cta">
         <a class="rec" href="https://api.auftragsboss.de/testen" target="_blank" rel="noopener">
@@ -426,59 +536,27 @@
 <div class="hero-sep-wrap"><div class="hero-sep"></div></div>
 
 <div class="wrap">
-  <!-- WARUM -->
-  <section class="sec" id="warum">
-    <div class="sec-h">
-      <span class="eyebrow lbl">Warum AuftragsBoss</span>
-      <h2>Wer zuerst anbietet, gewinnt.</h2>
-      <p>Ein sauberes Angebot noch am selben Tag entscheidet oft den Zuschlag.<br>AuftragsBoss macht das aus einer Sprachnachricht.</p>
-    </div>
-    <div class="belege">
-      <a class="beleg" href="https://firstknock.co.uk/research" target="_blank" rel="noopener">
-        <b>bis zu 50 %</b>
-        <span>der Aufträge gehen an den Betrieb, der zuerst ein Angebot abgibt.</span>
-        <small>Quelle: FirstKnock ↗</small>
-      </a>
-      <a class="beleg" href="https://www.insidesales.com/response-time-matters/" target="_blank" rel="noopener">
-        <b>21× häufiger</b>
-        <span>erreichst du einen qualifizierten Interessenten, wenn du in 5 statt 30&nbsp;Minuten reagierst.</span>
-        <small>Quelle: InsideSales ↗</small>
-      </a>
-    </div>
-    <div class="grid4">
-      <div class="tile"><div class="ic">🏆</div><h3>Mehr Aufträge</h3><p>Angebot noch am selben Tag beim Kunden, statt Tage später.</p></div>
-      <div class="tile"><div class="ic">🌙</div><h3>Feierabend zurück</h3><p>Angebote entstehen im Auto, nicht abends am Schreibtisch.</p></div>
-      <div class="tile"><div class="ic">📄</div><h3>Professioneller Eindruck</h3><p>Dein Logo, sauberer Briefkopf, einzelne Positionen. PDF oder Word.</p></div>
-      <div class="tile"><div class="ic">💬</div><h3>Keine App nötig</h3><p>Nichts zu installieren. AuftragsBoss läuft direkt über WhatsApp.</p></div>
+  <!-- 4 DIFFERENZIERER (direkt nach Hero) -->
+  <section class="sec" id="staerken" style="padding-top:58px;">
+    <div class="diff">
+      <div class="diff-i"><span class="diff-n">01</span><h3>Für Maler gebaut</h3><p>Versteht typische Malerarbeiten und stellt die passenden Rückfragen.</p></div>
+      <div class="diff-i"><span class="diff-n">02</span><h3>Lernt deine alten Angebote</h3><p>Lade bestehende Angebote hoch, AuftragsBoss lernt daraus. <b>Optional</b>, du kannst sofort starten.</p></div>
+      <div class="diff-i"><span class="diff-n">03</span><h3>Merkt sich deinen Betrieb</h3><p>Deine Preise und Positionen werden nach und nach zu deinem privaten Betriebswissen.</p></div>
+      <div class="diff-i"><span class="diff-n">04</span><h3>Nichts Neues lernen</h3><p>Keine App. Kein Login. Einfach WhatsApp.</p></div>
     </div>
   </section>
 
   <!-- SPEZIALISIERUNG MALER -->
   <section class="sec" id="maler">
     <div class="sec-h">
-      <span class="eyebrow lbl">Speziell für Maler</span>
-      <h2>Nicht für alle. Für Maler gemacht.</h2>
-      <p>Die meisten Angebots-Tools sind für „irgendein Gewerk". AuftragsBoss kennt Malerarbeiten und denkt mit, statt dich mit leeren Vorlagen allein zu lassen.</p>
+      <span class="eyebrow lbl">Speziell für Malerbetriebe</span>
+      <h2>AuftragsBoss versteht Maler.<br>Nicht nur Sprache.</h2>
+      <p>AuftragsBoss erkennt typische Malerarbeiten, ordnet sie in passende Angebotspositionen ein und fragt gezielt nach, wenn wichtige Angaben fehlen.</p>
     </div>
-    <div class="vs">
-      <div class="vs-card vs-bad">
-        <div class="vs-h">Software „für alle Gewerke"</div>
-        <ul>
-          <li>Leere Vorlage, du tippst jede Position selbst</li>
-          <li>Kennt weder Tapete noch Grundierung oder Sockelleisten</li>
-          <li>Kein Gespür für Reihenfolge und Materialketten</li>
-          <li>Vorschläge passen mal zum Fliesenleger, mal zum Elektriker</li>
-        </ul>
-      </div>
-      <div class="vs-card vs-good">
-        <div class="vs-h">AuftragsBoss für Maler</div>
-        <ul>
-          <li><b>Kennt Maler-Positionen</b>: Untergrund, Grundierung, Tapete, Anstrich, Lack</li>
-          <li><b>Schlägt passendes Material vor</b> (Farbe, Kleister, Vlies …)</li>
-          <li><b>Richtige Reihenfolge</b> und malertypische Einheiten (m², lfm, pauschal)</li>
-          <li><b>Lernt deine Preise</b> und schlägt sie beim nächsten Mal vor</li>
-        </ul>
-      </div>
+    <div class="grid3">
+      <div class="tile"><div class="ic">🎯</div><h3>Versteht den Auftrag</h3><p>Erkennt typische Malerarbeiten und deren Zusammenhang.</p></div>
+      <div class="tile"><div class="ic">🧱</div><h3>Strukturiert automatisch</h3><p>Aus deinen Angaben werden sinnvolle Angebotspositionen.</p></div>
+      <div class="tile"><div class="ic">❓</div><h3>Fragt nach, statt zu raten</h3><p>Fehlt etwas Entscheidendes, fragt AuftragsBoss gezielt nach.</p></div>
     </div>
   </section>
 
@@ -486,36 +564,38 @@
   <section class="sec" id="so">
     <div class="sec-h"><span class="eyebrow lbl">So geht's</span><h2>Das macht AuftragsBoss daraus.</h2></div>
     <div class="demo">
-      <div class="box">
+      <div class="box box-diktat">
         <span class="lbl">Das diktiert der Handwerker</span>
-        <div class="bubble"><span class="mic">🎙️</span>„Mach mal ein Angebot für Familie Berg, Lindenweg 4. Im Wohn- und Esszimmer verlegen wir rund 60 Quadratmeter Laminat, den alten Teppich vorher raus und entsorgen. Dann noch drei Innentüren kürzen. Das Laminat nehm ich mit 22 Euro den Quadratmeter, die Türen mach ich für 90 Euro das Stück. Verlegung und Entsorgung trag ich später ein."</div>
+        <div class="bubble"><span class="mic">🎙️</span>„Mach mal ein Angebot für Herrn Schmidt, Ahornweg 12. Im Wohnzimmer und Flur streichen wir die Wände, rund 85 Quadratmeter, dazu die Decken. Im Wohnzimmer die alte Tapete runter und ein paar Risse ausbessern. Möbel und Boden abdecken, vier Türzargen lackieren und die Sockelleisten ergänzen."</div>
       </div>
       <div class="arrow">→</div>
-      <div class="box">
+      <div class="box box-angebot">
         <span class="lbl">Das fertige Angebot</span>
         <button class="a4-thumb" data-zoom aria-label="Angebot vergrößern">
           <div class="a4">
+            <span class="a4-flag">✏️ Einfach anzupassen</span>
             <div class="a4-hd">
               <div class="a4-firma">Mein Malerbetrieb<small>Musterstraße 5 · 12345 Musterstadt</small></div>
-              <div class="a4-typ"><b>ANGEBOT</b><small>Nr. ANG-2026-0002<br>08.08.2026</small></div>
+              <div class="a4-typ"><b>ANGEBOT</b><small>Nr. ANG-2026-0007<br>11.08.2026</small></div>
             </div>
-            <div class="a4-kunde"><b>Familie Berg</b><br>Lindenweg 4 · 12345 Musterstadt</div>
+            <div class="a4-kunde"><b>Herr Schmidt</b><br>Ahornweg 12 · 12345 Musterstadt</div>
             <table>
               <thead><tr><th>Pos</th><th>Beschreibung</th><th class="r">Menge</th><th class="r">Einzel</th><th class="r">Gesamt</th></tr></thead>
               <tbody>
-                <tr class="grp"><td colspan="5">Arbeit</td></tr>
-                <tr><td>1</td><td>Alten Teppich entfernen &amp; entsorgen</td><td class="r">60 m²</td><td class="r">6,00</td><td class="r">360,00</td></tr>
-                <tr><td>2</td><td>Laminat verlegen</td><td class="r">60 m²</td><td class="r">18,00</td><td class="r">1.080,00</td></tr>
-                <tr><td>3</td><td>Innentüren kürzen</td><td class="r">3 Stk</td><td class="r">90,00</td><td class="r">270,00</td></tr>
                 <tr class="grp"><td colspan="5">Material</td></tr>
-                <tr><td>4</td><td>Laminat (Eiche, 8 mm)</td><td class="r">60 m²</td><td class="r">22,00</td><td class="r">1.320,00</td></tr>
-                <tr><td>5</td><td>Trittschalldämmung</td><td class="r">60 m²</td><td class="r">2,00</td><td class="r">120,00</td></tr>
+                <tr><td>1</td><td>Dispersionsfarbe (weiß, matt)</td><td class="r">30 l</td><td class="r">6,50</td><td class="r">195,00</td></tr>
+                <tr><td>2</td><td>Sockelleisten inkl. Montage</td><td class="r">24 lfm</td><td class="r">7,50</td><td class="r">180,00</td></tr>
+                <tr class="grp"><td colspan="5">Arbeit</td></tr>
+                <tr><td>3</td><td>Alte Tapete entfernen &amp; Risse ausbessern</td><td class="r">pauschal</td><td class="r"></td><td class="r">280,00</td></tr>
+                <tr><td>4</td><td>Wände streichen (Wohnzimmer + Flur)</td><td class="r">85 m²</td><td class="r">9,00</td><td class="r">765,00</td></tr>
+                <tr><td>5</td><td>Decken streichen</td><td class="r">35 m²</td><td class="r">11,00</td><td class="r">385,00</td></tr>
+                <tr><td>6</td><td>Türzargen lackieren</td><td class="r">4 Stk</td><td class="r">45,00</td><td class="r">180,00</td></tr>
               </tbody>
             </table>
             <div class="a4-sum">
-              <div><span>Netto</span><span>3.150,00 €</span></div>
-              <div><span>MwSt. 19 %</span><span>598,50 €</span></div>
-              <div class="tot"><span>Gesamt</span><span>3.748,50 €</span></div>
+              <div><span>Netto</span><span>1.985,00 €</span></div>
+              <div><span>MwSt. 19 %</span><span>377,15 €</span></div>
+              <div class="tot"><span>Gesamt</span><span>2.362,15 €</span></div>
             </div>
             <div class="a4-foot"><span>Mein Malerbetrieb · Musterstraße 5<br>Ansprechpartner: M. Mustermann</span><span>USt-IdNr. DE123456789<br>Musterbank · DE00 0000 0000 0000</span></div>
           </div>
@@ -525,100 +605,96 @@
     </div>
   </section>
 
+  <!-- ALTE ANGEBOTE LERNEN -->
+  <section class="sec" id="lernen">
+    <div class="sec-h">
+      <span class="eyebrow lbl">Dein Betrieb, nicht irgendeiner</span>
+      <h2>Nicht irgendein Angebot. Deins.</h2>
+      <p>AuftragsBoss lernt deinen Betrieb kennen. Lade einfach ein paar deiner bisherigen Angebote hoch, AuftragsBoss liest daraus, wie du Leistungen beschreibst, welche Positionen du nutzt und welche Preise du ansetzt.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><span class="step-n">01</span><h3>Alte Angebote hochladen</h3><p>PDF oder Word, ein paar reichen. Ganz ohne Abtippen.</p></div>
+      <div class="step-arrow" aria-hidden="true">→</div>
+      <div class="step"><span class="step-n">02</span><h3>AuftragsBoss lernt deinen Stil</h3><p>Es liest deine Positionen, Formulierungen und Preise aus.</p></div>
+      <div class="step-arrow" aria-hidden="true">→</div>
+      <div class="step"><span class="step-n">03</span><h3>Neue Angebote passen zu dir</h3><p>Deine Preise schlägt es dir beim nächsten Mal vor. Du entscheidest.</p></div>
+    </div>
+    <p class="lern-claim"><b>Deine Formulierungen. Deine Positionen. Deine Preise.</b> AuftragsBoss merkt sich, wie dein Betrieb arbeitet, und nutzt dieses Wissen beim nächsten Angebot.<span class="opt">Alles optional. Ohne Upload legst du genauso sofort los.</span></p>
+  </section>
+
+  <!-- BETRIEBLICHES GEDÄCHTNIS -->
+  <section class="sec" id="gedaechtnis">
+    <div class="sec-h">
+      <span class="eyebrow lbl">Privates Betriebswissen</span>
+      <h2>Je besser AuftragsBoss dich kennt, desto weniger musst du erklären.</h2>
+    </div>
+    <div class="mem">
+      <div class="mem-list">
+        <div class="mem-q">„Du führst Türzargen immer als eigene Position auf?"</div>
+        <div class="mem-q">„Bei möblierten Räumen nutzt du eine eigene Abdeckposition?"</div>
+        <div class="mem-q">„Preise aus deinen früheren Angeboten? Werden dir als Vorschlag angezeigt."</div>
+      </div>
+      <p class="mem-note">Aus deinen bestätigten Angeboten baut AuftragsBoss nach und nach ein <b>privates Betriebsgedächtnis</b> auf und schlägt dir beispielsweise passende Preise vor. Nichts geht ungeprüft an den Kunden, du entscheidest bei jedem Angebot.</p>
+    </div>
+  </section>
+
+  <!-- WARUM / Wer zuerst anbietet -->
+  <section class="sec" id="warum">
+    <div class="sec-h">
+      <span class="eyebrow lbl">Warum es sich lohnt</span>
+      <h2>Wer zuerst anbietet, gewinnt.</h2>
+      <p>Ein sauberes Angebot noch am selben Tag entscheidet oft den Zuschlag. Genau das schafft AuftragsBoss aus einer Sprachnachricht, direkt vom Kundentermin aus.</p>
+    </div>
+    <div class="belege">
+      <div class="beleg">
+        <b>bis zu 50 %</b>
+        <span>der Aufträge gehen an den Betrieb, der zuerst ein Angebot abgibt.</span>
+        <a class="quelle" href="https://firstknock.co.uk/research" target="_blank" rel="noopener">Quelle: FirstKnock ↗</a>
+      </div>
+      <div class="beleg">
+        <b>21× häufiger</b>
+        <span>erreichst du einen qualifizierten Interessenten, wenn du in 5 statt 30&nbsp;Minuten reagierst.</span>
+        <a class="quelle" href="https://www.insidesales.com/response-time-matters/" target="_blank" rel="noopener">Quelle: InsideSales ↗</a>
+      </div>
+    </div>
+  </section>
+
   <!-- SCREENSHOTS -->
   <section class="sec">
     <div class="sec-h">
       <span class="eyebrow lbl">Handy oder Büro</span>
       <h2>Unterwegs am Handy. Im Büro am Tablet.</h2>
-      <p>Angebote entstehen per Sprachnachricht &mdash; prüfen und feinschleifen kannst du, wo es dir passt.</p>
+      <p>Angebote entstehen per Sprachnachricht.<br>Prüfen und feinschleifen kannst du, wo es dir passt.</p>
+      <p class="scroll-tip">↕ In den Screenshots durch den ganzen Ablauf scrollen</p>
     </div>
-    <div class="shots-lead">
-      <div class="tab"><div class="screen s-doc">
-        <div class="doc-hd"><div><b>Mein Malerbetrieb</b><small>Angebot ANG-2026-0002 · Familie Berg</small></div><div class="lg"></div></div>
-        <div class="doc-b">
-          <div class="drow"><span>Alten Teppich entfernen &amp; entsorgen</span><span class="m">60 m²</span></div>
-          <div class="drow"><span>Laminat verlegen</span><span class="m">60 m²</span></div>
-          <div class="drow"><span>Innentüren kürzen</span><span class="m">3 Stk</span></div>
-          <div class="drow"><span>Laminat, Trittschalldämmung</span><span class="m">Material</span></div>
-        </div>
-        <div class="dsum"><span>Gesamt (Beispiel)</span><b>3.748,50 €</b></div>
-      </div></div>
-      <div class="pcap">Am Tablet im Büro<small>Positionen und Preise in Ruhe prüfen</small></div>
-    </div>
+
+    <!-- Handys zuerst, mit Fluss-Pfeilen (eins entsteht aus dem anderen) -->
     <div class="shots">
       <div class="pcol">
-        <div class="phone"><div class="screen s-wa">
-          <div class="wa-top"><div class="av"><img src="auftragsboss-logo.png" alt=""></div><div><b>AuftragsBoss</b><small>online</small></div></div>
-          <div class="wa-body">
-            <div class="bub out"><div class="wave"><span>🎙️</span><div class="bars"></div><span>0:14</span></div></div>
-            <div class="bub in">✅ Angebot <b>ANG-2026-0002</b> für Herrn Schmidt ist fertig.<br><span class="lk">auftragsboss.de/a/uqhg</span></div>
-            <div class="bub in">⚙️ Betriebsdaten, Logo &amp; alle Angebote</div>
-          </div>
-        </div></div>
+        <div class="phone"><div class="shot"><div class="statusbar"><span>9:41</span><span class="si"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div><div class="shot-screen"><img src="shot-whatsapp.jpg?v=maler" alt="WhatsApp-Chat mit AuftragsBoss" loading="lazy"></div><span class="scrollpille">↕ scrollen</span></div></div>
         <div class="pcap">WhatsApp-Chat<small>Sprachnachricht rein, Angebot-Link raus</small></div>
       </div>
 
+      <div class="flow" aria-hidden="true">→</div>
+
       <div class="pcol">
-        <div class="phone"><div class="screen s-doc">
-          <div class="doc-hd"><div><b>Mein Malerbetrieb</b><small>Angebot ANG-2026-0002</small></div><div class="lg"></div></div>
-          <div class="doc-b">
-            <div class="drow"><span>Alte Tapete entfernen</span><span class="m">Arbeit</span></div>
-            <div class="drow"><span>Wände neu tapezieren</span><span class="m">Arbeit</span></div>
-            <div class="drow"><span>Wände &amp; Decke streichen</span><span class="m">Arbeit</span></div>
-            <div class="drow"><span>Tapete, Kleister, Farbe</span><span class="m">Material</span></div>
-          </div>
-          <div class="dsum"><span>Gesamt (Beispiel)</span><b>1.842,00 €</b></div>
-        </div></div>
+        <div class="phone"><div class="shot"><div class="statusbar"><span>9:41</span><span class="si"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div><div class="shot-screen"><img src="shot-editor.jpg?v=maler" alt="Angebot im Editor bearbeiten" loading="lazy"></div><span class="scrollpille">↕ scrollen</span></div></div>
         <div class="pcap">Angebot bearbeiten<small>Positionen prüfen, Preise ergänzen</small></div>
       </div>
 
-      <div class="pcol">
-        <div class="phone"><div class="screen s-pdf">
-          <div class="t">Mein Malerbetrieb</div><div class="ph"></div>
-          <div class="l m"></div><div class="l s"></div>
-          <div style="height:5px"></div>
-          <div class="prow"><span>Pos. 1: Tapete entfernen</span><span>320,00 €</span></div>
-          <div class="prow"><span>Pos. 2: Neu tapezieren</span><span>640,00 €</span></div>
-          <div class="prow"><span>Pos. 3: Streichen</span><span>480,00 €</span></div>
-          <div class="l s" style="margin-top:8px"></div>
-        </div></div>
-        <div class="pcap">Fertiges PDF<small>Mit deinem Logo, direkt an den Kunden</small></div>
-      </div>
-    </div>
-  </section>
+      <div class="flow" aria-hidden="true">→</div>
 
-  <!-- PREISE -->
-  <section class="sec" id="preise">
-    <div class="sec-h">
-      <span class="eyebrow lbl">Preise</span>
-      <h2>Rechnet sich schon mit einem Auftrag.</h2>
-      <p>Keine Einrichtungsgebühr · erste 3 Angebote gratis · monatlich kündbar</p>
-    </div>
-    <div class="karten">
-      <div class="karte">
-        <div class="stufe">Basis</div><p class="fuer">Für den Einstieg</p>
-        <div class="preis"><span class="eur num">49&nbsp;€</span><span class="per">/ Monat</span></div>
-        <p class="mwst">zzgl. MwSt.</p>
-        <ul class="feat"><li><b>20</b> Angebote / Monat</li><li>1 Telefonnummer</li><li>Logo &amp; Briefkopf</li><li>Export als PDF &amp; Word</li><li>Standardtexte hinterlegen</li></ul>
-        <a class="cta" href="#testen">Gratis testen</a>
-      </div>
-      <div class="karte top">
-        <div class="badge">★ Beliebt</div>
-        <div class="stufe">Profi</div><p class="fuer">Für aktive Betriebe</p>
-        <div class="preis"><span class="eur num">99&nbsp;€</span><span class="per">/ Monat</span></div>
-        <p class="mwst">zzgl. MwSt. · nur 1,41 € je Angebot</p>
-        <ul class="feat"><li><b>80</b> Angebote / Monat</li><li>Bis zu 3 Telefonnummern</li><li>Alles aus <b>Basis</b></li><li>Erweiterte Auswertung</li><li>Nachträge per Sprachnachricht</li></ul>
-        <a class="cta prim" href="#testen">Gratis testen</a>
-      </div>
-      <div class="karte">
-        <div class="stufe">Team</div><p class="fuer">Für Teams bis 15</p>
-        <div class="preis"><span class="eur num">199&nbsp;€</span><span class="per">/ Monat</span></div>
-        <p class="mwst">zzgl. MwSt.</p>
-        <ul class="feat"><li><b>200</b> Angebote / Monat</li><li>Bis zu 15 Telefonnummern</li><li>Alles aus <b>Profi</b></li><li>Vorrang-Support</li><li>Gemeinsames Betriebsprofil</li></ul>
-        <a class="cta" href="#testen">Gratis testen</a>
+      <div class="pcol">
+        <div class="phone"><div class="shot zoom" data-pdf="angebot-beispiel.pdf?v=maler" role="button" tabindex="0" aria-label="Fertiges Angebot als PDF öffnen"><div class="statusbar"><span>9:41</span><span class="si"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div><div class="shot-screen"><img src="shot-pdf.jpg?v=maler" alt="Fertiges Angebot als PDF" loading="lazy"></div><span class="scrollpille zoompille">📄 PDF öffnen</span></div></div>
+        <div class="pcap">Fertiges Angebot<small>Als PDF, tippen zum Öffnen</small></div>
       </div>
     </div>
-    <div class="inkl"><span><span class="dot"></span><b>In jeder Stufe:</b></span><span>Logo &amp; Briefkopf</span><span>PDF + Word</span><span>läuft über WhatsApp</span><span>Kollegen werben = beide 1 Monat gratis</span></div>
+
+    <!-- Tablet danach -->
+    <div class="shots-lead shots-tab">
+      <div class="tab"><div class="shot"><div class="statusbar"><span>9:41</span><span class="si"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div><div class="shot-screen"><img src="shot-tablet.jpg?v=maler" alt="Angebot am Tablet im Büro prüfen" loading="lazy"></div><span class="scrollpille">↕ scrollen</span></div></div>
+      <div class="pcap">Am PC oder am Tablet im Büro<small>Positionen und Preise in Ruhe prüfen</small></div>
+    </div>
   </section>
 
   <!-- VERTRAUEN -->
@@ -646,6 +722,40 @@
     </div>
   </section>
 
+  <!-- PREISE -->
+  <section class="sec" id="preise">
+    <div class="sec-h">
+      <span class="eyebrow lbl">Preise</span>
+      <h2>Rechnet sich schon mit einem Auftrag.</h2>
+      <p>Keine Einrichtungsgebühr · erste 3 Angebote gratis · monatlich kündbar</p>
+    </div>
+    <div class="karten">
+      <div class="karte">
+        <div class="stufe">Basis</div><p class="fuer">Für den Einstieg</p>
+        <div class="preis"><span class="eur num">49&nbsp;€</span><span class="per">/ Monat</span></div>
+        <p class="mwst">zzgl. MwSt.</p>
+        <ul class="feat"><li><b>50</b> Angebote / Monat</li><li>1 Telefonnummer</li><li>Logo &amp; Briefkopf</li><li>Export als PDF &amp; Word</li><li>Standardtexte hinterlegen</li></ul>
+        <a class="cta" href="#testen">Gratis testen</a>
+      </div>
+      <div class="karte top">
+        <div class="badge">★ Beliebt</div>
+        <div class="stufe">Profi</div><p class="fuer">Für aktive Betriebe</p>
+        <div class="preis"><span class="eur num">99&nbsp;€</span><span class="per">/ Monat</span></div>
+        <p class="mwst">zzgl. MwSt. · nur 1,41 € je Angebot</p>
+        <ul class="feat"><li><b>120</b> Angebote / Monat</li><li>Bis zu 3 Telefonnummern</li><li>Alles aus <b>Basis</b></li><li>Erweiterte Auswertung</li><li>Nachträge per Sprachnachricht</li></ul>
+        <a class="cta prim" href="#testen">Gratis testen</a>
+      </div>
+      <div class="karte">
+        <div class="stufe">Team</div><p class="fuer">Für Teams bis 15</p>
+        <div class="preis"><span class="eur num">199&nbsp;€</span><span class="per">/ Monat</span></div>
+        <p class="mwst">zzgl. MwSt.</p>
+        <ul class="feat"><li><b>300</b> Angebote / Monat</li><li>Bis zu 15 Telefonnummern</li><li>Alles aus <b>Profi</b></li><li>Vorrang-Support</li><li>Gemeinsames Betriebsprofil</li></ul>
+        <a class="cta" href="#testen">Gratis testen</a>
+      </div>
+    </div>
+    <div class="inkl"><span><span class="dot"></span><b>In jeder Stufe:</b></span><span>Logo &amp; Briefkopf</span><span>PDF + Word</span><span>läuft über WhatsApp</span><span>Kollegen werben = beide 1 Monat gratis</span></div>
+  </section>
+
   <!-- FAQ -->
   <section class="sec">
     <div class="sec-h"><span class="eyebrow lbl">Häufige Fragen</span><h2>Gut zu wissen.</h2></div>
@@ -656,6 +766,9 @@
       <details><summary>Kostet der Test etwas?</summary><p>Nein. Die ersten 3 Angebote sind gratis, ohne Kreditkarte, ohne Anmeldung. Erst wenn es dir gefällt, wählst du eine Stufe.</p></details>
       <details><summary>Sind meine Kundendaten sicher?</summary><p>Ja. Verarbeitung DSGVO-konform, Server in der EU. Deine Daten gehören dir und lassen sich jederzeit exportieren.</p></details>
       <details><summary>Funktioniert das auch mit Dialekt?</summary><p>Ja. Die Spracherkennung ist auf gesprochene Aufträge aus dem Arbeitsalltag ausgelegt und korrigiert typische Hörfehler bei Fachbegriffen.</p></details>
+      <details><summary>Ist AuftragsBoss wirklich auf Maler zugeschnitten?</summary><p>Ja. AuftragsBoss ist speziell für Malerbetriebe entwickelt, kennt typische Malerarbeiten, die fachliche Reihenfolge und passende Einheiten und fragt gezielt nach, wenn etwas fehlt. Kein generischer KI-Assistent.</p></details>
+      <details><summary>Muss ich meine alten Angebote hochladen?</summary><p>Nein, das ist optional. Ohne Upload legst du sofort los. Lädst du ein paar bisherige Angebote hoch, liest AuftragsBoss deine Positionen und Preise aus und lernt so deinen Betrieb kennen.</p></details>
+      <details><summary>Übernimmt AuftragsBoss meine Preise automatisch?</summary><p>Es schlägt dir deine Preise aus früheren Angeboten als Vorschlag vor, übernehmen tust du sie mit einem Tipp. Die KI erfindet nie Preise, du entscheidest bei jedem Angebot.</p></details>
     </div>
   </section>
 </div>
@@ -691,12 +804,53 @@
   var inner=lb.querySelector('.lb-inner');
   function open(html){inner.innerHTML=html;lb.classList.add('on');lb.setAttribute('aria-hidden','false');}
   function close(){lb.classList.remove('on');inner.innerHTML='';lb.setAttribute('aria-hidden','true');}
+  function pdf(el){window.open(el.getAttribute('data-pdf'),'_blank','noopener');}
   document.addEventListener('click',function(e){
+    var zp=e.target.closest('[data-pdf]');
+    if(zp){pdf(zp);return;}
     var z=e.target.closest('[data-zoom]');
     if(z){var a=z.querySelector('.a4');if(a){open(a.outerHTML);}return;}
     if(lb.classList.contains('on') && !e.target.closest('.lb-inner')){close();}
   });
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'){close();}});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){close();return;}
+    if(e.key==='Enter'||e.key===' '){var zp=e.target.closest&&e.target.closest('[data-pdf]');if(zp){e.preventDefault();pdf(zp);}}
+  });
+  // Scroll-Pille + Verlauf ausblenden, wenn nichts (mehr) zu scrollen ist
+  function pruefe(s){
+    var shot=s.parentElement;
+    var wenig=s.scrollHeight-s.clientHeight<=4;
+    var unten=s.scrollTop+s.clientHeight>=s.scrollHeight-6;
+    shot.classList.toggle('ended', wenig||unten);
+  }
+  var screens=document.querySelectorAll('.shot:not(.zoom) .shot-screen');
+  screens.forEach(function(s){
+    var lauf=function(){pruefe(s);};
+    s.addEventListener('scroll',lauf,{passive:true});
+    var img=s.querySelector('img');
+    if(img){ if(img.complete){lauf();} img.addEventListener('load',lauf); img.addEventListener('dragstart',function(e){e.preventDefault();}); }
+    lauf();
+    // Anfassen und ziehen zum Scrollen (Maus); Touch nutzt weiterhin natives Scrollen, Scrollbalken bleibt aktiv
+    var down=false, startY=0, startTop=0;
+    s.addEventListener('pointerdown',function(e){
+      if(e.pointerType==='touch') return;      // Finger: natives Scrollen
+      if(e.button!==0) return;
+      if(e.offsetX>s.clientWidth) return;       // Klick auf den Scrollbalken nicht kapern
+      down=true; startY=e.clientY; startTop=s.scrollTop;
+      s.classList.add('grabbing');
+      try{s.setPointerCapture(e.pointerId);}catch(_){}
+    });
+    s.addEventListener('pointermove',function(e){
+      if(!down) return;
+      s.scrollTop=startTop-(e.clientY-startY);
+      e.preventDefault();
+    });
+    var ende=function(){ if(!down) return; down=false; s.classList.remove('grabbing'); };
+    s.addEventListener('pointerup',ende);
+    s.addEventListener('pointercancel',ende);
+    s.addEventListener('lostpointercapture',ende);
+  });
+  window.addEventListener('resize',function(){screens.forEach(pruefe);});
 })();
 </script>
 </body>

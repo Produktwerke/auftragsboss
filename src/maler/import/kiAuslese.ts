@@ -84,7 +84,11 @@ function zuDatum(iso: string | null): Date | null {
  * Ersatz. Wirft bei API-/Format-Fehler; der Aufrufer kann auf den Regel-Parser
  * zurückfallen.
  */
-export async function kiAusleseAngebotstext(text: string): Promise<ParseErgebnis> {
+export async function kiAusleseAngebotstext(
+  text: string,
+  /** Optional: meldet den Token-Verbrauch (Kosten-Tracking im Betreiber-Cockpit). */
+  verbrauch?: (tokensEin: number, tokensAus: number) => void,
+): Promise<ParseErgebnis> {
   const anthropic = new Anthropic({ apiKey: anthropicConfig().ANTHROPIC_API_KEY });
 
   const response = await anthropic.messages.parse({
@@ -100,6 +104,8 @@ export async function kiAusleseAngebotstext(text: string): Promise<ParseErgebnis
     ],
     output_config: { format: zodOutputFormat(KiAusleseSchema) },
   });
+
+  verbrauch?.(response.usage?.input_tokens ?? 0, response.usage?.output_tokens ?? 0);
 
   if (response.stop_reason === "refusal") {
     throw new Error("KI hat die Auslese abgelehnt (refusal).");

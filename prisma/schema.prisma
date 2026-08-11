@@ -81,6 +81,13 @@ model Handwerker {
   // aus dem Editor — bleibt gesetzt, bis der Handwerker ihn wieder abwählt.
   mailStandard Boolean @default(false)
 
+  // Betreiber-Cockpit: Konto pausiert (z.B. Zahlungsverzug, Missbrauch).
+  // Blockierte Nummern bekommen eine freundliche Hinweis-Nachricht, es wird
+  // nichts verarbeitet (kein API-Verbrauch). Jederzeit wieder entsperrbar.
+  blockiert      Boolean   @default(false)
+  blockiertGrund String?
+  blockiertAm    DateTime?
+
   erstelltAm       DateTime           @default(now())
   dokumente        Dokument[]
   vorgaenge        Vorgang[]
@@ -88,6 +95,46 @@ model Handwerker {
   empfehlungen     Empfehlung[] // von diesem Betrieb geworbene Kollegen (Leads)
   preisGedaechtnis Preisgedaechtnis[]
   importDokumente  ImportDokument[]
+  abo              Abo?
+}
+
+// ── Abrechnung (Betreiber-Cockpit Stufe 2) ─────────────────────────────────
+// Das aktuelle Abo eines Betriebs (genau eins). Abrechnung läuft heute manuell
+// (keine Stripe-Anbindung): Das Abo beschreibt den SOLL-Zustand (Tarif, Preis,
+// Status), die tatsächlichen Einnahmen stehen im Buchungs-Ledger (Buchung).
+model Abo {
+  id           String     @id @default(cuid())
+  handwerkerId String     @unique
+  handwerker   Handwerker @relation(fields: [handwerkerId], references: [id], onDelete: Cascade)
+
+  tarif       String // "BASIS" | "PROFI" | "TEAM" | "INDIVIDUELL"
+  monatspreis Float // EUR netto/Monat; bei INDIVIDUELL frei, sonst Preset (änderbar)
+  status      String @default("AKTIV") // "AKTIV" | "GEKUENDIGT"
+
+  beginntAm    DateTime  @default(now())
+  gekuendigtAm DateTime?
+
+  erstelltAm DateTime @default(now())
+}
+
+// Buchungs-Ledger: eine Zeile je Geldereignis. Daraus werden Kundenumsatz,
+// Monatsumsatz und Gesamtumsatz EXAKT berechnet (nie geschätzt). Bewusst OHNE
+// Relation (handwerkerId als String) + Firma im Klartext: Die Umsatzhistorie
+// überlebt das Löschen eines Betriebs (steuerlich relevant).
+model Buchung {
+  id           String  @id @default(cuid())
+  handwerkerId String
+  betrieb      String // Firma zum Buchungszeitpunkt
+  typ          String // "ZAHLUNG" (Geld eingegangen) | "FREIMONAT" (0 EUR, eingelöst) | "GUTSCHRIFT" | "KORREKTUR" (+/-)
+  betrag       Float // EUR; ZAHLUNG positiv, KORREKTUR auch negativ möglich
+  zeitraum     String // abgedeckter Monat "JJJJ-MM", z.B. "2026-08"
+  notiz        String @default("")
+
+  erstelltAm DateTime @default(now())
+
+  @@index([handwerkerId])
+  @@index([zeitraum])
+  @@index([erstelltAm])
 }
 
 // Eine Empfehlung: Ein Betrieb wirbt einen Kollegen. Erst als Lead erfasst
@@ -276,6 +323,23 @@ model Event {
 
   @@index([typ, erstelltAm])
   @@index([handwerkerId])
+}
+
+// Betreiber-Aktionsprotokoll: JEDE Cockpit-Aktion (blockieren, Nummer ändern,
+// Gutschrift, löschen …) wird hier festgehalten — Nachvollziehbarkeit bei
+// Kundenrückfragen und Streitfällen. Bewusst OHNE Relation (handwerkerId als
+// String), damit die Einträge das Löschen eines Betriebs überleben.
+model AdminLog {
+  id           String  @id @default(cuid())
+  aktion       String // z.B. "BLOCKIERT", "ENTSPERRT", "NUMMER_GEAENDERT", "GUTSCHRIFT", "GELOESCHT"
+  handwerkerId String? // Bezug auf den Betrieb (bleibt nach Löschung als Referenz stehen)
+  betrieb      String? // Firma zum Zeitpunkt der Aktion (lesbar auch nach Löschung)
+  detail       String // Klartext, z.B. "Nummer 4917… → 4915…" oder "2 Freimonate: Empfehlung Krause"
+
+  erstelltAm DateTime @default(now())
+
+  @@index([handwerkerId])
+  @@index([erstelltAm])
 }
 
 // ── Maler-Fachengine v1: Altangebots-Import ────────────────────────────────

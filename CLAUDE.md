@@ -120,6 +120,141 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 11.08.2026 (Nacht) — Betreiber-Cockpit Stufe 3: KI-Kosten, Alarme, Als-Kunde (✅ LIVE auf dem VPS, kein db push nötig; Kostenzahlen füllen sich ab Deploy):**
+> - **KI-Kosten je Kunde:** Jeder KI-Aufruf schreibt ein Event `KI_AUFRUF` mit `kostenCent` (Ganzzahl-Cent). Erfassung: `strukturiereDialog`/`liesBildNotiz`/`kiAusleseAngebotstext` haben einen optionalen `verbrauch`-Callback (input/output-Token aus `response.usage`; wird auch bei refusal gemeldet — Token sind angefallen); Transkription wird über die Audiodauer **geschätzt** (`schaetzeAudioSekunden`: Opus ~16 kbit/s → Bytes/2000). Preistabelle in `src/analytics/kikosten.ts` (**Annahme, zum Anpassen dokumentiert:** Claude Sonnet-Klasse 2,80/14,00 € je 1M Token ein/aus; Transkription 1,1 ct/min für BEIDE Fassungen zusammen) + `summiereKostenCent` (tolerant gegen fremde/kaputte dataJson). Webtest (anonym) bleibt bewusst unerfasst — Kosten je KUNDE. **UI:** Detail-Kacheln „KI-Kosten 30 Tage/gesamt", Listen-KPI „KI-Kosten dieser Monat".
+> - **Warnsignale-Box** oben in der Kundenliste (nur wenn vorhanden): 💤 Kunden (nicht Test/blockiert) 7+ Tage inaktiv mit Tageszahl, 🧪 Test-Konten am Limit (`testNachrichten >= DIREKTTEST_MAX_NACHRICHTEN` aus config), ❓ Kundenrückfragen der letzten 14 Tage (`Dokument.kundenRueckfrageAm`) — alle mit Link zur Detailseite.
+> - **„Als Kunde ansehen":** GET `betrieb/:id/als-kunde[?ziel=einstellungen]` → AdminLog `ALS_KUNDE` + 302 auf `cockpitLink`/`einstellungenLink` (Token via `einstellungenTokenBereit`, wird bei Bedarf erzeugt). Knöpfe auf der Detailseite (neuer Tab, Hinweis „wirkt wie vom Kunden selbst").
+> - **Typecheck grün, 115 Tests grün (13 neu: kikosten 11 + Alarme/Kosten-UI).** Ende-zu-Ende verifiziert: Test-Events 31+1 Cent → 0,32 € auf Kacheln + Monats-KPI; Warnsignal „inaktiv seit N Tagen" live; beide Redirects 302 mit echtem Token. **Kein Schema-Change** → Deploy ohne `db push`.
+>
+> **Update 11.08.2026 (noch später) — Betreiber-Cockpit Stufe 2: Abo + Umsatz (✅ LIVE auf dem VPS inkl. db push; /umsatz live verifiziert):**
+> - **Abrechnung im Betreiber-Cockpit** (manuell, keine Stripe-Anbindung): Neues Model **`Abo`** (1:1 Handwerker, onDelete Cascade: tarif BASIS/PROFI/TEAM/INDIVIDUELL, monatspreis, status AKTIV/GEKUENDIGT, beginntAm, gekuendigtAm) + **`Buchung`**-Ledger (bewusst OHNE Relation + Firma im Klartext → Umsatzhistorie übersteht Betriebs-Löschung; typ ZAHLUNG/FREIMONAT/GUTSCHRIFT/KORREKTUR, betrag, zeitraum "JJJJ-MM", notiz). **Grundsatz: Umsatz IMMER aus dem Ledger (Ist), MRR aus aktiven Abos (Soll).** Kennzahlen-Modul `src/betrieb/abrechnung.ts` (pur, 12 Tests): mrr, einnahmenImZeitraum, gesamtUmsatz, umsatzJeKunde, monatsverlauf (füllt Lücken mit 0-Zeilen, auch über Jahresgrenzen), TARIF_PRESETS 49/99/199 (müssen zur Landingpage-Preisseite passen). **UI:** Detailseite hat „Abo & Abrechnung" (Tarifwahl belegt Preis per JS vor; anlegen/ändern/reaktivieren = ein Upsert-Endpunkt `abo`, kündigen separat), „Zahlung erfassen" (Betrag mit Monatspreis vorbelegt, Zeitraum-Validierung), „Freimonat einlösen" (nur bei freimonate>0; Transaktion: decrement + 0-€-Buchung) und Zahlungshistorie; Kachel „Umsatz seit Beitritt". Liste: Abo-/Umsatz-Spalten + KPIs MRR/Einnahmen-Monat/Gesamtumsatz. **Neue Seite `/admin/:token/umsatz`:** KPIs (+ zahlende Kunden, offene Freimonate), Monatsverlauf als CSS-Balken (neuester oben, aktueller Monat blau), Abos nach Tarif, Kunden nach Umsatz (gelöschte Betriebe erscheinen als „<Firma> (gelöscht)" aus der Buchung). Alle Aktionen im AdminLog. **Typecheck grün, 102 Tests grün (18 neu); alle 9 Aktions-/Fehlerfälle + Umsatz-Seite Ende-zu-Ende im Browser verifiziert (Zahlen auf den Cent konsistent).** Deploy braucht `npx prisma db push` auf dem VPS. **Windows-Falle bestätigt:** `TaskStop` auf `npm run dev:editor` lässt Kindprozesse (Port + DLL) überleben → `taskkill /F /PID …` nötig; Ausweich-Test lief auf PORT=3001.
+>
+> **Update 11.08.2026 (spät) — Betreiber-Cockpit Stufe 1 (✅ LIVE auf dem VPS; ADMIN_TOKEN neu in VPS-.env gesetzt, Token in 1Password):**
+> - **Neues Betreiber-Cockpit für Dirk** unter `/admin/<ADMIN_TOKEN>/betriebe` (gleicher Schutz wie die Lern-Auswertung: `ADMIN_TOKEN` aus `.env`, ≥8 Zeichen, sonst 404; Querverweise beide Richtungen). **Liste** (`betreiberSeite.ts`/`betreiberRoutes.ts`): KPIs (Kunden/Test/Blockiert/Angebote gesamt + 7 Tage), Filter (alle/kunden/test/blockiert/inaktiv 7+ Tage), Tabelle mit Mitglied-seit, Angebotszahl, letzter Aktivität, Freimonaten, Status-Badge; Nutzung über zwei `groupBy` (kein N+1). **Detail:** Usage-Kacheln (**versandbereit** = keine offenen Preise + nicht versendet, **offene Preise** = `anzahlOffen>0`, **versendet** = `versendetAm`), letzte 15 Angebote mit Status, geworbene Kollegen, Admin-Protokoll. **Aktionen** (JSON-POST, Ergebnis inline): Kontakt ändern (Nummer 6–16 Ziffern + Eindeutigkeitsprüfung mit 409, E-Mail-Format), Blockieren mit Grund / Entsperren, Gutschrift 1–12 Freimonate mit Pflicht-Grund (increment auf `freimonate`), **Löschen mit Firmennamen-Bestätigung** → DSGVO-Kaskade in EINER Transaktion (Gewährleistung→Dokumente→Vorgänge→Feedback→Empfehlungen→Preisgedächtnis→Importe→Handwerker; Logo-Datei best-effort; **Events bleiben** als PII-freie Metriken, **AdminLog bleibt** als Nachweis). Schema: `Handwerker.blockiert/blockiertGrund/blockiertAm` + Model **`AdminLog`** (aktion/handwerkerId/betrieb/detail, bewusst ohne Relation — übersteht Löschung); **Pipeline:** blockierte Nummer → „⏸️ Konto pausiert…" ohne Verarbeitung/API-Kosten (+ Event `NACHRICHT_BLOCKIERT`). Registriert in `server.ts` + `devServer.ts` (Dev-Link in Konsole). **93 Tests grün (9 neu), Typecheck grün; Liste/Detail/alle Aktionen + Fehlerfälle Ende-zu-Ende im Browser verifiziert.** Stufe 2 (geplant): Abo-Modell + Buchungs-Ledger → MRR/Kundenumsatz/Gesamtumsatz; Stufe 3: API-Kosten je Kunde, Alarme. **Windows-Falle:** laufender `dev:editor` sperrt die Prisma-Engine-DLL → vor `db push`/`generate` beenden.
+>
+> **Update 11.08.2026 — Landingpage-Screenshots, Mobil-Feinschliff Cockpit/Einstellungen, WhatsApp-Bestätigungen (alles LIVE, VPS + IONOS):**
+> - **Landingpage (`marketing/`, → IONOS, hochgeladen):** Screenshot-Sektion „Handy oder Büro" komplett neu — **echte Screenshots** (statt CSS-Attrappen) in Geräterahmen mit **fester Höhe + Innen-Scroll** (gelbe Scrollbar + wippende „↕ scrollen"-Pille + Verlauf; Pille verschwindet unten/wenn nichts scrollt). **Handys zuerst, Tablet danach**, **gelbe Fluss-Pfeile** zwischen den Handys (→/↓). **Einheitliche schwarze Statusleiste „9:41"** (CSS) oben auf jedem Handy; die echten OS-Leisten sind bei den Bild-JPGs oben **weggeschnitten**. **PDF-Handy: Klick öffnet die echte PDF** (`angebot-beispiel.pdf`) im neuen Tab, nicht mehr der Screenshot (Handler `[data-pdf]`→`window.open`; die A4-Lightbox `[data-zoom]` im Hero-Demo bleibt). **Bilder komprimiert** (System.Drawing/PowerShell, `scratchpad/kompress.ps1`): ~3,7 MB → ~0,9 MB (`shot-whatsapp.jpg` 209 KB, `shot-editor.jpg` 293 KB, `shot-pdf.jpg` 78 KB, `shot-tablet.png` 308 KB). Quellen (unkomprimiert) in `voiceprotokoll-guard/Screenshots/`.
+> - **Hero-Animation mobil gefixt:** `chat-animation.html` `.chat` war `width:410px` (fix) → rechtsbündig → links abgeschnitten. Jetzt `width:100%;max-width:410px` → passt. Demo-Block war schon mittig (Flex-Umbau); der abgeschnittene Screenshot war die alte Live-Version.
+> - **Cockpit mobil (`cockpitSeite.ts`, `navigation.ts`):** KPI-Kacheln als **2×2-Quartett** (`@media 640`); Angebotsliste als echtes **Karten-Layout** (`.dtable`/tbody `display:block` unter 720px) → Versand-/Papierkorb-Symbol **voll sichtbar**, kein Quer-Scrollen mehr.
+> - **Einstellungen mobil (`einstellungenSeite.ts`):** Live-Vorschau als **fixes, scrollbares Panel unten** (`@media 760`, 44vh, sticky „LIVE-VORSCHAU"); Einstellungen scrollen darüber, Vorschau bleibt immer sichtbar. Kopfleiste deckt die **volle Breite** ab (kein Durchblitzen der Vorschau darüber); **Tippen auf die Kopfleiste klappt die Vorschau auf/zu** (Chevron, `.settings-layout.vorschau-zu` → Panel 52 px). Im `dev:editor` verifiziert (Kopf l=0/w=voll; zu=52 px).
+> - **WhatsApp: Bestätigung an JEDEM Schritt (`pipeline.ts`)** — behebt „wirkt eingefroren". (1) **Textnachrichten** bekommen vor der KI-Auswertung eine Eingangsbestätigung („👍 Hab ich! …"; nach gezeigter Zusammenfassung „⏳ Super, ich stelle dein Angebot jetzt fertig …"). (2) **Sprach-/Foto-Bestätigung kontextabhängig**: offener Dialog (Rückfrage-Antwort) → neutral „…ich arbeite im Hintergrund weiter", sonst „…ich erstelle dein Angebot". Dafür wird der offene Vorgang **einmal vor der Transkription** geladen und unten weitergenutzt.
+> - **„Dein Logo"** statt „Ihr Logo" (Editor-Platzhalter, du-Form) + **Gedankenstrich-Bereinigung** in allen sichtbaren Texten (Komma/Punkt statt — / –, Titel-Trenner „·"); Code-Kommentare, Leer-Zellen-Marker „—" und die KI-Prompt-Regel „KEINE GEDANKENSTRICHE" bewusst unberührt.
+> - **Kürzere WhatsApp-Links (Bearbeiten-Link):** Editor-Token **26 → 12 Zeichen** (`erzeugeKurzToken` in `tokens.ts`) **nur** für den Bearbeiten-Link — vertretbar, weil die **Zugangs-Schleuse** (Handynummer) den Editor ohnehin schützt; Einstellungen-/Cockpit-Token bleiben 26 (vertraute Tür ohne Schleuse). Zusätzlich **„/a/" weg**: Editor hört jetzt auf **`/:token`** (Wurzel, neue Angebote) UND weiter auf `/a/:token` (alte, schon verschickte Links) — ein Handler `editorAnzeigen`, beide Pfade (`routes.ts`); statische Routen `/testen`,`/health` behalten Vorrang, `/:token` verschluckt nichts. `bearbeitenLink` → `${basisUrl()}/${token}`; Schleuse leitet nach Erfolg auf `/${token}`. Ergebnis: `api.auftragsboss.de/k7m3rq9x2p8h` statt `…/a/733kayht7j2burwxakeh5tzgup`. Routen live im dev:editor geprüft. **Nur neue Angebote** bekommen kurze Token; alte Links bleiben gültig.
+> - **Landingpage Conversion-Umbau** (`marketing/index.html`, nach ChatGPT-Analyse, Variante 1): neue Info-Architektur, CI/Animation/Links unberührt. NEU: **4-Differenzierer-Strip** direkt nach Hero; Maler-Sektion geschärft (Überschrift „Es hört nicht nur zu. Es versteht, worum es geht." + Erklärtext + 3 Mini-Nutzen, Vergleich bleibt); **„Nicht irgendein Angebot. Deins."** (3-Schritt Altangebots-Import); **„Betriebliches Gedächtnis"** (ehrlich = Preisgedächtnis/Vorschlag, du entscheidest); **„Nichts lernen. Einfach WhatsApp."**; FAQ +3 (Maler/Import optional/Preise als Vorschlag). VERSCHOBEN: „Wer zuerst anbietet" (Studien) von oben nach unten; Vertrauen vor Preise. ENTFERNT: 4 generische Kacheln (Inhalt lebt in Differenzierern/WhatsApp-Sektion). Hero-Text verbessert (Foto + „lernt deinen Stil"). Demo-Beispiel Familie Berg/Laminat → **Herr Schmidt/Malerauftrag** (echte Maler-Positionen + Summen). **Bewusst NICHT behauptet:** dass die KI Struktur-Gewohnheiten automatisch anwendet (nur Preisgedächtnis ist real). Bug gefixt: tote alte `.steps`-CSS überschrieb neuen 3-Schritt-Grid → entfernt. Backup: `voiceprotokoll-guard/index.html.bak-landingpage-20260811` (außerhalb `marketing/`). Live Desktop+Mobil geprüft (kein Overflow, keine Konsolenfehler). **⏳ Dirk: `index.html` bei IONOS hochladen; echte Screenshots zeigen noch Bodenauftrag → später gegen Maler-Aufnahmen tauschen (nur 4 Bilddateien).**
+> - **75 Tests grün, Typecheck grün. Deploy 11.08.: VPS `pm2 restart` durch (online), IONOS-Upload durch, Landingpage von Dirk bestätigt.** Kein `prisma db push` nötig. (Cockpit/Einstellungen-Mobil-Feinschliff + Link-Kürzung als spätere Server-Deploys am selben Tag.)
+>
+> **Update 10.08.2026 (abends) — Offsite-Backup live, Nutzungs-Analyse + Feedback-Nudge:**
+> - ✅ **Offsite-Backup LIVE:** IONOS Object Storage (Bucket `auftragsboss-backup`, eu-central-3 Berlin),
+>   rclone-Remote `offsite`, AES-256-verschlüsselt, Passwort in `/root/backup-passphrase.txt` **+ 1Password**.
+>   `scripts/backup.sh` → `/root/backup-auftragsboss.sh` (Cron 03:15 nutzt es), Testlauf ok. Jede Nacht eine
+>   verschlüsselte Kopie außer Haus, 30 Tage. Wiederherstellen: `scripts/OFFSITE-BACKUP-EINRICHTEN.md`.
+> - ✅ **Selbst-Registrierung live verifiziert** (Browser-Check `/registrieren/test123` → „Link ungültig").
+> - ✅ **KI-Kennzeichnung (EU AI Act) war schon da** — WhatsApp-Erstkontakt (Test + Betrieb) nennt „KI-gestützter
+>   Dienst" **vor** jeder Verarbeitung (pipeline.ts); nichts zu bauen.
+> - 🆕 **Nutzungs-Analyse (PII-frei, berechtigtes Interesse, Datenschutz §6.4):** erweitertes Event-Tracking im
+>   bestehenden `Event`-Modell (**kein Schema-Umbau**, dataJson flexibel). Neu: `NACHRICHT_EMPFANGEN` (Kanal
+>   Sprache/Text/Foto), `LINK_GEOEFFNET` (Ziel editor/cockpit + Gerät Handy/Desktop aus User-Agent), `EXPORT`
+>   (pdf/word), plus bestehende `ANGEBOT_ERSTELLT`/`RUECKFRAGE`. Geräte-Helfer `geraetAusUA` in `analytics/event.ts`.
+>   Auswertungs-Dashboard bewusst SPÄTER (erst Daten sammeln).
+> - 🆕 **Feedback-Nudge im Chat:** einmalig **nach dem 2. Angebot**, **nur echte (Nicht-Test-)Betriebe**
+>   (merkt sich's über ein `FEEDBACK_NUDGE`-Event, kein Schema-Umbau). Bittet um kurze Sprach-/Text-Rückmeldung;
+>   setzt `feedbackWartetSeit`. **Sicherheit:** Längen-Check (`FEEDBACK_MAX_LEN=400`) — kurze Nachricht =
+>   Feedback, langes Diktat bleibt ein **Auftrag** (wird NIE „verschluckt"), für Sprache UND Text. `FEEDBACK_ERHALTEN`-Event.
+> - 🆕 **PLZ-Lookup im Editor** (`FEATURE_PLZ_LOOKUP`, Standard AUS): Knopf „🔍 PLZ" am Feld „PLZ und Ort"
+>   sucht per **OpenPLZ** (openplzapi.org, EU/DE, kostenlos) die PLZ aus Straße + Ort. **Serverseitig**
+>   (`GET /api/plz`, `src/betrieb/plzLookup.ts`) — Kundenadresse geht über unseren Server, nicht direkt aus
+>   dem Browser; nur Straße+Ort, kein Name. Wichtig: OpenPLZ speichert Straßen **abgekürzt** („Hauptstr.")
+>   und matcht `name` als **Präfix** → wir kürzen „…straße/…strasse" → „…str" (sonst 0 Treffer). Fallback
+>   „nur Straße + nach Ort filtern". Fehlertolerant (kein Treffer → Nutzer tippt selbst). Live verifiziert
+>   (Berlin/München/Heidelberg). **⚠️ Vor dem Scharfschalten:** OpenPLZ-Hinweis in `datenschutz.html` ergänzen.
+> - **75 Tests grün, Typecheck grün.** ✅ **Alles deployt (10.08. abends):** Analyse + Feedback-Nudge live;
+>   PLZ-Lookup deployt **und** `FEATURE_PLZ_LOOKUP=true` gesetzt, im Editor live verifiziert (Knopf ergänzt PLZ).
+>   Datenschutzerklärung um **§10.4 (OpenPLZ)** ergänzt, „Stand" 10.08. → **Dirk lädt `marketing/datenschutz.html`
+>   noch bei IONOS hoch** (falls nicht schon geschehen). Kein `prisma db push` nötig gewesen.
+>
+> **Update 10.08.2026 — 🚀 ÖFFENTLICH LIVE: Produktionsnummer eingebunden, fremde Nummer bestätigt:**
+> - **Meta-Firmenverifizierung durch, Produktionsnummer +49 174 9364823 im Server eingebunden:**
+>   `WHATSAPP_PHONE_NUMBER_ID=1186887661184567` in Server-`.env` gesetzt (alte US-Test-ID ersetzt),
+>   `pm2 restart auftragsboss`. Webhooks der Produktions-WABA (`1680177866376806`) empfangen (POST
+>   `/webhook/whatsapp` → 200).
+> - ✅ **Erster End-to-End-Durchstich über die ECHTE Nummer erfolgreich:** Sprachnachricht → Rückfrage
+>   (Runde 1) → **Angebot ANG-2026-0006 für „Beer GmbH" erstellt** und an Dirks Handy zugestellt.
+> - ✅ **ÖFFENTLICH LIVE BESTÄTIGT:** Ein **Freund mit fremder, NICHT registrierter Nummer** hat komplett
+>   durchgetestet — Rückfrage empfangen UND beantwortet, **Angebot ANG-2026-0001 erstellt**, Bearbeiten-
+>   Link geöffnet (`GET /a/… → 200`). Ausgehende Nachrichten erreichen also beliebige Nummern → die
+>   `131030`-Test-Modus-Sperre ist weg. **Zahlungsmethode (Weg A) war der entscheidende Schritt.**
+> - **131030 trat anfangs auf** (Nummer im Test-Modus), nach Hinterlegen der **Zahlungsmethode** verschwunden.
+> - **Alt-Logzeilen sind Altlasten, kein aktueller Fehler:** `P2025` an `pipeline.ts:256` und die zwei
+>   `131030` mit **identischen `fbtrace_id`s** (`AWOi82…`, `A8GU…`) stehen in JEDEM Log-Dump — sie stammen
+>   aus früheren Läufen (PM2-error.log sammelt über Neustarts). Die heutigen Testläufe waren sauber.
+> - **Deployter Code ist ÄLTER als der lokale Stand:** Fehler-Stacktrace zeigt `nachfragen`-Block bei
+>   `pipeline.ts:253`/plain `update`, lokal liegt er bei ~294 mit `updateMany`. Der Server läuft also NICHT
+>   den neuesten lokalen Code (09.08-Features wie Selbst-Registrierung/Import evtl. nicht/teilweise live).
+>   → Vor einem Voll-Redeploy auf Prod: bewusst prüfen (untestete Flags, `prisma db push`), nicht beiläufig.
+> - **Display-Name klargestellt:** Feld bleibt **„AuftragsBoss"**. Den Firmenzusatz „von DAG Deutsche
+>   Automotive GmbH" hängt WhatsApp selbst an (Echtheitskennzeichen unverifizierter Konten). Manuell den
+>   langen Namen eintragen → **„Abgelehnt"**. Sauberes „AuftragsBoss ✔️" nur via Antrag „Offizielles
+>   Unternehmenskonto" (blauer Haken, freiwillig, nicht nötig).
+> - **QR-Code-Entscheidung:** **KEIN QR-Code auf der Website** (bewusst so entschieden). `index.html` wurde
+>   NICHT verändert. Es liegen nur zwei **ungenutzte, nirgends verlinkte** Standalone-Dateien im Ordner:
+>   `marketing/auftragsboss-qr.png` (1024², ECC M) + `.svg`, Inhalt `wa.me/491749364823?text=…kostenlos ein
+>   Angebot testen.` — evtl. später für Offline/Print (Flyer/Fahrzeug). Erzeugt mit `qrcode` (npm), lokal.
+> - **⏳ OFFEN (Dirk):** (1) **Landingpage bei IONOS hochladen:** `marketing/index.html` hat lokal schon die
+>   echte Nummer `wa.me/491749364823` (Buttons Zeile 406 + 644), muss nur noch in den IONOS-Webroot `public`
+>   (wie beim letzten Website-Deploy). (2) Optionaler kleiner Robustheits-Fix beim nächsten geplanten Deploy:
+>   `pipeline.ts`-`update`→`updateMany` (P2025). (3) Optional: Meta-Zahlungsmethode „Indien" ist irrelevant
+>   (WhatsApp-Pay, nur IN/BR) — nicht die API-Abrechnung; die wurde separat hinterlegt (= Weg A, wirkte).
+> - **Nebenbei verifiziert:** Der Sicherheits-Hook (`.claude/hooks/guard.cjs` + `settings.json`,
+>   „auto"-Modus) greift auch in der **Desktop-App** auf dem Zweitrechner (`sudo echo test` → blockiert).
+
+> **Update 09.08.2026 (abends) — Selbst-Registrierung (Betriebe melden sich selbst an):**
+> - **WhatsApp-first Upgrade, sicher gegen Nummern-Kaperung:** Ein unbekannter Absender wird wie
+>   gehabt Test-Konto (Nummer damit **verifiziert**). Schreibt er **„anmelden"/„registrieren"**,
+>   bekommt er seinen persönlichen Link `…/registrieren/<einstellungenToken>` (verbraucht **kein**
+>   Test-Kontingent). Formular (Firma/Ansprechpartner/E-Mail) → Test-Konto wird **echter Betrieb**
+>   (`istTest=false`, Nummer + Verlauf bleiben). Bestätigung per **E-Mail** (mit Einstellungs-Link) +
+>   **WhatsApp** (best effort) + **Team-Mail** an `TEAM_MAIL` (Default `kontakt@auftragsboss.de`).
+> - **Anmelde-Link an zwei starken Stellen:** im **Willkommenstext** des Tests und in der
+>   **„Gratis-Tests aufgebraucht"**-Nachricht (statt „melde dich beim Team").
+> - **Kein Schema-Umbau** (kein `prisma db push`): der vorhandene `einstellungenToken` ist der
+>   Anmelde-Token. **Hinter Flag `FEATURE_SELBSTREGISTRIERUNG` (Standard AUS).**
+> - Neue Dateien: `src/web/registrierungSeite.ts`, `src/web/registrierungRoutes.ts`
+>   (GET `/registrieren/:token`, POST `/api/registrieren/:token`, in `server.ts` registriert);
+>   `tokens.ts` (`registrierLink`); `pipeline.ts` (`willAnmelden` + Stichwort-Handling + Willkommens-
+>   Hinweis); `direkttest.ts` (Anmelde-Link bei aufgebrauchtem Kontingent); `config.ts` (Flag).
+>   **Typecheck grün, 72 Tests grün.**
+> - **⏳ OFFEN (Dirk):** `FEATURE_SELBSTREGISTRIERUNG=true` (optional `TEAM_MAIL=…`) in die Server-
+>   `.env`, dann Deploy + `pm2 restart`. Kein `prisma db push` nötig. Noch nicht live getestet.
+>
+> **Update 09.08.2026 — Zugangs-Schleuse (E-Mail-Link-Schutz), Offsite-Backup, Test-Hinweis:**
+> - **Zugangs-Schleuse vor dem Editor (Stufe A / A2)** — schützt den per E-Mail weiterleitbaren
+>   Bearbeiten-Link. Beim ersten Öffnen auf einem Gerät fragt eine Schleuse die **Handynummer** ab,
+>   vergleicht sie mit `Handwerker.whatsappNummer` und setzt bei Treffer ein langlebiges, signiertes
+>   **httpOnly-Cookie (180 Tage)** — danach öffnet das Gerät ohne Nachfrage („nur einmal"-Hinweis auf
+>   der Seite). **Test-Konten (istTest) werden nie geschleust.** Cockpit/Einstellungen (per
+>   einstellungenToken) setzen das Cookie ebenfalls, damit der Cockpit-Weg reibungslos bleibt und die
+>   Cockpit-Aktionen greifen. Geschützt: Editor-Seite, Export, Speichern, Versendet-Toggle, Löschen
+>   (jeweils vertrautes Gerät oder istTest). Fehlversuch-Sperre (5 Versuche → 15 Min). Kein neues
+>   npm-Paket (Node-`crypto`). Neue Dateien `src/web/geraetevertrauen.ts` (+ `.test.ts`),
+>   `src/web/schleuseSeite.ts`; Einhängung in `web/routes.ts`. **72 Tests grün, Typecheck grün.**
+>   Braucht in der Server-`.env` **`SESSION_SECRET`** (langer Zufallswert; lokal schon gesetzt) —
+>   sonst überlebt das Geräte-Vertrauen keinen Neustart. **Stufe B (später):** stärkerer 2. Faktor per
+>   **WhatsApp-OTP-Template** (Einmal-Code, außerhalb 24 h erlaubt) statt Nummer-Eingabe.
+>   **✅ LIVE (09.08. von Dirk deployt): `SESSION_SECRET` am VPS gesetzt, Redeploy durch, im Inkognito
+>   echt verifiziert (Schleuse greift, richtige Nummer öffnet, falsche blockiert, vertraute Geräte frei).**
+> - **Offsite-Backup (IONOS S3) im Code fertig:** `scripts/backup.sh` verschlüsselt das Archiv
+>   (AES-256, Passwort aus `/root/backup-passphrase.txt`) und lädt es per **rclone** nach IONOS Object
+>   Storage (`offsite:auftragsboss-backup/daily`, 30 Tage). EU-Standort + Verschlüsselung wegen der
+>   Kundendaten. Fehlt rclone/Passwort, wird der Upload sauber übersprungen (lokales Backup bleibt).
+>   Anleitung: `scripts/OFFSITE-BACKUP-EINRICHTEN.md`.
+> - **Test-Seite `/testen`:** Datenschutz-/KI-Hinweis am Aufnahmeknopf (Verarbeitung zur Angebots-
+>   Erstellung, OpenAI/Anthropic, Audio nur im Arbeitsspeicher, Bitte-Beispieldaten, Link zur
+>   Datenschutzerklärung). Bewusst **kein** Cookie-Banner-Zwang: der Zugangs-Cookie ist technisch
+>   notwendig (§ 25 II TTDSG, zustimmungsfrei), die Test-Verarbeitung läuft über Art. 6 I b/f.
+> - **⏳ OFFEN (Dirk):** (1) `SESSION_SECRET` in die Server-`.env` + **Redeploy** (kein `prisma db push`
+>   nötig). (2) Offsite-Backup am VPS einrichten (siehe Anleitung). (3) Meta-Display-Name erneut
+>   einreichen — jetzt „AuftragsBoss von DAG Deutsche Automotive GmbH".
+>
 > **Update 08.08.2026 (Feierabend) — Landingpage-Ausbau + komplettes Cockpit-Redesign:**
 > - **Landingpage (`marketing/`, → IONOS):** Hero weiter verfeinert (2-Spalten, **runder Mikro-CTA „Jetzt live testen"** + WhatsApp-Sekundärbutton + Nummer, Chat als **handy-schmales** Produkt-Window mit warmem Glow, Ober-/Unterkante exakt zur Copy, Abschnitt zentriert). Neuer Abschnitt **„Speziell für Maler"** (Vergleich Allround-Software ✕ vs. AuftragsBoss ✓). „Einsprechen-senden-fertig"-Block **entfernt** (doppelte sich). Demo rechts = **echtes DIN-A4-Angebot mit Klick-Zoom** (Lightbox). **Tablet** im Screenshot-Abschnitt („Handy oder Büro"). **Hintergrund-Textur** (dezente Glows + kleines/großes Karo) über alle Abschnitte. **Kleines Favicon** gebaut (`favicon.ico` → Web-Root + `auftragsboss-favicon-32/180.png`) statt der 430-KB-Datei. Kleinfixes: „Keine App"-Kachel (Symbol 💬 + Border), Sprach-Blasen-Padding, „speziell auf Malerbetriebe" fett/hell.
 > - **Cockpit komplett neu (moderne App-Shell):** gemeinsame Shell in **`src/web/navigation.ts`** (`appShell()` + `dashStyles()`): feste **dunkle Anthrazit-Sidebar** (AuftragsBoss-Logo oben, klickbar → Übersicht; Punkte Übersicht/Angebote/Importieren/Einstellungen), sticky **Topbar** (Kontext + Account), Mobile-Drawer. Wiederverwendbar: panel, section, stat, dtable, btn, field, badge, toolbar. **Chrome bewusst OHNE Kundenfarbe** — die Akzentfarbe (`--akzent`) erscheint NUR in der Angebotsvorschau. `cockpitSeite.ts` (Begrüßung, KPI-Zeile, Such-/Filter-Toolbar, moderne Tabelle), `einstellungenSeite.ts` (58/42 + **sticky A4-Vorschau**), `importRoutes.ts` (**Drag-&-Drop-Dropzone**) neu auf der Shell. Routen/Signaturen unverändert.
@@ -409,6 +544,12 @@ deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
       `scp …\deploy.tar.gz root@87.106.165.151:/root/` und
       `ssh root@87.106.165.151 "tar xzf /root/deploy.tar.gz -C /root/app && pm2 restart auftragsboss"`.
       Merkregel: `PS C:\…>` = PC (scp/ssh), `root@ubuntu:~#` = Server (Linux-Befehle) — nicht vertauschen!
+      **Achtung PowerShell-`tar`:** kennt **kein** `--force-local` (Fehler „Option not supported") →
+      weglassen. Packen: `tar --exclude='prisma/*.db' -czf deploy.tar.gz src prisma knowledge package.json
+      package-lock.json tsconfig.json preisliste.json`. Vorm Hochladen prüfen, dass neue Dateien drin sind:
+      `tar -tzf deploy.tar.gz | findstr <dateiname>`. `SCHILY.fflags`-Warnungen beim Entpacken sind harmlos.
+      Neue `.env`-Werte (z. B. `SESSION_SECRET`) NUR am Server setzen (`printf … >> /root/app/.env`), nicht
+      im tar (die `.env` wird nie mitgepackt).
     - **Server-Kommandos:** `pm2 status` / `pm2 logs auftragsboss` (Live-Log, Strg+C beendet) /
       `pm2 restart auftragsboss`. `.env` am Server ändern → danach `pm2 restart`.
     - **Test-Konten zurücksetzen** (Kontingent frei): per `ssh … npx prisma db execute --stdin` je ein

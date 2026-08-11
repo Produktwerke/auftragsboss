@@ -38,7 +38,7 @@ export function effektivePreisliste(handwerker: Handwerker, basis: Preisliste): 
       // KEIN Demo-Logo-Fallback: Ein Betrieb zeigt sein EIGENES Logo oder gar
       // keins — niemals das Muster-Logo eines anderen. Fehlt das eigene Logo,
       // bleibt der Briefkopf im Kunden-Dokument schlicht (nur Firmenname); der
-      // Editor zeigt an dieser Stelle einen "Ihr Logo"-Platzhalter.
+      // Editor zeigt an dieser Stelle einen "Dein Logo"-Platzhalter.
       logo: handwerker.logoDatei?.trim() ? handwerker.logoDatei : "",
     },
   };

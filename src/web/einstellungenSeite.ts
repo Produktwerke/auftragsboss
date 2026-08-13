@@ -169,7 +169,7 @@ export function einstellungenSeite(args: {
               </label>
               <label class="check">
                 <input type="checkbox" id="zusammenfassungAktiv" ${h.zusammenfassungAktiv ? "checked" : ""}>
-                <span><b>Vor dem Angebot kurz zusammenfassen, was verstanden wurde.</b><br><span class="hint" style="margin:0;">Du bestätigst per „ja" oder korrigierst per Sprache. Abschaltbar auch per Nachricht „ohne Zusammenfassung".</span></span>
+                <span><b>Bei WhatsApp vor dem Angebot kurz zusammenfassen, was verstanden wurde.</b><br><span class="hint" style="margin:0;">Du bestätigst per „ja" oder korrigierst per Sprache. Abschaltbar auch per Nachricht „ohne Zusammenfassung".</span></span>
               </label>
             </div>
           </div>

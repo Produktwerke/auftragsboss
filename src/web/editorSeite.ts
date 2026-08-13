@@ -45,6 +45,15 @@ export function editorSeite(args: {
   // Datum als YYYY-MM-DD für das date-Eingabefeld
   const datumIso = dokument.datum.toISOString().slice(0, 10);
 
+  // Fußzeile der Live-Vorschau — gleicher Aufbau wie in Word/PDF (zweizeilig).
+  const fussZ1 = [
+    [b.firma, b.strasse, `${b.plz} ${b.ort}`.trim()].filter(Boolean).join(", "),
+    ...(b.inhaber ? [`Ansprechpartner: ${b.inhaber}`] : []),
+  ].join("   ·   ");
+  const fussZ2 = [b.ustIdNr ? `USt-IdNr.: ${b.ustIdNr}` : "", b.bank ? `Bank: ${b.bank}` : ""]
+    .filter(Boolean)
+    .join("   ·   ");
+
   // Anfangsdaten für das Skript — als JSON in die Seite eingebettet
   const startDaten = {
     token: dokument.bearbeitenToken,
@@ -75,7 +84,48 @@ export function editorSeite(args: {
   * { box-sizing: border-box; }
   body { margin:0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
          background:#eef0f3; color:#1a1a1a; line-height:1.5; }
-  .rahmen { max-width: 860px; margin: 0 auto; padding: 16px; }
+  .rahmen { max-width: 1500px; margin: 0 auto; padding: 16px; }
+  /* Zwei Spalten am Desktop: links der Editor, rechts die klebende
+     A4-Live-Vorschau. Unter 1100px verschwindet die Vorschau komplett
+     (Handy/Tablet), die Editor-Spalte bleibt wie gewohnt mittig. */
+  .editor-layout { display:grid; grid-template-columns:minmax(0,860px) minmax(340px,560px);
+                   gap:26px; justify-content:center; align-items:start; }
+  .editor-spalte { width:100%; max-width:860px; margin:0 auto; min-width:0; }
+  .doc-seite { position:sticky; top:14px; min-width:0; }
+  .doc-label { font-size:11.5px; font-weight:700; text-transform:uppercase;
+               letter-spacing:.06em; color:#8a919a; margin:2px 0 10px; }
+  @media (max-width:1099px){ .editor-layout{ display:block; } .doc-seite{ display:none; } }
+  /* Das Vorschau-Dokument selbst (nur hier eigene Tabellen-Optik — die
+     globalen th/td-Regeln des Editors werden gezielt überschrieben). */
+  .doc { background:#fff; border-radius:12px; box-shadow:0 10px 30px rgba(16,24,40,.14);
+         padding:26px 26px 20px; color:#222; }
+  .doc .d-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px;
+                 border-bottom:3px solid var(--akzent); padding-bottom:13px; }
+  .doc .d-firma { font-size:19px; font-weight:800; color:var(--akzent); line-height:1.15; }
+  .doc .d-adr { font-size:11.5px; color:#666; margin-top:5px; line-height:1.5; }
+  .doc .d-logo img { max-height:52px; max-width:150px; object-fit:contain; }
+  .doc .d-meta { display:flex; justify-content:space-between; gap:16px; margin-top:15px;
+                 font-size:11.5px; color:#444; line-height:1.5; }
+  .doc .d-nr { text-align:right; color:#555; white-space:nowrap; }
+  .doc .d-titel { font-size:16px; font-weight:800; margin:15px 0 2px; color:#222; }
+  .doc .d-objekt { font-size:11.5px; color:#555; margin-bottom:4px; }
+  .doc .d-text { font-size:11.5px; color:#333; white-space:pre-wrap; margin:7px 0; line-height:1.55; }
+  .doc table { width:100%; min-width:0; border-collapse:collapse; margin:9px 0; }
+  .doc th { background:none; text-align:left; font-size:10px; text-transform:uppercase;
+            letter-spacing:.04em; color:#8a9099; border-bottom:1px solid #d7dae0;
+            padding:0 6px 5px 0; font-weight:700; }
+  .doc th.r, .doc td.r { text-align:right; padding-right:0; white-space:nowrap; }
+  .doc td { padding:6px 6px 6px 0; border-bottom:1px solid #eef1f3; font-size:11.5px; color:#333; vertical-align:top; }
+  .doc tr.kat td { font-weight:700; color:#444; padding-top:10px; }
+  .doc tr.sum td { border:none; padding:3px 6px 3px 0; color:#444; }
+  .doc tr.sum.erste td { padding-top:9px; }
+  .doc tr.ges td { font-weight:800; color:var(--akzent); border-top:2px solid var(--akzent);
+                   border-bottom:none; padding-top:7px; }
+  .doc .offen { font-size:11.5px; }
+  .doc .d-gueltig { font-size:10.5px; color:#666; margin-top:11px; }
+  .doc .d-fuss { font-size:9.5px; color:#8a8a8a; margin-top:15px; padding-top:9px;
+                 border-top:1px solid #eceff2; line-height:1.6; }
+  .doc-note { font-size:12px; color:#98a0a8; margin:12px 2px 0; line-height:1.5; }
   .zurueck { display:inline-block; margin-bottom:12px; color:var(--akzent); text-decoration:none;
              font-size:14px; font-weight:600; }
   .zurueck:hover { text-decoration:underline; }
@@ -265,6 +315,8 @@ export function editorSeite(args: {
 </head>
 <body>
 <div class="rahmen">
+<div class="editor-layout">
+<div class="editor-spalte">
 
   ${
     einstellungenUrl
@@ -372,6 +424,37 @@ export function editorSeite(args: {
   </div>`
   }
 
+</div><!-- /editor-spalte -->
+
+<aside class="doc-seite">
+  <div class="doc-label">Vorschau</div>
+  <div class="doc">
+    <div class="d-head">
+      <div>
+        <div class="d-firma">${escapeHtml(b.firma)}</div>
+        <div class="d-adr">${escapeHtml([b.strasse, `${b.plz} ${b.ort}`.trim(), b.telefon].filter(Boolean).join(" · "))}</div>
+      </div>
+      ${logo ? `<div class="d-logo"><img src="${logo.dataUrl}" alt="Logo"></div>` : ""}
+    </div>
+    <div class="d-meta">
+      <div id="pvKunde"></div>
+      <div class="d-nr" id="pvMeta"></div>
+    </div>
+    <div class="d-titel">${escapeHtml(titel)}</div>
+    <div class="d-objekt" id="pvObjekt"></div>
+    <div class="d-text" id="pvEinleitung"></div>
+    <table>
+      <thead><tr><th>Pos.</th><th>Leistung</th><th class="r">Menge</th><th class="r">Einzel</th><th class="r">Gesamt</th></tr></thead>
+      <tbody id="pvPositionen"></tbody>
+    </table>
+    <div class="d-text" id="pvSchluss"></div>
+    ${istAngebot ? `<div class="d-gueltig" id="pvGueltig"></div>` : ""}
+    ${fussZ1 || fussZ2 ? `<div class="d-fuss">${[fussZ1, fussZ2].filter(Boolean).map(escapeHtml).join("<br>")}</div>` : ""}
+  </div>
+  <p class="doc-note">Live-Vorschau deines Angebots — ändert sich sofort beim Tippen. PDF und Word sehen genauso aus.</p>
+</aside>
+
+</div><!-- /editor-layout -->
 </div>
 
 <script>
@@ -381,6 +464,9 @@ const MAIL = ${JSON.stringify({ email: handwerker.email ?? "", standard: handwer
 // Preisgedächtnis-Stand für die Merken/Vergessen-Knöpfe je Position.
 // aktiv=false (Flag oder Betriebseinstellung aus) blendet alles aus.
 const GED = ${JSON.stringify({ aktiv: !!gedaechtnis, preise: gedaechtnis ?? {} })};
+// Konditionen für die "Gültig bis … Zahlungsziel: …"-Zeile der Live-Vorschau
+// (bereits mit den Betriebs-Einstellungen überlagert).
+const KOND = ${JSON.stringify({ tage: preisliste.konditionen.angebotGueltigTage, zahlungsziel: preisliste.konditionen.zahlungsziel })};
 // Sprechende Beschriftung im Dropdown; gespeichert wird der kurze Code.
 const EINHEIT_LABEL = {m2:'m²', lfm:'lfm', Stk:'Stk.', Std:'Std.', l:'Liter', kg:'kg', Sack:'Sack', Gebinde:'Gebinde', Rolle:'Rolle', pauschal:'pauschal'};
 const einheitLabel = e => EINHEIT_LABEL[e] || e;
@@ -764,8 +850,69 @@ if(START.versendet){ document.body.classList.add('gesperrt'); }
 function markiereGeaendert(){
   document.getElementById('status').textContent='Nicht gespeichert';
   document.getElementById('status').style.color='#b7791f';
+  vorschauAktualisieren();
   clearTimeout(aenderungsTimer);
   aenderungsTimer=setTimeout(speichern,1200);
+}
+
+// ── A4-Live-Vorschau (nur Desktop, rechte Spalte) ─────────
+// Baut das Vorschau-Dokument aus dem aktuellen Editor-Zustand — gleiche
+// Reihenfolge, Nummerierung und Summenlogik wie PDF/Word (kategorien(),
+// zeilensumme()). Offene Preise erscheinen ehrlich als ___ €.
+function datumAusFeld(){
+  const d = new Date(val('datum'));
+  return isNaN(d.getTime()) ? new Date() : d;
+}
+function pvDatum(d){ return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function pvZeilen(){
+  const kats = kategorien();
+  const mehrere = kats.length > 1;
+  let html=''; let nr=0; let nettoGesamt=0; let alleDa=positionen.length>0;
+  for(const kat of kats){
+    if(mehrere) html += '<tr class="kat"><td colspan="5">'+esc(katName(kat))+'</td></tr>';
+    let netto=0, voll=true;
+    for(const p of positionen){
+      if(p.kategorie!==kat) continue;
+      nr++;
+      const g = zeilensumme(p);
+      if(g==null) voll=false; else netto+=g;
+      const menge = p.einheit==='pauschal' ? 'pauschal'
+        : (p.menge==null ? '' : p.menge.toLocaleString('de-DE')+' '+einheitLabel(p.einheit||''));
+      html += '<tr><td>'+nr+'</td><td>'+esc(p.beschreibung)+'</td><td class="r">'+esc(menge)+'</td>'+
+              '<td class="r">'+(p.einzelpreis==null?OFFEN:euro(p.einzelpreis))+'</td>'+
+              '<td class="r">'+(g==null?OFFEN:euro(g))+'</td></tr>';
+    }
+    netto=Math.round(netto*100)/100; nettoGesamt+=netto; if(!voll) alleDa=false;
+    if(mehrere) html += '<tr class="sum zw"><td colspan="4" class="r">Zwischensumme '+esc(katName(kat))+'</td><td class="r">'+(voll?euro(netto):OFFEN)+'</td></tr>';
+  }
+  nettoGesamt=Math.round(nettoGesamt*100)/100;
+  const mwst=Math.round(nettoGesamt*START.mwstSatz)/100;
+  html += '<tr class="sum erste"><td colspan="4" class="r">Nettosumme</td><td class="r">'+(alleDa?euro(nettoGesamt):OFFEN)+'</td></tr>';
+  html += '<tr class="sum"><td colspan="4" class="r">zzgl. '+START.mwstSatz+' % MwSt.</td><td class="r">'+(alleDa?euro(mwst):OFFEN)+'</td></tr>';
+  html += '<tr class="ges"><td colspan="4" class="r">Gesamtbetrag</td><td class="r">'+(alleDa?euro(Math.round((nettoGesamt+mwst)*100)/100):OFFEN)+'</td></tr>';
+  return html;
+}
+function vorschauAktualisieren(){
+  const tbody = document.getElementById('pvPositionen');
+  if(!tbody) return;
+  const kunde = [val('kundeName'), val('kundeStrasse'), val('kundePlzOrt')].map(s=>s.trim()).filter(Boolean);
+  document.getElementById('pvKunde').innerHTML = kunde.map(esc).join('<br>');
+  const dat = datumAusFeld();
+  const knr = val('kundenNummer').trim();
+  document.getElementById('pvMeta').innerHTML =
+    esc(START.art==='ANGEBOT'?'Angebot':'Protokoll')+' Nr. '+esc(val('nummer'))+
+    '<br>Datum: '+pvDatum(dat)+(knr ? '<br>Kundennr.: '+esc(knr) : '');
+  const obj = val('objekt').trim();
+  const objEl = document.getElementById('pvObjekt');
+  objEl.textContent = obj; objEl.style.display = obj ? '' : 'none';
+  document.getElementById('pvEinleitung').textContent = val('einleitung');
+  tbody.innerHTML = pvZeilen();
+  document.getElementById('pvSchluss').textContent = val('schlusstext');
+  const g = document.getElementById('pvGueltig');
+  if(g){
+    const bis = new Date(dat.getTime() + KOND.tage*864e5);
+    g.textContent = 'Dieses Angebot ist gültig bis '+pvDatum(bis)+'. Zahlungsziel: '+KOND.zahlungsziel+'.';
+  }
 }
 
 async function speichern(){
@@ -858,6 +1005,7 @@ function mailInit(){
 
 mailInit();
 render();
+vorschauAktualisieren();
 </script>
 </body>
 </html>`;

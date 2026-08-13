@@ -267,7 +267,9 @@ export async function verarbeiteNachricht(args: {
         vonNummer,
         imDialog
           ? "🎙️ Hab ich! Einen kurzen Moment, ich arbeite im Hintergrund weiter …"
-          : "🎙️ Hab ich! Ich erstelle dein Angebot, einen kurzen Moment …",
+          // Bewusst neutral ("verarbeite", nicht "erstelle dein Angebot"): die
+          // Nachricht kann auch eine Frage sein — was sie ist, weiß erst die KI.
+          : "🎙️ Hab ich! Ich verarbeite deine Sprachnachricht, einen kurzen Moment …",
       );
       const audio = await ladeAudio(mediaId);
       const t = await transkribiereAudio(audio);
@@ -288,7 +290,8 @@ export async function verarbeiteNachricht(args: {
         vonNummer,
         imDialog
           ? "📷 Foto hab ich! Ich schau es mir an, einen kurzen Moment …"
-          : "📷 Foto hab ich! Ich lese deine Notizen und mache ein Angebot, einen kurzen Moment …",
+          // Auch hier neutral — ob aus dem Foto ein Angebot wird, entscheidet die KI.
+          : "📷 Foto hab ich! Ich lese deine Notizen, einen kurzen Moment …",
       );
       inhalt = await liesBildNotiz(await ladeBild(bildMediaId), (ein, aus) => {
         void spurEvent(prisma, "KI_AUFRUF", {

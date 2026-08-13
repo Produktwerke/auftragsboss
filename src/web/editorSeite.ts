@@ -95,7 +95,16 @@ export function editorSeite(args: {
   .editor-layout { display:grid; grid-template-columns:minmax(0,860px) minmax(340px,560px);
                    gap:26px; justify-content:center; align-items:start; }
   .editor-spalte { width:100%; max-width:860px; margin:0 auto; min-width:0; }
-  .doc-seite { position:sticky; top:14px; min-width:0; }
+  /* Die Vorschau ist maximal so hoch wie der Bildschirm und in sich selbst
+     scrollbar — bei langen Angeboten scrollt man MIT DEM MAUSRAD ÜBER DER
+     VORSCHAU unabhängig vom Editor links (overscroll-behavior verhindert,
+     dass am Ende die ganze Seite weiterscrollt). */
+  .doc-seite { position:sticky; top:14px; min-width:0; max-height:calc(100vh - 28px);
+               overflow-y:auto; overscroll-behavior:contain; padding-right:6px;
+               scrollbar-width:thin; scrollbar-color:#b9c1c9 transparent; }
+  .doc-seite::-webkit-scrollbar { width:9px; }
+  .doc-seite::-webkit-scrollbar-thumb { background:#b9c1c9; border-radius:5px; }
+  .doc-seite::-webkit-scrollbar-track { background:transparent; }
   .doc-label { font-size:11.5px; font-weight:700; text-transform:uppercase;
                letter-spacing:.06em; color:#8a919a; margin:2px 0 10px; }
   @media (max-width:1099px){ .editor-layout{ display:block; } .doc-seite{ display:none; } }

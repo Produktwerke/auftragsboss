@@ -70,6 +70,8 @@ interface EinstellungenKoerper {
   preisGedaechtnisAktiv?: boolean;
   zusammenfassungAktiv?: boolean;
   standardSchlusstext?: string;
+  angebotGueltigTage?: string | number; // Eingabefeld liefert einen String
+  zahlungsziel?: string;
 }
 
 export async function editorRoutes(app: FastifyInstance): Promise<void> {
@@ -743,6 +745,11 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
         k.farbe && /^[0-9a-fA-F]{6}$/.test(k.farbe.replace("#", ""))
           ? k.farbe.replace("#", "")
           : handwerker.farbe;
+      // Gültigkeitsdauer: 1–365 Tage; leer oder Unsinn = null → Vorgabe greift.
+      const gueltigTage = (() => {
+        const n = Math.round(Number(String(k.angebotGueltigTage ?? "").trim()));
+        return Number.isFinite(n) && n >= 1 && n <= 365 ? n : null;
+      })();
 
       await prisma.handwerker.update({
         where: { id: handwerker.id },
@@ -760,6 +767,8 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
           farbe,
           standardEinleitung: text(k.standardEinleitung),
           standardSchlusstext: text(k.standardSchlusstext),
+          angebotGueltigTage: gueltigTage,
+          zahlungsziel: text(k.zahlungsziel)?.slice(0, 160) ?? null,
           ...(typeof k.preisGedaechtnisAktiv === "boolean"
             ? { preisGedaechtnisAktiv: k.preisGedaechtnisAktiv }
             : {}),

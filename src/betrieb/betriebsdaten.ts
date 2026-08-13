@@ -41,6 +41,17 @@ export function effektivePreisliste(handwerker: Handwerker, basis: Preisliste): 
       // Editor zeigt an dieser Stelle einen "Dein Logo"-Platzhalter.
       logo: handwerker.logoDatei?.trim() ? handwerker.logoDatei : "",
     },
+    // Konditionen je Betrieb: Gültigkeitsdauer und Zahlungsziel darf jeder
+    // Betrieb selbst festlegen (Einstellungsseite); leer = Vorgabe aus der JSON.
+    // Landet über summe.gueltigBis bzw. konditionen.zahlungsziel in PDF, Word
+    // und E-Mail — die Erzeuger bleiben unverändert.
+    konditionen: {
+      ...basis.konditionen,
+      ...(handwerker.angebotGueltigTage && handwerker.angebotGueltigTage > 0
+        ? { angebotGueltigTage: handwerker.angebotGueltigTage }
+        : {}),
+      zahlungsziel: oder(handwerker.zahlungsziel, basis.konditionen.zahlungsziel),
+    },
   };
 }
 

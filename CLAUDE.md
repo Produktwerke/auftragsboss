@@ -120,7 +120,22 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
-> **Update 13.08.2026 — Preisgedächtnis: Merken/Vergessen-Knöpfe je Position im Editor (✅ LIVE auf dem VPS, pm2 #62, /health ok):**
+> **Update 13.08.2026 (2) — Angebotsgültigkeit + Zahlungsziel je Betrieb einstellbar (⏳ VPS-Deploy offen, MIT `db push`):**
+> - Vorher standen beide nur als globale Vorgabe in `preisliste.json` (`angebotGueltigTage` 30, `zahlungsziel`)
+>   und landeten von dort in der Schlusszeile von PDF/Word/E-Mail — kein Betrieb konnte sie ändern.
+> - **Schema:** `Handwerker.angebotGueltigTage Int?` + `zahlungsziel String?` (null = Vorgabe greift) → **`db push` nötig** (additiv).
+> - **`effektivePreisliste` überlagert jetzt auch `konditionen`** (Tage nur wenn >0, Zahlungsziel per `oder()`).
+>   Dadurch fließen die Betriebs-Werte ohne Änderung an den Erzeugern in `summe.gueltigBis` (berechnung.ts)
+>   und die „Gültig bis … Zahlungsziel: …"-Zeile von PDF/Word/E-Mail; Timeout-Job ist über
+>   `erstelleDokument` (pipeline rechnet eff intern) automatisch abgedeckt.
+> - **Einstellungsseite:** zwei neue Felder unter „Angebots-Texte" („Angebot gültig für (Tage)" 1–365,
+>   „Zahlungsziel" max 160 Zeichen, Platzhalter = Vorgabe, leer = zurück zur Vorgabe); Live-Vorschau-Zeile
+>   `#pvGueltig` rechnet beim Tippen mit. Speichern über die bestehende PUT-Route (Validierung serverseitig).
+> - **Typecheck grün, 121 Tests grün (4 neu: betriebsdaten.test.ts — Vorgabe/Überlagerung/Unsinnswerte/MwSt).**
+>   Browser-E2E: Feld 14 Tage + eigenes Zahlungsziel → Vorschau 27.08. korrekt, gespeichert, nach Reload da;
+>   Felder geleert → Vorgabe greift wieder. Lokales `db push` durch.
+>
+> **Update 13.08.2026 — Preisgedächtnis: Merken/Vergessen-Knöpfe je Position im Editor (✅ LIVE auf dem VPS, pm2 #62, /health ok; Mobil-Feinschliff: Knopf in der Kreuzchen-Zeile — Deploy zusammen mit Update (2)):**
 > - **Dirks Idee:** je Position gezielt „Stundensatz merken" / „m²-Preis merken" / „Gebinde-Preis merken" … —
 >   und wenn ein Preis schon gemerkt ist, zeigt dieselbe Stelle „✓ gemerkt" + „vergessen". So sieht der Maler
 >   sofort, dass ein Preis aus seinem Gedächtnis kommt, und kann ihn mit einem Klick wieder entfernen.

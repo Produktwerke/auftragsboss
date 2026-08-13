@@ -55,6 +55,10 @@ model Handwerker {
   standardEinleitung  String? // Vorgabe-Anschreiben, falls die KI keins bildet
   standardSchlusstext String? // wird an den Schlusstext jedes Angebots angehängt
 
+  // Konditionen je Betrieb — leer = Vorgabe aus preisliste.json greift.
+  angebotGueltigTage Int? // wie lange ein Angebot gilt (Vorgabe 30 Tage)
+  zahlungsziel       String? // z.B. "14 Tage netto nach Rechnungserhalt"
+
   // Persönlicher, passwortloser Zugang zur Einstellungsseite. Nullable, damit
   // Bestandsdatensätze ohne Migration bestehen bleiben — der Token wird beim
   // ersten Bedarf erzeugt (siehe betrieb/betriebsdaten.ts).

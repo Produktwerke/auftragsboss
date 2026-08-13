@@ -54,7 +54,20 @@ export function einstellungenSeite(args: {
     bank: feld(h.bank, v.bank),
     standardEinleitung: feld(h.standardEinleitung, ""),
     standardSchlusstext: feld(h.standardSchlusstext, ""),
+    angebotGueltigTage: feld(
+      h.angebotGueltigTage && h.angebotGueltigTage > 0 ? String(h.angebotGueltigTage) : null,
+      String(vorgabe.konditionen.angebotGueltigTage),
+    ),
+    zahlungsziel: feld(h.zahlungsziel, vorgabe.konditionen.zahlungsziel),
   };
+
+  // Startwerte für die Vorschau-Zeile "Gültig bis … Zahlungsziel: …" —
+  // die Handwerker-Werte gewinnen, sonst greift die Vorgabe.
+  const gueltigTageStart =
+    h.angebotGueltigTage && h.angebotGueltigTage > 0
+      ? h.angebotGueltigTage
+      : vorgabe.konditionen.angebotGueltigTage;
+  const zahlungszielStart = h.zahlungsziel?.trim() ? h.zahlungsziel : vorgabe.konditionen.zahlungsziel;
 
   const inp = (id: string, x: { wert: string; ph: string }, extra = "") =>
     `<input id="${id}" value="${escapeHtml(x.wert)}" placeholder="${escapeHtml(x.ph)}" ${extra}>`;
@@ -128,6 +141,16 @@ export function einstellungenSeite(args: {
                 <textarea id="standardSchlusstext" placeholder="z.B. Es gelten unsere allgemeinen Geschäftsbedingungen. Gewährleistung nach den gesetzlichen Bestimmungen.">${escapeHtml(f.standardSchlusstext.wert)}</textarea>
                 ${hint("Wird an jedes Angebot angehängt.")}
               </div>
+              <div class="grid2">
+                <div class="field"><label>Angebot gültig für <span style="font-weight:400;color:var(--faint);">(Tage)</span></label>
+                  ${inp("angebotGueltigTage", f.angebotGueltigTage, 'type="number" min="1" max="365" inputmode="numeric"')}
+                  ${hint("Steht unten im Angebot: „Gültig bis <Datum>“.")}
+                </div>
+                <div class="field"><label>Zahlungsziel</label>
+                  ${inp("zahlungsziel", f.zahlungsziel, 'maxlength="160"')}
+                  ${hint("Steht unten im Angebot: „Zahlungsziel: …“.")}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -192,7 +215,7 @@ export function einstellungenSeite(args: {
               </tbody>
             </table>
             <div class="d-text" id="pvSchluss"></div>
-            <div class="d-gueltig">Gültig bis ${datumDE(new Date(Date.now() + 30 * 864e5))}. Zahlungsziel: ${escapeHtml(vorgabe.konditionen?.zahlungsziel ?? "14 Tage")}.</div>
+            <div class="d-gueltig" id="pvGueltig">Gültig bis ${datumDE(new Date(Date.now() + gueltigTageStart * 864e5))}. Zahlungsziel: ${escapeHtml(zahlungszielStart)}.</div>
             <div class="d-fuss" id="pvFuss"></div>
           </div>
           <p class="preview-note">So sieht ein Angebot mit deinen Angaben aus. Ändert sich sofort, während du links tippst. Positionen und Preise sind Beispiele.</p>
@@ -250,7 +273,7 @@ export function einstellungenSeite(args: {
 
   const scriptExtra = `
 const TOKEN = ${JSON.stringify(token)};
-const FELDER = ["firma","name","strasse","plz","ort","telefon","email","ustIdNr","bank","standardEinleitung","standardSchlusstext"];
+const FELDER = ["firma","name","strasse","plz","ort","telefon","email","ustIdNr","bank","standardEinleitung","standardSchlusstext","angebotGueltigTage","zahlungsziel"];
 const val = id => document.getElementById(id).value;
 
 function aktualisiereVorschau(){
@@ -273,6 +296,11 @@ function aktualisiereVorschau(){
   const zeilen = [z1.join("   ·   ")];
   if(z2.length) zeilen.push(z2.join("   ·   "));
   document.getElementById("pvFuss").innerHTML = zeilen.map(esc).join("<br>");
+  // Gültigkeit + Zahlungsziel live in die Vorschau-Zeile unter der Tabelle
+  const tageRoh = parseInt(val("angebotGueltigTage"), 10);
+  const tage = (tageRoh >= 1 && tageRoh <= 365) ? tageRoh : (parseInt(ph("angebotGueltigTage"), 10) || 30);
+  const bis = new Date(Date.now() + tage * 864e5).toLocaleDateString("de-DE", {day:"2-digit", month:"2-digit", year:"numeric"});
+  document.getElementById("pvGueltig").textContent = "Gültig bis " + bis + ". Zahlungsziel: " + wert("zahlungsziel") + ".";
   // Akzentfarbe live in die Vorschau (nur dort referenziert)
   document.documentElement.style.setProperty("--akzent", document.getElementById("farbe").value);
 }

@@ -151,7 +151,7 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 > - **Untere Leiste („Herunterladen & E-Mail") am Handy zuklappbar** (Kopfzeile 47 px, Tipp öffnet/schließt, Auto-Aufklappen am Seitenende mit **Flacker-Schutz**: merkt Scroll-Lage beim Öffnen, schließt erst 150 px darüber). **Segment neu designt:** zwei Gruppen „Angebot herunterladen" (große PDF/Word-Knöpfe + Mail-Haken) und „💻 Am PC weitermachen" (Link-Knopf + Erklärsatz), Desktop nebeneinander. `statusSetzen()` null-sicher, Status mobil in der Klapp-Kopfzeile.
 > - Jede Stufe im Browser E2E verifiziert (Desktop + 375 px), 122 Tests grün. Deploys ohne `db push`.
 >
-> **Update 13.08.2026 (3) — Einstellungsseite: Kopf-/Fußzeile getrennt, Bank+IBAN, Vorschau-Markierung; Editor: A4-Live-Vorschau (⏳ Deploy zusammen, MIT `db push` wegen `iban`):**
+> **Update 13.08.2026 (3) — Einstellungsseite: Kopf-/Fußzeile getrennt, Bank+IBAN, Vorschau-Markierung; Editor: A4-Live-Vorschau (✅ LIVE, db push wegen `iban` durch):**
 > - **Editor bekam eine A4-Live-Vorschau** rechts (nur Desktop ≥1100px, sticky) mit dem ECHTEN Angebot
 >   (Positionen/Summen/Gültig-bis/Fußzeile, offene Preise als ___ €); Hook in `markiereGeaendert`.
 >   Außerdem Merken-Knopf am Desktop rechtsbündig unter dem Einzelpreis (statt unter der Beschreibung).
@@ -168,7 +168,7 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 > - **122 Tests grün (u. a. Bank/IBAN-Überlagerung), Typecheck grün, Browser-E2E:** Abschnitte in neuer
 >   Reihenfolge, IBAN tippen → Fußzeile „Bank: … · IBAN: …", nach Reload da, Leeren = Vorgabe.
 >
-> **Update 13.08.2026 (2) — Angebotsgültigkeit + Zahlungsziel je Betrieb einstellbar (⏳ VPS-Deploy offen, MIT `db push`):**
+> **Update 13.08.2026 (2) — Angebotsgültigkeit + Zahlungsziel je Betrieb einstellbar (✅ LIVE, db push durch; live in der Einstellungs-Vorschau bestätigt):**
 > - Vorher standen beide nur als globale Vorgabe in `preisliste.json` (`angebotGueltigTage` 30, `zahlungsziel`)
 >   und landeten von dort in der Schlusszeile von PDF/Word/E-Mail — kein Betrieb konnte sie ändern.
 > - **Schema:** `Handwerker.angebotGueltigTage Int?` + `zahlungsziel String?` (null = Vorgabe greift) → **`db push` nötig** (additiv).

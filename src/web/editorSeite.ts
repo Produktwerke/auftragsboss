@@ -222,6 +222,9 @@ export function editorSeite(args: {
   tr.drag-ziel td { outline:2px dashed var(--akzent); outline-offset:-2px; }
   /* ▲/▼-Verschiebeknöpfe: nur auf dem Handy sichtbar (Desktop zieht am Anfasser) */
   .pfeile { display:none; }
+  /* Verschobene Zeile blinkt kurz auf (nach ▲/▼ oder Drag & Drop) */
+  tr.bewegt td { animation: bewegtflash .8s ease; }
+  @keyframes bewegtflash { 0% { background:#fff3bf; } 100% { background:transparent; } }
   /* Gelöschte Position: bleibt kurz als graue Rückgängig-Zeile stehen und
      blendet zum Ende der Frist von selbst aus (die Entfernung macht das JS). */
   tr.geloescht-zeile td { color:#98a0a8; background:#f6f7f9; font-size:14px; }
@@ -236,6 +239,20 @@ export function editorSeite(args: {
      nicht darüber. */
   .aktionen { position:sticky; bottom:0; z-index:20; background:#fff; border-radius:12px; padding:14px 16px;
               box-shadow:0 -2px 10px rgba(0,0,0,.08); }
+  /* Untere Leiste: am Handy zuklappbar (Kopfzeile antippen); öffnet sich von
+     selbst, wenn man ganz unten angekommen ist. Am Desktop immer offen. */
+  .akt-kopf { display:none; }
+  @media (max-width:640px){
+    .akt-kopf { display:flex; align-items:center; gap:10px; font-size:14.5px; font-weight:700;
+                color:#333; cursor:pointer; user-select:none; padding:2px 2px; }
+    .akt-kopf .akt-status { margin-left:auto; font-size:12.5px; font-weight:600; }
+    .akt-kopf .akt-caret { font-size:15px; color:#8a919a; transition:transform .2s ease; }
+    .aktionen.zu .akt-caret { transform:rotate(180deg); }
+    .aktionen.zu .akt-inhalt { display:none; }
+    .aktionen .akt-inhalt { margin-top:8px; }
+    .aktionen .zeile1 .status { display:none; } /* Status steht mobil in der Kopfzeile */
+    .aktionen { padding:10px 14px; }
+  }
   .aktionen .zeile1 { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
   .dl-label { font-size:14px; font-weight:600; color:#555; }
   .btn { border:none; border-radius:8px; padding:11px 16px; font-size:15px; font-weight:600;
@@ -440,6 +457,8 @@ export function editorSeite(args: {
   ${
     handwerker.istTest
       ? `<div class="aktionen">
+    <div class="akt-kopf" id="aktKopf">📄 Herunterladen<span class="akt-status" id="aktKopfStatus"></span><span class="akt-caret">▾</span></div>
+    <div class="akt-inhalt">
     <div class="zeile1">
       <span class="dl-label">Herunterladen als:</span>
       <button class="btn locked" disabled title="Im Test nicht verfügbar">PDF</button>
@@ -450,8 +469,11 @@ export function editorSeite(args: {
       <a class="wa-btn" href="https://wa.me/491749364823?text=Hallo%20AuftragsBoss%2C%20ich%20m%C3%B6chte%20mein%20Angebot%20als%20PDF%20und%20loslegen." target="_blank" rel="noopener">▶ Jetzt über WhatsApp testen</a>
       <div class="nr">oder schreib direkt an: <b>+49 174 9364823</b></div>
     </div>
+    </div>
   </div>`
       : `<div class="aktionen">
+    <div class="akt-kopf" id="aktKopf">📄 Herunterladen &amp; E-Mail<span class="akt-status" id="aktKopfStatus"></span><span class="akt-caret">▾</span></div>
+    <div class="akt-inhalt">
     <div class="zeile1">
       <span class="dl-label">Herunterladen als:</span>
       <button class="btn" onclick="exportieren('pdf')">PDF</button>
@@ -469,6 +491,7 @@ export function editorSeite(args: {
         <button class="btn" onclick="mailSpeichern()">Speichern</button>
       </div>
       <div class="mail-status" id="mailStatus"></div>
+    </div>
     </div>
   </div>`
   }
@@ -705,6 +728,7 @@ function render(){
         '<td class="r" data-label="Einzelpreis"><input class="pos-preis r" inputmode="decimal" value="'+(p.einzelpreis??'')+'" placeholder="___" oninput="setNum('+i+',\\'einzelpreis\\',this.value,this)"><div class="ged-box ged-desk" data-i="'+i+'">'+gedHtml(p,i)+'</div></td>'+
         '<td class="r zeilensumme" data-label="Gesamt">'+(g==null?OFFEN:euro(g))+'</td>'+
         '<td class="c-del"><span class="pfeile"><button type="button" class="pfeil" title="Nach oben verschieben" onclick="verschiebePosition('+i+',-1)">▲</button><button type="button" class="pfeil" title="Nach unten verschieben" onclick="verschiebePosition('+i+',1)">▼</button></span><div class="ged-box ged-mob" data-i="'+i+'">'+gedHtml(p,i)+'</div><button class="loeschen" title="Zeile löschen" onclick="loeschen('+i+')">×</button></td>';
+      tr.dataset.i = i; // fürs Wiederfinden nach dem Neuaufbau (Bewegungs-Animation)
       dragVerdrahten(tr, p);
       tbody.appendChild(tr);
     });
@@ -889,8 +913,10 @@ function dragVerdrahten(tr, p){
     positionen.splice(positionen.indexOf(dragP), 1);
     dragP.kategorie = p.kategorie; // Ablage in anderer Kategorie wechselt sie
     positionen.splice(positionen.indexOf(p) + (oben?0:1), 0, dragP);
+    const bewegt = dragP;
     dragP = null;
     render(); markiereGeaendert();
+    zeigeBewegung(bewegt, null); // kurz aufblinken lassen
   });
 }
 // "+ Position hinzufügen"-Zeile als Ablageziel: ans Ende dieser Kategorie.
@@ -905,8 +931,10 @@ function dragZielKategorieEnde(trNeu, kat){
     let letzte = -1;
     positionen.forEach((q,qi)=>{ if(q.kategorie===kat && !q._geloescht) letzte=qi; });
     positionen.splice(letzte+1, 0, dragP);
+    const bewegt = dragP;
     dragP = null;
     render(); markiereGeaendert();
+    zeigeBewegung(bewegt, null);
   });
 }
 
@@ -926,6 +954,10 @@ function verschiebePosition(i, richtung){
   const liste = anzeigeListe();
   const nachbar = liste[liste.indexOf(p) + richtung];
   if(!nachbar) return; // schon ganz oben bzw. ganz unten
+  // Alte Lage merken, damit die Zeile nach dem Neuaufbau sichtbar dorthin
+  // GLEITET statt einfach umzuspringen (wichtig auf kleinen Bildschirmen).
+  const altTr = document.querySelector('#postab tr[data-i="'+i+'"]');
+  const altTop = altTr ? altTr.getBoundingClientRect().top : null;
   positionen.splice(positionen.indexOf(p), 1);
   const ni = positionen.indexOf(nachbar);
   if(nachbar.kategorie === p.kategorie){
@@ -935,6 +967,29 @@ function verschiebePosition(i, richtung){
     positionen.splice(richtung < 0 ? ni+1 : ni, 0, p);
   }
   render(); markiereGeaendert();
+  zeigeBewegung(p, altTop);
+}
+
+// Verschobene Zeile nach dem Neuaufbau hervorheben: sie gleitet von der alten
+// zur neuen Lage (FLIP-Trick: erst zurückversetzen, dann zu 0 animieren) und
+// blinkt kurz auf. So sieht man auch auf dem Handy sofort, WAS passiert ist.
+function zeigeBewegung(p, altTop){
+  const tr = document.querySelector('#postab tr[data-i="'+positionen.indexOf(p)+'"]');
+  if(!tr) return;
+  if(altTop != null){
+    const delta = altTop - tr.getBoundingClientRect().top;
+    if(delta){
+      tr.style.transition = 'none';
+      tr.style.transform = 'translateY('+delta+'px)';
+      requestAnimationFrame(()=>{
+        tr.style.transition = 'transform .28s ease';
+        tr.style.transform = '';
+      });
+      tr.addEventListener('transitionend', ()=>{ tr.style.transition=''; }, {once:true});
+    }
+  }
+  tr.classList.add('bewegt');
+  setTimeout(()=>tr.classList.remove('bewegt'), 800);
 }
 
 // Löschen mit Reue-Frist: Die Zeile bleibt 8 Sekunden als graue
@@ -1020,9 +1075,17 @@ if(plzBtn){
 }
 // Versendet = schreibgeschützt: Eingaben sperren (Export/Ansehen bleibt).
 if(START.versendet){ document.body.classList.add('gesperrt'); }
+// Speicher-Status an beiden Stellen anzeigen: in der Aktionszeile (Desktop)
+// und in der Kopfzeile der zugeklappten Leiste (Handy). Null-sicher — bei
+// Test-Konten gibt es die Aktionszeile mit #status nicht.
+function statusSetzen(text,farbe){
+  ['status','aktKopfStatus'].forEach(id=>{
+    const s=document.getElementById(id);
+    if(s){ s.textContent=text; s.style.color=farbe; }
+  });
+}
 function markiereGeaendert(){
-  document.getElementById('status').textContent='Nicht gespeichert';
-  document.getElementById('status').style.color='#b7791f';
+  statusSetzen('Nicht gespeichert','#b7791f');
   vorschauAktualisieren();
   clearTimeout(aenderungsTimer);
   aenderungsTimer=setTimeout(speichern,1200);
@@ -1103,9 +1166,9 @@ async function speichern(){
   try{
     const r=await fetch('/api/a/'+START.token,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(daten)});
     if(!r.ok) throw 0;
-    const s=document.getElementById('status'); s.textContent='✓ Gespeichert'; s.style.color='#2e7d32';
+    statusSetzen('✓ Gespeichert','#2e7d32');
   }catch(e){
-    const s=document.getElementById('status'); s.textContent='Speichern fehlgeschlagen'; s.style.color='#c0392b';
+    statusSetzen('Speichern fehlgeschlagen','#c0392b');
   }
 }
 function val(id){ return document.getElementById(id).value; }
@@ -1199,6 +1262,25 @@ function mailInit(){
   mailLabelAktualisieren();
   // Haken gesetzt, aber noch keine Adresse? Direkt Eingabe anbieten.
   if(MAIL.standard && !MAIL.email) mailEingabeZeigen();
+}
+
+// ── Untere Leiste (Handy): zuklappbar + Auto-Aufklappen am Seitenende ──
+const aktLeiste=document.querySelector('.aktionen');
+const aktKopf=document.getElementById('aktKopf');
+let aktManuellOffen=false;
+function aktMobil(){ return window.matchMedia('(max-width:640px)').matches; }
+if(aktLeiste && aktKopf){
+  if(aktMobil()) aktLeiste.classList.add('zu');
+  aktKopf.addEventListener('click', ()=>{
+    const zu=aktLeiste.classList.toggle('zu');
+    aktManuellOffen=!zu;
+  });
+  window.addEventListener('scroll', ()=>{
+    if(!aktMobil()) return;
+    const unten = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 60;
+    if(unten) aktLeiste.classList.remove('zu');
+    else if(!aktManuellOffen) aktLeiste.classList.add('zu');
+  }, {passive:true});
 }
 
 mailInit();

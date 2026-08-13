@@ -175,6 +175,7 @@ export function editorSeite(args: {
   .mail-aendern { background:none; border:none; color:var(--akzent); font-size:13px;
          cursor:pointer; text-decoration:underline; padding:0; }
   .mail-status { font-size:13px; margin-top:6px; }
+  .mail-tipp { font-size:13px; color:#66707a; margin-top:6px; line-height:1.5; }
   .zwei { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .drei { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
   .tab-scroll { overflow-x:auto; margin:8px -6px 0; padding:0 6px; }
@@ -436,6 +437,7 @@ export function editorSeite(args: {
     <div class="mail-zeile">
       <label class="chk"><input type="checkbox" id="mailChk" onchange="mailHakenGeaendert()">
         <span id="mailChkText">Datei auch als E-Mail senden</span></label>
+      <div class="mail-tipp">💻 Die E-Mail enthält neben der Datei auch deinen <b>Bearbeitungslink</b> — praktisch, um das Angebot später am PC in Ruhe fertig zu machen.</div>
       <button class="mail-aendern" id="mailAendern" type="button" onclick="mailEingabeZeigen()" style="display:none;">E-Mail-Adresse ändern</button>
       <div class="mail-eingabe" id="mailEingabe" style="display:none;">
         <input id="mailAdresse" type="email" inputmode="email" placeholder="deine@firma.de">

@@ -221,7 +221,7 @@ export function betreiberListe(args: {
     "Kunden",
     `
   <h1>Kunden</h1>
-  <p class="unter">Alle Betriebe mit Nutzung, Abo und Status. <a href="${basis}/umsatz">Zur Umsatz-Übersicht</a> · <a href="${basis}">Zur Lern-Auswertung</a></p>
+  <p class="unter">Alle Betriebe mit Nutzung, Abo und Status. <a href="${basis}/umsatz">Zur Umsatz-Übersicht</a> · <a href="${basis === "/stasi" ? "/stasi/auswertung" : basis}">Zur Lern-Auswertung</a>${basis === "/stasi" ? ` · <a href="/stasi/abmelden">Abmelden</a>` : ""}</p>
 
   <div class="kennz">
     <div class="kachel"><div class="wert">${kpis.kunden}</div><div class="lab">Kunden</div></div>

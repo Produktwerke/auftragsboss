@@ -120,6 +120,26 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 13.08.2026 (5) — Betreiber-Login unter /stasi: E-Mail + Passwort statt Token-URL (⏳ Deploy + .env-Ergänzung offen):**
+> - **Neuer Zugang:** `/stasi` = Login-Seite (E-Mail + Passwort) → signiertes httpOnly-Cookie (30 Tage,
+>   `SESSION_SECRET`, gleiche Technik wie die Zugangs-Schleuse) → Cockpit unter sauberen URLs
+>   `/stasi/betriebe`, `/stasi/betrieb/:id`, `/stasi/umsatz`, `/stasi/auswertung` (Lern-Auswertung) — kein
+>   Geheimnis mehr in URL/Verlauf/Lesezeichen. Abmelden-Link in der Kundenliste. Pfad „stasi" bewusst
+>   unauffällig (Dirks Wunsch); Sicherheit kommt vom Login.
+> - **Technik (`src/web/adminAuth.ts`):** Passwort als **scrypt-Hash** in der .env (`ADMIN_EMAIL` +
+>   `ADMIN_PASSWORT_HASH=scrypt.<salt>.<hash>`; erzeugen mit `npx tsx src/stasi-passwort.ts "PW"`), Vergleich
+>   timing-sicher, Passwortprüfung läuft auch bei falscher E-Mail (kein Timing-Orakel); Brute-Force-Sperre
+>   5 Versuche → 15 Min (gemeinsamer Zähler aus geraetevertrauen). Fehlt eine der beiden .env-Zeilen → /stasi
+>   komplett 404 (fail closed). Ohne Sitzung: HTML-Seiten leiten zum Login um, JSON-Aktionen 404.
+> - **Routen:** betreiberRoutes registriert jede Route DOPPELT via `beide()`-Helfer (`/stasi/…` mit Cookie,
+>   `/admin/:token/…` mit ADMIN_TOKEN als **Notfall-Zugang, bleibt vorerst**); `zugang(req)` liefert ok+basis.
+>   dev:editor setzt Demo-Zugang admin@demo.de / demo-passwort. **E-Mail-Fußzeile: „Eine Marke der DAG …"**
+>   (statt „Ein Dienst der", passend zur Website).
+> - **127 Tests grün (5 neu: Hash/Cookie), Typecheck grün; Browser-E2E:** Login falsch/richtig, alle Seiten +
+>   Aktionsrouten über Cookie, Abmelden, Schutz ohne Sitzung, alter Token-Weg + falscher Token.
+> - **⏳ Dirk nach Deploy:** Hash lokal erzeugen, `ADMIN_EMAIL`/`ADMIN_PASSWORT_HASH` in VPS-.env, pm2 restart;
+>   Passwort in 1Password; Lesezeichen auf `api.auftragsboss.de/stasi` umstellen.
+>
 > **Update 13.08.2026 (4) — Editor-Feinschliff-Runde (viele kleine Features, jeweils einzeln deployt; Stand Abend LIVE):**
 > - **WhatsApp-Eingangsbestätigung neutral** („Ich verarbeite deine Sprachnachricht" / „Ich lese deine Notizen" statt „erstelle dein Angebot" — Nachricht kann auch eine Frage sein); Bestätigung nach der Zusammenfassung bleibt konkret.
 > - **Merken-Knopf Desktop rechtsbündig unter dem Einzelpreis**; Einstellungs-Schalter beginnt mit „Bei WhatsApp …".

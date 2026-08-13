@@ -6,6 +6,7 @@ import { editorRoutes } from "./web/routes.js";
 import { importRoutes } from "./web/importRoutes.js";
 import { registrierungRoutes } from "./web/registrierungRoutes.js";
 import { betreiberRoutes } from "./web/betreiberRoutes.js";
+import { adminAuthRoutes } from "./web/adminAuth.js";
 import { starteGewaehrleistungsJob } from "./jobs/warrantyReminders.js";
 import { starteVorgangTimeoutJob } from "./jobs/vorgangTimeout.js";
 
@@ -19,6 +20,7 @@ await app.register(editorRoutes);
 await app.register(importRoutes);
 await app.register(registrierungRoutes);
 await app.register(betreiberRoutes);
+await app.register(adminAuthRoutes);
 
 starteGewaehrleistungsJob();
 starteVorgangTimeoutJob();

@@ -76,7 +76,7 @@ const signatur = `
         <td style="vertical-align:middle;font-weight:800;color:${INK};font-size:16px;letter-spacing:.2px;">AUFTRAGSBOSS</td>
       </tr>
     </table>
-    <div>Ein Dienst der DAG Deutsche Automotive GmbH</div>
+    <div>Eine Marke der DAG Deutsche Automotive GmbH</div>
     <div>Augsburger Straße 746 · 70329 Stuttgart</div>
     <div>
       Tel. <a href="tel:+491749364823" style="color:${INK};text-decoration:none;">+49 174 936 4823</a> ·

@@ -31,6 +31,7 @@ import { findePlz } from "../betrieb/plzLookup.js";
 import { testSeite } from "./testSeite.js";
 import { testErlaubt, testAngebotAusAudio, testAngebotBeispiel, pruefeAudio } from "./webtest.js";
 import { schleuseSeite } from "./schleuseSeite.js";
+import { hatAdminSitzung } from "./adminAuth.js";
 import {
   darfZugreifen,
   hatGeraetevertrauen,
@@ -887,6 +888,17 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       take: 50,
     });
     return reply.type("text/html; charset=utf-8").send(adminSeite({ dokumente, basis: `/admin/${req.params.token}` }));
+  });
+
+  // Neuer Login-Weg: dieselbe Lern-Auswertung unter /stasi/auswertung
+  // (Sitzungs-Cookie statt Token in der URL).
+  app.get("/stasi/auswertung", async (req, reply) => {
+    if (!hatAdminSitzung(req)) return reply.redirect("/stasi");
+    const dokumente = await prisma.dokument.findMany({
+      orderBy: { erstelltAm: "desc" },
+      take: 50,
+    });
+    return reply.type("text/html; charset=utf-8").send(adminSeite({ dokumente, basis: "/stasi" }));
   });
 
   // ── Empfehlung: Einladungs-Landingpage ────────────────

@@ -36,10 +36,23 @@ import { summiereKostenCent } from "../analytics/kikosten.js";
 import { direkttestConfig } from "../config.js";
 import { einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
 import { cockpitLink, einstellungenLink } from "./tokens.js";
+import { hatAdminSitzung } from "./adminAuth.js";
+import type { FastifyRequest } from "fastify";
 
 function adminOk(token: string): boolean {
   const admin = process.env.ADMIN_TOKEN;
   return !!admin && admin.length >= 8 && token === admin;
+}
+
+// Jede Cockpit-Route läuft unter ZWEI Pfaden: neu /stasi/… (Login-Cookie)
+// und übergangsweise weiter /admin/<ADMIN_TOKEN>/… (Notfall-Zugang).
+const beide = (rest: string): string[] => [`/stasi${rest}`, `/admin/:token${rest}`];
+
+/** Zugangsprüfung + Link-Basis für die gerenderte Seite — je nach Weg. */
+function zugang(req: FastifyRequest): { ok: boolean; basis: string } {
+  const token = (req.params as { token?: string }).token;
+  if (token !== undefined) return { ok: adminOk(token), basis: `/admin/${token}` };
+  return { ok: hatAdminSitzung(req), basis: "/stasi" };
 }
 
 function nichtGefunden(): string {
@@ -56,11 +69,12 @@ async function protokolliere(handwerkerId: string | null, betrieb: string | null
 
 export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
   // ── Kundenliste ───────────────────────────────────────
-  app.get<{ Params: { token: string }; Querystring: { filter?: string } }>(
-    "/admin/:token/betriebe",
+  for (const pfad of beide("/betriebe")) app.get<{ Params: { token?: string }; Querystring: { filter?: string } }>(
+    pfad,
     async (req, reply) => {
-      if (!adminOk(req.params.token)) return reply.code(404).type("text/html").send(nichtGefunden());
-      const basis = `/admin/${req.params.token}`;
+      const z = zugang(req);
+      if (!z.ok) return z.basis === "/stasi" ? reply.redirect("/stasi") : reply.code(404).type("text/html").send(nichtGefunden());
+      const basis = z.basis;
 
       const betriebe = await prisma.handwerker.findMany({ orderBy: { erstelltAm: "desc" } });
 
@@ -158,9 +172,10 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
   );
 
   // ── Kundendetail ──────────────────────────────────────
-  app.get<{ Params: { token: string; id: string } }>("/admin/:token/betrieb/:id", async (req, reply) => {
-    if (!adminOk(req.params.token)) return reply.code(404).type("text/html").send(nichtGefunden());
-    const basis = `/admin/${req.params.token}`;
+  for (const pfad of beide("/betrieb/:id")) app.get<{ Params: { token?: string; id: string } }>(pfad, async (req, reply) => {
+    const z = zugang(req);
+    if (!z.ok) return z.basis === "/stasi" ? reply.redirect("/stasi") : reply.code(404).type("text/html").send(nichtGefunden());
+    const basis = z.basis;
 
     const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
     if (!h) return reply.code(404).type("text/html").send(nichtGefunden());
@@ -240,10 +255,10 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── Kontakt ändern (Nummer / E-Mail) ──────────────────
-  app.post<{ Params: { token: string; id: string }; Body: { nummer?: string; email?: string } }>(
-    "/admin/:token/betrieb/:id/kontakt",
+  for (const pfad of beide("/betrieb/:id/kontakt")) app.post<{ Params: { token?: string; id: string }; Body: { nummer?: string; email?: string } }>(
+    pfad,
     async (req, reply) => {
-      if (!adminOk(req.params.token)) return reply.code(404).send({ fehler: "nicht gefunden" });
+      if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
       const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
       if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
 
@@ -269,10 +284,10 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
   );
 
   // ── Blockieren / Entsperren ───────────────────────────
-  app.post<{ Params: { token: string; id: string }; Body: { grund?: string } }>(
-    "/admin/:token/betrieb/:id/blockieren",
+  for (const pfad of beide("/betrieb/:id/blockieren")) app.post<{ Params: { token?: string; id: string }; Body: { grund?: string } }>(
+    pfad,
     async (req, reply) => {
-      if (!adminOk(req.params.token)) return reply.code(404).send({ fehler: "nicht gefunden" });
+      if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
       const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
       if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
       const grund = (req.body.grund ?? "").trim();
@@ -287,8 +302,8 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Params: { token: string; id: string } }>("/admin/:token/betrieb/:id/entsperren", async (req, reply) => {
-    if (!adminOk(req.params.token)) return reply.code(404).send({ fehler: "nicht gefunden" });
+  for (const pfad of beide("/betrieb/:id/entsperren")) app.post<{ Params: { token?: string; id: string } }>(pfad, async (req, reply) => {
+    if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
     const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
     if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
 
@@ -301,10 +316,10 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── Gutschrift (Freimonate) ───────────────────────────
-  app.post<{ Params: { token: string; id: string }; Body: { monate?: string | number; grund?: string } }>(
-    "/admin/:token/betrieb/:id/gutschrift",
+  for (const pfad of beide("/betrieb/:id/gutschrift")) app.post<{ Params: { token?: string; id: string }; Body: { monate?: string | number; grund?: string } }>(
+    pfad,
     async (req, reply) => {
-      if (!adminOk(req.params.token)) return reply.code(404).send({ fehler: "nicht gefunden" });
+      if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
       const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
       if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
 
@@ -320,10 +335,11 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
   );
 
   // ── Als Kunde ansehen (Weiterleitung + Protokoll) ─────
-  app.get<{ Params: { token: string; id: string }; Querystring: { ziel?: string } }>(
-    "/admin/:token/betrieb/:id/als-kunde",
+  for (const pfad of beide("/betrieb/:id/als-kunde")) app.get<{ Params: { token?: string; id: string }; Querystring: { ziel?: string } }>(
+    pfad,
     async (req, reply) => {
-      if (!adminOk(req.params.token)) return reply.code(404).type("text/html").send(nichtGefunden());
+      const z = zugang(req);
+      if (!z.ok) return z.basis === "/stasi" ? reply.redirect("/stasi") : reply.code(404).type("text/html").send(nichtGefunden());
       const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
       if (!h) return reply.code(404).type("text/html").send(nichtGefunden());
 
@@ -335,10 +351,10 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
   );
 
   // ── Abo anlegen / ändern / reaktivieren ───────────────
-  app.post<{ Params: { token: string; id: string }; Body: { tarif?: string; monatspreis?: string | number } }>(
-    "/admin/:token/betrieb/:id/abo",
+  for (const pfad of beide("/betrieb/:id/abo")) app.post<{ Params: { token?: string; id: string }; Body: { tarif?: string; monatspreis?: string | number } }>(
+    pfad,
     async (req, reply) => {
-      if (!adminOk(req.params.token)) return reply.code(404).send({ fehler: "nicht gefunden" });
+      if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
       const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
       if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
 
@@ -364,8 +380,8 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
   );
 
   // ── Abo kündigen ──────────────────────────────────────
-  app.post<{ Params: { token: string; id: string } }>("/admin/:token/betrieb/:id/abo-kuendigen", async (req, reply) => {
-    if (!adminOk(req.params.token)) return reply.code(404).send({ fehler: "nicht gefunden" });
+  for (const pfad of beide("/betrieb/:id/abo-kuendigen")) app.post<{ Params: { token?: string; id: string } }>(pfad, async (req, reply) => {
+    if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
     const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
     if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
     const abo = await prisma.abo.findUnique({ where: { handwerkerId: h.id } });
@@ -377,10 +393,10 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── Zahlung erfassen (manuelles Ledger) ───────────────
-  app.post<{ Params: { token: string; id: string }; Body: { betrag?: string | number; zeitraum?: string; notiz?: string } }>(
-    "/admin/:token/betrieb/:id/zahlung",
+  for (const pfad of beide("/betrieb/:id/zahlung")) app.post<{ Params: { token?: string; id: string }; Body: { betrag?: string | number; zeitraum?: string; notiz?: string } }>(
+    pfad,
     async (req, reply) => {
-      if (!adminOk(req.params.token)) return reply.code(404).send({ fehler: "nicht gefunden" });
+      if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
       const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
       if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
 
@@ -399,10 +415,10 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
   );
 
   // ── Freimonat einlösen (0-€-Buchung + Zähler runter) ──
-  app.post<{ Params: { token: string; id: string }; Body: { zeitraum?: string } }>(
-    "/admin/:token/betrieb/:id/freimonat",
+  for (const pfad of beide("/betrieb/:id/freimonat")) app.post<{ Params: { token?: string; id: string }; Body: { zeitraum?: string } }>(
+    pfad,
     async (req, reply) => {
-      if (!adminOk(req.params.token)) return reply.code(404).send({ fehler: "nicht gefunden" });
+      if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
       const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
       if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
       if (h.freimonate < 1) return reply.code(400).send({ fehler: "Keine Freimonate übrig" });
@@ -421,9 +437,10 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
   );
 
   // ── Umsatz-Übersicht ──────────────────────────────────
-  app.get<{ Params: { token: string } }>("/admin/:token/umsatz", async (req, reply) => {
-    if (!adminOk(req.params.token)) return reply.code(404).type("text/html").send(nichtGefunden());
-    const basis = `/admin/${req.params.token}`;
+  for (const pfad of beide("/umsatz")) app.get<{ Params: { token?: string } }>(pfad, async (req, reply) => {
+    const z = zugang(req);
+    if (!z.ok) return z.basis === "/stasi" ? reply.redirect("/stasi") : reply.code(404).type("text/html").send(nichtGefunden());
+    const basis = z.basis;
 
     const [abos, buchungen, betriebe] = await Promise.all([
       prisma.abo.findMany(),
@@ -466,10 +483,10 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── Löschen (DSGVO-Kaskade) ───────────────────────────
-  app.post<{ Params: { token: string; id: string }; Body: { bestaetigung?: string } }>(
-    "/admin/:token/betrieb/:id/loeschen",
+  for (const pfad of beide("/betrieb/:id/loeschen")) app.post<{ Params: { token?: string; id: string }; Body: { bestaetigung?: string } }>(
+    pfad,
     async (req, reply) => {
-      if (!adminOk(req.params.token)) return reply.code(404).send({ fehler: "nicht gefunden" });
+      if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
       const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
       if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
 

@@ -600,6 +600,51 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     },
   );
 
+  // ── Nur den Bearbeitungslink per E-Mail senden (ohne Datei) ──
+  // Für den Handy→PC-Workflow: unterwegs am Handy vorbereiten, den Link ins
+  // Postfach legen, abends am Rechner in Ruhe fertig machen. Gleiche Vorlage
+  // wie der Datei-Versand (Vorschau + „Jetzt bearbeiten"-Knopf), nur ohne
+  // Anhang — dokumentMail ohne wordDateiname lässt den Anhang-Kasten weg.
+  app.post<{ Params: { token: string } }>("/api/a/:token/mail-link", async (req, reply) => {
+    const dokument = await prisma.dokument.findUnique({
+      where: { bearbeitenToken: req.params.token },
+    });
+    if (!dokument) return reply.code(404).send({ fehler: "nicht gefunden" });
+    const handwerker = await prisma.handwerker.findUniqueOrThrow({
+      where: { id: dokument.handwerkerId },
+    });
+    if (handwerker.istTest) return reply.code(403).send({ fehler: "Im Test nicht verfügbar, nur über WhatsApp." });
+    if (!darfZugreifen(req, handwerker.id, handwerker.istTest)) {
+      return reply.code(401).send({ fehler: "Bitte zuerst den Zugang bestätigen." });
+    }
+    if (!smtpKonfiguriert()) {
+      return reply.code(400).send({ fehler: "E-Mail-Versand ist noch nicht eingerichtet (SMTP fehlt)." });
+    }
+    if (!handwerker.email?.trim()) {
+      return reply.code(400).send({ fehler: "keine E-Mail-Adresse hinterlegt" });
+    }
+
+    const preisliste = effektivePreisliste(handwerker, ladePreisliste());
+    const daten = dokumentZuDaten(dokument);
+    const summe = berechneAngebot(daten.positionen, preisliste, dokument.datum);
+    const { betreff, html } = dokumentMail({
+      daten,
+      summe,
+      preisliste,
+      nummer: dokument.nummer,
+      datum: dokument.datum,
+      version: dokument.version,
+      bearbeitenUrl: bearbeitenLink(dokument.bearbeitenToken),
+    });
+    try {
+      await sendeMail(handwerker.email, betreff, html, [logoAnhang()]);
+    } catch (err) {
+      app.log.error({ err }, "Link-Mail aus dem Editor fehlgeschlagen");
+      return reply.code(502).send({ fehler: "E-Mail konnte nicht versendet werden." });
+    }
+    return reply.send({ ok: true });
+  });
+
   // ── Cockpit / Übersicht (passwortloser Zugang per Token) ─
   app.get<{ Params: { token: string } }>("/start/:token", async (req, reply) => {
     const handwerker = await prisma.handwerker.findUnique({

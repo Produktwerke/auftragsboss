@@ -176,6 +176,10 @@ export function editorSeite(args: {
          cursor:pointer; text-decoration:underline; padding:0; }
   .mail-status { font-size:13px; margin-top:6px; }
   .mail-tipp { font-size:13px; color:#66707a; margin-top:6px; line-height:1.5; }
+  .mail-link-btn { margin-top:8px; background:none; border:1px solid #cbd2da; border-radius:8px;
+                   padding:8px 12px; font-size:13.5px; font-weight:600; color:#333; cursor:pointer; }
+  .mail-link-btn:hover { background:#f2f4f6; }
+  .mail-link-btn:disabled { opacity:.6; cursor:default; }
   .zwei { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .drei { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
   .tab-scroll { overflow-x:auto; margin:8px -6px 0; padding:0 6px; }
@@ -438,6 +442,7 @@ export function editorSeite(args: {
       <label class="chk"><input type="checkbox" id="mailChk" onchange="mailHakenGeaendert()">
         <span id="mailChkText">Datei auch als E-Mail senden</span></label>
       <div class="mail-tipp">💻 Die E-Mail enthält neben der Datei auch deinen <b>Bearbeitungslink</b> — praktisch, um das Angebot später am PC in Ruhe fertig zu machen.</div>
+      <button class="mail-link-btn" id="mailLinkBtn" type="button" onclick="linkMailSenden()">📧 Nur den Bearbeitungslink an meine E-Mail senden</button>
       <button class="mail-aendern" id="mailAendern" type="button" onclick="mailEingabeZeigen()" style="display:none;">E-Mail-Adresse ändern</button>
       <div class="mail-eingabe" id="mailEingabe" style="display:none;">
         <input id="mailAdresse" type="email" inputmode="email" placeholder="deine@firma.de">
@@ -1016,6 +1021,27 @@ async function exportieren(format){
     }
   }
   window.location.href='/api/a/'+START.token+'/export.'+format;
+}
+
+// Nur den Bearbeitungslink mailen (ohne Datei) — für "abends am PC weitermachen".
+async function linkMailSenden(){
+  if(!MAIL.email){
+    mailStatus('Bitte zuerst deine E-Mail-Adresse eintragen und speichern.', '#c0392b');
+    mailEingabeZeigen();
+    return;
+  }
+  await speichern(); // aktueller Stand soll hinter dem Link stehen
+  const btn=document.getElementById('mailLinkBtn');
+  btn.disabled=true; const alt=btn.textContent; btn.textContent='Wird gesendet …';
+  try{
+    const r=await fetch('/api/a/'+START.token+'/mail-link',{method:'POST'});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.fehler||'Versand fehlgeschlagen');
+    mailStatus('📧 Bearbeitungslink gesendet an '+MAIL.email+'.', '#2e7d32');
+  }catch(e){
+    mailStatus('Link nicht gesendet: '+e.message, '#c0392b');
+  }
+  btn.disabled=false; btn.textContent=alt;
 }
 
 // ── E-Mail-Versand-Bereich ────────────────────────────────

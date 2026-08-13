@@ -120,6 +120,71 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 13.08.2026 — Preisgedächtnis: Merken/Vergessen-Knöpfe je Position im Editor (⏳ VPS-Deploy offen):**
+> - **Dirks Idee:** je Position gezielt „Stundensatz merken" / „m²-Preis merken" / „Gebinde-Preis merken" … —
+>   und wenn ein Preis schon gemerkt ist, zeigt dieselbe Stelle „✓ gemerkt" + „vergessen". So sieht der Maler
+>   sofort, dass ein Preis aus seinem Gedächtnis kommt, und kann ihn mit einem Klick wieder entfernen.
+>   Preis ändern = neuen Preis eintippen und wieder „merken" drücken (überschreibt).
+> - **Editor (`editorSeite.ts`):** unter jeder Positionsbeschreibung eine `.ged-box`. Beschriftung folgt der
+>   Einheit (`gedLabel`: Std→Stundensatz, m2→m²-Preis, pauschal→Pauschalpreis, Stk→Stückpreis, …, sonst „Preis").
+>   Zustände: Preis da + nicht gemerkt → „🧠 … merken"; gemerkt + gleicher Preis → „✓ … gemerkt · vergessen";
+>   gemerkt + anderer Preis → „🧠 Neuen … merken (bisher X €) · vergessen". **Client-Schlüssel `gedSchluessel()`
+>   MUSS der Server-Normalisierung `leistungSchluessel()` entsprechen** (preisgedaechtnis.ts) — im Browser per
+>   Reload verifiziert (Server- und Client-Schlüssel identisch). Knöpfe erscheinen nur bei aktivem Preisgedächtnis
+>   (Flag + Betriebsschalter, nie bei Test-Konten); bei „versendet" mitgesperrt (`.gesperrt .ged-btn`).
+> - **Routen (`routes.ts`):** Editor-GET bettet den Gedächtnis-Stand ein (Schlüssel→Preis); neu
+>   POST `/api/a/:token/preis-merken` (Preis-Validierung, upsert via `merkePreise`, quelle MANUELL) und
+>   POST `/api/a/:token/preis-vergessen` (neue Funktion `vergissPreis`). Beide hinter der Zugangs-Schleuse,
+>   403 wenn Gedächtnis aus.
+> - **Automatik bleibt** (Dirks Entscheidung „Beides": Speichern lernt weiter alle bepreisten Positionen).
+>   Dafür neue Positions-Sperre **`gedSperre`**: „vergessen" setzt sie — sonst würde das Automatik-Lernen beim
+>   nächsten Auto-Speichern den noch eingetragenen Preis sofort wieder merken —, „merken" hebt sie auf.
+>   Wandert durchs Editor-JSON (`EditorPosition`/`EingabePosition`/`editorZuPositionen`; das `...p` in
+>   berechnung.ts erhält sie in positionenJson); `merkePreise` überspringt gesperrte Zeilen.
+> - **Typecheck grün, 117 Tests grün (2 neu: vergissPreis; merkePreise-Test um gedSperre erweitert).**
+>   Ende-zu-Ende im Browser (dev:editor, PORT 3010/3011, Flag an, Demo-Betrieb-Schalter an): merken →
+>   Persistenz nach Reload, abweichender Preis, vergessen + Sperre hält (Automatik lernte NICHT nach),
+>   merken hebt Sperre wieder auf. Demo-Daten danach aufgeräumt, verwaiste Dev-Server per taskkill beendet.
+> - **⏳ OFFEN: VPS-Deploy** (KEIN Schema-Change, kein `db push` nötig). `deploy.tar.gz` liegt im Projektordner.
+>   `FEATURE_PREISGEDAECHTNIS` ist am VPS schon AN; Betriebe sehen die Knöpfe erst, wenn ihr
+>   Preisgedächtnis-Schalter in den Einstellungen an ist (Standard AUS).
+>
+> **Update 12.08.2026 — VORFALL GELÖST: Anthropic-Guthaben leer → Angebotserstellung fiel aus (11.08. abends bis 12.08. mittags):**
+> - **Symptom:** WhatsApp nahm Nachrichten an („Hab ich! …"), danach kam „⚠️ Da ist etwas schiefgelaufen" —
+>   bei Dirk UND potenziell bei echten Interessenten. **Ursache:** `strukturiereDialog` (structure.ts) bekam
+>   von der Anthropic-API 400 „credit balance too low"; auch der Timeout-Job scheiterte daran.
+> - **Wurzel:** Der Server-`ANTHROPIC_API_KEY` gehörte zur ALTEN Organisation (`b602a07f-…`, Guthaben leer),
+>   während Dirks aktuelles Console-Konto „Frittenkarl" (`861b4b1f-…`, 100 $ Guthaben) **null API-Schlüssel** hatte.
+>   Zwei Kassen: Schlüssel ohne Geld / Geld ohne Schlüssel.
+> - **Fix (12.08.):** Neuer Schlüssel `auftragsboss-server` in der aktuellen Organisation (Workspace Default,
+>   Schlüssel in 1Password) → in VPS-`.env` `ANTHROPIC_API_KEY` ersetzt → `pm2 restart`. **Auto-Reload
+>   (automatisches Aufladen) in der Console AKTIVIERT** — Wiederholung ausgeschlossen. Alte Organisation wird
+>   nicht mehr genutzt. (Ausgabenlimit 200 $/Monat + Admin-Mail bei 100 $ waren schon gesetzt.)
+> - **Außerdem: OpenAI-Schlüssel ROTIERT** (alter war versehentlich im Klartext in den Claude-Chat geraten —
+>   gleiche Sorte Leak wie der Verify-Token am 30.07.; Regel: Schlüssel NIE in Chat/Notizen einfügen, nur
+>   Präfix-Checks wie `grep -o '^…=.\{10\}'`). Beim Tausch kurze Stolperfalle: Schlüssel in falscher Zeile →
+>   Server-Startprüfung meldete „ANTHROPIC_API_KEY muss mit sk-ant- beginnen" (env-check.ts hat sauber
+>   gegriffen!). Beide Zeilen korrekt gesetzt (`sk-ant-…` / `sk-proj-…`) + `pm2 restart` (Merke: .env wird
+>   NUR beim Prozessstart gelesen — ohne Restart wirkt keine Änderung).
+> - ✅ **12.08. nachmittags LIVE BESTÄTIGT: „jetzt funktioniert alles wieder"** — Sprachnachricht → Angebot
+>   läuft mit beiden neuen Schlüsseln.
+> - **Lehren:** (1) Bei „schiefgelaufen"-Meldungen zuerst `pm2 logs --err` lesen — der echte Grund steht drin
+>   (hier inkl. `anthropic-organization-id`, die die falsche Kasse verriet). (2) Live-Betrieb heißt: BEIDE
+>   KI-Konten (Anthropic + OpenAI) brauchen Auto-Reload/Alarm. ✅ **OpenAI Auto-Recharge aktiviert (13.08., Dirk).**
+>   **⏳ TODO (Dirk, OpenAI-Konto):** den ALTEN geleakten Schlüssel (endet `…R9hYA`) in der API-keys-Liste löschen.
+> - Merkzettel: Server nutzt Claude via API (structure.ts); Guthaben wird durch API-, Claude-Code- und
+>   Workbench-Nutzung verbraucht (eine Kasse pro Organisation).
+> - 🆕 **STRIPE-KONTO EINGERICHTET (12.08. nachmittags, Dirk selbst):** Live-Konto für DAG Deutsche
+>   Automotive GmbH komplett durchs Onboarding (Unternehmensdaten, Bank, Betrugsschutz **Lite/gratis**
+>   — bewusst, B2B-Abo mit Stammkunden braucht kein Radar-Standard; Steuerberechnung/Climate übersprungen).
+>   Kategorie „Software", Beschreibung = AuftragsBoss-Abo (49/99/199 €, B2B Deutschland).
+>   **Zahlungsbeschreibung auf Kontoauszug: `AUFTRAGSBOSS.DE`** (kurz-Variante leer). Öffentliches
+>   Stripe-Profil bewusst NICHT erstellt (unnötig, Adresse würde öffentlich). ⏳ Stripe-Prüfung läuft ggf.
+>   im Hintergrund (auf E-Mail achten). **NÄCHSTES GROSSES PROJEKT (geplant angehen, nicht nebenbei):**
+>   technische Abo-Anbindung an AuftragsBoss — automatische Abbuchung, Tarife ans Cockpit-Abo-Modell
+>   (`Abo`/`Buchung`) koppeln, Empfehlungs-Freimonat einlösen. Secret Key (`sk_live_…`) dann NUR direkt
+>   in die Server-`.env`, nie in Chat/Notizen.
+
 > **Update 11.08.2026 (Nacht) — Betreiber-Cockpit Stufe 3: KI-Kosten, Alarme, Als-Kunde (✅ LIVE auf dem VPS, kein db push nötig; Kostenzahlen füllen sich ab Deploy):**
 > - **KI-Kosten je Kunde:** Jeder KI-Aufruf schreibt ein Event `KI_AUFRUF` mit `kostenCent` (Ganzzahl-Cent). Erfassung: `strukturiereDialog`/`liesBildNotiz`/`kiAusleseAngebotstext` haben einen optionalen `verbrauch`-Callback (input/output-Token aus `response.usage`; wird auch bei refusal gemeldet — Token sind angefallen); Transkription wird über die Audiodauer **geschätzt** (`schaetzeAudioSekunden`: Opus ~16 kbit/s → Bytes/2000). Preistabelle in `src/analytics/kikosten.ts` (**Annahme, zum Anpassen dokumentiert:** Claude Sonnet-Klasse 2,80/14,00 € je 1M Token ein/aus; Transkription 1,1 ct/min für BEIDE Fassungen zusammen) + `summiereKostenCent` (tolerant gegen fremde/kaputte dataJson). Webtest (anonym) bleibt bewusst unerfasst — Kosten je KUNDE. **UI:** Detail-Kacheln „KI-Kosten 30 Tage/gesamt", Listen-KPI „KI-Kosten dieser Monat".
 > - **Warnsignale-Box** oben in der Kundenliste (nur wenn vorhanden): 💤 Kunden (nicht Test/blockiert) 7+ Tage inaktiv mit Tageszahl, 🧪 Test-Konten am Limit (`testNachrichten >= DIREKTTEST_MAX_NACHRICHTEN` aus config), ❓ Kundenrückfragen der letzten 14 Tage (`Dokument.kundenRueckfrageAm`) — alle mit Link zur Detailseite.

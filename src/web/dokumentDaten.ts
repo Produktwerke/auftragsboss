@@ -41,6 +41,8 @@ export interface EditorPosition {
   preisquelle?: Preisquelle;
   vorschlag?: boolean;
   mengeUnsicher?: boolean;
+  /** true = Preis wurde bewusst „vergessen" — Automatik-Lernen aussetzen. */
+  gedSperre?: boolean;
 }
 
 export function editorZuPositionen(eingabe: EditorPosition[]): EingabePosition[] {
@@ -56,5 +58,7 @@ export function editorZuPositionen(eingabe: EditorPosition[]): EingabePosition[]
     // als UNBEKANNT. Nie mehr fälschlich als DIKTAT ausweisen.
     preisquelle: p.preisquelle ?? (p.einzelpreis !== null ? "MANUELL" : "UNBEKANNT"),
     mengeUnsicher: p.mengeUnsicher ?? false,
+    // Nur mitschreiben, wenn gesetzt — hält das gespeicherte JSON schlank.
+    ...(p.gedSperre ? { gedSperre: true } : {}),
   }));
 }

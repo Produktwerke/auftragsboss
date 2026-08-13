@@ -35,6 +35,10 @@ interface MerkbarePosition {
   einheit: string | null;
   einzelpreis: number | null;
   preisquelle: string;
+  /** true = bewusst „vergessen" (Knopf im Editor) — Automatik überspringt sie,
+   *  sonst würde der nächste Speichervorgang das Vergessen sofort rückgängig
+   *  machen. Der Merken-Knopf hebt die Sperre wieder auf. */
+  gedSperre?: boolean;
 }
 
 /**
@@ -53,6 +57,7 @@ export async function merkePreise(
     if (p.einzelpreis == null) continue;
     if (!p.beschreibung.trim()) continue;
     if (p.preisquelle === "PREISGEDAECHTNIS") continue; // nicht selbst verstärken
+    if (p.gedSperre) continue; // bewusst vergessen — nicht wieder lernen
     const schluessel = leistungSchluessel(p.beschreibung, p.einheit);
     await prisma.preisgedaechtnis.upsert({
       where: { handwerkerId_leistungSchluessel: { handwerkerId, leistungSchluessel: schluessel } },
@@ -135,6 +140,23 @@ export async function merkePreiseAusImport(
     gemerkt++;
   }
   return gemerkt;
+}
+
+/**
+ * Entfernt einen gemerkten Preis wieder aus dem Gedächtnis dieses Betriebs
+ * („Vergessen"-Knopf im Editor). Gibt zurück, ob ein Eintrag entfernt wurde.
+ */
+export async function vergissPreis(
+  prisma: PrismaClient,
+  handwerkerId: string,
+  beschreibung: string,
+  einheit: string | null,
+): Promise<boolean> {
+  const schluessel = leistungSchluessel(beschreibung, einheit);
+  const r = await prisma.preisgedaechtnis.deleteMany({
+    where: { handwerkerId, leistungSchluessel: schluessel },
+  });
+  return r.count > 0;
 }
 
 export interface GedaechtnisVorschlag {

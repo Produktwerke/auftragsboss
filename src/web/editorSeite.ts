@@ -29,8 +29,12 @@ export function editorSeite(args: {
   einstellungenUrl?: string;
   /** PLZ-Nachschlag-Knopf anzeigen (Feature-Flag FEATURE_PLZ_LOOKUP). */
   plzLookup?: boolean;
+  /** Preisgedächtnis-Stand für die Merken/Vergessen-Knöpfe je Position:
+   *  Leistungs-Schlüssel → gemerkter Preis. Null/undefined = Funktion aus
+   *  (Flag oder Betriebseinstellung), die Knöpfe erscheinen dann nicht. */
+  gedaechtnis?: Record<string, number> | null;
 }): string {
-  const { dokument, preisliste, einstellungenUrl, handwerker, plzLookup } = args;
+  const { dokument, preisliste, einstellungenUrl, handwerker, plzLookup, gedaechtnis } = args;
   const b = preisliste.betrieb;
   const akzent = `#${/^[0-9a-fA-F]{6}$/.test(b.farbe) ? b.farbe : "0B5CAD"}`;
   const logo = ladeLogo(b.logo);
@@ -225,11 +229,21 @@ export function editorSeite(args: {
   .hk-dik{ background:#eef2f5; color:#5a636b; }
   .hk-lst{ background:#eef7ee; color:#2e7d32; }
   .hk-man{ background:#f0f0f2; color:#555; }
+  /* Preisgedächtnis: Merken/Vergessen-Knöpfe je Position */
+  .ged-box{ margin-top:4px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .ged-box:empty{ display:none; }
+  .ged-btn{ background:#f2f6fb; border:1px solid #c9d6e8; color:#1a56c4; border-radius:10px;
+            padding:2px 9px; font-size:11.5px; font-weight:600; cursor:pointer; line-height:1.5; }
+  .ged-btn:hover{ background:#e3edf9; }
+  .ged-weg{ background:none; border:none; color:#8a939c; text-decoration:underline; padding:2px 0; }
+  .ged-weg:hover{ background:none; color:#c0392b; }
+  .ged-ok{ font-size:11.5px; font-weight:600; color:#2e7d32; }
+  .ged-err{ font-size:11.5px; color:#c0392b; }
   /* Test-Angebot: Export gesperrt, Hinweis auf WhatsApp */
   .btn.locked{ opacity:.5; cursor:not-allowed; }
   /* Versendet = schreibgeschützt: Eingaben gesperrt, Export bleibt möglich */
   .gesperrt input, .gesperrt textarea, .gesperrt select,
-  .gesperrt .neu, .gesperrt .loeschen { pointer-events:none; opacity:.55; }
+  .gesperrt .neu, .gesperrt .loeschen, .gesperrt .ged-btn { pointer-events:none; opacity:.55; }
   .test-note{ margin-top:10px; padding:14px 16px; background:#fff8e6; border:1px solid #f0d98a; border-radius:10px; }
   .test-note p{ margin:0 0 10px; font-size:14px; color:#5c4d00; line-height:1.5; }
   .test-note .wa-btn{ display:inline-flex; align-items:center; gap:8px; background:#25D366; color:#fff; text-decoration:none;
@@ -353,6 +367,9 @@ export function editorSeite(args: {
 const START = ${JSON.stringify(startDaten)};
 const EINHEITEN = ${JSON.stringify(EINHEITEN)};
 const MAIL = ${JSON.stringify({ email: handwerker.email ?? "", standard: handwerker.mailStandard })};
+// Preisgedächtnis-Stand für die Merken/Vergessen-Knöpfe je Position.
+// aktiv=false (Flag oder Betriebseinstellung aus) blendet alles aus.
+const GED = ${JSON.stringify({ aktiv: !!gedaechtnis, preise: gedaechtnis ?? {} })};
 // Sprechende Beschriftung im Dropdown; gespeichert wird der kurze Code.
 const EINHEIT_LABEL = {m2:'m²', lfm:'lfm', Stk:'Stk.', Std:'Std.', l:'Liter', kg:'kg', Sack:'Sack', Gebinde:'Gebinde', Rolle:'Rolle', pauschal:'pauschal'};
 const einheitLabel = e => EINHEIT_LABEL[e] || e;
@@ -363,7 +380,9 @@ let positionen = START.positionen.map(p => ({
   // sie verloren und jeder Preis wurde fälschlich zu "DIKTAT").
   preisquelle: p.preisquelle || (p.einzelpreis!=null ? 'DIKTAT' : 'UNBEKANNT'),
   vorschlag: !!p.vorschlag, mengeUnsicher: !!p.mengeUnsicher,
-  preisStand: p.preisStand || null
+  preisStand: p.preisStand || null,
+  // Sperre fürs Automatik-Lernen: bewusst "vergessene" Preise bleiben vergessen.
+  gedSperre: !!p.gedSperre
 }));
 
 const euro = n => n.toLocaleString('de-DE',{style:'currency',currency:'EUR'});
@@ -384,6 +403,97 @@ function herkunftHtml(p){
     case 'MANUELL':   return '<span class="hk hk-man">selbst eingetragen</span>';
     default:          return '';
   }
+}
+
+// ── Preisgedächtnis: Merken/Vergessen je Position ─────────
+// Der Handwerker entscheidet gezielt, welcher Einheitspreis (Stundensatz,
+// m²-Preis, Gebinde-Preis …) ins Gedächtnis wandert — und sieht umgekehrt
+// sofort, wenn ein Preis bereits gemerkt ist, inklusive "vergessen"-Knopf.
+
+// Muss der Server-Normalisierung leistungSchluessel() entsprechen
+// (betrieb/preisgedaechtnis.ts) — sonst erkennen sich die Einträge nicht.
+function gedSchluessel(beschreibung,einheit){
+  const norm=(beschreibung||'').toLowerCase()
+    .replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss')
+    .replace(/[^a-z0-9]+/g,' ').trim().replace(/ +/g,' ');
+  return norm+'|'+((einheit==null?'':einheit)+'').toLowerCase();
+}
+// Sprechende Beschriftung je Einheit: "Stundensatz merken" statt nur "Preis merken".
+function gedLabel(einheit){
+  switch(einheit){
+    case 'Std': return 'Stundensatz';
+    case 'm2': return 'm²-Preis';
+    case 'pauschal': return 'Pauschalpreis';
+    case 'Stk': return 'Stückpreis';
+    case 'lfm': return 'lfm-Preis';
+    case 'l': return 'Literpreis';
+    case 'kg': return 'Kilopreis';
+    case 'Sack': return 'Sackpreis';
+    case 'Gebinde': return 'Gebinde-Preis';
+    case 'Rolle': return 'Rollenpreis';
+    default: return 'Preis';
+  }
+}
+function gedHtml(p,i){
+  if(!GED.aktiv || !(p.beschreibung||'').trim()) return '';
+  const key = gedSchluessel(p.beschreibung,p.einheit);
+  const label = gedLabel(p.einheit);
+  if(Object.prototype.hasOwnProperty.call(GED.preise,key)){
+    const alt = GED.preise[key];
+    const abweichend = p.einzelpreis!=null && Math.abs(alt-p.einzelpreis)>=0.005;
+    const teil = abweichend
+      ? '<button type="button" class="ged-btn" onclick="gedMerken('+i+')">🧠 Neuen '+esc(label)+' merken (bisher '+euro(alt)+')</button>'
+      : '<span class="ged-ok">✓ '+esc(label)+' gemerkt'+(p.einzelpreis==null?' ('+euro(alt)+')':'')+'</span>';
+    return teil+'<button type="button" class="ged-btn ged-weg" title="Diesen Preis aus dem Gedächtnis entfernen" onclick="gedVergessen('+i+')">vergessen</button>';
+  }
+  if(p.einzelpreis==null) return '';
+  return '<button type="button" class="ged-btn" onclick="gedMerken('+i+')">🧠 '+esc(label)+' merken</button>';
+}
+// Alle Knopf-Boxen auffrischen — mehrere Zeilen können denselben Schlüssel
+// teilen (z. B. zweimal "Meisterstunden"), darum nicht nur die eine Zeile.
+function gedAlle(){
+  positionen.forEach((p,idx)=>{
+    const box=document.getElementById('gedbox-'+idx);
+    if(box) box.innerHTML=gedHtml(p,idx);
+  });
+}
+function gedAktualisieren(i){
+  const box=document.getElementById('gedbox-'+i);
+  if(box) box.innerHTML=gedHtml(positionen[i],i);
+}
+function gedFehler(i,text){
+  const box=document.getElementById('gedbox-'+i);
+  if(box) box.innerHTML=gedHtml(positionen[i],i)+'<span class="ged-err">'+esc(text)+'</span>';
+}
+async function gedMerken(i){
+  const p=positionen[i];
+  if(p.einzelpreis==null) return;
+  try{
+    const r=await fetch('/api/a/'+START.token+'/preis-merken',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({beschreibung:p.beschreibung,einheit:p.einheit,einzelpreis:p.einzelpreis})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.fehler||'Merken fehlgeschlagen.');
+    GED.preise[gedSchluessel(p.beschreibung,p.einheit)]=p.einzelpreis;
+    // Merken hebt eine frühere "vergessen"-Sperre wieder auf.
+    if(p.gedSperre){ p.gedSperre=false; markiereGeaendert(); }
+    gedAlle();
+  }catch(e){ gedFehler(i,e.message); }
+}
+async function gedVergessen(i){
+  const p=positionen[i];
+  try{
+    const r=await fetch('/api/a/'+START.token+'/preis-vergessen',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({beschreibung:p.beschreibung,einheit:p.einheit})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.fehler||'Vergessen fehlgeschlagen.');
+    delete GED.preise[gedSchluessel(p.beschreibung,p.einheit)];
+    // Sperre setzen, sonst würde das Automatik-Lernen beim nächsten
+    // Speichern den noch eingetragenen Preis sofort wieder merken.
+    if(!p.gedSperre){ p.gedSperre=true; markiereGeaendert(); }
+    gedAlle();
+  }catch(e){ gedFehler(i,e.message); }
 }
 
 function zeilensumme(p){
@@ -433,7 +543,7 @@ function render(){
       const g = zeilensumme(p);
       const tr = document.createElement('tr');
       tr.innerHTML =
-        '<td class="c-beschr" data-label="Leistung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this)">'+esc(p.beschreibung)+'</textarea><div class="hk-box">'+herkunftHtml(p)+'</div></td>'+
+        '<td class="c-beschr" data-label="Leistung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this); gedAktualisieren('+i+')">'+esc(p.beschreibung)+'</textarea><div class="hk-box">'+herkunftHtml(p)+'</div><div class="ged-box" id="gedbox-'+i+'">'+gedHtml(p,i)+'</div></td>'+
         '<td class="r" data-label="Menge"><input class="pos-menge r" inputmode="decimal" value="'+(p.menge??'')+'" oninput="setNum('+i+',\\'menge\\',this.value,this)"></td>'+
         '<td class="c-einheit" data-label="Einheit">'+einheitZelle(i,p.einheit)+'</td>'+
         '<td class="r" data-label="Einzelpreis"><input class="pos-preis r" inputmode="decimal" value="'+(p.einzelpreis??'')+'" placeholder="___" oninput="setNum('+i+',\\'einzelpreis\\',this.value,this)"></td>'+
@@ -529,6 +639,7 @@ function zeileNeuRechnen(i,el){
   const g = zeilensumme(positionen[i]);
   const zelle = el.closest('tr').querySelector('.zeilensumme');
   if(zelle) zelle.innerHTML = g==null?OFFEN:euro(g);
+  gedAktualisieren(i); // Einheit ist Teil des Gedächtnis-Schlüssels
   summen(); markiereGeaendert();
 }
 
@@ -574,6 +685,7 @@ function setNum(i,feld,wert,el){
     positionen[i].preisStand = null;
     const box = el.closest('tr').querySelector('.hk-box');
     if(box) box.innerHTML = herkunftHtml(positionen[i]);
+    gedAktualisieren(i); // Merken-Knopf folgt dem Preis (da/weg/abweichend)
   }
   const g = zeilensumme(positionen[i]);
   const zelle = el.closest('tr').querySelector('.zeilensumme');

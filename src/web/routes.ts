@@ -25,7 +25,7 @@ import { speichereLogo, entferneLogo, LogoFehler } from "../betrieb/logoUpload.j
 import { smtpKonfiguriert, featureConfig, webtestConfig } from "../config.js";
 import { sendeMail, WORD_MIME } from "../email/send.js";
 import { dokumentMail, logoAnhang } from "../email/templates.js";
-import { merkePreise } from "../betrieb/preisgedaechtnis.js";
+import { merkePreise, vergissPreis } from "../betrieb/preisgedaechtnis.js";
 import { spurEvent, geraetAusUA } from "../analytics/event.js";
 import { findePlz } from "../betrieb/plzLookup.js";
 import { testSeite } from "./testSeite.js";
@@ -110,6 +110,18 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       ? undefined
       : cockpitLink(await einstellungenTokenBereit(prisma, handwerker));
 
+    // Preisgedächtnis-Stand für die Merken/Vergessen-Knöpfe im Editor:
+    // welche Leistungen dieser Betrieb schon gemerkt hat (Schlüssel → Preis).
+    // Null = Funktion aus (Flag/Betriebseinstellung), die Knöpfe erscheinen nicht.
+    let gedaechtnis: Record<string, number> | null = null;
+    if (featureConfig().FEATURE_PREISGEDAECHTNIS && handwerker.preisGedaechtnisAktiv && !handwerker.istTest) {
+      const eintraege = await prisma.preisgedaechtnis.findMany({
+        where: { handwerkerId: handwerker.id },
+        select: { leistungSchluessel: true, letzterPreis: true },
+      });
+      gedaechtnis = Object.fromEntries(eintraege.map((e) => [e.leistungSchluessel, e.letzterPreis]));
+    }
+
     // Produktmetrik (PII-frei): Bearbeiten-Link geöffnet — Gerät (Handy/Desktop)
     // und Zeitpunkt. Erlaubt „abends am Laptop oder später am Handy?"-Auswertungen.
     await spurEvent(prisma, "LINK_GEOEFFNET", {
@@ -124,6 +136,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
         preisliste,
         einstellungenUrl,
         plzLookup: featureConfig().FEATURE_PLZ_LOOKUP,
+        gedaechtnis,
       }),
     );
   };
@@ -231,6 +244,79 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
 
     return reply.send({ ok: true });
   });
+
+  // ── Preisgedächtnis: einzelnen Preis merken / vergessen ──
+  // Die Merken/Vergessen-Knöpfe je Position im Editor: der Handwerker
+  // entscheidet gezielt, ob ein Einheitspreis ins Gedächtnis wandert
+  // (zusätzlich zum automatischen Lernen beim Speichern) oder wieder
+  // daraus verschwindet. Streng an den Betrieb des Dokuments gebunden.
+  const gedaechtnisBetrieb = async (
+    req: FastifyRequest<{ Params: { token: string } }>,
+    reply: FastifyReply,
+  ): Promise<{ id: string } | null> => {
+    const dokument = await prisma.dokument.findUnique({
+      where: { bearbeitenToken: req.params.token },
+      select: { handwerkerId: true },
+    });
+    if (!dokument) {
+      await reply.code(404).send({ fehler: "nicht gefunden" });
+      return null;
+    }
+    const handwerker = await prisma.handwerker.findUnique({
+      where: { id: dokument.handwerkerId },
+      select: { id: true, istTest: true, preisGedaechtnisAktiv: true },
+    });
+    if (!handwerker) {
+      await reply.code(404).send({ fehler: "nicht gefunden" });
+      return null;
+    }
+    if (!darfZugreifen(req, handwerker.id, handwerker.istTest)) {
+      await reply.code(401).send({ fehler: "Bitte zuerst den Zugang bestätigen." });
+      return null;
+    }
+    if (!featureConfig().FEATURE_PREISGEDAECHTNIS || !handwerker.preisGedaechtnisAktiv || handwerker.istTest) {
+      await reply.code(403).send({ fehler: "Das Preisgedächtnis ist für diesen Betrieb nicht aktiv." });
+      return null;
+    }
+    return { id: handwerker.id };
+  };
+
+  app.post<{ Params: { token: string }; Body: { beschreibung?: string; einheit?: string | null; einzelpreis?: number } }>(
+    "/api/a/:token/preis-merken",
+    async (req, reply) => {
+      const betrieb = await gedaechtnisBetrieb(req, reply);
+      if (!betrieb) return;
+      const beschreibung = (req.body?.beschreibung ?? "").trim();
+      const einheit = typeof req.body?.einheit === "string" && req.body.einheit.trim() ? req.body.einheit : null;
+      const preis = req.body?.einzelpreis;
+      if (!beschreibung || beschreibung.length > 500) {
+        return reply.code(400).send({ fehler: "Bitte zuerst eine Beschreibung eintragen." });
+      }
+      if (typeof preis !== "number" || !isFinite(preis) || preis <= 0 || preis > 1_000_000) {
+        return reply.code(400).send({ fehler: "Bitte zuerst einen gültigen Preis eintragen." });
+      }
+      // preisquelle MANUELL: der Knopfdruck ist eine bewusste Bestätigung des
+      // Handwerkers — merkePreise übernimmt (nur PREISGEDAECHTNIS würde es
+      // überspringen, und dafür zeigt der Editor gar keinen Merken-Knopf).
+      await merkePreise(prisma, betrieb.id, [
+        { beschreibung, einheit, einzelpreis: Math.round(preis * 100) / 100, preisquelle: "MANUELL" },
+      ]);
+      return reply.send({ ok: true });
+    },
+  );
+
+  app.post<{ Params: { token: string }; Body: { beschreibung?: string; einheit?: string | null } }>(
+    "/api/a/:token/preis-vergessen",
+    async (req, reply) => {
+      const betrieb = await gedaechtnisBetrieb(req, reply);
+      if (!betrieb) return;
+      const beschreibung = (req.body?.beschreibung ?? "").trim();
+      if (!beschreibung) return reply.code(400).send({ fehler: "Beschreibung fehlt." });
+      const einheit = typeof req.body?.einheit === "string" && req.body.einheit.trim() ? req.body.einheit : null;
+      const entfernt = await vergissPreis(prisma, betrieb.id, beschreibung, einheit);
+      return reply.send({ ok: true, entfernt });
+    },
+  );
 
   // ── Angebot als "versendet" markieren / wieder freigeben ──
   // Markiert schützt das Angebot vor Änderungen (Speichern gibt 409); ansehen

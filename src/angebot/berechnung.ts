@@ -17,6 +17,10 @@ import type { Preisliste } from "../preisliste.js";
 export type EingabePosition = Omit<Position, "kategorie" | "einheit"> & {
   kategorie: string;
   einheit: string | null;
+  /** true = der Handwerker hat diesen Preis bewusst aus dem Preisgedächtnis
+   *  „vergessen" — das automatische Lernen beim Speichern lässt die Zeile dann
+   *  in Ruhe, bis er wieder ausdrücklich auf „merken" drückt. */
+  gedSperre?: boolean;
 };
 
 /** Anzeigename einer Kategorie — die KI-Codes bekommen sprechende Titel. */

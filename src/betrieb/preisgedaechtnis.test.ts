@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { PrismaClient } from "@prisma/client";
-import { leistungSchluessel, schlagePreiseVor, merkePreise, merkePreiseAusImport } from "./preisgedaechtnis.js";
+import { leistungSchluessel, schlagePreiseVor, merkePreise, merkePreiseAusImport, vergissPreis } from "./preisgedaechtnis.js";
 import type { Position } from "../ai/structure.js";
 
 const pos = (over: Partial<Position>): Position => ({
@@ -67,9 +67,35 @@ describe("Preisgedächtnis: Merken", () => {
       { beschreibung: "Wände streichen", einheit: "m2", einzelpreis: 6.8, preisquelle: "MANUELL" },
       { beschreibung: "Decke streichen", einheit: "m2", einzelpreis: null, preisquelle: "UNBEKANNT" }, // leer -> übersprungen
       { beschreibung: "Boden schützen", einheit: "pauschal", einzelpreis: 30, preisquelle: "PREISGEDAECHTNIS" }, // Vorschlag -> übersprungen
+      { beschreibung: "Türen lackieren", einheit: "Stk", einzelpreis: 85, preisquelle: "MANUELL", gedSperre: true }, // bewusst vergessen -> übersprungen
     ]);
     expect(n).toBe(1);
     expect(gemerkt).toEqual([leistungSchluessel("Wände streichen", "m2")]);
+  });
+});
+
+describe("Preisgedächtnis: Vergessen (Knopf im Editor)", () => {
+  it("entfernt genau den Eintrag dieses Betriebs (normalisierter Schlüssel)", async () => {
+    const geloescht: any[] = [];
+    const stub = {
+      preisgedaechtnis: {
+        deleteMany: async ({ where }: any) => { geloescht.push(where); return { count: 1 }; },
+      },
+    } as unknown as PrismaClient;
+
+    const ok = await vergissPreis(stub, "hw1", "Wände streichen, weiß!", "m2");
+    expect(ok).toBe(true);
+    expect(geloescht[0]).toEqual({
+      handwerkerId: "hw1",
+      leistungSchluessel: leistungSchluessel("waende  Streichen weiss", "m2"),
+    });
+  });
+
+  it("meldet false, wenn nichts gemerkt war", async () => {
+    const stub = {
+      preisgedaechtnis: { deleteMany: async () => ({ count: 0 }) },
+    } as unknown as PrismaClient;
+    expect(await vergissPreis(stub, "hw1", "Unbekannte Leistung", null)).toBe(false);
   });
 });
 

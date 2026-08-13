@@ -165,19 +165,27 @@ export function editorSeite(args: {
   textarea.pos-beschr { min-height:0; height:auto; padding:6px 7px; font-size:14px;
          line-height:1.35; resize:none; overflow:hidden; display:block; }
   .pos-einheit-custom { display:block; width:100%; max-width:180px; margin-top:4px; }
-  /* E-Mail-Versand unter den Export-Knöpfen */
-  .mail-zeile { margin-top:12px; border-top:1px solid #eceff2; padding-top:12px; }
-  .mail-zeile label.chk { display:flex; align-items:center; gap:8px; font-size:14px;
-         font-weight:600; color:#444; margin:0; cursor:pointer; }
-  .mail-zeile label.chk input { width:auto; }
+  /* Untere Leiste: zwei aufgeräumte Gruppen — "Angebot herunterladen" und
+     "Am PC weitermachen" — nebeneinander (Desktop) bzw. untereinander (Handy). */
+  .akt-spalten { display:flex; gap:22px; align-items:stretch; }
+  .akt-gruppe { flex:1; min-width:0; }
+  .akt-trenner { width:1px; background:#e8ebee; }
+  .akt-titel { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+               color:#8a919a; margin-bottom:9px; display:flex; align-items:center; }
+  .akt-titel .status { text-transform:none; letter-spacing:0; font-size:12.5px; }
+  .akt-knoepfe { display:flex; gap:10px; }
+  .akt-knoepfe .btn { flex:1; padding:12px 14px; font-size:15px; font-weight:700; }
+  .aktionen label.chk { display:flex; align-items:center; gap:8px; font-size:14px;
+         font-weight:600; color:#444; margin:12px 0 0; cursor:pointer; }
+  .aktionen label.chk input { width:auto; }
   .mail-eingabe { margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .mail-eingabe input { width:auto; flex:1; min-width:180px; max-width:320px; }
   .mail-aendern { background:none; border:none; color:var(--akzent); font-size:13px;
          cursor:pointer; text-decoration:underline; padding:0; }
   .mail-status { font-size:13px; margin-top:6px; }
   .mail-tipp { font-size:13px; color:#66707a; margin-top:6px; line-height:1.5; }
-  .mail-link-btn { margin-top:8px; background:none; border:1px solid #cbd2da; border-radius:8px;
-                   padding:8px 12px; font-size:13.5px; font-weight:600; color:#333; cursor:pointer; }
+  .mail-link-btn { width:100%; background:none; border:1px solid #cbd2da; border-radius:8px;
+                   padding:11px 12px; font-size:13.5px; font-weight:600; color:#333; cursor:pointer; }
   .mail-link-btn:hover { background:#f2f4f6; }
   .mail-link-btn:disabled { opacity:.6; cursor:default; }
   .zwei { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -249,9 +257,11 @@ export function editorSeite(args: {
     .akt-kopf .akt-caret { font-size:15px; color:#8a919a; transition:transform .2s ease; }
     .aktionen.zu .akt-caret { transform:rotate(180deg); }
     .aktionen.zu .akt-inhalt { display:none; }
-    .aktionen .akt-inhalt { margin-top:8px; }
-    .aktionen .zeile1 .status { display:none; } /* Status steht mobil in der Kopfzeile */
+    .aktionen .akt-inhalt { margin-top:10px; }
+    .aktionen .akt-inhalt .status { display:none; } /* Status steht mobil in der Kopfzeile */
     .aktionen { padding:10px 14px; }
+    .akt-spalten { flex-direction:column; gap:14px; }
+    .akt-trenner { width:auto; height:1px; }
   }
   .aktionen .zeile1 { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
   .dl-label { font-size:14px; font-weight:600; color:#555; }
@@ -474,24 +484,29 @@ export function editorSeite(args: {
       : `<div class="aktionen">
     <div class="akt-kopf" id="aktKopf">📄 Herunterladen &amp; E-Mail<span class="akt-status" id="aktKopfStatus"></span><span class="akt-caret">▾</span></div>
     <div class="akt-inhalt">
-    <div class="zeile1">
-      <span class="dl-label">Herunterladen als:</span>
-      <button class="btn" onclick="exportieren('pdf')">PDF</button>
-      <button class="btn" onclick="exportieren('word')">Word</button>
-      <span class="status" id="status"></span>
-    </div>
-    <div class="mail-zeile">
-      <label class="chk"><input type="checkbox" id="mailChk" onchange="mailHakenGeaendert()">
-        <span id="mailChkText">Datei auch als E-Mail senden</span></label>
-      <div class="mail-tipp">💻 Die E-Mail enthält neben der Datei auch deinen <b>Bearbeitungslink</b> — praktisch, um das Angebot später am PC in Ruhe fertig zu machen.</div>
-      <button class="mail-link-btn" id="mailLinkBtn" type="button" onclick="linkMailSenden()">📧 Nur den Bearbeitungslink an meine E-Mail senden</button>
-      <button class="mail-aendern" id="mailAendern" type="button" onclick="mailEingabeZeigen()" style="display:none;">E-Mail-Adresse ändern</button>
-      <div class="mail-eingabe" id="mailEingabe" style="display:none;">
-        <input id="mailAdresse" type="email" inputmode="email" placeholder="deine@firma.de">
-        <button class="btn" onclick="mailSpeichern()">Speichern</button>
+    <div class="akt-spalten">
+      <div class="akt-gruppe">
+        <div class="akt-titel">Angebot herunterladen<span class="status" id="status"></span></div>
+        <div class="akt-knoepfe">
+          <button class="btn" onclick="exportieren('pdf')">📄 PDF</button>
+          <button class="btn" onclick="exportieren('word')">📝 Word</button>
+        </div>
+        <label class="chk"><input type="checkbox" id="mailChk" onchange="mailHakenGeaendert()">
+          <span id="mailChkText">Datei auch als E-Mail senden</span></label>
+        <button class="mail-aendern" id="mailAendern" type="button" onclick="mailEingabeZeigen()" style="display:none;">E-Mail-Adresse ändern</button>
+        <div class="mail-eingabe" id="mailEingabe" style="display:none;">
+          <input id="mailAdresse" type="email" inputmode="email" placeholder="deine@firma.de">
+          <button class="btn" onclick="mailSpeichern()">Speichern</button>
+        </div>
       </div>
-      <div class="mail-status" id="mailStatus"></div>
+      <div class="akt-trenner"></div>
+      <div class="akt-gruppe">
+        <div class="akt-titel">💻 Am PC weitermachen</div>
+        <button class="mail-link-btn" id="mailLinkBtn" type="button" onclick="linkMailSenden()">📧 Bearbeitungslink an meine E-Mail senden</button>
+        <div class="mail-tipp">Die E-Mail enthält deinen <b>Bearbeitungslink</b> — so machst du das Angebot später am Rechner in Ruhe fertig.</div>
+      </div>
     </div>
+    <div class="mail-status" id="mailStatus"></div>
     </div>
   </div>`
   }
@@ -1275,11 +1290,24 @@ if(aktLeiste && aktKopf){
     const zu=aktLeiste.classList.toggle('zu');
     aktManuellOffen=!zu;
   });
+  // Flacker-Schutz: Das Aufklappen macht die Seite höher, wodurch man
+  // rechnerisch sofort nicht mehr "ganz unten" wäre — die Leiste würde
+  // wieder zuklappen und alles flackert. Deshalb: nach dem Auto-Aufklappen
+  // die Scroll-Lage merken und erst wieder zuklappen, wenn der Nutzer
+  // DEUTLICH (150px) darüber hochgescrollt ist.
+  let aktAutoAb = null;
   window.addEventListener('scroll', ()=>{
     if(!aktMobil()) return;
     const unten = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 60;
-    if(unten) aktLeiste.classList.remove('zu');
-    else if(!aktManuellOffen) aktLeiste.classList.add('zu');
+    if(unten){
+      if(aktLeiste.classList.contains('zu')){
+        aktLeiste.classList.remove('zu');
+        aktAutoAb = window.scrollY;
+      }
+    } else if(!aktManuellOffen && (aktAutoAb === null || window.scrollY < aktAutoAb - 150)){
+      aktLeiste.classList.add('zu');
+      aktAutoAb = null;
+    }
   }, {passive:true});
 }
 

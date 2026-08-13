@@ -214,8 +214,15 @@ export function editorSeite(args: {
     #postab td.c-beschr input{ width:100%; }
     #postab td .pos-menge, #postab td .pos-einheit, #postab td .pos-preis{ width:auto; flex:0 0 58%; }
     #postab td.zeilensumme{ font-size:15px; font-weight:600; }
-    #postab td.c-del{ justify-content:flex-end; padding-top:0; }
+    #postab td.c-del{ justify-content:flex-end; padding-top:0; flex-wrap:wrap; }
     #postab td.c-del .loeschen{ font-size:24px; }
+    /* Merken/Vergessen auf dem Handy: in der Zeile mit dem Lösch-Kreuzchen
+       (unter dem Preis), links davon — hält die Leistungsbeschreibung oben frei.
+       Doppelklasse nötig: die .ged-box-Basisregel steht NACH diesem Media-Block
+       im Stylesheet und würde bei gleicher Spezifität gewinnen. */
+    .ged-box.ged-desk{ display:none; }
+    #postab td.c-del .ged-mob{ display:flex; margin-right:auto; align-items:center; gap:10px; flex-wrap:wrap; }
+    #postab td.c-del .ged-mob:empty{ display:none; }
     /* Eigene Einheit ("Andere…"): Freitextfeld auf eigene Zeile, volle Breite,
        damit es auf dem Handy nicht überläuft. */
     #postab td.c-einheit{ flex-wrap:wrap; }
@@ -239,6 +246,8 @@ export function editorSeite(args: {
   .ged-weg:hover{ background:none; color:#c0392b; }
   .ged-ok{ font-size:11.5px; font-weight:600; color:#2e7d32; }
   .ged-err{ font-size:11.5px; color:#c0392b; }
+  /* Handy-Variante der Knopf-Box (in der Kreuzchen-Zeile) — nur mobil sichtbar */
+  .ged-mob{ display:none; }
   /* Test-Angebot: Export gesperrt, Hinweis auf WhatsApp */
   .btn.locked{ opacity:.5; cursor:not-allowed; }
   /* Versendet = schreibgeschützt: Eingaben gesperrt, Export bleibt möglich */
@@ -449,21 +458,18 @@ function gedHtml(p,i){
   if(p.einzelpreis==null) return '';
   return '<button type="button" class="ged-btn" onclick="gedMerken('+i+')">🧠 '+esc(label)+' merken</button>';
 }
-// Alle Knopf-Boxen auffrischen — mehrere Zeilen können denselben Schlüssel
-// teilen (z. B. zweimal "Meisterstunden"), darum nicht nur die eine Zeile.
-function gedAlle(){
-  positionen.forEach((p,idx)=>{
-    const box=document.getElementById('gedbox-'+idx);
-    if(box) box.innerHTML=gedHtml(p,idx);
-  });
-}
+// Jede Zeile hat ZWEI Knopf-Boxen (Desktop: unter der Beschreibung, Handy:
+// in der Zeile mit dem Lösch-Kreuzchen) — CSS blendet je Ansicht eine aus,
+// aktualisiert werden immer beide.
+function gedBoxen(i){ return document.querySelectorAll('.ged-box[data-i="'+i+'"]'); }
 function gedAktualisieren(i){
-  const box=document.getElementById('gedbox-'+i);
-  if(box) box.innerHTML=gedHtml(positionen[i],i);
+  gedBoxen(i).forEach(box=>{ box.innerHTML=gedHtml(positionen[i],i); });
 }
+// Alle Zeilen auffrischen — mehrere können denselben Schlüssel teilen
+// (z. B. zweimal "Meisterstunden"), darum nicht nur die eine Zeile.
+function gedAlle(){ positionen.forEach((_,idx)=>gedAktualisieren(idx)); }
 function gedFehler(i,text){
-  const box=document.getElementById('gedbox-'+i);
-  if(box) box.innerHTML=gedHtml(positionen[i],i)+'<span class="ged-err">'+esc(text)+'</span>';
+  gedBoxen(i).forEach(box=>{ box.innerHTML=gedHtml(positionen[i],i)+'<span class="ged-err">'+esc(text)+'</span>'; });
 }
 async function gedMerken(i){
   const p=positionen[i];
@@ -543,12 +549,12 @@ function render(){
       const g = zeilensumme(p);
       const tr = document.createElement('tr');
       tr.innerHTML =
-        '<td class="c-beschr" data-label="Leistung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this); gedAktualisieren('+i+')">'+esc(p.beschreibung)+'</textarea><div class="hk-box">'+herkunftHtml(p)+'</div><div class="ged-box" id="gedbox-'+i+'">'+gedHtml(p,i)+'</div></td>'+
+        '<td class="c-beschr" data-label="Leistung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this); gedAktualisieren('+i+')">'+esc(p.beschreibung)+'</textarea><div class="hk-box">'+herkunftHtml(p)+'</div><div class="ged-box ged-desk" data-i="'+i+'">'+gedHtml(p,i)+'</div></td>'+
         '<td class="r" data-label="Menge"><input class="pos-menge r" inputmode="decimal" value="'+(p.menge??'')+'" oninput="setNum('+i+',\\'menge\\',this.value,this)"></td>'+
         '<td class="c-einheit" data-label="Einheit">'+einheitZelle(i,p.einheit)+'</td>'+
         '<td class="r" data-label="Einzelpreis"><input class="pos-preis r" inputmode="decimal" value="'+(p.einzelpreis??'')+'" placeholder="___" oninput="setNum('+i+',\\'einzelpreis\\',this.value,this)"></td>'+
         '<td class="r zeilensumme" data-label="Gesamt">'+(g==null?OFFEN:euro(g))+'</td>'+
-        '<td class="c-del"><button class="loeschen" title="Zeile löschen" onclick="loeschen('+i+')">×</button></td>';
+        '<td class="c-del"><div class="ged-box ged-mob" data-i="'+i+'">'+gedHtml(p,i)+'</div><button class="loeschen" title="Zeile löschen" onclick="loeschen('+i+')">×</button></td>';
       tbody.appendChild(tr);
     });
     // "+ Position hinzufügen" direkt unter dem jeweiligen Abschnitt

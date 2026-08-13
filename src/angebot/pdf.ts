@@ -231,6 +231,7 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
   const fussZeile2 = [
     b.ustIdNr ? `USt-IdNr.: ${b.ustIdNr}` : "",
     b.bank ? `Bank: ${b.bank}` : "",
+    b.iban ? `IBAN: ${b.iban}` : "",
   ]
     .filter(Boolean)
     .join("   ·   ");

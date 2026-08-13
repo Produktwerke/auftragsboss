@@ -120,6 +120,23 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 13.08.2026 (3) — Einstellungsseite: Kopf-/Fußzeile getrennt, Bank+IBAN, Vorschau-Markierung; Editor: A4-Live-Vorschau (⏳ Deploy zusammen, MIT `db push` wegen `iban`):**
+> - **Editor bekam eine A4-Live-Vorschau** rechts (nur Desktop ≥1100px, sticky) mit dem ECHTEN Angebot
+>   (Positionen/Summen/Gültig-bis/Fußzeile, offene Preise als ___ €); Hook in `markiereGeaendert`.
+>   Außerdem Merken-Knopf am Desktop rechtsbündig unter dem Einzelpreis (statt unter der Beschreibung).
+> - **Firmendaten in ZWEI Abschnitte getrennt:** „Kopfzeile — oben im Angebot" (Firma, Straße, PLZ/Ort,
+>   Telefon, E-Mail) und „Fußzeile — unten im Angebot" (Ansprechpartner, USt-IdNr., Bank, IBAN) — erst
+>   oben ausfüllen, dann unten; Firma+Adresse erscheinen automatisch in beiden.
+> - **Bank + IBAN getrennt:** neues Feld `Handwerker.iban` (+ `iban` in preisliste.json-Schema mit Default "");
+>   `effektivePreisliste` überlagert es; Word-/PDF-/Editor-Vorschau-Fußzeile hängen `IBAN: …` an. Bestandsdaten
+>   bleiben im Feld `bank` (Dirk kann die IBAN von Hand ins neue Feld verschieben).
+> - **Vorschau-Markierung:** Legende + gelb hinterlegt (`.pv-mein`) = kommt aus den Einstellungen
+>   (Briefkopf, Einleitung, Schlusstext, Gültig/Zahlungsziel, Fußzeile); ausgegraut (`.pv-demo`, Pille
+>   „Nur Beispiel") = Beispiel-Angebot (Kunde/Positionen/Preise) — macht klar, dass das Angebot selbst
+>   NICHT hier, sondern im Angebots-Editor bearbeitet wird.
+> - **122 Tests grün (u. a. Bank/IBAN-Überlagerung), Typecheck grün, Browser-E2E:** Abschnitte in neuer
+>   Reihenfolge, IBAN tippen → Fußzeile „Bank: … · IBAN: …", nach Reload da, Leeren = Vorgabe.
+>
 > **Update 13.08.2026 (2) — Angebotsgültigkeit + Zahlungsziel je Betrieb einstellbar (⏳ VPS-Deploy offen, MIT `db push`):**
 > - Vorher standen beide nur als globale Vorgabe in `preisliste.json` (`angebotGueltigTage` 30, `zahlungsziel`)
 >   und landeten von dort in der Schlusszeile von PDF/Word/E-Mail — kein Betrieb konnte sie ändern.

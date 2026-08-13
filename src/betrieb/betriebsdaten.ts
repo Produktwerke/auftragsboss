@@ -34,6 +34,7 @@ export function effektivePreisliste(handwerker: Handwerker, basis: Preisliste): 
       gewerk: oder(handwerker.gewerk, b.gewerk),
       ustIdNr: oder(handwerker.ustIdNr, b.ustIdNr),
       bank: oder(handwerker.bank, b.bank),
+      iban: oder(handwerker.iban, b.iban),
       farbe,
       // KEIN Demo-Logo-Fallback: Ein Betrieb zeigt sein EIGENES Logo oder gar
       // keins — niemals das Muster-Logo eines anderen. Fehlt das eigene Logo,

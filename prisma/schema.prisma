@@ -48,7 +48,8 @@ model Handwerker {
   ort       String?
   telefon   String?
   ustIdNr   String? // für die Fußzeile
-  bank      String? // Bankverbindung für die Fußzeile
+  bank      String? // Name der Bank für die Fußzeile
+  iban      String? // IBAN für die Fußzeile (eigenes Feld, zweizeilige Abfrage)
 
   // Standardtexte, die der Betrieb auf jedem Angebot haben möchte —
   // z.B. eine feste Grußformel oder ein Haftungs-/Gewährleistungshinweis.

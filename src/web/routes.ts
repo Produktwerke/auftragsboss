@@ -65,6 +65,7 @@ interface EinstellungenKoerper {
   email?: string;
   ustIdNr?: string;
   bank?: string;
+  iban?: string;
   farbe?: string; // Hex ohne #
   standardEinleitung?: string;
   preisGedaechtnisAktiv?: boolean;
@@ -764,6 +765,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
           telefon: text(k.telefon),
           ustIdNr: text(k.ustIdNr),
           bank: text(k.bank),
+          iban: text(k.iban),
           farbe,
           standardEinleitung: text(k.standardEinleitung),
           standardSchlusstext: text(k.standardSchlusstext),

@@ -35,6 +35,8 @@ const PreislistenSchema = z.object({
       .default("0B5CAD"),
     /** Bankverbindung für die Fußzeile (optional). */
     bank: z.string().default(""),
+    /** IBAN für die Fußzeile (optional, eigenes Feld neben dem Banknamen). */
+    iban: z.string().default(""),
   }),
   konditionen: z.object({
     // 0 = kein Stundensatz hinterlegt → Stundenpositionen bleiben Platzhalter

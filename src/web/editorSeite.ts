@@ -50,7 +50,11 @@ export function editorSeite(args: {
     [b.firma, b.strasse, `${b.plz} ${b.ort}`.trim()].filter(Boolean).join(", "),
     ...(b.inhaber ? [`Ansprechpartner: ${b.inhaber}`] : []),
   ].join("   ·   ");
-  const fussZ2 = [b.ustIdNr ? `USt-IdNr.: ${b.ustIdNr}` : "", b.bank ? `Bank: ${b.bank}` : ""]
+  const fussZ2 = [
+    b.ustIdNr ? `USt-IdNr.: ${b.ustIdNr}` : "",
+    b.bank ? `Bank: ${b.bank}` : "",
+    b.iban ? `IBAN: ${b.iban}` : "",
+  ]
     .filter(Boolean)
     .join("   ·   ");
 

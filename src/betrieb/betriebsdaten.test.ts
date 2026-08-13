@@ -7,7 +7,7 @@ import type { Preisliste } from "../preisliste.js";
 function handwerker(teil: Partial<Handwerker> = {}): Handwerker {
   return {
     firma: "Malerbetrieb Muster", name: "Max", email: "max@muster.de",
-    strasse: null, plz: null, ort: null, telefon: null, ustIdNr: null, bank: null,
+    strasse: null, plz: null, ort: null, telefon: null, ustIdNr: null, bank: null, iban: null,
     farbe: null, logoDatei: null, gewerk: null,
     angebotGueltigTage: null, zahlungsziel: null,
     ...teil,
@@ -17,7 +17,7 @@ function handwerker(teil: Partial<Handwerker> = {}): Handwerker {
 const BASIS = {
   betrieb: {
     firma: "Vorgabe GmbH", inhaber: "V. Orlage", strasse: "Weg 1", plz: "11111", ort: "Vorstadt",
-    telefon: "0", email: "v@v.de", gewerk: "Malerei", ustIdNr: "", logo: "", farbe: "0B5CAD", bank: "",
+    telefon: "0", email: "v@v.de", gewerk: "Malerei", ustIdNr: "", logo: "", farbe: "0B5CAD", bank: "", iban: "",
   },
   konditionen: { stundensatz: 0, mwstSatz: 19, angebotGueltigTage: 30, anfahrtPauschale: 0, zahlungsziel: "14 Tage netto" },
   positionen: [],
@@ -48,5 +48,11 @@ describe("effektivePreisliste: Konditionen je Betrieb", () => {
   it("übrige Konditionen (MwSt) bleiben unangetastet", () => {
     const eff = effektivePreisliste(handwerker({ angebotGueltigTage: 7 }), BASIS);
     expect(eff.konditionen.mwstSatz).toBe(19);
+  });
+
+  it("Bank und IBAN sind getrennte Felder und gewinnen einzeln", () => {
+    const eff = effektivePreisliste(handwerker({ bank: "Volksbank Stuttgart", iban: "DE20 1582 4589 5243 1" }), BASIS);
+    expect(eff.betrieb.bank).toBe("Volksbank Stuttgart");
+    expect(eff.betrieb.iban).toBe("DE20 1582 4589 5243 1");
   });
 });

@@ -246,6 +246,8 @@ export function editorSeite(args: {
   .ged-weg:hover{ background:none; color:#c0392b; }
   .ged-ok{ font-size:11.5px; font-weight:600; color:#2e7d32; }
   .ged-err{ font-size:11.5px; color:#c0392b; }
+  /* Desktop: rechtsbündig unter dem Einzelpreis-Feld */
+  .ged-desk{ justify-content:flex-end; text-align:right; }
   /* Handy-Variante der Knopf-Box (in der Kreuzchen-Zeile) — nur mobil sichtbar */
   .ged-mob{ display:none; }
   /* Test-Angebot: Export gesperrt, Hinweis auf WhatsApp */
@@ -549,10 +551,10 @@ function render(){
       const g = zeilensumme(p);
       const tr = document.createElement('tr');
       tr.innerHTML =
-        '<td class="c-beschr" data-label="Leistung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this); gedAktualisieren('+i+')">'+esc(p.beschreibung)+'</textarea><div class="hk-box">'+herkunftHtml(p)+'</div><div class="ged-box ged-desk" data-i="'+i+'">'+gedHtml(p,i)+'</div></td>'+
+        '<td class="c-beschr" data-label="Leistung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this); gedAktualisieren('+i+')">'+esc(p.beschreibung)+'</textarea><div class="hk-box">'+herkunftHtml(p)+'</div></td>'+
         '<td class="r" data-label="Menge"><input class="pos-menge r" inputmode="decimal" value="'+(p.menge??'')+'" oninput="setNum('+i+',\\'menge\\',this.value,this)"></td>'+
         '<td class="c-einheit" data-label="Einheit">'+einheitZelle(i,p.einheit)+'</td>'+
-        '<td class="r" data-label="Einzelpreis"><input class="pos-preis r" inputmode="decimal" value="'+(p.einzelpreis??'')+'" placeholder="___" oninput="setNum('+i+',\\'einzelpreis\\',this.value,this)"></td>'+
+        '<td class="r" data-label="Einzelpreis"><input class="pos-preis r" inputmode="decimal" value="'+(p.einzelpreis??'')+'" placeholder="___" oninput="setNum('+i+',\\'einzelpreis\\',this.value,this)"><div class="ged-box ged-desk" data-i="'+i+'">'+gedHtml(p,i)+'</div></td>'+
         '<td class="r zeilensumme" data-label="Gesamt">'+(g==null?OFFEN:euro(g))+'</td>'+
         '<td class="c-del"><div class="ged-box ged-mob" data-i="'+i+'">'+gedHtml(p,i)+'</div><button class="loeschen" title="Zeile löschen" onclick="loeschen('+i+')">×</button></td>';
       tbody.appendChild(tr);

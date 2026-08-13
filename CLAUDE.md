@@ -120,7 +120,7 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
-> **Update 13.08.2026 (5) — Betreiber-Login unter /stasi: E-Mail + Passwort statt Token-URL (⏳ Deploy + .env-Ergänzung offen):**
+> **Update 13.08.2026 (5) — Betreiber-Login unter /stasi: E-Mail + Passwort statt Token-URL (✅ LIVE, Login von Dirk bestätigt; ADMIN_EMAIL=d.beer@deutsche-automotive.de + scrypt-Hash in VPS-.env):**
 > - **Neuer Zugang:** `/stasi` = Login-Seite (E-Mail + Passwort) → signiertes httpOnly-Cookie (30 Tage,
 >   `SESSION_SECRET`, gleiche Technik wie die Zugangs-Schleuse) → Cockpit unter sauberen URLs
 >   `/stasi/betriebe`, `/stasi/betrieb/:id`, `/stasi/umsatz`, `/stasi/auswertung` (Lern-Auswertung) — kein
@@ -137,8 +137,9 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   (statt „Ein Dienst der", passend zur Website).
 > - **127 Tests grün (5 neu: Hash/Cookie), Typecheck grün; Browser-E2E:** Login falsch/richtig, alle Seiten +
 >   Aktionsrouten über Cookie, Abmelden, Schutz ohne Sitzung, alter Token-Weg + falscher Token.
-> - **⏳ Dirk nach Deploy:** Hash lokal erzeugen, `ADMIN_EMAIL`/`ADMIN_PASSWORT_HASH` in VPS-.env, pm2 restart;
->   Passwort in 1Password; Lesezeichen auf `api.auftragsboss.de/stasi` umstellen.
+> - ✅ **13.08. abends LIVE:** Zugangsdaten in VPS-.env (Stolperfalle unterwegs: erst Platzhalter-E-Mail
+>   erwischt → per `sed` beide Zeilen sauber neu geschrieben), Login auf api.auftragsboss.de/stasi bestätigt.
+>   **Später (wenn bewährt):** Alt-Weg `/admin/<token>` entfernen; Lesezeichen auf /stasi umstellen.
 >
 > **Update 13.08.2026 (4) — Editor-Feinschliff-Runde (viele kleine Features, jeweils einzeln deployt; Stand Abend LIVE):**
 > - **WhatsApp-Eingangsbestätigung neutral** („Ich verarbeite deine Sprachnachricht" / „Ich lese deine Notizen" statt „erstelle dein Angebot" — Nachricht kann auch eine Frage sein); Bestätigung nach der Zusammenfassung bleibt konkret.

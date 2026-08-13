@@ -120,7 +120,7 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
-> **Update 13.08.2026 — Preisgedächtnis: Merken/Vergessen-Knöpfe je Position im Editor (⏳ VPS-Deploy offen):**
+> **Update 13.08.2026 — Preisgedächtnis: Merken/Vergessen-Knöpfe je Position im Editor (✅ LIVE auf dem VPS, pm2 #62, /health ok):**
 > - **Dirks Idee:** je Position gezielt „Stundensatz merken" / „m²-Preis merken" / „Gebinde-Preis merken" … —
 >   und wenn ein Preis schon gemerkt ist, zeigt dieselbe Stelle „✓ gemerkt" + „vergessen". So sieht der Maler
 >   sofort, dass ein Preis aus seinem Gedächtnis kommt, und kann ihn mit einem Klick wieder entfernen.
@@ -145,9 +145,9 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   Ende-zu-Ende im Browser (dev:editor, PORT 3010/3011, Flag an, Demo-Betrieb-Schalter an): merken →
 >   Persistenz nach Reload, abweichender Preis, vergessen + Sperre hält (Automatik lernte NICHT nach),
 >   merken hebt Sperre wieder auf. Demo-Daten danach aufgeräumt, verwaiste Dev-Server per taskkill beendet.
-> - **⏳ OFFEN: VPS-Deploy** (KEIN Schema-Change, kein `db push` nötig). `deploy.tar.gz` liegt im Projektordner.
->   `FEATURE_PREISGEDAECHTNIS` ist am VPS schon AN; Betriebe sehen die Knöpfe erst, wenn ihr
->   Preisgedächtnis-Schalter in den Einstellungen an ist (Standard AUS).
+> - ✅ **Deploy 13.08. durch** (kein Schema-Change, kein `db push`; scp + tar + `pm2 restart` von Dirk,
+>   `/health` danach ok). `FEATURE_PREISGEDAECHTNIS` ist am VPS schon AN; Betriebe sehen die Knöpfe erst,
+>   wenn ihr Preisgedächtnis-Schalter in den Einstellungen an ist (Standard AUS).
 >
 > **Update 12.08.2026 — VORFALL GELÖST: Anthropic-Guthaben leer → Angebotserstellung fiel aus (11.08. abends bis 12.08. mittags):**
 > - **Symptom:** WhatsApp nahm Nachrichten an („Hab ich! …"), danach kam „⚠️ Da ist etwas schiefgelaufen" —

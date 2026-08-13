@@ -120,6 +120,16 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 13.08.2026 (4) — Editor-Feinschliff-Runde (viele kleine Features, jeweils einzeln deployt; Stand Abend LIVE):**
+> - **WhatsApp-Eingangsbestätigung neutral** („Ich verarbeite deine Sprachnachricht" / „Ich lese deine Notizen" statt „erstelle dein Angebot" — Nachricht kann auch eine Frage sein); Bestätigung nach der Zusammenfassung bleibt konkret.
+> - **Merken-Knopf Desktop rechtsbündig unter dem Einzelpreis**; Einstellungs-Schalter beginnt mit „Bei WhatsApp …".
+> - **A4-Live-Vorschau im Editor in sich scrollbar** (max. Fensterhöhe, Mausrad über der Vorschau, overscroll-contain).
+> - **Löschen mit Reue-Frist:** graue Rückgängig-Zeile (8 s, Kreuzchen = sofort weg, `_geloescht`/`_timer` intern; Summen/Vorschau/Speichern filtern sie).
+> - **Handy→PC-Workflow:** Tipp unter dem E-Mail-Haken + neuer Knopf „Bearbeitungslink an meine E-Mail senden" (Route POST `/api/a/:token/mail-link`, dokumentMail OHNE wordDateiname = ohne Anhang-Kasten; gleiche Schutzschichten wie Datei-Versand).
+> - **Positionen verschieben:** Desktop Drag & Drop am ⠿-Anfasser (nur am Anfasser draggable; Ablage in anderer Kategorie wechselt sie; „+ Position"-Zeile = ans Kategorie-Ende), Handy ▲/▼-Pfeile in der Kreuzchen-Zeile (`verschiebePosition` über `anzeigeListe`). **FLIP-Animation** (Zeile gleitet über `data-i`, blinkt gelb).
+> - **Untere Leiste („Herunterladen & E-Mail") am Handy zuklappbar** (Kopfzeile 47 px, Tipp öffnet/schließt, Auto-Aufklappen am Seitenende mit **Flacker-Schutz**: merkt Scroll-Lage beim Öffnen, schließt erst 150 px darüber). **Segment neu designt:** zwei Gruppen „Angebot herunterladen" (große PDF/Word-Knöpfe + Mail-Haken) und „💻 Am PC weitermachen" (Link-Knopf + Erklärsatz), Desktop nebeneinander. `statusSetzen()` null-sicher, Status mobil in der Klapp-Kopfzeile.
+> - Jede Stufe im Browser E2E verifiziert (Desktop + 375 px), 122 Tests grün. Deploys ohne `db push`.
+>
 > **Update 13.08.2026 (3) — Einstellungsseite: Kopf-/Fußzeile getrennt, Bank+IBAN, Vorschau-Markierung; Editor: A4-Live-Vorschau (⏳ Deploy zusammen, MIT `db push` wegen `iban`):**
 > - **Editor bekam eine A4-Live-Vorschau** rechts (nur Desktop ≥1100px, sticky) mit dem ECHTEN Angebot
 >   (Positionen/Summen/Gültig-bis/Fußzeile, offene Preise als ___ €); Hook in `markiereGeaendert`.

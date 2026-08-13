@@ -220,6 +220,8 @@ export function editorSeite(args: {
   tr.drag-oben td { border-top:2px solid var(--akzent); }
   tr.drag-unten td { border-bottom:2px solid var(--akzent); }
   tr.drag-ziel td { outline:2px dashed var(--akzent); outline-offset:-2px; }
+  /* ▲/▼-Verschiebeknöpfe: nur auf dem Handy sichtbar (Desktop zieht am Anfasser) */
+  .pfeile { display:none; }
   /* Gelöschte Position: bleibt kurz als graue Rückgängig-Zeile stehen und
      blendet zum Ende der Frist von selbst aus (die Entfernung macht das JS). */
   tr.geloescht-zeile td { color:#98a0a8; background:#f6f7f9; font-size:14px; }
@@ -306,6 +308,11 @@ export function editorSeite(args: {
     #postab tr:not(.abschnitt):not(.hinzu):not(.zwsumme) td.c-griff{ display:none; }
     #postab td.c-del{ justify-content:flex-end; padding-top:0; flex-wrap:wrap; }
     #postab td.c-del .loeschen{ font-size:24px; }
+    /* ▲/▼ zum Verschieben — links in der Kreuzchen-Zeile */
+    #postab td.c-del .pfeile{ display:flex; gap:8px; margin-right:10px; }
+    .pfeil{ background:#f2f5f8; border:1px solid #cbd2da; border-radius:8px;
+            width:42px; height:36px; font-size:14px; color:#444; cursor:pointer; line-height:1; }
+    .pfeil:active{ background:#e2e8ee; }
     /* Merken/Vergessen auf dem Handy: in der Zeile mit dem Lösch-Kreuzchen
        (unter dem Preis), links davon — hält die Leistungsbeschreibung oben frei.
        Doppelklasse nötig: die .ged-box-Basisregel steht NACH diesem Media-Block
@@ -344,7 +351,7 @@ export function editorSeite(args: {
   .btn.locked{ opacity:.5; cursor:not-allowed; }
   /* Versendet = schreibgeschützt: Eingaben gesperrt, Export bleibt möglich */
   .gesperrt input, .gesperrt textarea, .gesperrt select,
-  .gesperrt .neu, .gesperrt .loeschen, .gesperrt .ged-btn, .gesperrt .griff { pointer-events:none; opacity:.55; }
+  .gesperrt .neu, .gesperrt .loeschen, .gesperrt .ged-btn, .gesperrt .griff, .gesperrt .pfeil { pointer-events:none; opacity:.55; }
   .test-note{ margin-top:10px; padding:14px 16px; background:#fff8e6; border:1px solid #f0d98a; border-radius:10px; }
   .test-note p{ margin:0 0 10px; font-size:14px; color:#5c4d00; line-height:1.5; }
   .test-note .wa-btn{ display:inline-flex; align-items:center; gap:8px; background:#25D366; color:#fff; text-decoration:none;
@@ -697,7 +704,7 @@ function render(){
         '<td class="c-einheit" data-label="Einheit">'+einheitZelle(i,p.einheit)+'</td>'+
         '<td class="r" data-label="Einzelpreis"><input class="pos-preis r" inputmode="decimal" value="'+(p.einzelpreis??'')+'" placeholder="___" oninput="setNum('+i+',\\'einzelpreis\\',this.value,this)"><div class="ged-box ged-desk" data-i="'+i+'">'+gedHtml(p,i)+'</div></td>'+
         '<td class="r zeilensumme" data-label="Gesamt">'+(g==null?OFFEN:euro(g))+'</td>'+
-        '<td class="c-del"><div class="ged-box ged-mob" data-i="'+i+'">'+gedHtml(p,i)+'</div><button class="loeschen" title="Zeile löschen" onclick="loeschen('+i+')">×</button></td>';
+        '<td class="c-del"><span class="pfeile"><button type="button" class="pfeil" title="Nach oben verschieben" onclick="verschiebePosition('+i+',-1)">▲</button><button type="button" class="pfeil" title="Nach unten verschieben" onclick="verschiebePosition('+i+',1)">▼</button></span><div class="ged-box ged-mob" data-i="'+i+'">'+gedHtml(p,i)+'</div><button class="loeschen" title="Zeile löschen" onclick="loeschen('+i+')">×</button></td>';
       dragVerdrahten(tr, p);
       tbody.appendChild(tr);
     });
@@ -901,6 +908,33 @@ function dragZielKategorieEnde(trNeu, kat){
     dragP = null;
     render(); markiereGeaendert();
   });
+}
+
+// ── Positionen mit ▲/▼ verschieben (Handy — dort gibt es kein Ziehen) ─
+// Bewegt sich in der ANZEIGE-Reihenfolge (Material zuerst, dann Arbeit, dann
+// eigene Kategorien); über eine Kategoriegrenze hinweg wechselt die Position
+// die Kategorie — gleiches Verhalten wie Drag & Drop am PC.
+function anzeigeListe(){
+  const liste = [];
+  for(const kat of kategorien()){
+    positionen.forEach(p=>{ if(p.kategorie===kat && !p._geloescht) liste.push(p); });
+  }
+  return liste;
+}
+function verschiebePosition(i, richtung){
+  const p = positionen[i];
+  const liste = anzeigeListe();
+  const nachbar = liste[liste.indexOf(p) + richtung];
+  if(!nachbar) return; // schon ganz oben bzw. ganz unten
+  positionen.splice(positionen.indexOf(p), 1);
+  const ni = positionen.indexOf(nachbar);
+  if(nachbar.kategorie === p.kategorie){
+    positionen.splice(richtung < 0 ? ni : ni+1, 0, p); // vor/hinter den Nachbarn
+  } else {
+    p.kategorie = nachbar.kategorie; // Grenze überschritten → Kategorie wechseln
+    positionen.splice(richtung < 0 ? ni+1 : ni, 0, p);
+  }
+  render(); markiereGeaendert();
 }
 
 // Löschen mit Reue-Frist: Die Zeile bleibt 8 Sekunden als graue

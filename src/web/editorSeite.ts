@@ -205,6 +205,15 @@ export function editorSeite(args: {
   .loeschen { background:none; border:none; color:#c0392b; font-size:20px; cursor:pointer;
               padding:0 4px; line-height:1; }
   .loeschen:hover { color:#e74c3c; }
+  /* Gelöschte Position: bleibt kurz als graue Rückgängig-Zeile stehen und
+     blendet zum Ende der Frist von selbst aus (die Entfernung macht das JS). */
+  tr.geloescht-zeile td { color:#98a0a8; background:#f6f7f9; font-size:14px; }
+  tr.geloescht-zeile { animation: gelfade 8s forwards; }
+  @keyframes gelfade { 0%,75% { opacity:1; } 100% { opacity:.12; } }
+  .gel-name { text-decoration:line-through; }
+  .gel-undo { background:none; border:none; color:var(--akzent); font-weight:600; cursor:pointer;
+              text-decoration:underline; padding:0; font-size:14px; }
+  .gel-undo:hover { filter:brightness(.8); }
   /* z-index über den klebenden Kategorie-Überschriften (z-index:5), damit die
      Überschriften beim Scrollen HINTER dieser unteren Leiste verschwinden,
      nicht darüber. */
@@ -647,6 +656,17 @@ function render(){
     tbody.appendChild(trK);
     positionen.forEach((p,i)=>{
       if(p.kategorie!==kat) return;
+      // Gerade gelöschte Zeile: graue Rückgängig-Zeile statt Eingabefeldern.
+      if(p._geloescht){
+        const trG = document.createElement('tr');
+        trG.className='geloescht-zeile';
+        trG.innerHTML =
+          '<td colspan="5" class="gel-td"><span class="gel-name">'+esc(p.beschreibung||'Position')+'</span>'+
+          ' gelöscht — <button type="button" class="gel-undo" onclick="wiederherstellen('+i+')">Rückgängig</button></td>'+
+          '<td class="c-del"><button class="loeschen" title="Sofort endgültig entfernen" onclick="endgueltigLoeschen('+i+')">×</button></td>';
+        tbody.appendChild(trG);
+        return;
+      }
       const g = zeilensumme(p);
       const tr = document.createElement('tr');
       tr.innerHTML =
@@ -754,11 +774,13 @@ function summen(){
   const kats = kategorien();
   const mehrere = kats.length > 1;
   let html = '';
-  let nettoGesamt = 0, alleDa = positionen.length>0;
+  // Gerade gelöschte Zeilen (Rückgängig-Frist) zählen nicht mehr mit.
+  let nettoGesamt = 0, alleDa = positionen.some(p=>!p._geloescht);
 
   for(const kat of kats){
-    const eigene = positionen.filter(p=>p.kategorie===kat);
-    let netto = 0, voll = eigene.length>0;
+    const eigene = positionen.filter(p=>p.kategorie===kat && !p._geloescht);
+    if(!eigene.length) continue;
+    let netto = 0, voll = true;
     for(const p of eigene){
       const g = zeilensumme(p);
       if(g==null) voll=false; else netto+=g;
@@ -800,7 +822,30 @@ function setNum(i,feld,wert,el){
   summen();
   markiereGeaendert();
 }
-function loeschen(i){ positionen.splice(i,1); render(); markiereGeaendert(); }
+// Löschen mit Reue-Frist: Die Zeile bleibt 8 Sekunden als graue
+// Rückgängig-Zeile stehen (gespeichert wird sofort OHNE sie), danach — oder
+// per Kreuzchen sofort — verschwindet sie endgültig aus der Ansicht.
+function loeschen(i){
+  const p = positionen[i];
+  p._geloescht = true;
+  clearTimeout(p._timer);
+  p._timer = setTimeout(()=>{
+    const idx = positionen.indexOf(p);
+    if(idx >= 0 && positionen[idx]._geloescht){ positionen.splice(idx,1); render(); }
+  }, 8000);
+  render(); markiereGeaendert();
+}
+function wiederherstellen(i){
+  const p = positionen[i];
+  clearTimeout(p._timer);
+  delete p._geloescht; delete p._timer;
+  render(); markiereGeaendert();
+}
+function endgueltigLoeschen(i){
+  clearTimeout(positionen[i]._timer);
+  positionen.splice(i,1);
+  render(); // gespeichert wurde schon beim Löschen — nur die Ansicht auffrischen
+}
 function neuePosition(kat){
   // Hinter der letzten Position derselben Kategorie einfügen
   let letzte = -1;
@@ -880,12 +925,13 @@ function pvDatum(d){ return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2
 function pvZeilen(){
   const kats = kategorien();
   const mehrere = kats.length > 1;
-  let html=''; let nr=0; let nettoGesamt=0; let alleDa=positionen.length>0;
+  let html=''; let nr=0; let nettoGesamt=0; let alleDa=positionen.some(p=>!p._geloescht);
   for(const kat of kats){
+    const eigene = positionen.filter(p=>p.kategorie===kat && !p._geloescht);
+    if(!eigene.length) continue;
     if(mehrere) html += '<tr class="kat"><td colspan="5">'+esc(katName(kat))+'</td></tr>';
     let netto=0, voll=true;
-    for(const p of positionen){
-      if(p.kategorie!==kat) continue;
+    for(const p of eigene){
       nr++;
       const g = zeilensumme(p);
       if(g==null) voll=false; else netto+=g;
@@ -934,7 +980,10 @@ async function speichern(){
     kundeName:val('kundeName'), kundenNummer:val('kundenNummer'),
     kundeStrasse:val('kundeStrasse'), kundePlzOrt:val('kundePlzOrt'),
     nummer:val('nummer'), datum:val('datum'), objekt:val('objekt'),
-    einleitung:val('einleitung'), schlusstext:val('schlusstext'), positionen
+    einleitung:val('einleitung'), schlusstext:val('schlusstext'),
+    // Gerade gelöschte Zeilen (Rückgängig-Frist) und interne Felder bleiben
+    // draußen — gespeichert wird der Zustand, wie er im Angebot landen soll.
+    positionen: positionen.filter(p=>!p._geloescht).map(({_timer,_geloescht,...rest})=>rest)
   };
   try{
     const r=await fetch('/api/a/'+START.token,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(daten)});

@@ -210,6 +210,16 @@ export function editorSeite(args: {
   .loeschen { background:none; border:none; color:#c0392b; font-size:20px; cursor:pointer;
               padding:0 4px; line-height:1; }
   .loeschen:hover { color:#e74c3c; }
+  /* Anfasser zum Verschieben der Positionen (Drag & Drop, Desktop) */
+  .k-griffkopf { width:26px; }
+  td.c-griff { width:26px; padding:6px 0 6px 2px; text-align:center; }
+  .griff { cursor:grab; color:#b3bcc4; font-size:15px; user-select:none; display:inline-block; padding:2px 4px; }
+  .griff:hover { color:#5a6570; }
+  .griff:active { cursor:grabbing; }
+  tr.dragging { opacity:.35; }
+  tr.drag-oben td { border-top:2px solid var(--akzent); }
+  tr.drag-unten td { border-bottom:2px solid var(--akzent); }
+  tr.drag-ziel td { outline:2px dashed var(--akzent); outline-offset:-2px; }
   /* Gelöschte Position: bleibt kurz als graue Rückgängig-Zeile stehen und
      blendet zum Ende der Frist von selbst aus (die Entfernung macht das JS). */
   tr.geloescht-zeile td { color:#98a0a8; background:#f6f7f9; font-size:14px; }
@@ -291,6 +301,9 @@ export function editorSeite(args: {
     #postab td.c-beschr input{ width:100%; }
     #postab td .pos-menge, #postab td .pos-einheit, #postab td .pos-preis{ width:auto; flex:0 0 58%; }
     #postab td.zeilensumme{ font-size:15px; font-weight:600; }
+    /* Anfasser auf dem Handy ausblenden — Ziehen per Finger ist unzuverlässig.
+       (Selektor muss die Karten-Regel "…tr:not(…) td{display:flex}" schlagen.) */
+    #postab tr:not(.abschnitt):not(.hinzu):not(.zwsumme) td.c-griff{ display:none; }
     #postab td.c-del{ justify-content:flex-end; padding-top:0; flex-wrap:wrap; }
     #postab td.c-del .loeschen{ font-size:24px; }
     /* Merken/Vergessen auf dem Handy: in der Zeile mit dem Lösch-Kreuzchen
@@ -331,7 +344,7 @@ export function editorSeite(args: {
   .btn.locked{ opacity:.5; cursor:not-allowed; }
   /* Versendet = schreibgeschützt: Eingaben gesperrt, Export bleibt möglich */
   .gesperrt input, .gesperrt textarea, .gesperrt select,
-  .gesperrt .neu, .gesperrt .loeschen, .gesperrt .ged-btn { pointer-events:none; opacity:.55; }
+  .gesperrt .neu, .gesperrt .loeschen, .gesperrt .ged-btn, .gesperrt .griff { pointer-events:none; opacity:.55; }
   .test-note{ margin-top:10px; padding:14px 16px; background:#fff8e6; border:1px solid #f0d98a; border-radius:10px; }
   .test-note p{ margin:0 0 10px; font-size:14px; color:#5c4d00; line-height:1.5; }
   .test-note .wa-btn{ display:inline-flex; align-items:center; gap:8px; background:#25D366; color:#fff; text-decoration:none;
@@ -654,6 +667,7 @@ function render(){
     const trK = document.createElement('tr');
     trK.className='abschnitt';
     trK.innerHTML =
+      '<td class="k-sp k-griffkopf"></td>'+
       '<td class="k-name">'+esc(katName(kat))+'</td>'+
       '<td class="r k-sp">Menge</td>'+
       '<td class="k-sp">Einheit</td>'+
@@ -668,7 +682,7 @@ function render(){
         const trG = document.createElement('tr');
         trG.className='geloescht-zeile';
         trG.innerHTML =
-          '<td colspan="5" class="gel-td"><span class="gel-name">'+esc(p.beschreibung||'Position')+'</span>'+
+          '<td colspan="6" class="gel-td"><span class="gel-name">'+esc(p.beschreibung||'Position')+'</span>'+
           ' gelöscht — <button type="button" class="gel-undo" onclick="wiederherstellen('+i+')">Rückgängig</button></td>'+
           '<td class="c-del"><button class="loeschen" title="Sofort endgültig entfernen" onclick="endgueltigLoeschen('+i+')">×</button></td>';
         tbody.appendChild(trG);
@@ -677,18 +691,22 @@ function render(){
       const g = zeilensumme(p);
       const tr = document.createElement('tr');
       tr.innerHTML =
+        '<td class="c-griff"><span class="griff" title="Ziehen, um die Position zu verschieben">⠿</span></td>'+
         '<td class="c-beschr" data-label="Leistung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this); gedAktualisieren('+i+')">'+esc(p.beschreibung)+'</textarea><div class="hk-box">'+herkunftHtml(p)+'</div></td>'+
         '<td class="r" data-label="Menge"><input class="pos-menge r" inputmode="decimal" value="'+(p.menge??'')+'" oninput="setNum('+i+',\\'menge\\',this.value,this)"></td>'+
         '<td class="c-einheit" data-label="Einheit">'+einheitZelle(i,p.einheit)+'</td>'+
         '<td class="r" data-label="Einzelpreis"><input class="pos-preis r" inputmode="decimal" value="'+(p.einzelpreis??'')+'" placeholder="___" oninput="setNum('+i+',\\'einzelpreis\\',this.value,this)"><div class="ged-box ged-desk" data-i="'+i+'">'+gedHtml(p,i)+'</div></td>'+
         '<td class="r zeilensumme" data-label="Gesamt">'+(g==null?OFFEN:euro(g))+'</td>'+
         '<td class="c-del"><div class="ged-box ged-mob" data-i="'+i+'">'+gedHtml(p,i)+'</div><button class="loeschen" title="Zeile löschen" onclick="loeschen('+i+')">×</button></td>';
+      dragVerdrahten(tr, p);
       tbody.appendChild(tr);
     });
-    // "+ Position hinzufügen" direkt unter dem jeweiligen Abschnitt
+    // "+ Position hinzufügen" direkt unter dem jeweiligen Abschnitt — auch
+    // Ablageziel beim Ziehen ("ans Ende dieser Kategorie").
     const trNeu = document.createElement('tr');
     trNeu.className='hinzu';
-    trNeu.innerHTML = '<td colspan="6"><button class="neu" onclick="neuePosition(\\''+escJs(kat)+'\\')">+ Position'+(mehrere?' unter „'+esc(katName(kat))+'“':'')+' hinzufügen</button></td>';
+    trNeu.innerHTML = '<td colspan="7"><button class="neu" onclick="neuePosition(\\''+escJs(kat)+'\\')">+ Position'+(mehrere?' unter „'+esc(katName(kat))+'“':'')+' hinzufügen</button></td>';
+    dragZielKategorieEnde(trNeu, kat);
     tbody.appendChild(trNeu);
     tabelle.appendChild(tbody);
   }
@@ -829,6 +847,62 @@ function setNum(i,feld,wert,el){
   summen();
   markiereGeaendert();
 }
+// ── Positionen verschieben (Drag & Drop am ⠿-Anfasser, Desktop) ─
+let dragP = null; // die gerade gezogene Position (Objekt-Referenz)
+function dragMarkierungenWeg(){
+  document.querySelectorAll('#postab tr').forEach(r=>r.classList.remove('drag-oben','drag-unten','drag-ziel'));
+}
+function dragVerdrahten(tr, p){
+  const griff = tr.querySelector('.griff');
+  // Ziehen startet NUR am Anfasser — sonst würde jede Textauswahl in den
+  // Eingabefeldern versehentlich die ganze Zeile ziehen.
+  griff.addEventListener('mousedown', ()=>{ tr.draggable = true; });
+  griff.addEventListener('mouseup', ()=>{ tr.draggable = false; });
+  tr.addEventListener('dragstart', e=>{
+    dragP = p;
+    tr.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try{ e.dataTransfer.setData('text/plain',''); }catch(_){ }
+  });
+  tr.addEventListener('dragend', ()=>{ tr.draggable=false; tr.classList.remove('dragging'); dragMarkierungenWeg(); });
+  tr.addEventListener('dragover', e=>{
+    if(!dragP || dragP===p) return;
+    e.preventDefault(); e.dataTransfer.dropEffect='move';
+    const r = tr.getBoundingClientRect();
+    const oben = e.clientY < r.top + r.height/2;
+    tr.classList.toggle('drag-oben', oben);
+    tr.classList.toggle('drag-unten', !oben);
+  });
+  tr.addEventListener('dragleave', ()=>{ tr.classList.remove('drag-oben','drag-unten'); });
+  tr.addEventListener('drop', e=>{
+    e.preventDefault();
+    if(!dragP || dragP===p) return;
+    const r = tr.getBoundingClientRect();
+    const oben = e.clientY < r.top + r.height/2;
+    positionen.splice(positionen.indexOf(dragP), 1);
+    dragP.kategorie = p.kategorie; // Ablage in anderer Kategorie wechselt sie
+    positionen.splice(positionen.indexOf(p) + (oben?0:1), 0, dragP);
+    dragP = null;
+    render(); markiereGeaendert();
+  });
+}
+// "+ Position hinzufügen"-Zeile als Ablageziel: ans Ende dieser Kategorie.
+function dragZielKategorieEnde(trNeu, kat){
+  trNeu.addEventListener('dragover', e=>{ if(!dragP) return; e.preventDefault(); e.dataTransfer.dropEffect='move'; trNeu.classList.add('drag-ziel'); });
+  trNeu.addEventListener('dragleave', ()=>trNeu.classList.remove('drag-ziel'));
+  trNeu.addEventListener('drop', e=>{
+    e.preventDefault();
+    if(!dragP) return;
+    positionen.splice(positionen.indexOf(dragP), 1);
+    dragP.kategorie = kat;
+    let letzte = -1;
+    positionen.forEach((q,qi)=>{ if(q.kategorie===kat && !q._geloescht) letzte=qi; });
+    positionen.splice(letzte+1, 0, dragP);
+    dragP = null;
+    render(); markiereGeaendert();
+  });
+}
+
 // Löschen mit Reue-Frist: Die Zeile bleibt 8 Sekunden als graue
 // Rückgängig-Zeile stehen (gespeichert wird sofort OHNE sie), danach — oder
 // per Kreuzchen sofort — verschwindet sie endgültig aus der Ansicht.

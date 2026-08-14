@@ -120,6 +120,24 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 14.08.2026 — Editor-UI-Runde + Betreiber-WhatsApp vorbereitet (⏳ committet, Deploy bewusst aufgeschoben — „erst bei der nächsten Änderung"; alles im aktuellen deploy.tar.gz, kein db push nötig):**
+> - **Mobile Positions-Karten neu** (514c848): aufgeräumtes Raster je Karte — Beschreibung oben, Menge+Einheit
+>   und Einzelpreis+Gesamt paarweise nebeneinander, Feldlabels klein ÜBER den Eingaben; Fußleiste mit Trennlinie
+>   (▲/▼ links, Merken-Pille rund, Lösch-Knopf gerahmt rechts). Gelöschte Position = schmale graue Karte.
+>   Neue Klassen `pos-zeile`/`c-menge`/`c-preis` statt :not()-Ketten; Desktop-Tabelle unverändert (+ Hover).
+>   **Zuklapp-Pfeil der unteren Leiste mobil = großer 42×40-Knopf mit Rahmen** (war winzig, schlecht zu treffen).
+> - **Löschen animiert** (dbc2abe): `zeigeGroessenwechsel` (FLIP über die Zeilenhöhe) — Karte schrumpft sichtbar
+>   auf die Rückgängig-Zeile (288→63 px im Test), Rückgängig wächst zurück; Desktop (<6 px Unterschied) übersprungen.
+> - **Betreiber-Benachrichtigung „neuer Kunde" vorbereitet** (c304b13): Dirk bekommt eine WhatsApp auf
+>   BETREIBER_HANDY, wenn eine Firma ein Abo bucht — **Auslöser kommt erst mit der Stripe-Anbindung**
+>   (`meldeNeuenKunden` in `betrieb/betreiberAlarm.ts` dort an den Buchungs-Webhook hängen; bewusst KEINE
+>   Zwischenlösung). Technik: Meta-**Vorlage** `neuer_kunde` (freier Text ginge nur im 24-h-Fenster);
+>   `sendeWhatsAppVorlage` in send.ts, `betreiberConfig` (Handynummer tolerant normalisiert, fehlend = aus).
+>   Test-Skript für den Server: `npx tsx src/betreiber-ping.ts`. **Offen (Dirk):** Vorlage im WhatsApp Manager
+>   anlegen (Utility, Name exakt `neuer_kunde`, Deutsch, „🎉 Hey Dirk, {{1}} hat gerade ein Abo gebucht: {{2}}.")
+>   + `BETREIBER_HANDY=4917662492471` in die VPS-.env + nach Deploy/Genehmigung Ping-Test.
+> - **131 Tests grün (4 neu), Typecheck grün; UI-Runde im Browser E2E verifiziert (375 px + 1440 px).**
+>
 > **Update 13.08.2026 (5) — Betreiber-Login unter /stasi: E-Mail + Passwort statt Token-URL (✅ LIVE, Login von Dirk bestätigt; ADMIN_EMAIL=d.beer@deutsche-automotive.de + scrypt-Hash in VPS-.env):**
 > - **Neuer Zugang:** `/stasi` = Login-Seite (E-Mail + Passwort) → signiertes httpOnly-Cookie (30 Tage,
 >   `SESSION_SECRET`, gleiche Technik wie die Zugangs-Schleuse) → Cockpit unter sauberen URLs

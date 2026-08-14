@@ -252,9 +252,14 @@ export function editorSeite(args: {
   .akt-kopf { display:none; }
   @media (max-width:640px){
     .akt-kopf { display:flex; align-items:center; gap:10px; font-size:14.5px; font-weight:700;
-                color:#333; cursor:pointer; user-select:none; padding:2px 2px; }
+                color:#333; cursor:pointer; user-select:none; padding:4px 2px; }
     .akt-kopf .akt-status { margin-left:auto; font-size:12.5px; font-weight:600; }
-    .akt-kopf .akt-caret { font-size:15px; color:#8a919a; transition:transform .2s ease; }
+    /* Großer, gut treffbarer Auf-/Zuklapp-Knopf (die ganze Kopfzeile ist
+       klickbar — der Knopf macht das nur deutlich sichtbar). */
+    .akt-kopf .akt-caret { flex:0 0 auto; width:42px; height:40px; display:flex;
+                align-items:center; justify-content:center; font-size:20px; color:#5a6570;
+                background:#f2f4f7; border:1px solid #dfe4e9; border-radius:10px;
+                transition:transform .2s ease; }
     .aktionen.zu .akt-caret { transform:rotate(180deg); }
     .aktionen.zu .akt-inhalt { display:none; }
     .aktionen .akt-inhalt { margin-top:10px; }
@@ -313,44 +318,74 @@ export function editorSeite(args: {
     #postab tr.hinzu td { display:block; border-bottom:none; padding:6px 0; }
     #postab tr.zwsumme { display:block; }
     #postab tr.zwsumme td { display:flex; justify-content:space-between; border-bottom:none; }
-    /* echte Positionszeilen als Karte */
-    #postab tr:not(.abschnitt):not(.hinzu):not(.zwsumme){
-      display:block; background:#fff; border:1px solid #e3e7ea; border-radius:9px;
-      padding:6px 10px 10px; margin:0 0 10px;
+    /* Positions-Karte: aufgeräumtes Raster — Beschreibung oben, darunter
+       Menge+Einheit und Einzelpreis+Gesamt paarweise nebeneinander, unten
+       eine Fußleiste mit Verschieben / Merken / Löschen. */
+    #postab tr.pos-zeile{
+      display:grid; grid-template-columns:1fr 1fr;
+      grid-template-areas:"beschr beschr" "menge einheit" "preis gesamt" "fuss fuss";
+      column-gap:12px; row-gap:10px;
+      background:#fff; border:1px solid #e3e7ea; border-radius:12px;
+      padding:12px 12px 10px; margin:0 0 12px;
+      box-shadow:0 1px 3px rgba(16,24,40,.06);
     }
-    #postab tr:not(.abschnitt):not(.hinzu):not(.zwsumme) td{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      border-bottom:none; padding:6px 0; text-align:left;
+    #postab tr.pos-zeile td{ display:block; border-bottom:none; padding:0; text-align:left; }
+    /* Anfasser mobil ausblenden — Ziehen per Finger ist unzuverlässig, dafür ▲/▼ */
+    #postab tr.pos-zeile td.c-griff{ display:none; }
+    #postab tr.pos-zeile td.c-beschr{ grid-area:beschr; }
+    #postab tr.pos-zeile td.c-menge{ grid-area:menge; }
+    #postab tr.pos-zeile td.c-einheit{ grid-area:einheit; }
+    #postab tr.pos-zeile td.c-preis{ grid-area:preis; }
+    #postab tr.pos-zeile td.zeilensumme{ grid-area:gesamt; }
+    #postab tr.pos-zeile td.c-del{ grid-area:fuss; }
+    /* kleine Feldlabels ÜBER den Eingaben (statt daneben) */
+    #postab tr.pos-zeile td[data-label]::before{
+      content:attr(data-label); display:block; color:#8a919a; font-size:11px;
+      font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;
     }
-    #postab td[data-label]::before{
-      content:attr(data-label); color:#777; font-size:12px; font-weight:600; flex:0 0 auto;
+    #postab tr.pos-zeile .pos-beschr{ width:100%; font-size:15px; }
+    #postab tr.pos-zeile .pos-menge, #postab tr.pos-zeile .pos-einheit,
+    #postab tr.pos-zeile .pos-preis{ width:100%; }
+    #postab tr.pos-zeile .hk-box{ margin-top:6px; }
+    /* Gesamt: ruhiger Wert rechtsbündig, auf Höhe des Einzelpreis-Felds */
+    #postab tr.pos-zeile td.zeilensumme{
+      display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between;
+      font-size:17px; font-weight:700;
     }
-    #postab td.c-beschr{ display:block; padding-top:2px; }
-    #postab td.c-beschr::before{ display:block; margin-bottom:4px; }
-    #postab td.c-beschr input{ width:100%; }
-    #postab td .pos-menge, #postab td .pos-einheit, #postab td .pos-preis{ width:auto; flex:0 0 58%; }
-    #postab td.zeilensumme{ font-size:15px; font-weight:600; }
-    /* Anfasser auf dem Handy ausblenden — Ziehen per Finger ist unzuverlässig.
-       (Selektor muss die Karten-Regel "…tr:not(…) td{display:flex}" schlagen.) */
-    #postab tr:not(.abschnitt):not(.hinzu):not(.zwsumme) td.c-griff{ display:none; }
-    #postab td.c-del{ justify-content:flex-end; padding-top:0; flex-wrap:wrap; }
-    #postab td.c-del .loeschen{ font-size:24px; }
-    /* ▲/▼ zum Verschieben — links in der Kreuzchen-Zeile */
-    #postab td.c-del .pfeile{ display:flex; gap:8px; margin-right:10px; }
-    .pfeil{ background:#f2f5f8; border:1px solid #cbd2da; border-radius:8px;
-            width:42px; height:36px; font-size:14px; color:#444; cursor:pointer; line-height:1; }
+    /* Fußleiste der Karte: ▲/▼ links, Merken-Knopf daneben, Löschen rechts */
+    #postab tr.pos-zeile td.c-del{
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+      border-top:1px solid #eef1f3; padding-top:10px; margin-top:2px;
+    }
+    #postab tr.pos-zeile td.c-del .pfeile{ display:flex; gap:8px; }
+    .pfeil{ background:#f7f8fa; border:1px solid #dfe4e9; border-radius:10px;
+            width:44px; height:38px; font-size:15px; color:#444; cursor:pointer; line-height:1; }
     .pfeil:active{ background:#e2e8ee; }
-    /* Merken/Vergessen auf dem Handy: in der Zeile mit dem Lösch-Kreuzchen
-       (unter dem Preis), links davon — hält die Leistungsbeschreibung oben frei.
-       Doppelklasse nötig: die .ged-box-Basisregel steht NACH diesem Media-Block
-       im Stylesheet und würde bei gleicher Spezifität gewinnen. */
+    #postab tr.pos-zeile td.c-del .loeschen{
+      width:42px; height:38px; flex:0 0 auto; margin-left:auto; font-size:20px; line-height:1;
+      background:#fdf6f5; border:1px solid #f0dbd7; border-radius:10px; padding:0;
+    }
+    /* Merken/Vergessen auf dem Handy: in der Fußleiste (unter dem Preis) —
+       hält die Beschreibung oben frei. Doppelklasse nötig: die .ged-box-
+       Basisregel steht NACH diesem Media-Block im Stylesheet und würde bei
+       gleicher Spezifität gewinnen. */
     .ged-box.ged-desk{ display:none; }
-    #postab td.c-del .ged-mob{ display:flex; margin-right:auto; align-items:center; gap:10px; flex-wrap:wrap; }
-    #postab td.c-del .ged-mob:empty{ display:none; }
-    /* Eigene Einheit ("Andere…"): Freitextfeld auf eigene Zeile, volle Breite,
-       damit es auf dem Handy nicht überläuft. */
-    #postab td.c-einheit{ flex-wrap:wrap; }
-    #postab td.c-einheit .pos-einheit-custom{ flex:1 0 100%; width:100%; max-width:none; margin-top:6px; }
+    #postab tr.pos-zeile td.c-del .ged-mob{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    #postab tr.pos-zeile td.c-del .ged-mob:empty{ display:none; }
+    /* Merken-Knopf als runde, gut tippbare Pille */
+    #postab .ged-btn{ padding:6px 12px; font-size:12.5px; border-radius:999px; }
+    /* Eigene Einheit ("Andere…"): Freitextfeld unter dem Dropdown, volle Breite */
+    #postab tr.pos-zeile td.c-einheit .pos-einheit-custom{ width:100%; max-width:none; margin-top:6px; }
+    /* Gerade gelöschte Position: schmale graue Rückgängig-Karte */
+    #postab tr.geloescht-zeile{
+      display:flex; align-items:center; gap:8px;
+      background:#f6f7f9; border:1px solid #e3e7ea; border-radius:12px;
+      padding:10px 12px; margin:0 0 12px;
+    }
+    #postab tr.geloescht-zeile td{ display:block; border-bottom:none; padding:0; background:none; }
+    #postab tr.geloescht-zeile td.gel-td{ flex:1; }
+    /* "+ Position hinzufügen" als luftiger Knopf */
+    #postab tr.hinzu .neu{ padding:11px; border-radius:10px; }
   }
   /* Herkunfts-Etiketten je Zeile (woher der Preis kommt) */
   .hk-box{ margin-top:3px; line-height:1; }
@@ -735,12 +770,13 @@ function render(){
       }
       const g = zeilensumme(p);
       const tr = document.createElement('tr');
+      tr.className = 'pos-zeile';
       tr.innerHTML =
         '<td class="c-griff"><span class="griff" title="Ziehen, um die Position zu verschieben">⠿</span></td>'+
-        '<td class="c-beschr" data-label="Leistung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this); gedAktualisieren('+i+')">'+esc(p.beschreibung)+'</textarea><div class="hk-box">'+herkunftHtml(p)+'</div></td>'+
-        '<td class="r" data-label="Menge"><input class="pos-menge r" inputmode="decimal" value="'+(p.menge??'')+'" oninput="setNum('+i+',\\'menge\\',this.value,this)"></td>'+
+        '<td class="c-beschr" data-label="Beschreibung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this); gedAktualisieren('+i+')">'+esc(p.beschreibung)+'</textarea><div class="hk-box">'+herkunftHtml(p)+'</div></td>'+
+        '<td class="r c-menge" data-label="Menge"><input class="pos-menge r" inputmode="decimal" value="'+(p.menge??'')+'" oninput="setNum('+i+',\\'menge\\',this.value,this)"></td>'+
         '<td class="c-einheit" data-label="Einheit">'+einheitZelle(i,p.einheit)+'</td>'+
-        '<td class="r" data-label="Einzelpreis"><input class="pos-preis r" inputmode="decimal" value="'+(p.einzelpreis??'')+'" placeholder="___" oninput="setNum('+i+',\\'einzelpreis\\',this.value,this)"><div class="ged-box ged-desk" data-i="'+i+'">'+gedHtml(p,i)+'</div></td>'+
+        '<td class="r c-preis" data-label="Einzelpreis"><input class="pos-preis r" inputmode="decimal" value="'+(p.einzelpreis??'')+'" placeholder="___" oninput="setNum('+i+',\\'einzelpreis\\',this.value,this)"><div class="ged-box ged-desk" data-i="'+i+'">'+gedHtml(p,i)+'</div></td>'+
         '<td class="r zeilensumme" data-label="Gesamt">'+(g==null?OFFEN:euro(g))+'</td>'+
         '<td class="c-del"><span class="pfeile"><button type="button" class="pfeil" title="Nach oben verschieben" onclick="verschiebePosition('+i+',-1)">▲</button><button type="button" class="pfeil" title="Nach unten verschieben" onclick="verschiebePosition('+i+',1)">▼</button></span><div class="ged-box ged-mob" data-i="'+i+'">'+gedHtml(p,i)+'</div><button class="loeschen" title="Zeile löschen" onclick="loeschen('+i+')">×</button></td>';
       tr.dataset.i = i; // fürs Wiederfinden nach dem Neuaufbau (Bewegungs-Animation)

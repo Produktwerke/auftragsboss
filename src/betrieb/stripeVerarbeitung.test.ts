@@ -14,6 +14,7 @@ function fakePrisma(vorgaben: {
   handwerker?: unknown;
   abo?: unknown;
   buchungVorhanden?: unknown;
+  korrekturen?: unknown[];
 } = {}) {
   const aufrufe: Record<string, unknown[]> = {
     aboUpsert: [], aboUpdateMany: [], buchungCreate: [], adminLogCreate: [],
@@ -27,6 +28,7 @@ function fakePrisma(vorgaben: {
     },
     buchung: {
       findFirst: vi.fn(async () => vorgaben.buchungVorhanden ?? null),
+      findMany: vi.fn(async () => vorgaben.korrekturen ?? []),
       create: vi.fn(async (a: unknown) => { aufrufe.buchungCreate.push(a); return {}; }),
     },
     adminLog: { create: vi.fn(async (a: unknown) => { aufrufe.adminLogCreate.push(a); return {}; }) },
@@ -160,6 +162,43 @@ describe("Stripe: Ereignis-Verarbeitung", () => {
     const um = aufrufe.aboUpdateMany[0] as { data: Record<string, unknown> };
     expect(um.data.status).toBe("GEKUENDIGT");
     expect(aufrufe.adminLogCreate).toHaveLength(1);
+  });
+
+  // Original-Buchung, auf die sich die Erstattungen beziehen (Netto 99 €).
+  const origBuchung = { handwerkerId: "hw1", betrieb: "Maler Müller GmbH", betrag: 99, zeitraum: "2026-08" };
+  const erstattungsEvent = (erstattetCent: number) => ({
+    type: "charge.refunded",
+    data: { object: { invoice: "in_77", amount: 11781, amount_refunded: erstattetCent } },
+  });
+
+  it("Voll-Erstattung → negative KORREKTUR in voller Netto-Höhe", async () => {
+    const { p, aufrufe } = fakePrisma({ buchungVorhanden: origBuchung });
+    const erg = await verarbeiteStripeEvent(p, erstattungsEvent(11781), vi.fn(async () => true));
+    expect(erg.aktion).toBe("erstattung-gebucht");
+    const b = (aufrufe.buchungCreate[0] as { data: Record<string, unknown> }).data;
+    expect(b.typ).toBe("KORREKTUR");
+    expect(b.betrag).toBe(-99);
+    expect(b.zeitraum).toBe("2026-08");
+    expect(String(b.notiz)).toContain("in_77");
+  });
+
+  it("dieselbe Erstattung erneut zugestellt → keine Doppel-Korrektur", async () => {
+    const { p, aufrufe } = fakePrisma({
+      buchungVorhanden: origBuchung,
+      korrekturen: [{ betrag: -99 }],
+    });
+    const erg = await verarbeiteStripeEvent(p, erstattungsEvent(11781), vi.fn(async () => true));
+    expect(erg.aktion).toBe("schon-gebucht");
+    expect(aufrufe.buchungCreate).toHaveLength(0);
+  });
+
+  it("Teil-Erstattung → anteilige Netto-Korrektur", async () => {
+    const { p, aufrufe } = fakePrisma({ buchungVorhanden: origBuchung });
+    // Hälfte des Brutto-Betrags erstattet → Hälfte des Netto-Betrags korrigieren
+    const halb = { type: "charge.refunded", data: { object: { invoice: "in_77", amount: 10000, amount_refunded: 5000 } } };
+    const erg = await verarbeiteStripeEvent(p, halb, vi.fn(async () => true));
+    expect(erg.aktion).toBe("erstattung-gebucht");
+    expect((aufrufe.buchungCreate[0] as { data: Record<string, unknown> }).data.betrag).toBe(-49.5);
   });
 
   it("unbekannter Ereignistyp → ignoriert, nichts passiert", async () => {

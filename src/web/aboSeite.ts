@@ -4,6 +4,7 @@
 import type { Handwerker } from "@prisma/client";
 import { appShell } from "./navigation.js";
 import { empfehlungsText } from "../empfehlung.js";
+import type { RechnungsZeile } from "../betrieb/stripeCheckout.js";
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -23,8 +24,14 @@ export function aboSeite(args: {
   abo: AboStand | null;
   /** Online-Buchung möglich (Stripe eingerichtet, kein Test-Konto)? */
   aboBuchbar: boolean;
+  /** Rechnungshistorie aus Stripe (neueste zuerst); leer = nichts anzeigen. */
+  rechnungen?: RechnungsZeile[];
+  /** Betrieb ist Stripe-Kunde? Steuert, ob das Rechnungs-Panel erscheint. */
+  hatStripeKunde?: boolean;
 }): string {
-  const { handwerker: h, token, werbeUrl, abo, aboBuchbar } = args;
+  const { handwerker: h, token, werbeUrl, abo, aboBuchbar, rechnungen = [], hatStripeKunde } = args;
+  const datumDE = (d: Date) => d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const euro = (n: number) => n.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
   const teilenText = empfehlungsText(h.firma || "Ein Kollege", werbeUrl);
   const waHref = `https://wa.me/?text=${encodeURIComponent(teilenText)}`;
   const mailHref = `mailto:?subject=${encodeURIComponent("Empfehlung: AuftragsBoss")}&body=${encodeURIComponent(teilenText)}`;
@@ -82,14 +89,49 @@ export function aboSeite(args: {
       </div>`;
   }
 
+  // Rechnungs-Panel: Historie mit PDF-Download (nur für Stripe-Kunden).
+  let rechnungsPanel = "";
+  if (hatStripeKunde) {
+    const statusBadge = (s: string) =>
+      s === "paid"
+        ? `<span class="badge ok">Bezahlt</span>`
+        : s === "open"
+          ? `<span class="badge warn">Offen</span>`
+          : `<span class="badge neutral">${escapeHtml(s || "—")}</span>`;
+    const zeilen = rechnungen
+      .map(
+        (r) => `<tr>
+          <td class="t-num">${escapeHtml(r.nummer)}</td>
+          <td class="num">${datumDE(r.datum)}</td>
+          <td class="r t-amount">${euro(r.bruttoEuro)}</td>
+          <td>${statusBadge(r.status)}</td>
+          <td class="r">${r.pdfUrl ? `<a class="btn sm" href="${escapeHtml(r.pdfUrl)}" target="_blank" rel="noopener">PDF herunterladen</a>` : r.webUrl ? `<a class="btn sm" href="${escapeHtml(r.webUrl)}" target="_blank" rel="noopener">Ansehen</a>` : "—"}</td>
+        </tr>`,
+      )
+      .join("");
+    rechnungsPanel = `
+      <div class="panel">
+        <div class="panel-h"><div><h2>Rechnungen</h2><p>Alle Abo-Rechnungen mit Download, Beträge inkl. MwSt.</p></div></div>
+        ${
+          rechnungen.length
+            ? `<div class="dtable-wrap"><table class="dtable rech-tabelle">
+          <thead><tr><th>Nummer</th><th>Datum</th><th class="r">Betrag</th><th>Status</th><th></th></tr></thead>
+          <tbody>${zeilen}</tbody>
+        </table></div>`
+            : `<div class="panel-b" style="color:var(--faint);font-size:14px;">Noch keine Rechnungen vorhanden.</div>`
+        }
+      </div>`;
+  }
+
   const content = `
       <div class="page-head">
         <div>
           <h1 class="greet">Abo &amp; Abrechnung</h1>
-          <p class="sub">Dein Tarif und dein Empfehlungs-Bonus an einem Ort.</p>
+          <p class="sub">Dein Tarif, deine Rechnungen und dein Empfehlungs-Bonus an einem Ort.</p>
         </div>
       </div>
 ${aboPanel}
+${rechnungsPanel}
       <div class="panel promo">
         <div class="promo-head">
           <span class="promo-badge">1 Monat gratis</span>
@@ -165,6 +207,7 @@ window.linkKopieren = linkKopieren; window.perMailEinladen = perMailEinladen;
   .tarif-preis span{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:0;}
   .tarif-m{color:var(--muted);font-size:13px;margin-bottom:10px;}
   .tarif .btn{margin-top:auto;}
+  .rech-tabelle tbody tr{cursor:default;}
   @media (max-width:720px){.tarife{grid-template-columns:1fr;}}
   .promo{background:linear-gradient(180deg,#fbfcfd,var(--panel));}
   .promo-head{padding:22px 22px 8px;}

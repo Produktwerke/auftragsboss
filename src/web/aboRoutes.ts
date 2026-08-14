@@ -9,7 +9,12 @@
 import type { FastifyInstance } from "fastify";
 import { prisma } from "../pipeline.js";
 import { stripeKonfiguriert } from "../config.js";
-import { erzeugeAboCheckoutUrl, type BuchbarerTarif } from "../betrieb/stripeCheckout.js";
+import {
+  erzeugeAboCheckoutUrl,
+  ladeRechnungen,
+  type BuchbarerTarif,
+  type RechnungsZeile,
+} from "../betrieb/stripeCheckout.js";
 import { cockpitLink, registrierLink, werbeLink } from "./tokens.js";
 import { werbeCodeBereit } from "../empfehlung.js";
 import { aboSeite } from "./aboSeite.js";
@@ -55,6 +60,18 @@ export async function aboRoutes(app: FastifyInstance): Promise<void> {
     );
     const abo = await prisma.abo.findUnique({ where: { handwerkerId: handwerker.id } });
     const werbeUrl = werbeLink(await werbeCodeBereit(prisma, handwerker));
+
+    // Rechnungshistorie aus Stripe (nur wenn der Betrieb dort Kunde ist).
+    // Fehler sind nicht fatal — die Seite zeigt dann einfach keine Liste.
+    let rechnungen: RechnungsZeile[] = [];
+    if (abo?.stripeCustomerId && stripeKonfiguriert()) {
+      try {
+        rechnungen = await ladeRechnungen(abo.stripeCustomerId);
+      } catch (err) {
+        req.log.warn({ err }, "Stripe-Rechnungen konnten nicht geladen werden");
+      }
+    }
+
     return reply.type("text/html; charset=utf-8").send(
       aboSeite({
         handwerker,
@@ -62,6 +79,8 @@ export async function aboRoutes(app: FastifyInstance): Promise<void> {
         werbeUrl,
         abo: abo ? { tarif: abo.tarif, monatspreis: abo.monatspreis, status: abo.status } : null,
         aboBuchbar: stripeKonfiguriert() && !handwerker.istTest,
+        rechnungen,
+        hatStripeKunde: Boolean(abo?.stripeCustomerId),
       }),
     );
   });

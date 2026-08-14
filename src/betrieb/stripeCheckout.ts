@@ -75,3 +75,27 @@ export async function erzeugeAboCheckoutUrl(
   if (!session.url) throw new Error("Stripe lieferte keine Checkout-URL.");
   return session.url;
 }
+
+/** Eine Rechnung für die Historie auf der "Abo & Abrechnung"-Seite. */
+export interface RechnungsZeile {
+  nummer: string;
+  datum: Date;
+  /** Rechnungsbetrag BRUTTO (inkl. MwSt.) — so steht er auf der Rechnung. */
+  bruttoEuro: number;
+  status: string; // "paid" | "open" | "void" | …
+  pdfUrl: string | null;
+  webUrl: string | null;
+}
+
+/** Rechnungshistorie eines Betriebs aus Stripe laden (neueste zuerst). */
+export async function ladeRechnungen(stripeCustomerId: string, limit = 24): Promise<RechnungsZeile[]> {
+  const rechnungen = await stripe().invoices.list({ customer: stripeCustomerId, limit });
+  return rechnungen.data.map((r) => ({
+    nummer: r.number ?? r.id ?? "—",
+    datum: new Date(r.created * 1000),
+    bruttoEuro: (r.total ?? 0) / 100,
+    status: r.status ?? "",
+    pdfUrl: r.invoice_pdf ?? null,
+    webUrl: r.hosted_invoice_url ?? null,
+  }));
+}

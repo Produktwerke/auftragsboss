@@ -229,6 +229,47 @@ export async function verarbeiteStripeEvent(
       return { aktion: "gekuendigt", detail: subId };
     }
 
+    case "charge.refunded": {
+      // Rückerstattung (voll oder teilweise) → negative KORREKTUR-Buchung,
+      // damit Einnahmen/Umsatz im Cockpit wieder stimmen. Idempotent über den
+      // ZIEL-Zustand: Summe aller Korrekturen zu dieser Rechnung soll dem
+      // erstatteten Anteil entsprechen — mehrfache Zustellung bucht nur das Delta.
+      const charge = event.data.object;
+      const invoiceId = idVon(charge?.invoice);
+      if (!invoiceId) return { aktion: "ignoriert", detail: "Erstattung ohne Rechnungsbezug" };
+      const gesamt = typeof charge?.amount === "number" ? charge.amount : null;
+      const erstattet = typeof charge?.amount_refunded === "number" ? charge.amount_refunded : null;
+      if (!gesamt || erstattet == null || erstattet <= 0) {
+        return { aktion: "ignoriert", detail: `Erstattung ${invoiceId} ohne Betrag` };
+      }
+      const orig = await prisma.buchung.findFirst({
+        where: { typ: "ZAHLUNG", notiz: { contains: invoiceId } },
+      });
+      if (!orig) return { aktion: "ignoriert", detail: `Keine Buchung zu Rechnung ${invoiceId}` };
+
+      // Erstatteter Anteil (brutto) auf unseren NETTO-Buchungsbetrag umgelegt.
+      const quote = Math.min(1, erstattet / gesamt);
+      const soll = -Math.round(orig.betrag * quote * 100) / 100;
+      const korrekturen = await prisma.buchung.findMany({
+        where: { typ: "KORREKTUR", notiz: { contains: invoiceId } },
+      });
+      const bisher = Math.round(korrekturen.reduce((s, b) => s + b.betrag, 0) * 100) / 100;
+      const delta = Math.round((soll - bisher) * 100) / 100;
+      if (Math.abs(delta) < 0.005) return { aktion: "schon-gebucht", detail: `Erstattung ${invoiceId}` };
+
+      await prisma.buchung.create({
+        data: {
+          handwerkerId: orig.handwerkerId,
+          betrieb: orig.betrieb,
+          typ: "KORREKTUR",
+          betrag: delta,
+          zeitraum: orig.zeitraum,
+          notiz: `Stripe-Erstattung zur Rechnung ${invoiceId}`,
+        },
+      });
+      return { aktion: "erstattung-gebucht", detail: `${invoiceId}: ${delta} €` };
+    }
+
     case "invoice.payment_failed": {
       const r = liesRechnung(event.data.object);
       const abo = r.subscriptionId

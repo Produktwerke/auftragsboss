@@ -151,6 +151,27 @@ export const webtestConfig = lade(
   }),
 );
 
+// Stripe (Abo-Abrechnung). Der geheime Schlüssel liegt NUR in der .env
+// (Testmodus sk_test_…, live sk_live_…). STRIPE_WEBHOOK_SECRET (whsec_…)
+// stammt aus dem Stripe-Dashboard beim Anlegen des Webhook-Endpunkts und
+// sichert die Echtheitsprüfung eingehender Ereignisse ab.
+export const stripeConfig = lade(
+  "Stripe",
+  z.object({
+    STRIPE_SECRET_KEY: z.string().startsWith("sk_", "muss mit 'sk_' beginnen"),
+    STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_", "muss mit 'whsec_' beginnen"),
+  }),
+);
+
+/** Prüft, OB Stripe hinterlegt ist — ohne bei Fehlen den Server zu beenden.
+ *  Ohne Schlüssel bleibt der Webhook einfach aus (404), alles andere läuft. */
+export function stripeKonfiguriert(): boolean {
+  return Boolean(
+    process.env.STRIPE_SECRET_KEY?.startsWith("sk_") &&
+      process.env.STRIPE_WEBHOOK_SECRET?.startsWith("whsec_"),
+  );
+}
+
 /** Handynummer aus der .env ins WhatsApp-Format bringen: nur Ziffern,
  *  deutsche 0-Vorwahl wird zu 49. Leeres/Unbrauchbares ergibt null —
  *  die Betreiber-Benachrichtigung ist dann einfach aus (kein Abbruch). */

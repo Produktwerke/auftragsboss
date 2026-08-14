@@ -119,7 +119,14 @@ model Abo {
   beginntAm    DateTime  @default(now())
   gekuendigtAm DateTime?
 
+  // Stripe-Verknüpfung (null = manuell angelegtes Abo, wie bisher).
+  // Über die Subscription-ID ordnet der Webhook Folgezahlungen/Kündigungen zu.
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+
   erstelltAm DateTime @default(now())
+
+  @@index([stripeSubscriptionId])
 }
 
 // Buchungs-Ledger: eine Zeile je Geldereignis. Daraus werden Kundenumsatz,

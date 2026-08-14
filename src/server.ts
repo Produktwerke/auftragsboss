@@ -7,6 +7,7 @@ import { importRoutes } from "./web/importRoutes.js";
 import { registrierungRoutes } from "./web/registrierungRoutes.js";
 import { betreiberRoutes } from "./web/betreiberRoutes.js";
 import { adminAuthRoutes } from "./web/adminAuth.js";
+import { stripeWebhookRoutes } from "./web/stripeWebhook.js";
 import { starteGewaehrleistungsJob } from "./jobs/warrantyReminders.js";
 import { starteVorgangTimeoutJob } from "./jobs/vorgangTimeout.js";
 
@@ -21,6 +22,7 @@ await app.register(importRoutes);
 await app.register(registrierungRoutes);
 await app.register(betreiberRoutes);
 await app.register(adminAuthRoutes);
+await app.register(stripeWebhookRoutes);
 
 starteGewaehrleistungsJob();
 starteVorgangTimeoutJob();

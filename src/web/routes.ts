@@ -672,12 +672,6 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       offen: dokumente.filter((d) => d.anzahlOffen > 0).length,
       volumen: dokumente.reduce((s, d) => s + (d.anzahlOffen === 0 ? d.brutto : 0), 0),
     };
-    const werbeUrl = werbeLink(await werbeCodeBereit(prisma, handwerker));
-
-    // Abo-Stand fürs Panel: aktives Abo zeigen, sonst (bei eingerichtetem
-    // Stripe) die Tarife mit Buchen-Knöpfen.
-    const abo = await prisma.abo.findUnique({ where: { handwerkerId: handwerker.id } });
-
     // Wer den Einstellungs-/Cockpit-Link hat, ist nachweislich der Betrieb:
     // Gerät als vertraut markieren, damit Angebote von hier aus ohne Schleuse
     // öffnen und die Cockpit-Aktionen (Löschen/Versendet) greifen.
@@ -691,9 +685,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     return reply.type("text/html; charset=utf-8").send(
       cockpitSeite({
         handwerker, logoDataUrl: logo?.dataUrl ?? null, akzent,
-        dokumente: uebersicht, kennzahlen, token: req.params.token, werbeUrl,
-        abo: abo ? { tarif: abo.tarif, monatspreis: abo.monatspreis, status: abo.status } : null,
-        aboBuchbar: stripeKonfiguriert() && !handwerker.istTest,
+        dokumente: uebersicht, kennzahlen, token: req.params.token,
       }),
     );
   });

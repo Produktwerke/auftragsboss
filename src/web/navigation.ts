@@ -12,7 +12,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { cockpitLink, einstellungenLink, importLink } from "./tokens.js";
+import { aboLink, cockpitLink, einstellungenLink, importLink } from "./tokens.js";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -29,7 +29,7 @@ try {
   LOGO_DATA_URI = null;
 }
 
-export type NavAktiv = "start" | "import" | "einstellungen";
+export type NavAktiv = "start" | "import" | "abo" | "einstellungen";
 
 /** Ein Navigationseintrag der Sidebar. */
 function navPunkt(url: string, icon: string, text: string, aktiv: boolean): string {
@@ -44,6 +44,7 @@ const IC = {
   angebote: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M10 12h5M10 16h5"/></svg>`,
   import: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4"/><path d="M8 8l4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>`,
   einstellungen: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 2.6 15H2a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4 7.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 4.6V4a2 2 0 1 1 4 0v.1A1.6 1.6 0 0 0 15 5.6a1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V11a2 2 0 1 1 0 4h-.6z"/></svg>`,
+  abo: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>`,
 };
 
 /** Die App-Shell: Sidebar + Topbar + Inhalt. Alle registrierten Seiten nutzen sie. */
@@ -88,6 +89,7 @@ ${opts.headExtra ?? ""}
       ${navPunkt(cockpit + "#angebote", IC.angebote, "Angebote", false)}
       ${navPunkt(importLink(token), IC.import, "Angebot importieren", aktiv === "import")}
       <div class="side-cap">Konto</div>
+      ${navPunkt(aboLink(token), IC.abo, "Abo & Abrechnung", aktiv === "abo")}
       ${navPunkt(einstellungenLink(token), IC.einstellungen, "Einstellungen", aktiv === "einstellungen")}
     </nav>
     <div class="side-foot">

@@ -10,7 +10,9 @@ import type { FastifyInstance } from "fastify";
 import { prisma } from "../pipeline.js";
 import { stripeKonfiguriert } from "../config.js";
 import { erzeugeAboCheckoutUrl, type BuchbarerTarif } from "../betrieb/stripeCheckout.js";
-import { cockpitLink, registrierLink } from "./tokens.js";
+import { cockpitLink, registrierLink, werbeLink } from "./tokens.js";
+import { werbeCodeBereit } from "../empfehlung.js";
+import { aboSeite } from "./aboSeite.js";
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -42,6 +44,28 @@ function seite(titel: string, text: string, knopf?: { href: string; label: strin
 }
 
 export async function aboRoutes(app: FastifyInstance): Promise<void> {
+  // Seite "Abo & Abrechnung" in der App-Shell (Tarif-Stand + Empfehlungs-Panel).
+  // Statische Geschwister /abo/danke und /abo/buchen/:token haben Vorrang.
+  app.get<{ Params: { token: string } }>("/abo/:token", async (req, reply) => {
+    const handwerker = await prisma.handwerker.findUnique({
+      where: { einstellungenToken: req.params.token },
+    });
+    if (!handwerker) return reply.code(404).type("text/html").send(
+      seite("Link ungültig", "Dieser Link gehört zu keinem Betrieb. Öffne dein Cockpit über den Link aus WhatsApp."),
+    );
+    const abo = await prisma.abo.findUnique({ where: { handwerkerId: handwerker.id } });
+    const werbeUrl = werbeLink(await werbeCodeBereit(prisma, handwerker));
+    return reply.type("text/html; charset=utf-8").send(
+      aboSeite({
+        handwerker,
+        token: req.params.token,
+        werbeUrl,
+        abo: abo ? { tarif: abo.tarif, monatspreis: abo.monatspreis, status: abo.status } : null,
+        aboBuchbar: stripeKonfiguriert() && !handwerker.istTest,
+      }),
+    );
+  });
+
   app.get<{ Params: { token: string }; Querystring: { tarif?: string } }>(
     "/abo/buchen/:token",
     async (req, reply) => {
@@ -90,7 +114,7 @@ export async function aboRoutes(app: FastifyInstance): Promise<void> {
     return reply.type("text/html").send(
       seite(
         "Danke, dein Abo ist unterwegs! 🎉",
-        "Die Zahlung ist bei uns angekommen und dein Abo wird in diesem Moment freigeschaltet. Du kannst AuftragsBoss einfach weiter über WhatsApp nutzen — an deinem Ablauf ändert sich nichts.",
+        "Die Zahlung ist bei uns angekommen und dein Abo wird in diesem Moment freigeschaltet. Du kannst AuftragsBoss einfach weiter über WhatsApp nutzen, an deinem Ablauf ändert sich nichts.",
         token ? { href: cockpitLink(token), label: "Zurück zum Cockpit" } : undefined,
       ),
     );

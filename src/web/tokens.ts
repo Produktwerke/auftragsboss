@@ -48,4 +48,5 @@ export const einstellungenLink = (token: string): string => `${basisUrl()}/einst
 export const cockpitLink = (token: string): string => `${basisUrl()}/start/${token}`;
 export const registrierLink = (token: string): string => `${basisUrl()}/registrieren/${token}`;
 export const importLink = (token: string): string => `${basisUrl()}/import/${token}`;
+export const aboLink = (token: string): string => `${basisUrl()}/abo/${token}`;
 export const werbeLink = (code: string): string => `${basisUrl()}/einladung/${code}`;

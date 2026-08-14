@@ -120,6 +120,34 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 14.08.2026 (2) — STRIPE-ABO-ANBINDUNG Etappen 1+2 LIVE, Testmodus-Durchstich ERFOLGREICH (Commits d0a2f95…6acd2f0, 145 Tests grün; deployt inkl. npm install + db push):**
+> - **Etappe 1:** `POST /webhook/stripe` (Signaturprüfung auf rohem Body, eigener Buffer-Parser, fail-closed ohne
+>   .env-Schlüssel). `stripeVerarbeitung.ts`: checkout.session.completed → Abo AKTIV (+stripeCustomerId/-SubscriptionId,
+>   Schema additiv) + AdminLog + **Betreiber-WhatsApp** (`meldeNeuenKunden`); invoice.paid → **NETTO-Buchung** ins Ledger
+>   (idempotent via Rechnungs-Id in notiz); subscription.deleted → GEKUENDIGT; payment_failed → AdminLog;
+>   **charge.refunded → negative KORREKTUR** (Ziel-Zustands-Idempotenz, Teil-Erstattungen anteilig — Dirks Wunsch nach
+>   dem Test). Tarif-Erkennung über Preis-lookup_keys basis/profi/team. `src/stripe-einrichten.ts` legt idempotent
+>   Produkte (49/99/199 € NETTO zzgl. 19 % MwSt, Dirks Entscheidung) + Steuersatz an.
+> - **Etappe 2:** `stripeCheckout.ts` (personalisierte Checkout-Session: client_reference_id + Metadaten an Session UND
+>   Abo; Tax-Rate; Adresse Pflicht + USt-IdNr.; Erfolg /abo/danke, Abbruch Cockpit) + `aboRoutes.ts`
+>   (GET /abo/buchen/:einstellungenToken?tarif=…, /abo/danke; Test-Konten → Registrier-Hinweis).
+> - **Neuer App-Reiter „Abo & Abrechnung"** (`aboSeite.ts`, /abo/:token, Nav-Punkt unter „Konto"): Abo-Stand bzw.
+>   3 Tarif-Karten + **Rechnungs-Panel mit PDF-Download** (ladeRechnungen via stripeCustomerId) + Empfehlungs-Panel —
+>   beides RAUS aus der Übersicht (Dirk: dort unerwartet). cockpitSeite entsprechend entschlackt.
+> - **Testmodus-Durchstich mit Dirk (in seiner SANDBOX) komplett:** Checkout mit Testkarte → Abo im Cockpit AKTIV →
+>   49/99-€-Buchung im Ledger → Kündigung über Stripe-Dashboard korrekt erkannt → Erstattung (Rückkopplung dafür
+>   nachgebaut; Dirk hat charge.refunded im Webhook-Endpunkt ergänzt). Nur WhatsApp offen (Meta-Vorlage in Prüfung).
+> - **Stripe-Konfig auf dem VPS:** sk_test_ + whsec_ in .env (von Dirk), Webhook-Endpunkt in seiner Sandbox auf
+>   api.auftragsboss.de/webhook/stripe mit 5 Ereignissen, Einrichtungs-Skript gelaufen. **BETREIBER_HANDY gesetzt.**
+> - **Stripe-Branding:** Wort-Bild-Marke `marketing/auftragsboss-logo-schrift.png` neu gebaut (Symbol + AUFTRAGSBOSS in
+>   Inter ExtraBold, „AUFTRAGS" anthrazit / „BOSS" gelb; woff2→ttf konvertiert, GDI+-Skript im Scratchpad).
+>   **Stolperfalle: Sandbox zeigt Branding nur an, speichert NICHT** — Upload klappte erst im LIVE-Modus (kontoweit,
+>   gilt damit schon für den Echtbetrieb). PayPal aktiviert Dirk unter Einstellungen → Zahlungsmethoden (je Umgebung).
+> - **Aufräumen:** `stripe-testdaten-loeschen.sql` im Repo-Root (löscht Stripe-Test-Buchungen/-Abos via
+>   `npx prisma db execute --file …`). **Offen:** Meta-Genehmigung `neuer_kunde` → `npx tsx src/betreiber-ping.ts`;
+>   **Etappe 3** (Stripe-Kundenportal zum Selbst-Kündigen/Zahlungsmittel-Ändern, Zahlungsausfall-UX,
+>   **Live-Umstellung**: sk_live/whsec im Live-Modus + Webhook + Einrichtungs-Skript + PayPal dort erneut).
+>
 > **Update 14.08.2026 — Editor-UI-Runde + Betreiber-WhatsApp vorbereitet (⏳ committet, Deploy bewusst aufgeschoben — „erst bei der nächsten Änderung"; alles im aktuellen deploy.tar.gz, kein db push nötig):**
 > - **Mobile Positions-Karten neu** (514c848): aufgeräumtes Raster je Karte — Beschreibung oben, Menge+Einheit
 >   und Einzelpreis+Gesamt paarweise nebeneinander, Feldlabels klein ÜBER den Eingaben; Fußleiste mit Trennlinie

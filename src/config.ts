@@ -151,6 +151,28 @@ export const webtestConfig = lade(
   }),
 );
 
+/** Handynummer aus der .env ins WhatsApp-Format bringen: nur Ziffern,
+ *  deutsche 0-Vorwahl wird zu 49. Leeres/Unbrauchbares ergibt null —
+ *  die Betreiber-Benachrichtigung ist dann einfach aus (kein Abbruch). */
+export function normalisiereHandy(wert: string | undefined): string | null {
+  const ziffern = (wert ?? "").replace(/\D/g, "");
+  if (!ziffern) return null;
+  const voll = ziffern.startsWith("0") ? "49" + ziffern.slice(1) : ziffern;
+  return voll.length >= 8 && voll.length <= 16 ? voll : null;
+}
+
+// Betreiber-Benachrichtigung: WhatsApp an den Betreiber (Dirk) bei wichtigen
+// Ereignissen — erste Anwendung "neuer Kunde hat ein Abo gebucht" (wird mit
+// der Stripe-Anbindung ausgelöst). Ohne BETREIBER_HANDY in der .env ist die
+// Funktion aus; die Vorlage muss bei Meta angelegt und genehmigt sein.
+export const betreiberConfig = lade(
+  "Betreiber-Benachrichtigung",
+  z.object({
+    BETREIBER_HANDY: z.string().optional().transform(normalisiereHandy),
+    BETREIBER_VORLAGE_NEUER_KUNDE: z.string().default("neuer_kunde"),
+  }),
+);
+
 export const emailConfig = lade(
   "E-Mail (SMTP)",
   z.object({

@@ -761,6 +761,7 @@ function render(){
       if(p._geloescht){
         const trG = document.createElement('tr');
         trG.className='geloescht-zeile';
+        trG.dataset.i = i; // fürs Wiederfinden nach dem Neuaufbau (Schrumpf-Animation)
         trG.innerHTML =
           '<td colspan="6" class="gel-td"><span class="gel-name">'+esc(p.beschreibung||'Position')+'</span>'+
           ' gelöscht — <button type="button" class="gel-undo" onclick="wiederherstellen('+i+')">Rückgängig</button></td>'+
@@ -1043,11 +1044,32 @@ function zeigeBewegung(p, altTop){
   setTimeout(()=>tr.classList.remove('bewegt'), 800);
 }
 
+// Höhen-Übergang beim Löschen/Wiederherstellen: die Zeile schrumpft sichtbar
+// auf die graue Rückgängig-Zeile zusammen (bzw. wächst wieder zur Karte auf),
+// statt umzuspringen — gleiche Idee wie die Verschiebe-Animation (FLIP).
+function zeigeGroessenwechsel(tr, altHoehe){
+  if(!tr || altHoehe == null) return;
+  const ziel = tr.getBoundingClientRect().height;
+  if(Math.abs(altHoehe - ziel) < 6) return; // kaum Unterschied (Desktop-Tabelle)
+  tr.style.transition = 'none';
+  tr.style.height = altHoehe + 'px';
+  tr.style.overflow = 'hidden';
+  requestAnimationFrame(()=>{
+    tr.style.transition = 'height .28s ease';
+    tr.style.height = ziel + 'px';
+  });
+  const aufraeumen = ()=>{ tr.style.transition=''; tr.style.height=''; tr.style.overflow=''; };
+  tr.addEventListener('transitionend', aufraeumen, {once:true});
+  setTimeout(aufraeumen, 400); // Rückfallnetz, falls der Browser nichts animiert
+}
+
 // Löschen mit Reue-Frist: Die Zeile bleibt 8 Sekunden als graue
 // Rückgängig-Zeile stehen (gespeichert wird sofort OHNE sie), danach — oder
 // per Kreuzchen sofort — verschwindet sie endgültig aus der Ansicht.
 function loeschen(i){
   const p = positionen[i];
+  const altTr = document.querySelector('#postab tr[data-i="'+i+'"]');
+  const altHoehe = altTr ? altTr.getBoundingClientRect().height : null;
   p._geloescht = true;
   clearTimeout(p._timer);
   p._timer = setTimeout(()=>{
@@ -1055,12 +1077,16 @@ function loeschen(i){
     if(idx >= 0 && positionen[idx]._geloescht){ positionen.splice(idx,1); render(); }
   }, 8000);
   render(); markiereGeaendert();
+  zeigeGroessenwechsel(document.querySelector('#postab tr.geloescht-zeile[data-i="'+i+'"]'), altHoehe);
 }
 function wiederherstellen(i){
   const p = positionen[i];
+  const altTr = document.querySelector('#postab tr.geloescht-zeile[data-i="'+i+'"]');
+  const altHoehe = altTr ? altTr.getBoundingClientRect().height : null;
   clearTimeout(p._timer);
   delete p._geloescht; delete p._timer;
   render(); markiereGeaendert();
+  zeigeGroessenwechsel(document.querySelector('#postab tr.pos-zeile[data-i="'+positionen.indexOf(p)+'"]'), altHoehe);
 }
 function endgueltigLoeschen(i){
   clearTimeout(positionen[i]._timer);

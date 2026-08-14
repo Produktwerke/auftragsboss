@@ -31,6 +31,13 @@ export interface Kennzahlen {
   volumen: number; // Summe der vollständigen Brutto-Beträge
 }
 
+/** Abo-Stand fürs Panel — null, wenn (noch) kein Abo existiert. */
+export interface AboStand {
+  tarif: string;
+  monatspreis: number;
+  status: string;
+}
+
 export function cockpitSeite(args: {
   handwerker: Handwerker;
   logoDataUrl: string | null;
@@ -39,8 +46,12 @@ export function cockpitSeite(args: {
   kennzahlen: Kennzahlen;
   token: string;
   werbeUrl: string;
+  /** Aktuelles Abo (falls vorhanden) — zeigt Stand statt Buchen-Knöpfen. */
+  abo?: AboStand | null;
+  /** Online-Buchung möglich (Stripe eingerichtet)? Steuert das Tarif-Panel. */
+  aboBuchbar?: boolean;
 }): string {
-  const { handwerker: h, logoDataUrl, dokumente, kennzahlen, token, werbeUrl } = args;
+  const { handwerker: h, logoDataUrl, dokumente, kennzahlen, token, werbeUrl, abo, aboBuchbar } = args;
   const teilenText = empfehlungsText(h.firma || "Ein Kollege", werbeUrl);
   const waHref = `https://wa.me/?text=${encodeURIComponent(teilenText)}`;
   const mailHref = `mailto:?subject=${encodeURIComponent("Empfehlung: AuftragsBoss")}&body=${encodeURIComponent(teilenText)}`;
@@ -78,6 +89,49 @@ export function cockpitSeite(args: {
       </tr>`;
           })
           .join("");
+
+  // Abo-Panel: aktives Abo anzeigen ODER (wenn Online-Buchung möglich) die
+  // Tarife mit Buchen-Knöpfen. Kontingente müssen zur Landingpage passen.
+  const TARIF_KARTEN = [
+    { key: "basis", name: "Basis", preis: 49, angebote: 20, beliebt: false },
+    { key: "profi", name: "Profi", preis: 99, angebote: 80, beliebt: true },
+    { key: "team", name: "Team", preis: 199, angebote: 200, beliebt: false },
+  ];
+  let aboPanel = "";
+  if (abo && abo.status === "AKTIV") {
+    const tarifName =
+      abo.tarif === "INDIVIDUELL" ? "Individuell" : abo.tarif.charAt(0) + abo.tarif.slice(1).toLowerCase();
+    aboPanel = `
+      <div class="panel">
+        <div class="panel-b abo-aktiv">
+          <div>
+            <div class="abo-k">Dein Abo</div>
+            <div class="abo-v">${escapeHtml(tarifName)} · ${abo.monatspreis.toLocaleString("de-DE")} € im Monat zzgl. MwSt.</div>
+          </div>
+          <span class="badge ok">Aktiv</span>
+        </div>
+      </div>`;
+  } else if (aboBuchbar) {
+    aboPanel = `
+      <div class="panel">
+        <div class="promo-head">
+          <h2>Wähle dein Abo</h2>
+          <p>Alle Tarife enthalten WhatsApp-Angebote, PDF- und Word-Export, E-Mail-Versand und dein Logo. Monatlich kündbar, Preise zzgl. MwSt.</p>
+        </div>
+        <div class="panel-b tarife">
+          ${TARIF_KARTEN.map(
+            (t) => `
+          <div class="tarif${t.beliebt ? " beliebt" : ""}">
+            ${t.beliebt ? `<span class="tarif-flag">Beliebt</span>` : ""}
+            <div class="tarif-name">${t.name}</div>
+            <div class="tarif-preis">${t.preis} €<span> / Monat</span></div>
+            <div class="tarif-m">bis zu ${t.angebote} Angebote im Monat</div>
+            <a class="btn prim" href="/abo/buchen/${escapeHtml(token)}?tarif=${t.key}">Jetzt buchen</a>
+          </div>`,
+          ).join("")}
+        </div>
+      </div>`;
+  }
 
   const content = `
       <div class="page-head">
@@ -119,7 +173,7 @@ export function cockpitSeite(args: {
         </div>
         <div class="empty-search" id="leerSuch">Keine Angebote gefunden.</div>
       </div>
-
+${aboPanel}
       <div class="panel promo">
         <div class="promo-head">
           <span class="promo-badge">1 Monat gratis</span>
@@ -246,6 +300,19 @@ window.linkKopieren = linkKopieren; window.perMailEinladen = perMailEinladen;
   .ico-btn:hover{background:var(--panel-2);color:var(--ink);}
   .ico-btn.danger:hover{background:#fdecea;color:#c0392b;border-color:#f3c9c3;}
   .ico-btn:disabled{opacity:.5;cursor:default;}
+  .abo-aktiv{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+  .abo-k{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);margin-bottom:4px;}
+  .abo-v{font-size:16px;font-weight:700;}
+  .tarife{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .tarif{position:relative;border:1px solid var(--line-2);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;background:var(--panel);}
+  .tarif.beliebt{border-color:#e3b93c;box-shadow:0 0 0 1px #e3b93c;}
+  .tarif-flag{position:absolute;top:-11px;right:14px;background:#ffd166;color:#1a1a1a;font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;}
+  .tarif-name{font-weight:800;font-size:15px;}
+  .tarif-preis{font-size:26px;font-weight:800;letter-spacing:-.02em;}
+  .tarif-preis span{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:0;}
+  .tarif-m{color:var(--muted);font-size:13px;margin-bottom:10px;}
+  .tarif .btn{margin-top:auto;}
+  @media (max-width:720px){.tarife{grid-template-columns:1fr;}}
   .promo{background:linear-gradient(180deg,#fbfcfd,var(--panel));}
   .promo-head{padding:22px 22px 8px;}
   .promo-badge{display:inline-block;background:var(--ok-bg);color:var(--ok);font-weight:800;font-size:12px;padding:5px 12px;border-radius:999px;letter-spacing:.01em;margin-bottom:12px;}

@@ -10,6 +10,7 @@ import { ladePreisliste } from "../preisliste.js";
 import { editorRoutes } from "./routes.js";
 import { betreiberRoutes } from "./betreiberRoutes.js";
 import { adminAuthRoutes, passwortHashErzeugen } from "./adminAuth.js";
+import { aboRoutes } from "./aboRoutes.js";
 import { basisUrl, bearbeitenLink, einstellungenLink, erzeugeToken, kundenLink, werbeLink } from "./tokens.js";
 import { einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
 import { werbeCodeBereit } from "../empfehlung.js";
@@ -105,6 +106,7 @@ async function main(): Promise<void> {
   await app.register(editorRoutes);
   await app.register(betreiberRoutes);
   await app.register(adminAuthRoutes);
+  await app.register(aboRoutes);
 
   const tokens = await stelleDemoDokumentBereit();
   const port = Number(process.env.PORT ?? 3000);

@@ -22,7 +22,7 @@ import { bearbeitenLink, einstellungenLink, cockpitLink, werbeLink } from "./tok
 import { werbeCodeBereit, empfehlungsEinladungMail } from "../empfehlung.js";
 import { ladeLogo } from "../betrieb/logo.js";
 import { speichereLogo, entferneLogo, LogoFehler } from "../betrieb/logoUpload.js";
-import { smtpKonfiguriert, featureConfig, webtestConfig } from "../config.js";
+import { smtpKonfiguriert, stripeKonfiguriert, featureConfig, webtestConfig } from "../config.js";
 import { sendeMail, WORD_MIME } from "../email/send.js";
 import { dokumentMail, logoAnhang } from "../email/templates.js";
 import { merkePreise, vergissPreis } from "../betrieb/preisgedaechtnis.js";
@@ -674,6 +674,10 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     };
     const werbeUrl = werbeLink(await werbeCodeBereit(prisma, handwerker));
 
+    // Abo-Stand fürs Panel: aktives Abo zeigen, sonst (bei eingerichtetem
+    // Stripe) die Tarife mit Buchen-Knöpfen.
+    const abo = await prisma.abo.findUnique({ where: { handwerkerId: handwerker.id } });
+
     // Wer den Einstellungs-/Cockpit-Link hat, ist nachweislich der Betrieb:
     // Gerät als vertraut markieren, damit Angebote von hier aus ohne Schleuse
     // öffnen und die Cockpit-Aktionen (Löschen/Versendet) greifen.
@@ -688,6 +692,8 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       cockpitSeite({
         handwerker, logoDataUrl: logo?.dataUrl ?? null, akzent,
         dokumente: uebersicht, kennzahlen, token: req.params.token, werbeUrl,
+        abo: abo ? { tarif: abo.tarif, monatspreis: abo.monatspreis, status: abo.status } : null,
+        aboBuchbar: stripeKonfiguriert() && !handwerker.istTest,
       }),
     );
   });

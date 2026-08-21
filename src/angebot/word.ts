@@ -72,14 +72,18 @@ function zelle(opts: {
     children: [
       new Paragraph({
         alignment: opts.rechts ? AlignmentType.RIGHT : AlignmentType.LEFT,
-        children: [
-          new TextRun({
-            text: opts.text,
-            bold: opts.fett,
-            size: 19,
-            color: opts.farbe,
-          }),
-        ],
+        // Zeilenumbrüche in der Beschreibung (z. B. zusammengefasste Positionen)
+        // als echte Umbrüche ausgeben — je Zeile ein TextRun mit break davor.
+        children: opts.text.split("\n").map(
+          (zeile, i) =>
+            new TextRun({
+              text: zeile,
+              bold: opts.fett,
+              size: 19,
+              color: opts.farbe,
+              break: i > 0 ? 1 : undefined,
+            }),
+        ),
       }),
     ],
   });

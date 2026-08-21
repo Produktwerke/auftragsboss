@@ -116,7 +116,7 @@ function positionsTabelle(summe: Angebotssumme): string {
 
       return `<tr>
         <td style="${zellStil}text-align:right;color:#888;">${p.nummer}</td>
-        <td style="${zellStil}">${escapeHtml(p.beschreibung)}${hinweis}</td>
+        <td style="${zellStil}">${escapeHtml(p.beschreibung).replace(/\n/g, "<br>")}${hinweis}</td>
         <td style="${zellStil}text-align:right;white-space:nowrap;">${mengeZelle}</td>
         <td style="${zellStil}text-align:right;white-space:nowrap;">${preisZelle}</td>
         <td style="${zellStil}text-align:right;white-space:nowrap;">${gesamtZelle}</td>

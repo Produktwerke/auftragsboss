@@ -228,6 +228,23 @@ export function editorSeite(args: {
   tr.drag-oben td { border-top:2px solid var(--akzent); }
   tr.drag-unten td { border-bottom:2px solid var(--akzent); }
   tr.drag-ziel td { outline:2px dashed var(--akzent); outline-offset:-2px; }
+  /* Auswahl-Häkchen zum Zusammenfassen mehrerer Positionen */
+  .k-wahlkopf { width:30px; }
+  td.c-wahl { width:30px; padding:6px 0 6px 6px; text-align:center; }
+  input.wahl { width:17px; height:17px; margin:0; cursor:pointer; accent-color:var(--akzent); vertical-align:middle; }
+  .wahl-mob-box { display:none; }
+  /* Leiste über den Positionen — erscheint, sobald etwas ausgewählt ist */
+  .wahl-leiste { display:none; align-items:center; gap:10px; flex-wrap:wrap;
+    background:#eef4fb; border:1px solid #c9d9ec; border-radius:9px;
+    padding:9px 12px; margin:10px 0 2px; font-size:13.5px; color:#2c3e50; }
+  .wahl-leiste.an { display:flex; }
+  .wahl-leiste.undo { background:#eef7ee; border-color:#bcd9c2; }
+  .wahl-btn { background:var(--akzent); color:#fff; border:none; border-radius:8px;
+    padding:8px 13px; font-size:13.5px; font-weight:700; cursor:pointer; }
+  .wahl-btn:hover { filter:brightness(1.08); }
+  .wahl-btn:disabled { opacity:.5; cursor:default; }
+  .wahl-weg { background:none; border:none; color:#5a6570; text-decoration:underline;
+    cursor:pointer; font-size:13px; padding:0; }
   /* ▲/▼-Verschiebeknöpfe: nur auf dem Handy sichtbar (Desktop zieht am Anfasser) */
   .pfeile { display:none; }
   /* Verschobene Zeile blinkt kurz auf (nach ▲/▼ oder Drag & Drop) */
@@ -332,6 +349,11 @@ export function editorSeite(args: {
     #postab tr.pos-zeile td{ display:block; border-bottom:none; padding:0; text-align:left; }
     /* Anfasser mobil ausblenden — Ziehen per Finger ist unzuverlässig, dafür ▲/▼ */
     #postab tr.pos-zeile td.c-griff{ display:none; }
+    /* Auswahl-Häkchen mobil: nicht als eigene Spalte, sondern in der Fußleiste */
+    #postab tr.pos-zeile td.c-wahl{ display:none; }
+    #postab tr.pos-zeile td.c-del .wahl-mob-box{ display:flex; align-items:center; justify-content:center;
+      width:44px; height:38px; border:1px solid #dfe4e9; border-radius:10px; background:#f7f8fa; cursor:pointer; }
+    #postab tr.pos-zeile td.c-del .wahl-mob-box input.wahl{ width:19px; height:19px; }
     #postab tr.pos-zeile td.c-beschr{ grid-area:beschr; }
     #postab tr.pos-zeile td.c-menge{ grid-area:menge; }
     #postab tr.pos-zeile td.c-einheit{ grid-area:einheit; }
@@ -482,6 +504,7 @@ export function editorSeite(args: {
 
   <div class="karte">
     <label style="margin-top:0;">Positionen</label>
+    <div class="wahl-leiste" id="wahlLeiste"></div>
     <div class="tab-scroll">
     <table id="postab"></table>
     </div>
@@ -747,6 +770,7 @@ function render(){
     const trK = document.createElement('tr');
     trK.className='abschnitt';
     trK.innerHTML =
+      '<td class="k-sp k-wahlkopf"></td>'+
       '<td class="k-sp k-griffkopf"></td>'+
       '<td class="k-name">'+esc(katName(kat))+'</td>'+
       '<td class="r k-sp">Menge</td>'+
@@ -763,7 +787,7 @@ function render(){
         trG.className='geloescht-zeile';
         trG.dataset.i = i; // fürs Wiederfinden nach dem Neuaufbau (Schrumpf-Animation)
         trG.innerHTML =
-          '<td colspan="6" class="gel-td"><span class="gel-name">'+esc(p.beschreibung||'Position')+'</span>'+
+          '<td colspan="7" class="gel-td"><span class="gel-name">'+esc(p.beschreibung||'Position')+'</span>'+
           ' gelöscht — <button type="button" class="gel-undo" onclick="wiederherstellen('+i+')">Rückgängig</button></td>'+
           '<td class="c-del"><button class="loeschen" title="Sofort endgültig entfernen" onclick="endgueltigLoeschen('+i+')">×</button></td>';
         tbody.appendChild(trG);
@@ -773,13 +797,14 @@ function render(){
       const tr = document.createElement('tr');
       tr.className = 'pos-zeile';
       tr.innerHTML =
+        '<td class="c-wahl"><input type="checkbox" class="wahl" '+(p._wahl?'checked ':'')+'title="Zum Zusammenfassen auswählen" onchange="wahlSetzen('+i+',this.checked)"></td>'+
         '<td class="c-griff"><span class="griff" title="Ziehen, um die Position zu verschieben">⠿</span></td>'+
         '<td class="c-beschr" data-label="Beschreibung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this); gedAktualisieren('+i+')">'+esc(p.beschreibung)+'</textarea><div class="hk-box">'+herkunftHtml(p)+'</div></td>'+
         '<td class="r c-menge" data-label="Menge"><input class="pos-menge r" inputmode="decimal" value="'+(p.menge??'')+'" oninput="setNum('+i+',\\'menge\\',this.value,this)"></td>'+
         '<td class="c-einheit" data-label="Einheit">'+einheitZelle(i,p.einheit)+'</td>'+
         '<td class="r c-preis" data-label="Einzelpreis"><input class="pos-preis r" inputmode="decimal" value="'+(p.einzelpreis??'')+'" placeholder="___" oninput="setNum('+i+',\\'einzelpreis\\',this.value,this)"><div class="ged-box ged-desk" data-i="'+i+'">'+gedHtml(p,i)+'</div></td>'+
         '<td class="r zeilensumme" data-label="Gesamt">'+(g==null?OFFEN:euro(g))+'</td>'+
-        '<td class="c-del"><span class="pfeile"><button type="button" class="pfeil" title="Nach oben verschieben" onclick="verschiebePosition('+i+',-1)">▲</button><button type="button" class="pfeil" title="Nach unten verschieben" onclick="verschiebePosition('+i+',1)">▼</button></span><div class="ged-box ged-mob" data-i="'+i+'">'+gedHtml(p,i)+'</div><button class="loeschen" title="Zeile löschen" onclick="loeschen('+i+')">×</button></td>';
+        '<td class="c-del"><label class="wahl-mob-box" title="Zum Zusammenfassen auswählen"><input type="checkbox" class="wahl" '+(p._wahl?'checked ':'')+'onchange="wahlSetzen('+i+',this.checked)"></label><span class="pfeile"><button type="button" class="pfeil" title="Nach oben verschieben" onclick="verschiebePosition('+i+',-1)">▲</button><button type="button" class="pfeil" title="Nach unten verschieben" onclick="verschiebePosition('+i+',1)">▼</button></span><div class="ged-box ged-mob" data-i="'+i+'">'+gedHtml(p,i)+'</div><button class="loeschen" title="Zeile löschen" onclick="loeschen('+i+')">×</button></td>';
       tr.dataset.i = i; // fürs Wiederfinden nach dem Neuaufbau (Bewegungs-Animation)
       dragVerdrahten(tr, p);
       tbody.appendChild(tr);
@@ -788,7 +813,7 @@ function render(){
     // Ablageziel beim Ziehen ("ans Ende dieser Kategorie").
     const trNeu = document.createElement('tr');
     trNeu.className='hinzu';
-    trNeu.innerHTML = '<td colspan="7"><button class="neu" onclick="neuePosition(\\''+escJs(kat)+'\\')">+ Position'+(mehrere?' unter „'+esc(katName(kat))+'“':'')+' hinzufügen</button></td>';
+    trNeu.innerHTML = '<td colspan="8"><button class="neu" onclick="neuePosition(\\''+escJs(kat)+'\\')">+ Position'+(mehrere?' unter „'+esc(katName(kat))+'“':'')+' hinzufügen</button></td>';
     dragZielKategorieEnde(trNeu, kat);
     tbody.appendChild(trNeu);
     tabelle.appendChild(tbody);
@@ -797,6 +822,93 @@ function render(){
   tabelle.querySelectorAll('textarea.pos-beschr').forEach(autoWachs);
   summen();
   stickyAktualisieren();
+  wahlLeisteAktualisieren();
+}
+
+// ── Mehrere Positionen zu EINER Pauschal-Position zusammenfassen ─
+// Viele Betriebe bieten nicht fein aufgedröselt an, sondern 2-3 große
+// Positionen mit Pauschalpreis. Die KI dröselt bewusst fein auf (sicherer
+// Ausgangspunkt) — hier fasst der Handwerker mit zwei Klicks zusammen.
+let wahlUndoVorher = null;   // Positions-Reihenfolge vor dem Zusammenfassen
+let wahlUndoTimer = null;
+
+function wahlSetzen(i, an){
+  positionen[i]._wahl = an;
+  // Desktop- und Handy-Häkchen derselben Zeile synchron halten.
+  document.querySelectorAll('#postab tr.pos-zeile[data-i="'+i+'"] input.wahl')
+    .forEach(c=>{ c.checked = an; });
+  wahlLeisteAktualisieren();
+}
+function wahlAufheben(){
+  positionen.forEach(p=>{ delete p._wahl; });
+  document.querySelectorAll('#postab input.wahl').forEach(c=>{ c.checked = false; });
+  wahlLeisteAktualisieren();
+}
+function wahlLeisteAktualisieren(){
+  const leiste = document.getElementById('wahlLeiste');
+  if(!leiste) return;
+  const anzahl = positionen.filter(p=>p._wahl && !p._geloescht).length;
+  if(anzahl === 0){
+    // Ohne Auswahl bleibt eine evtl. laufende Rückgängig-Anzeige stehen.
+    if(!leiste.classList.contains('undo')) leiste.classList.remove('an');
+    return;
+  }
+  clearTimeout(wahlUndoTimer);
+  leiste.classList.remove('undo');
+  leiste.classList.add('an');
+  leiste.innerHTML =
+    '<span><b>'+anzahl+'</b> Position'+(anzahl===1?'':'en')+' ausgewählt</span>'+
+    '<button type="button" class="wahl-btn" '+(anzahl<2?'disabled title="Mindestens zwei Positionen auswählen"':'')+
+      ' onclick="zusammenfassen()">Zu einer Position zusammenfassen</button>'+
+    '<button type="button" class="wahl-weg" onclick="wahlAufheben()">Auswahl aufheben</button>';
+}
+function zusammenfassen(){
+  const ausgewaehlt = anzeigeListe().filter(p=>p._wahl);
+  if(ausgewaehlt.length < 2) return;
+  wahlUndoVorher = positionen.slice(); // alte Reihenfolge fürs Rückgängig sichern
+  const erste = ausgewaehlt[0];
+  // Beschreibungen als Zeilen untereinander — danach frei editierbar.
+  const beschreibung = ausgewaehlt.map(p=>(p.beschreibung||'').trim()).filter(Boolean).join('\\n');
+  // Pauschalpreis-Startwert: Summe der vorhandenen Zeilensummen; fehlt eine,
+  // bleibt der Preis ehrlich offen (___ €) — nichts wird erfunden.
+  let summe = 0, voll = true;
+  for(const p of ausgewaehlt){
+    const g = zeilensumme(p);
+    if(g == null) voll = false; else summe += g;
+  }
+  const neue = { kategorie: erste.kategorie, beschreibung,
+    menge: 1, einheit: 'pauschal',
+    einzelpreis: voll ? Math.round(summe*100)/100 : null,
+    preisquelle: voll ? 'MANUELL' : 'UNBEKANNT',
+    vorschlag: false, mengeUnsicher: false };
+  positionen.splice(positionen.indexOf(erste), 0, neue);
+  for(const p of ausgewaehlt){
+    const j = positionen.indexOf(p);
+    if(j >= 0) positionen.splice(j, 1);
+  }
+  positionen.forEach(p=>{ delete p._wahl; });
+  render(); markiereGeaendert();
+  zeigeBewegung(neue, null);
+  // Rückgängig-Angebot für ein paar Sekunden anzeigen.
+  const leiste = document.getElementById('wahlLeiste');
+  leiste.classList.add('an','undo');
+  leiste.innerHTML =
+    '<span>✓ '+ausgewaehlt.length+' Positionen zu einer Pauschale zusammengefasst.</span>'+
+    '<button type="button" class="wahl-weg" onclick="zusammenfassenRueckgaengig()">Rückgängig</button>';
+  clearTimeout(wahlUndoTimer);
+  wahlUndoTimer = setTimeout(()=>{
+    leiste.classList.remove('an','undo');
+    wahlUndoVorher = null;
+  }, 10000);
+}
+function zusammenfassenRueckgaengig(){
+  if(!wahlUndoVorher) return;
+  positionen = wahlUndoVorher;
+  wahlUndoVorher = null;
+  clearTimeout(wahlUndoTimer);
+  const leiste = document.getElementById('wahlLeiste');
+  leiste.classList.remove('an','undo');
+  render(); markiereGeaendert();
 }
 
 // ── Klebende Kategorie-Überschriften (nur Handy) ──────────
@@ -1192,7 +1304,7 @@ function pvZeilen(){
       if(g==null) voll=false; else netto+=g;
       const menge = p.einheit==='pauschal' ? 'pauschal'
         : (p.menge==null ? '' : p.menge.toLocaleString('de-DE')+' '+einheitLabel(p.einheit||''));
-      html += '<tr><td>'+nr+'</td><td>'+esc(p.beschreibung)+'</td><td class="r">'+esc(menge)+'</td>'+
+      html += '<tr><td>'+nr+'</td><td>'+esc(p.beschreibung).replace(/\\n/g,'<br>')+'</td><td class="r">'+esc(menge)+'</td>'+
               '<td class="r">'+(p.einzelpreis==null?OFFEN:euro(p.einzelpreis))+'</td>'+
               '<td class="r">'+(g==null?OFFEN:euro(g))+'</td></tr>';
     }
@@ -1238,7 +1350,7 @@ async function speichern(){
     einleitung:val('einleitung'), schlusstext:val('schlusstext'),
     // Gerade gelöschte Zeilen (Rückgängig-Frist) und interne Felder bleiben
     // draußen — gespeichert wird der Zustand, wie er im Angebot landen soll.
-    positionen: positionen.filter(p=>!p._geloescht).map(({_timer,_geloescht,...rest})=>rest)
+    positionen: positionen.filter(p=>!p._geloescht).map(({_timer,_geloescht,_wahl,...rest})=>rest)
   };
   try{
     const r=await fetch('/api/a/'+START.token,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(daten)});

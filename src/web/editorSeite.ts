@@ -241,9 +241,15 @@ export function editorSeite(args: {
   /* Leiste über den Positionen — erscheint, sobald etwas ausgewählt ist */
   .wahl-leiste { display:none; align-items:center; gap:10px; flex-wrap:wrap;
     background:#eef4fb; border:1px solid #c9d9ec; border-radius:9px;
-    padding:9px 12px; margin:10px 0 2px; font-size:13.5px; color:#2c3e50; }
+    padding:9px 12px; margin:10px 0 2px; font-size:13.5px; color:#2c3e50;
+    position:relative; }
   .wahl-leiste.an { display:flex; }
-  .wahl-leiste.undo { background:#eef7ee; border-color:#bcd9c2; }
+  .wahl-leiste.undo { background:#eef7ee; border-color:#bcd9c2; padding-right:38px; }
+  /* Kreuzchen zum sofortigen Ausblenden der Bestätigung (sie verschwindet
+     sonst nach ein paar Sekunden von selbst) */
+  .wahl-zu { position:absolute; top:5px; right:7px; background:none; border:none;
+    font-size:19px; line-height:1; color:#8a939c; cursor:pointer; padding:3px 6px; }
+  .wahl-zu:hover { color:#444; }
   .wahl-btn { background:var(--akzent); color:#fff; border:none; border-radius:8px;
     padding:8px 13px; font-size:13.5px; font-weight:700; cursor:pointer; }
   .wahl-btn:hover { filter:brightness(1.08); }
@@ -910,12 +916,19 @@ function zusammenfassen(){
   leiste.classList.add('an','undo');
   leiste.innerHTML =
     '<span>✓ '+ausgewaehlt.length+' Positionen zu einer Pauschale zusammengefasst.</span>'+
-    '<button type="button" class="wahl-weg" onclick="zusammenfassenRueckgaengig()">Rückgängig</button>';
+    '<button type="button" class="wahl-weg" onclick="zusammenfassenRueckgaengig()">Rückgängig</button>'+
+    '<button type="button" class="wahl-zu" title="Ausblenden" onclick="wahlLeisteSchliessen()">×</button>';
   clearTimeout(wahlUndoTimer);
   wahlUndoTimer = setTimeout(()=>{
     leiste.classList.remove('an','undo');
     wahlUndoVorher = null;
   }, 10000);
+}
+function wahlLeisteSchliessen(){
+  clearTimeout(wahlUndoTimer);
+  wahlUndoVorher = null;
+  const leiste = document.getElementById('wahlLeiste');
+  leiste.classList.remove('an','undo');
 }
 function zusammenfassenRueckgaengig(){
   if(!wahlUndoVorher) return;

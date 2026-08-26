@@ -271,7 +271,8 @@ export function einstellungenSeite(args: {
   .doc th.r,.doc td.r{text-align:right;padding-right:14px;white-space:nowrap;}
   .doc th:last-child,.doc td:last-child{padding-right:0;}
   .doc td{padding:6px 6px 6px 0;border-bottom:1px solid #eef1f3;font-size:11.5px;color:#333;}
-  .doc tr.sum td{border:none;padding:3px 6px 3px 0;color:#444;}
+  .doc tr.sum td{border:none;padding:3px 14px 3px 0;color:#444;}
+  .doc tr.sum td:last-child{padding-right:0;}
   .doc tr.sum.erste td{padding-top:9px;}
   .doc tr.ges td{font-weight:800;color:var(--akzent);border-top:2px solid var(--akzent);border-bottom:none;padding-top:7px;}
   .doc .d-gueltig{font-size:10.5px;color:#666;margin-top:11px;}

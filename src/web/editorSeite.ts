@@ -134,7 +134,8 @@ export function editorSeite(args: {
   .doc th:last-child, .doc td:last-child { padding-right:0; }
   .doc td { padding:6px 6px 6px 0; border-bottom:1px solid #eef1f3; font-size:11.5px; color:#333; vertical-align:top; }
   .doc tr.kat td { font-weight:700; color:#444; padding-top:10px; }
-  .doc tr.sum td { border:none; padding:3px 6px 3px 0; color:#444; }
+  .doc tr.sum td { border:none; padding:3px 14px 3px 0; color:#444; }
+  .doc tr.sum td:last-child { padding-right:0; }
   .doc tr.sum.erste td { padding-top:9px; }
   .doc tr.ges td { font-weight:800; color:var(--akzent); border-top:2px solid var(--akzent);
                    border-bottom:none; padding-top:7px; }

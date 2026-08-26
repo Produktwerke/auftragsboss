@@ -26,7 +26,7 @@ const WEBTEST_NUMMER = "webtest-anonym";
 // vollständiges Angebot mit Gesamtsumme statt vieler ___-€-Lücken. Die KI
 // erfindet ja nichts dazu; was hier fehlt, fehlt auch im Beispiel.
 const BEISPIEL_TEXT =
-  "Angebot für Familie Bär, Bergstraße 12, 67433 Neustadt. Wir renovieren Wohnzimmer und Flur. " +
+  "Angebot für Familie Mustermann, Musterstraße 5, 12345 Musterstadt. Wir renovieren Wohnzimmer und Flur. " +
   "Im Flur die alte Tapete entfernen und die Wände glatt spachteln, pauschal 380 Euro. " +
   "Wände in Wohnzimmer und Flur grundieren und zweimal streichen, zusammen 65 Quadratmeter zu 12,50 Euro. " +
   "Decken streichen, 28 Quadratmeter zu 11 Euro. Anfahrt und Baustelleneinrichtung pauschal 90 Euro. " +

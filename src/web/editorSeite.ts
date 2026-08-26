@@ -250,6 +250,7 @@ export function editorSeite(args: {
   .wahl-btn:disabled { opacity:.5; cursor:default; }
   .wahl-weg { background:none; border:none; color:#5a6570; text-decoration:underline;
     cursor:pointer; font-size:13px; padding:0; }
+  .wahl-hint { font-size:12.5px; color:#5a6570; }
   /* ▲/▼-Verschiebeknöpfe: nur auf dem Handy sichtbar (Desktop zieht am Anfasser) */
   .pfeile { display:none; }
   /* Verschobene Zeile blinkt kurz auf (nach ▲/▼ oder Drag & Drop) */
@@ -354,6 +355,13 @@ export function editorSeite(args: {
     #postab tr.pos-zeile td{ display:block; border-bottom:none; padding:0; text-align:left; }
     /* Anfasser mobil ausblenden — Ziehen per Finger ist unzuverlässig, dafür ▲/▼ */
     #postab tr.pos-zeile td.c-griff{ display:none; }
+    /* Auswahl-Leiste klebt auf dem Handy oben im Sichtfeld, sobald etwas
+       ausgewählt ist — so versteht man die Häkchen sofort und muss zum
+       Zusammenfassen-Knopf nicht hochscrollen. z-index über den klebenden
+       Kategorie-Bannern (5), die schieben sich beim Scrollen darunter durch. */
+    .wahl-leiste.an{ position:sticky; top:8px; z-index:6;
+      box-shadow:0 5px 16px rgba(16,24,40,.22); }
+    .wahl-leiste .wahl-btn{ flex:1 0 100%; padding:11px 12px; }
     /* Auswahl-Häkchen mobil: nicht als eigene Spalte, sondern in der Fußleiste */
     #postab tr.pos-zeile td.c-wahl{ display:none; }
     #postab tr.pos-zeile td.c-del .wahl-mob-box{ display:flex; align-items:center; justify-content:center;
@@ -863,6 +871,9 @@ function wahlLeisteAktualisieren(){
   leiste.classList.add('an');
   leiste.innerHTML =
     '<span><b>'+anzahl+'</b> Position'+(anzahl===1?'':'en')+' ausgewählt</span>'+
+    (anzahl===1
+      ? '<span class="wahl-hint">Hake mindestens eine weitere an, um sie zu einer Pauschal-Position zusammenzufassen.</span>'
+      : '')+
     '<button type="button" class="wahl-btn" '+(anzahl<2?'disabled title="Mindestens zwei Positionen auswählen"':'')+
       ' onclick="zusammenfassen()">Zu einer Position zusammenfassen</button>'+
     '<button type="button" class="wahl-weg" onclick="wahlAufheben()">Auswahl aufheben</button>';

@@ -702,7 +702,8 @@ deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
 
 - **Name entschieden: AuftragsBoss** (Domain AuftragsBoss.de). Alle kundensichtbaren
   Texte umbenannt; interner Ordner bleibt `voiceprotokoll-guard`.
-- **Preismodell:** 3 Stufen **49 / 99 / 199 €**, Kontingente 20/80/200 Angebote/Monat,
+- **Preismodell:** 3 Stufen **49 / 99 / 199 €**, Kontingente **50/120/300** Angebote/Monat (Dirks
+  Entscheidung 26.08.2026 — die Landingpage-Zahlen gelten; Cockpit-Tarifkarten + Stripe-Beschreibungen angeglichen),
   Logo/Export in allen Stufen, erste 3 Angebote gratis, **keine Einrichtungsgebühr**.
   Marge ~90 % (API ~5 Cent/Angebot). Noch offen: echte Zahlungsbereitschaft testen.
 - **Landingpage** unter `marketing/` (deploybare Seite: `index.html` + `fonts/` +

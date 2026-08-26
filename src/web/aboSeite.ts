@@ -38,9 +38,9 @@ export function aboSeite(args: {
 
   // Tarif-Karten — Kontingente müssen zur Preisseite der Landingpage passen.
   const TARIF_KARTEN = [
-    { key: "basis", name: "Basis", preis: 49, angebote: 20, beliebt: false },
-    { key: "profi", name: "Profi", preis: 99, angebote: 80, beliebt: true },
-    { key: "team", name: "Team", preis: 199, angebote: 200, beliebt: false },
+    { key: "basis", name: "Basis", preis: 49, angebote: 50, beliebt: false },
+    { key: "profi", name: "Profi", preis: 99, angebote: 120, beliebt: true },
+    { key: "team", name: "Team", preis: 199, angebote: 300, beliebt: false },
   ];
 
   let aboPanel: string;

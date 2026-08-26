@@ -20,10 +20,11 @@ if (!key?.startsWith("sk_")) {
 const modus = key.startsWith("sk_test_") ? "TESTMODUS" : "LIVE";
 const stripe = new Stripe(key);
 
+// Kontingente müssen zur Preisseite der Landingpage passen (50/120/300).
 const TARIFE = [
-  { lookup: "basis", name: "AuftragsBoss Basis", nettoCent: 4900, angebote: 20 },
-  { lookup: "profi", name: "AuftragsBoss Profi", nettoCent: 9900, angebote: 80 },
-  { lookup: "team", name: "AuftragsBoss Team", nettoCent: 19900, angebote: 200 },
+  { lookup: "basis", name: "AuftragsBoss Basis", nettoCent: 4900, angebote: 50 },
+  { lookup: "profi", name: "AuftragsBoss Profi", nettoCent: 9900, angebote: 120 },
+  { lookup: "team", name: "AuftragsBoss Team", nettoCent: 19900, angebote: 300 },
 ];
 
 console.log(`Stripe-Einrichtung (${modus}) …\n`);
@@ -35,14 +36,18 @@ const vorhandene = await stripe.prices.list({
 });
 
 for (const tarif of TARIFE) {
+  const beschreibung = `AuftragsBoss-Abo ${tarif.name.split(" ")[1]}: bis zu ${tarif.angebote} Angebote pro Monat. Preis zzgl. MwSt.`;
   const preis = vorhandene.data.find((p) => p.lookup_key === tarif.lookup);
   if (preis) {
-    console.log(`✓ ${tarif.name}: Preis existiert schon (${preis.id})`);
+    // Produkt-Beschreibung nachziehen (z. B. geänderte Kontingente) —
+    // der Preis selbst bleibt unangetastet.
+    await stripe.products.update(String(preis.product), { name: tarif.name, description: beschreibung });
+    console.log(`✓ ${tarif.name}: Preis existiert schon (${preis.id}), Beschreibung aktualisiert`);
     continue;
   }
   const produkt = await stripe.products.create({
     name: tarif.name,
-    description: `AuftragsBoss-Abo ${tarif.name.split(" ")[1]}: bis zu ${tarif.angebote} Angebote pro Monat. Preis zzgl. MwSt.`,
+    description: beschreibung,
   });
   const neu = await stripe.prices.create({
     product: produkt.id,

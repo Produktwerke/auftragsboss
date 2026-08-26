@@ -120,6 +120,33 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 26.08.2026 — Positionen zusammenfassen, Beispiel-Angebot komplett, Landingpage-Demo plausibilisiert, Vorschau-Feinschliff, Betreiber-WhatsApp FERTIG (alles ✅ LIVE — VPS deployt + IONOS hochgeladen):**
+> - **Editor: Positionen zusammenfassen** (26136e7): Auswahl-Häkchen je Position (Desktop-Spalte vor dem
+>   Anfasser, mobil Kachel in der Karten-Fußleiste, synchron) → Leiste „N ausgewählt → Zu einer Position
+>   zusammenfassen" (aktiv ab 2). Ergebnis: Beschreibungen als Zeilen untereinander, pauschal/Menge 1,
+>   Preis = Summe der Zeilensummen (fehlt eine → offen, nichts wird erfunden), Herkunft MANUELL; 10 s
+>   Rückgängig-Fenster stellt alles wieder her. Hintergrund: Maler bieten oft 2-3 große Pauschal-Positionen an;
+>   die KI dröselt bewusst weiter fein auf (zusammenfassen = 2 Klicks, auseinanderpflücken = Handarbeit).
+>   **Mehrzeilige Beschreibungen** jetzt überall sauber: Word (TextRun-breaks), E-Mail (<br>), Editor-Vorschau
+>   (<br>); PDF konnte es schon (pdfkit nativ). Interne Felder `_wahl` (wie `_geloescht`) beim Speichern gefiltert.
+> - **Web-Test „Kein Mikro? Beispiel ansehen" liefert jetzt ein VOLLSTÄNDIGES Angebot** (8ae9637): Der Knopf
+>   schickt BEISPIEL_TEXT durch die ECHTE KI-Pipeline — Lösung war ein komplett diktiertes Beispiel (volle
+>   Adresse „Familie Bär, Bergstraße 12, 67433 Neustadt", alle Preise, große Pauschal-Positionen). Ergebnis
+>   (echt verifiziert): 2 Material- + 4 Arbeits-Positionen, 0 Lücken, Gesamt 2.273,50 €.
+> - **Landingpage-Demo-Angebot schlüssig zum Diktat** (da5b954, 239706e; index.html BEI IONOS HOCHGELADEN):
+>   Diktiertes „Möbel/Boden abdecken" fehlte komplett, dazu Material ergänzt (Folie/Vlies, Weißlack,
+>   Tiefengrund/Spachtel — bewusst KEINE neue Tapete: sie kommt nur runter, gestrichen statt tapeziert);
+>   Preise plausibilisiert (Wände 10,50 €/m², Sockelleisten 9,50 €/lfm inkl. Montage; Mengen gegen
+>   Geometrie/Ergiebigkeit geprüft). Neu: Netto 2.428,50 / Gesamt 2.889,92 €. 10 Positionen, Karte wächst mit.
+> - **A4-Vorschau-Bündigkeit** (8f6659d): rechtsbündige Spalten hatten padding-right:0 → „pauschal" klebte am
+>   Einzelpreis, „Gesamtbetrag" am Betrag. Jetzt 14 px Luft zwischen Zahlenspalten, letzte Spalte bündig —
+>   in Editor- UND Einstellungs-Vorschau.
+> - **Betreiber-WhatsApp KOMPLETT FERTIG:** Meta hat `neuer_kunde` genehmigt; Ping-Test kam auf Dirks Handy an
+>   (kurzer Schreck: „Musterfirma GmbH / Basis (49 €)" sind die Beispielwerte aus betreiber-ping.ts — keine
+>   echte Buchung, Cockpit/Logs leer, verifiziert). Bei echten Buchungen steht der echte Firmenname drin.
+> - 145 Tests + test:demo grün; Browser-E2E Desktop + 375 px. **Offen: Stripe Etappe 3** (Kundenportal,
+>   Zahlungsausfall-UX, LIVE-Umstellung) — dann können echte Kunden zahlen.
+>
 > **Update 14.08.2026 (2) — STRIPE-ABO-ANBINDUNG Etappen 1+2 LIVE, Testmodus-Durchstich ERFOLGREICH (Commits d0a2f95…6acd2f0, 145 Tests grün; deployt inkl. npm install + db push):**
 > - **Etappe 1:** `POST /webhook/stripe` (Signaturprüfung auf rohem Body, eigener Buffer-Parser, fail-closed ohne
 >   .env-Schlüssel). `stripeVerarbeitung.ts`: checkout.session.completed → Abo AKTIV (+stripeCustomerId/-SubscriptionId,

@@ -127,7 +127,11 @@ export function editorSeite(args: {
   .doc th { background:none; text-align:left; font-size:10px; text-transform:uppercase;
             letter-spacing:.04em; color:#8a9099; border-bottom:1px solid #d7dae0;
             padding:0 6px 5px 0; font-weight:700; }
-  .doc th.r, .doc td.r { text-align:right; padding-right:0; white-space:nowrap; }
+  /* Rechte Spalten: Luft ZWISCHEN den Zahlenspalten (sonst klebt "pauschal"
+     am Einzelpreis und "Gesamtbetrag" am Betrag); nur die letzte Spalte
+     schließt bündig mit dem Blattrand ab. */
+  .doc th.r, .doc td.r { text-align:right; padding-right:14px; white-space:nowrap; }
+  .doc th:last-child, .doc td:last-child { padding-right:0; }
   .doc td { padding:6px 6px 6px 0; border-bottom:1px solid #eef1f3; font-size:11.5px; color:#333; vertical-align:top; }
   .doc tr.kat td { font-weight:700; color:#444; padding-top:10px; }
   .doc tr.sum td { border:none; padding:3px 6px 3px 0; color:#444; }

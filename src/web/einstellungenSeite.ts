@@ -268,7 +268,8 @@ export function einstellungenSeite(args: {
   .doc .d-text{font-size:11.5px;color:#333;white-space:pre-wrap;margin:7px 0;line-height:1.55;}
   .doc table{width:100%;border-collapse:collapse;margin:9px 0;}
   .doc th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#8a9099;border-bottom:1px solid #d7dae0;padding:0 6px 5px 0;font-weight:700;}
-  .doc th.r,.doc td.r{text-align:right;padding-right:0;white-space:nowrap;}
+  .doc th.r,.doc td.r{text-align:right;padding-right:14px;white-space:nowrap;}
+  .doc th:last-child,.doc td:last-child{padding-right:0;}
   .doc td{padding:6px 6px 6px 0;border-bottom:1px solid #eef1f3;font-size:11.5px;color:#333;}
   .doc tr.sum td{border:none;padding:3px 6px 3px 0;color:#444;}
   .doc tr.sum.erste td{padding-top:9px;}

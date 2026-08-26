@@ -21,10 +21,16 @@ import { spurEvent } from "../analytics/event.js";
 const WEBTEST_NUMMER = "webtest-anonym";
 
 // Beispiel-Diktat für den "Beispiel"-Knopf (wer nicht selbst sprechen mag).
+// Bewusst KOMPLETT diktiert (volle Adresse, alle Preise, wenige große
+// Pauschal-Positionen wie im echten Maler-Alltag) — so entsteht ein
+// vollständiges Angebot mit Gesamtsumme statt vieler ___-€-Lücken. Die KI
+// erfindet ja nichts dazu; was hier fehlt, fehlt auch im Beispiel.
 const BEISPIEL_TEXT =
-  "Kunde Familie Bär, Bergstraße 12. Wohnzimmer, ungefähr 45 Quadratmeter Wandfläche, " +
-  "vorhandene Raufaser bleibt, weiß streichen, zweimal. Decke auch streichen, etwa 20 Quadratmeter. " +
-  "Alte Tapete im Flur entfernen. Anfahrt 40 Euro.";
+  "Angebot für Familie Bär, Bergstraße 12, 67433 Neustadt. Wir renovieren Wohnzimmer und Flur. " +
+  "Im Flur die alte Tapete entfernen und die Wände glatt spachteln, pauschal 380 Euro. " +
+  "Wände in Wohnzimmer und Flur grundieren und zweimal streichen, zusammen 65 Quadratmeter zu 12,50 Euro. " +
+  "Decken streichen, 28 Quadratmeter zu 11 Euro. Anfahrt und Baustelleneinrichtung pauschal 90 Euro. " +
+  "Material: Wandfarbe und Tiefengrund pauschal 260 Euro, dazu Abdeckvlies und Kleinmaterial pauschal 60 Euro.";
 
 // ── IP-Limits (im Arbeitsspeicher) ─────────────────────────
 interface IpStand {

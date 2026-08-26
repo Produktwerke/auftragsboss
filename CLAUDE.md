@@ -144,8 +144,19 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 > - **Betreiber-WhatsApp KOMPLETT FERTIG:** Meta hat `neuer_kunde` genehmigt; Ping-Test kam auf Dirks Handy an
 >   (kurzer Schreck: „Musterfirma GmbH / Basis (49 €)" sind die Beispielwerte aus betreiber-ping.ts — keine
 >   echte Buchung, Cockpit/Logs leer, verifiziert). Bei echten Buchungen steht der echte Firmenname drin.
+> - **Nachmittags-Runde (alles ✅ LIVE, VPS + IONOS):** (a) A4-Vorschau-Bündigkeit: alle Zahlenspalten 14 px
+>   Luft, Summenzeilen exakt bündig zur Betragsspalte (eigene tr.sum-Regel übersteuerte den Fix — in Editor-
+>   UND Einstellungs-Vorschau). (b) Beispiel-Kunde heißt Familie Mustermann, Musterstraße 5, 12345 Musterstadt.
+>   (c) Landingpage-Demo kompakter (engere Zeilen, keine Zweizeiler; Karte 515→463 px). (d) **Zusammenfassen
+>   mobil:** Auswahl-Leiste klebt sticky im Sichtfeld (top:8px, z6 über den Kategorie-Bannern), Erklärtext beim
+>   ersten Haken, Knopf volle Breite; Bestätigungs-Overlay hat ×-Kreuzchen (wahlLeisteSchliessen). (e) **Alle
+>   fünf /testen-Links öffnen im NEUEN Tab** (Dirks finale Entscheidung — Preiskarten-Knöpfe gingen vorher auf
+>   toten #testen-Anker). (f) **Kontingente vereinheitlicht auf 50/120/300** (Landingpage gilt, Dirks
+>   Entscheidung): Cockpit-Tarifkarten + Stripe-Produktbeschreibungen angepasst; stripe-einrichten.ts zieht
+>   Beschreibungen bestehender Produkte jetzt nach (auf dem Server erneut gelaufen).
 > - 145 Tests + test:demo grün; Browser-E2E Desktop + 375 px. **Offen: Stripe Etappe 3** (Kundenportal,
->   Zahlungsausfall-UX, LIVE-Umstellung) — dann können echte Kunden zahlen.
+>   Zahlungsausfall-UX, LIVE-Umstellung) — dann können echte Kunden zahlen. Dirk wollte außerdem das
+>   Server-Root-Passwort ändern (Anleitung per `passwd` gegeben, Vollzug nicht bestätigt).
 >
 > **Update 14.08.2026 (2) — STRIPE-ABO-ANBINDUNG Etappen 1+2 LIVE, Testmodus-Durchstich ERFOLGREICH (Commits d0a2f95…6acd2f0, 145 Tests grün; deployt inkl. npm install + db push):**
 > - **Etappe 1:** `POST /webhook/stripe` (Signaturprüfung auf rohem Body, eigener Buffer-Parser, fail-closed ohne

@@ -507,7 +507,8 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 > - **Einstellungen**: zweispaltige **Live-Angebotsvorschau** (ganzes Blatt inkl. Summen + Fußzeile, färbt sich live);
 >   **Hex-Farbeingabe**; **Feld-Hinweise** (wo jedes Feld im Angebot erscheint). **Word + PDF Fußzeile** konsistent
 >   **zweizeilig** (Firma/Anschrift/Ansprechpartner // USt-IdNr. + Bank) — Ansprechpartner + Bank jetzt in **beiden** Formaten.
-> - **Maler-Fachwissen ins Angebot** (`src/maler/prompt.ts`, hinter `FEATURE_MALER_SCOPE`, **noch AUS**): speist die
+> - **Maler-Fachwissen ins Angebot** (`src/maler/prompt.ts`, hinter `FEATURE_MALER_SCOPE`, **noch AUS** — seit
+>   07.08. AN, am 26.08. in der VPS-.env erneut bestätigt): speist die
 >   YAML-Wissensbasis in den KI-Systemprompt (Positionsbibliothek + fachliche Reihenfolge, A-Pflicht-Rückfragen, Scope).
 >   An einem Maler-Diktat verifiziert (korrekte Reihenfolge/Benennung, Materialketten, Fassade korrekt ausgelassen).
 > - **Deploy:** tar enthält jetzt den **`knowledge/`-Ordner** + neue Deps. `npx prisma db push` für die Import-Tabellen nötig.

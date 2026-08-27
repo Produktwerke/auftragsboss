@@ -37,6 +37,7 @@ import { direkttestConfig } from "../config.js";
 import { einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
 import { cockpitLink, einstellungenLink } from "./tokens.js";
 import { hatAdminSitzung } from "./adminAuth.js";
+import { legeLeadAnUndLadeEin } from "../lead/onboarding.js";
 import type { FastifyRequest } from "fastify";
 
 function adminOk(token: string): boolean {
@@ -313,6 +314,28 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
     });
     await protokolliere(h.id, h.firma, "ENTSPERRT", h.blockiertGrund ? `war blockiert wegen: ${h.blockiertGrund}` : "Konto wieder frei");
     return reply.send({ ok: true, meldung: "Konto entsperrt." });
+  });
+
+  // ── Telefon-Lead einladen (Akquise mit dokumentiertem WhatsApp-Opt-in) ─
+  for (const pfad of beide("/lead-einladen")) app.post<{
+    Params: { token?: string };
+    Body: { nummer?: string; anrede?: string; firma?: string; quelle?: string };
+  }>(pfad, async (req, reply) => {
+    if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
+    const ergebnis = await legeLeadAnUndLadeEin(prisma, {
+      nummer: req.body.nummer ?? "",
+      anrede: req.body.anrede ?? "",
+      firma: req.body.firma,
+      optInQuelle: req.body.quelle,
+    });
+    if ("fehler" in ergebnis) return reply.code(400).send({ fehler: ergebnis.fehler });
+    await protokolliere(
+      ergebnis.handwerker.id,
+      ergebnis.handwerker.firma || ergebnis.handwerker.name,
+      "LEAD_EINGELADEN",
+      `WhatsApp-Einladung an ${ergebnis.handwerker.whatsappNummer} (Opt-in: ${ergebnis.handwerker.optInQuelle})`,
+    );
+    return reply.send({ ok: true, meldung: `Einladung an ${ergebnis.handwerker.whatsappNummer} gesendet.` });
   });
 
   // ── Gutschrift (Freimonate) ───────────────────────────

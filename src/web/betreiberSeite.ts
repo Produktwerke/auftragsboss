@@ -247,6 +247,31 @@ export function betreiberListe(args: {
     <thead><tr><th>Betrieb</th><th>Kontakt</th><th>Mitglied seit</th><th style="text-align:right;">Angebote</th><th>Letzte Aktivität</th><th>Abo</th><th style="text-align:right;">Umsatz</th><th>Status</th></tr></thead>
     <tbody>${zeilenHtml || `<tr><td colspan="8" style="text-align:center;color:#888;padding:26px;">Keine Betriebe für diesen Filter.</td></tr>`}</tbody>
   </table>
+  </div>
+
+  <div class="karte" style="margin-top:22px;">
+    <h2 style="margin-top:0;">📞 Telefon-Lead einladen</h2>
+    <p style="margin:0 0 12px;font-size:13.5px;color:#888;line-height:1.5;">
+      Nach einem Telefonat mit <b>ausdrücklicher WhatsApp-Einwilligung</b>: Lead anlegen und die
+      Einladungs-Vorlage mit den Antwort-Knöpfen senden. Der Interessent startet als Test-Konto
+      mit dem üblichen Gratis-Kontingent.
+    </p>
+    <form class="zeile" data-post="${basis}/lead-einladen" data-frage="WhatsApp-Einladung an diese Nummer senden? Nur mit vorher erteilter Einwilligung!">
+      <label class="feld">Handynummer
+        <input name="nummer" required placeholder="z. B. 0176 1234567">
+      </label>
+      <label class="feld">Anrede (steht in der Nachricht)
+        <input name="anrede" required minlength="2" placeholder="z. B. Herr Müller">
+      </label>
+      <label class="feld">Firma (optional)
+        <input name="firma" placeholder="z. B. Malerbetrieb Müller">
+      </label>
+      <label class="feld">Einwilligung eingeholt durch
+        <input name="quelle" value="telefonat">
+      </label>
+      <button type="submit">Einladung senden</button>
+      <span class="meldung"></span>
+    </form>
   </div>`,
   );
 }

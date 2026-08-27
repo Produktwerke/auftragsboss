@@ -1,0 +1,156 @@
+// Telefon-Akquise-Onboarding: Nach einem Erstgespräch (mit ausdrücklicher
+// WhatsApp-Einwilligung!) schreibt AuftragsBoss den Interessenten ZUERST an.
+//
+// Ablauf (bewusst so kurz wie möglich — der Lead soll binnen Sekunden vom
+// Leser zum Anwender werden, keine Mini-Landingpage im Chat):
+//
+//   Betreiber legt Lead im Cockpit an → genehmigte Meta-VORLAGE mit zwei
+//   Schnellantwort-Knöpfen [Ja, los geht's] [Kurz erklären] → Klick öffnet
+//   das 24-h-Fenster → EINE kurze Aufforderung zur Sprachnachricht → die
+//   normale Angebots-Pipeline übernimmt (Test-Konto, 3 Gratis-Angebote).
+//
+// Schickt der Lead direkt eine Sprachnachricht ohne Knopfdruck, funktioniert
+// das genauso (die Pipeline behandelt ihn wie jedes Test-Konto).
+//
+// WICHTIG (Meta): Die Erstnachricht MUSS eine genehmigte Vorlage sein
+// (business-initiiert). Das Opt-in wird mit Zeitpunkt und Quelle am
+// Handwerker dokumentiert (Meta-Vorgabe bei Akquise-Nachrichten).
+import type { Handwerker, PrismaClient } from "@prisma/client";
+import { sendeWhatsAppText, sendeWhatsAppKnoepfe, sendeWhatsAppVorlage } from "../whatsapp/send.js";
+import { spurEvent } from "../analytics/event.js";
+import { normalisiereHandy } from "../config.js";
+
+// Kennungen der Antwort-Knöpfe (kommen im Webhook als knopfPayload zurück).
+export const KNOPF_JA = "LEAD_JA";
+export const KNOPF_ERKLAEREN = "LEAD_ERKLAEREN";
+export const KNOPF_AUSPROBIEREN = "LEAD_AUSPROBIEREN";
+
+/** Name der bei Meta genehmigten Einladungs-Vorlage (überschreibbar per .env). */
+export function leadVorlagenName(): string {
+  return process.env.LEAD_VORLAGE?.trim() || "angebot_ausprobieren";
+}
+
+// Die EINE Aufforderung nach "Ja, los geht's" — danach wird gewartet, nichts
+// weiter gesendet. (Hausregel: keine Gedankenstriche in Nutzertexten.)
+const AUFFORDERUNG =
+  "Perfekt. Denk an einen echten Auftrag, den du gerade auf dem Tisch hast.\n\n" +
+  "Schick mir einfach eine Sprachnachricht und erzähl mir, was gemacht werden soll. " +
+  "So, wie du es einem Mitarbeiter erklären würdest. 🎙️";
+
+const ERKLAERUNG =
+  "Ganz einfach: Du erzählst mir per Sprachnachricht, was beim Kunden gemacht werden soll. " +
+  "Ich fasse den Auftrag zusammen, frage bei Bedarf kurz nach und erstelle daraus deinen Angebotsentwurf.\n\n" +
+  "Preise musst du nicht diktieren. Was fehlt, bleibt im Entwurf einfach offen.";
+
+export type LeadSender = {
+  vorlage: typeof sendeWhatsAppVorlage;
+  text: typeof sendeWhatsAppText;
+  knoepfe: typeof sendeWhatsAppKnoepfe;
+};
+const echterSender: LeadSender = {
+  vorlage: sendeWhatsAppVorlage,
+  text: sendeWhatsAppText,
+  knoepfe: sendeWhatsAppKnoepfe,
+};
+
+/**
+ * Lead anlegen und die Einladungs-Vorlage senden (aus dem Betreiber-Cockpit).
+ * Gibt bei Erfolg den Handwerker zurück, sonst eine Fehlermeldung fürs UI.
+ */
+export async function legeLeadAnUndLadeEin(
+  prisma: PrismaClient,
+  args: { nummer: string; anrede: string; firma?: string; optInQuelle?: string },
+  sender: LeadSender = echterSender,
+): Promise<{ handwerker: Handwerker } | { fehler: string }> {
+  const nummer = normalisiereHandy(args.nummer);
+  if (!nummer) return { fehler: "Bitte eine gültige Handynummer angeben (z. B. 0176 1234567)." };
+  const anrede = args.anrede.trim();
+  if (anrede.length < 2) return { fehler: "Bitte die Anrede angeben (z. B. Herr Müller), sie steht in der Nachricht." };
+
+  const vorhanden = await prisma.handwerker.findUnique({ where: { whatsappNummer: nummer } });
+  if (vorhanden) {
+    return { fehler: `Diese Nummer ist schon im System (${vorhanden.firma || vorhanden.name || "ohne Name"}).` };
+  }
+
+  const handwerker = await prisma.handwerker.create({
+    data: {
+      whatsappNummer: nummer,
+      name: anrede,
+      firma: (args.firma ?? "").trim(),
+      email: "",
+      istTest: true, // startet mit dem Gratis-Kontingent wie jeder Test
+      leadQuelle: "TELEFON",
+      optInAm: new Date(),
+      optInQuelle: (args.optInQuelle ?? "telefonat").trim() || "telefonat",
+      onboardingStatus: "EINGELADEN",
+    },
+  });
+  await spurEvent(prisma, "LEAD_ANGELEGT", {
+    handwerkerId: handwerker.id,
+    data: { quelle: handwerker.optInQuelle },
+  });
+
+  const ok = await sender.vorlage(nummer, leadVorlagenName(), [anrede], [KNOPF_JA, KNOPF_ERKLAEREN]);
+  if (!ok) {
+    // Lead bleibt angelegt (Opt-in ist dokumentiert) — der Betreiber sieht den
+    // Fehler und kann es erneut versuchen (z. B. Vorlage noch nicht genehmigt).
+    return { fehler: "Lead angelegt, aber die WhatsApp-Einladung konnte nicht gesendet werden. Ist die Vorlage bei Meta genehmigt?" };
+  }
+  await spurEvent(prisma, "LEAD_EINLADUNG_GESENDET", { handwerkerId: handwerker.id });
+  return { handwerker };
+}
+
+/**
+ * Klick auf einen Onboarding-Knopf verarbeiten (aus dem Webhook, ohne KI).
+ * Idempotent: doppelt zugestellte Klicks lösen keine doppelte Aufforderung aus.
+ */
+export async function verarbeiteOnboardingKnopf(
+  prisma: PrismaClient,
+  handwerker: Handwerker,
+  payload: string,
+  sender: LeadSender = echterSender,
+): Promise<void> {
+  if (payload === KNOPF_JA || payload === KNOPF_AUSPROBIEREN) {
+    // Schutz gegen doppelte Webhooks/Doppelklicks binnen Sekunden.
+    if (handwerker.onboardingStatus === "WARTET_AUF_AUFTRAG") return;
+    await prisma.handwerker.update({
+      where: { id: handwerker.id },
+      data: { onboardingStatus: "WARTET_AUF_AUFTRAG" },
+    });
+    await spurEvent(prisma, "LEAD_KNOPF", {
+      handwerkerId: handwerker.id,
+      data: { knopf: payload === KNOPF_JA ? "ja" : "ausprobieren" },
+    });
+    await sender.text(handwerker.whatsappNummer, AUFFORDERUNG);
+    return;
+  }
+
+  if (payload === KNOPF_ERKLAEREN) {
+    if (handwerker.onboardingStatus === "ERKLAERT") return;
+    await prisma.handwerker.update({
+      where: { id: handwerker.id },
+      data: { onboardingStatus: "ERKLAERT" },
+    });
+    await spurEvent(prisma, "LEAD_KNOPF", { handwerkerId: handwerker.id, data: { knopf: "erklaeren" } });
+    await sender.knoepfe(handwerker.whatsappNummer, ERKLAERUNG, [
+      { id: KNOPF_AUSPROBIEREN, titel: "Angebot ausprobieren" },
+    ]);
+    return;
+  }
+  // Unbekannte Kennung: bewusst still ignorieren (kein Rätsel-Text an den Nutzer).
+}
+
+/**
+ * Erste ECHTE Eingabe eines Leads (Sprache/Foto/Text, auch ohne Knopfdruck):
+ * Onboarding als erledigt markieren. Läuft VOR der normalen Pipeline, ändert
+ * an ihr nichts. Gibt zurück, ob es die erste Eingabe war (fürs Tracking).
+ */
+export async function markiereLeadAktiv(prisma: PrismaClient, handwerker: Handwerker): Promise<boolean> {
+  if (!handwerker.onboardingStatus || handwerker.onboardingStatus === "AKTIV") return false;
+  await prisma.handwerker.updateMany({
+    where: { id: handwerker.id, NOT: { onboardingStatus: "AKTIV" } },
+    data: { onboardingStatus: "AKTIV" },
+  });
+  await spurEvent(prisma, "LEAD_ERSTE_EINGABE", { handwerkerId: handwerker.id });
+  return true;
+}

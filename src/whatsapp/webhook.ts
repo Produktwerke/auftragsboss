@@ -23,6 +23,28 @@ interface WhatsAppMessage {
   audio?: { id: string; mime_type: string };
   image?: { id: string; mime_type: string; caption?: string };
   text?: { body: string };
+  // Klick auf einen Schnellantwort-Knopf einer VORLAGE
+  button?: { payload?: string; text?: string };
+  // Klick auf einen Antwort-Knopf einer interaktiven Nachricht (24-h-Fenster)
+  interactive?: { type?: string; button_reply?: { id?: string; title?: string } };
+}
+
+/** Eine Meta-Nachricht in unsere Pipeline-Eingabe übersetzen (pur, testbar).
+ *  Sprache, Foto und Text sind gleichwertige Auftrags-Eingaben; Knopf-Klicks
+ *  (Vorlagen-Schnellantworten und interaktive Knöpfe) tragen ihre Kennung. */
+export function extrahiereEingabe(msg: WhatsAppMessage):
+  | { vonNummer: string; mediaId?: string; bildMediaId?: string; text?: string; knopfPayload?: string }
+  | null {
+  if (msg.type === "audio" && msg.audio) return { vonNummer: msg.from, mediaId: msg.audio.id };
+  if (msg.type === "image" && msg.image) return { vonNummer: msg.from, bildMediaId: msg.image.id };
+  if (msg.type === "text" && msg.text) return { vonNummer: msg.from, text: msg.text.body };
+  if (msg.type === "button" && msg.button?.payload) {
+    return { vonNummer: msg.from, knopfPayload: msg.button.payload };
+  }
+  if (msg.type === "interactive" && msg.interactive?.button_reply?.id) {
+    return { vonNummer: msg.from, knopfPayload: msg.interactive.button_reply.id };
+  }
+  return null;
 }
 
 interface WebhookBody {
@@ -94,15 +116,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     // so liefern, wie es ihm im Moment leichter fällt (diktieren, Aufmaß-Zettel
     // fotografieren oder tippen).
     for (const msg of messages) {
-      const eingabe =
-        msg.type === "audio" && msg.audio
-          ? { vonNummer: msg.from, mediaId: msg.audio.id }
-          : msg.type === "image" && msg.image
-            ? { vonNummer: msg.from, bildMediaId: msg.image.id }
-            : msg.type === "text" && msg.text
-              ? { vonNummer: msg.from, text: msg.text.body }
-              : null;
-
+      const eingabe = extrahiereEingabe(msg);
       if (!eingabe) continue;
 
       // Fire-and-forget mit eigenem Error-Handling — ein Fehler in einer

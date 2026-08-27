@@ -26,6 +26,7 @@ import { effektivePreisliste, einstellungenTokenBereit } from "./betrieb/betrieb
 import { willFeedback, extrahiereFeedback, FEEDBACK_FENSTER_MINUTEN } from "./feedback.js";
 import { werbeCodeBereit, EMPFEHLUNG_AB_ANGEBOT } from "./empfehlung.js";
 import { starteTestFuerNeueNummer, testNachrichtBlockiert } from "./direkttest.js";
+import { verarbeiteOnboardingKnopf, markiereLeadAktiv } from "./lead/onboarding.js";
 import { direkttestConfig, featureConfig } from "./config.js";
 import { validierePositionen } from "./validierung/validator.js";
 import { schlagePreiseVor } from "./betrieb/preisgedaechtnis.js";
@@ -99,12 +100,18 @@ export async function verarbeiteNachricht(args: {
   mediaId?: string; // Sprachnachricht
   bildMediaId?: string; // Foto/Screenshot (Aufmaß-Zettel, Handy-Notiz)
   text?: string; // Textnachricht
+  knopfPayload?: string; // Klick auf einen Antwort-Knopf (Lead-Onboarding)
 }): Promise<void> {
-  const { vonNummer, mediaId, bildMediaId, text } = args;
-  const kanal = mediaId ? "sprache" : bildMediaId ? "foto" : "text";
+  const { vonNummer, mediaId, bildMediaId, text, knopfPayload } = args;
+  const kanal = mediaId ? "sprache" : bildMediaId ? "foto" : knopfPayload ? "knopf" : "text";
 
   // 1. Absender kennen wir? (Kein Login — die Nummer IST die Identität)
   let handwerker = await prisma.handwerker.findUnique({ where: { whatsappNummer: vonNummer } });
+
+  // Knopf-Klick von einer unbekannten Nummer: kann regulär nicht vorkommen
+  // (Knöpfe bekommen nur angelegte Leads) — still ignorieren, KEIN Test-Konto
+  // anlegen und keine Verarbeitung anstoßen.
+  if (!handwerker && knopfPayload) return;
 
   // Unbekannte Nummer: Ist die Test-Funktion an, wird daraus ein automatisches
   // Test-Konto ("Direkt testen" von der Landingpage). Sonst die gewohnte
@@ -127,6 +134,18 @@ export async function verarbeiteNachricht(args: {
       "⏸️ Dein AuftragsBoss-Konto ist gerade pausiert. Melde dich bitte kurz bei uns, dann klären wir das: kontakt@auftragsboss.de",
     );
     return;
+  }
+
+  // Lead-Onboarding: Klick auf einen Antwort-Knopf (Telefon-Akquise) — kurze,
+  // feste Antworten ohne KI, ohne Kontingent-Verbrauch. Danach fertig.
+  if (knopfPayload) {
+    await verarbeiteOnboardingKnopf(prisma, handwerker, knopfPayload);
+    return;
+  }
+  // Erste echte Eingabe eines eingeladenen Leads (auch ohne Knopfdruck):
+  // Onboarding als erledigt markieren, dann ganz normal weiterverarbeiten.
+  if (handwerker.onboardingStatus && handwerker.onboardingStatus !== "AKTIV") {
+    await markiereLeadAktiv(prisma, handwerker);
   }
 
   // Produktmetrik (PII-frei): eingehende Nachricht + Kanal (Sprache/Text/Foto).
@@ -157,8 +176,10 @@ export async function verarbeiteNachricht(args: {
       return;
     }
     // handwerker.testNachrichten trägt hier noch den Stand VOR dieser Nachricht:
-    // 0 = allererste Nachricht dieser Nummer → einmal begrüßen.
-    if (handwerker.testNachrichten === 0) {
+    // 0 = allererste Nachricht dieser Nummer → einmal begrüßen. Telefon-Leads
+    // NICHT: die wurden per Einladung schon begrüßt (KI-Hinweis steht dort in
+    // der Vorlagen-Fußzeile), eine zweite Begrüßung wäre verwirrend.
+    if (handwerker.testNachrichten === 0 && !handwerker.leadQuelle) {
       const anmeldeHinweis = featureConfig().FEATURE_SELBSTREGISTRIERUNG
         ? `\n\nWillst du AuftragsBoss richtig nutzen? Schreib einfach *anmelden*.`
         : "";
@@ -491,6 +512,7 @@ export function verarbeiteNachrichtSeriell(args: {
   mediaId?: string;
   bildMediaId?: string;
   text?: string;
+  knopfPayload?: string;
 }): Promise<void> {
   const key = args.vonNummer;
   const vorher = laufendeVerarbeitung.get(key) ?? Promise.resolve();

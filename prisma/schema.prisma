@@ -60,6 +60,14 @@ model Handwerker {
   angebotGueltigTage Int? // wie lange ein Angebot gilt (Vorgabe 30 Tage)
   zahlungsziel       String? // z.B. "14 Tage netto nach Rechnungserhalt"
 
+  // Telefon-Akquise-Leads: Nach einem Erstgespräch (mit WhatsApp-Einwilligung!)
+  // schreibt AuftragsBoss den Interessenten zuerst an (genehmigte Meta-Vorlage
+  // mit Antwort-Knöpfen). Alles null = normaler Weg (Website/Direkt-WhatsApp).
+  leadQuelle       String? // "TELEFON" | null
+  optInAm          DateTime? // wann die WhatsApp-Einwilligung erteilt wurde
+  optInQuelle      String? // wer sie eingeholt hat, z.B. "telefonat"
+  onboardingStatus String? // "EINGELADEN" | "ERKLAERT" | "WARTET_AUF_AUFTRAG" | "AKTIV"
+
   // Persönlicher, passwortloser Zugang zur Einstellungsseite. Nullable, damit
   // Bestandsdatensätze ohne Migration bestehen bleiben — der Token wird beim
   // ersten Bedarf erzeugt (siehe betrieb/betriebsdaten.ts).

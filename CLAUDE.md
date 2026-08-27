@@ -120,6 +120,25 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 26.08.2026 (2) — TELEFON-AKQUISE-ONBOARDING Etappe 1 (Commit fd87bc2, 156 Tests grün; ⏳ Deploy MIT db push + Meta-Vorlage offen):**
+> - **Funnel:** Telefonat (mit ausdrücklicher WhatsApp-Einwilligung, rechtliche Prüfung macht Dirk separat) →
+>   /stasi-Kundenliste Panel „📞 Telefon-Lead einladen" (Nummer/Anrede/Firma/Opt-in-Quelle) → Handwerker als
+>   Test-Konto mit dokumentiertem Opt-in (leadQuelle/optInAm/optInQuelle/onboardingStatus, Schema additiv) →
+>   **Meta-Vorlage `angebot_ausprobieren`** ({{1}}=Anrede) mit Quick-Reply-Knöpfen **[Ja, los geht's]
+>   [Kurz erklären]** → Klick: JA → EINE Aufforderung zur Sprachnachricht (idempotent); ERKLÄREN → Kurz-
+>   Erklärung + interaktiver Knopf „Angebot ausprobieren" → erste echte Eingabe (auch ohne Knopf) → normale
+>   Pipeline (Gratis-Kontingent). Bewusst KEINE Erklär-Kaskade — sofortige Interaktion (Dirks Briefing).
+> - **Technik:** `src/lead/onboarding.ts` (Sender injizierbar); send.ts Vorlagen mit quick_reply-Payloads +
+>   `sendeWhatsAppKnoepfe` (interactive, 24-h-Fenster); webhook `extrahiereEingabe` (pure) erkennt
+>   button.payload/interactive.button_reply → pipeline-Abzweig `knopfPayload` (kein KI/Kontingent-Verbrauch;
+>   unbekannte Nummer + Knopf still ignoriert). **Leads bekommen die Test-Begrüßung NICHT** (KI-Hinweis
+>   gehört in die Vorlagen-Fußzeile!). Vorlagenname via .env `LEAD_VORLAGE` überschreibbar.
+>   Events: LEAD_ANGELEGT/-EINLADUNG_GESENDET/-KNOPF/-ERSTE_EINGABE; AdminLog LEAD_EINGELADEN.
+> - **Offen:** Meta-Vorlage anlegen/genehmigen (Marketing, Body „Hallo {{1}}, hier ist AuftragsBoss. Wie eben
+>   am Telefon besprochen: Wollen wir direkt ein Angebot ausprobieren?", Fußzeile KI-Hinweis, 2 Buttons),
+>   Deploy + **db push**, Live-Test. **Etappe 2 später:** Reminder hinter Flag + Funnel-Auswertung je
+>   leadQuelle. **Bewusst verschoben:** Eingabe-Bündel-Fenster (Sprache+Foto), Sales-Frank-API.
+>
 > **Update 26.08.2026 — Positionen zusammenfassen, Beispiel-Angebot komplett, Landingpage-Demo plausibilisiert, Vorschau-Feinschliff, Betreiber-WhatsApp FERTIG (alles ✅ LIVE — VPS deployt + IONOS hochgeladen):**
 > - **Editor: Positionen zusammenfassen** (26136e7): Auswahl-Häkchen je Position (Desktop-Spalte vor dem
 >   Anfasser, mobil Kachel in der Karten-Fußleiste, synchron) → Leiste „N ausgewählt → Zu einer Position

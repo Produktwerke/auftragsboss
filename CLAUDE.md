@@ -120,7 +120,7 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
-> **Update 26.08.2026 (2) — TELEFON-AKQUISE-ONBOARDING Etappe 1 (Commit fd87bc2, 156 Tests grün; ⏳ Deploy MIT db push + Meta-Vorlage offen):**
+> **Update 26.08.2026 (2) — TELEFON-AKQUISE-ONBOARDING Etappe 1 (Commit fd87bc2, 156 Tests grün; ✅ 27.08. deployt inkl. db push; Meta-Vorlage eingereicht — finaler Text „Hallo {{1}}, danke für das nette Telefonat eben! Wollen wir direkt loslegen und ein erstes Angebot ausprobieren?"; ⏳ Genehmigung + Live-Test mit unregistrierter Nummer):**
 > - **Funnel:** Telefonat (mit ausdrücklicher WhatsApp-Einwilligung, rechtliche Prüfung macht Dirk separat) →
 >   /stasi-Kundenliste Panel „📞 Telefon-Lead einladen" (Nummer/Anrede/Firma/Opt-in-Quelle) → Handwerker als
 >   Test-Konto mit dokumentiertem Opt-in (leadQuelle/optInAm/optInQuelle/onboardingStatus, Schema additiv) →

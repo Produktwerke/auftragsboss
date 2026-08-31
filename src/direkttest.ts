@@ -6,13 +6,18 @@
 // Dafür wird seine (unbekannte) Nummer automatisch zu einem Test-Konto
 // (Handwerker mit istTest = true), das die normale Pipeline durchläuft.
 //
+// Kommuniziert wird nach außen NUR: "14 Tage kostenlos testen". Intern gibt es
+// zusätzlich einen stillen Angebots-Deckel — wer den vor Tag 14 reißt, bekommt
+// dieselbe "Testphase abgelaufen"-Nachricht wie nach Zeitablauf.
+//
 // Missbrauchsschutz, mehrschichtig. Grundschutz ist WhatsApp selbst (man
 // braucht ein echtes Konto). Darüber:
 //   1. Not-Aus:  DIREKTTEST_AKTIV schaltet die ganze Funktion an/aus.
-//   2. Kontingent pro Nummer: nur so viele fertige Test-Angebote (Standard 2).
-//   3. Nachrichten-Deckel pro Nummer: fängt Dauer-Kauderwelsch ab (Standard 12).
-//   4. Tages-Gesamtdeckel über alle Nummern: Kostenobergrenze (Standard 80).
-//   5. Tempo-Limit pro Nummer: Mindestabstand zwischen Nachrichten (Standard 3s).
+//   2. Testphase: DIREKTTEST_TAGE ab Konto-Anlage (Standard 14 Tage).
+//   3. Stiller Angebots-Deckel pro Nummer (Standard 10 fertige Test-Angebote).
+//   4. Nachrichten-Deckel pro Nummer: fängt Dauer-Kauderwelsch ab (Standard 60).
+//   5. Tages-Gesamtdeckel über alle Nummern: Kostenobergrenze (Standard 80).
+//   6. Tempo-Limit pro Nummer: Mindestabstand zwischen Nachrichten (Standard 3s).
 //
 // Persistenz: Kontingent und Nachrichten-Deckel liegen PRO NUMMER in der DB und
 // überstehen einen Neustart — das sind die harten Grenzen. Tages-Deckel und
@@ -24,6 +29,23 @@ import { einstellungenTokenBereit } from "./betrieb/betriebsdaten.js";
 import { registrierLink } from "./web/tokens.js";
 
 const KONTAKT = "Melde dich beim AuftragsBoss-Team, dann richten wir dir dein eigenes Konto ein.";
+
+/**
+ * Einheitliche Abschluss-Nachricht, wenn die Testphase vorbei ist — egal ob
+ * durch Zeitablauf oder den stillen Angebots-Deckel (der Deckel wird bewusst
+ * nicht verraten, kommuniziert ist nur "14 Tage kostenlos testen").
+ */
+async function testphaseAbgelaufen(prisma: PrismaClient, handwerker: Handwerker): Promise<string> {
+  const basis = "🎉 Deine kostenlose Testphase ist abgelaufen. Stark, dass du AuftragsBoss ausprobiert hast!";
+  if (featureConfig().FEATURE_SELBSTREGISTRIERUNG) {
+    const token = await einstellungenTokenBereit(prisma, handwerker);
+    return (
+      `${basis}\n\n` +
+      `Melde jetzt in 1 Minute deinen Betrieb an. Dann gehören dir Logo, Adresse und alle Angebote, und du legst richtig los:\n${registrierLink(token)}`
+    );
+  }
+  return `${basis} Wenn du damit richtig arbeiten willst: ${KONTAKT}`;
+}
 
 // Tempo-Limit: Nummer → Zeitpunkt der letzten verarbeiteten Nachricht (ms).
 const letzteNachricht = new Map<string, number>();
@@ -100,32 +122,27 @@ export async function testNachrichtBlockiert(
     return "🔧 Der kostenlose Test ist gerade pausiert. Melde dich gern beim AuftragsBoss-Team.";
   }
 
+  // Testphase abgelaufen? (Zeit läuft ab Anlage des Test-Kontos.)
+  const testAlterMs = Date.now() - handwerker.erstelltAm.getTime();
+  if (testAlterMs > cfg.DIREKTTEST_TAGE * 24 * 60 * 60 * 1000) {
+    return testphaseAbgelaufen(prisma, handwerker);
+  }
+
   // Nachrichten-Deckel pro Nummer (DB, persistent).
   if (handwerker.testNachrichten >= cfg.DIREKTTEST_MAX_NACHRICHTEN) {
     return `Du hast das Test-Limit dieser Nummer erreicht. ${KONTAKT}`;
   }
 
-  // Gratis-Kontingent: nur EIGENSTÄNDIGE Test-Angebote pro Nummer zählen
+  // Stiller Angebots-Deckel: nur EIGENSTÄNDIGE Test-Angebote pro Nummer zählen
   // (version === 1). Nachträge/Verbesserungen am selben Angebot (version > 1)
   // zählen NICHT — so kann ein Interessent ruhig ein paar Schleifen drehen, bis
-  // ein Angebot passt, ohne dass jede Sprachnachricht ein Kontingent verbraucht.
+  // ein Angebot passt, ohne dass jede Sprachnachricht das Kontingent verbraucht.
+  // Nach außen heißt es auch hier nur "Testphase abgelaufen".
   const fertige = await prisma.dokument.count({
     where: { handwerkerId: handwerker.id, version: 1 },
   });
   if (fertige >= cfg.DIREKTTEST_GRATIS_ANGEBOTE) {
-    // Ist die Selbst-Anmeldung an, ist genau JETZT der beste Moment: statt „melde
-    // dich beim Team" bekommt der Interessent seinen persönlichen Anmelde-Link.
-    if (featureConfig().FEATURE_SELBSTREGISTRIERUNG) {
-      const token = await einstellungenTokenBereit(prisma, handwerker);
-      return (
-        `🎉 Das waren deine ${cfg.DIREKTTEST_GRATIS_ANGEBOTE} Gratis-Test-Angebote. Stark, dass du AuftragsBoss ausprobiert hast!\n\n` +
-        `Melde jetzt in 1 Minute deinen Betrieb an. Dann gehören dir Logo, Adresse und alle Angebote, und du legst richtig los:\n${registrierLink(token)}`
-      );
-    }
-    return (
-      `🎉 Das waren deine ${cfg.DIREKTTEST_GRATIS_ANGEBOTE} Gratis-Test-Angebote. ` +
-      `Stark, dass du AuftragsBoss ausprobiert hast! Wenn du damit richtig arbeiten willst: ${KONTAKT}`
-    );
+    return testphaseAbgelaufen(prisma, handwerker);
   }
 
   // Tages-Gesamtdeckel (Arbeitsspeicher).

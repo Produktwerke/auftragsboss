@@ -186,7 +186,7 @@ export async function verarbeiteNachricht(args: {
       await sendeWhatsAppText(
         vonNummer,
         `🤖 AuftragsBoss ist ein KI-gestützter Dienst. Deine Sprach- oder Textnachricht wird automatisiert verarbeitet, um daraus ein Angebot zu erstellen.\n\n` +
-          `👋 Willkommen beim AuftragsBoss-Test!\n\nSprich einfach eine kurze *Sprachnachricht*: Kunde, Adresse und was gemacht werden soll. Ich mache in Sekunden ein fertiges Angebot draus.\n\nDu hast ${direkttestConfig().DIREKTTEST_GRATIS_ANGEBOTE} Gratis-Tests frei. 🎙️` +
+          `👋 Willkommen beim AuftragsBoss-Test!\n\nSprich einfach eine kurze *Sprachnachricht*: Kunde, Adresse und was gemacht werden soll. Ich mache in Sekunden ein fertiges Angebot draus.\n\nDu kannst AuftragsBoss ${direkttestConfig().DIREKTTEST_TAGE} Tage kostenlos testen. 🎙️` +
           anmeldeHinweis,
       );
       // kein return — die eigentliche Nachricht wird gleich weiterverarbeitet

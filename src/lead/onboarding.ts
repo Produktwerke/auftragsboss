@@ -7,7 +7,7 @@
 //   Betreiber legt Lead im Cockpit an → genehmigte Meta-VORLAGE mit zwei
 //   Schnellantwort-Knöpfen [Ja, los geht's] [Kurz erklären] → Klick öffnet
 //   das 24-h-Fenster → EINE kurze Aufforderung zur Sprachnachricht → die
-//   normale Angebots-Pipeline übernimmt (Test-Konto, 3 Gratis-Angebote).
+//   normale Angebots-Pipeline übernimmt (Test-Konto, 14 Tage Testphase).
 //
 // Schickt der Lead direkt eine Sprachnachricht ohne Knopfdruck, funktioniert
 // das genauso (die Pipeline behandelt ihn wie jedes Test-Konto).

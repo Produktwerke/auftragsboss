@@ -81,10 +81,16 @@ export const direkttestConfig = lade(
       .string()
       .default("false")
       .transform((v) => ["true", "1", "ja", "on"].includes(v.trim().toLowerCase())),
-    // Gratis-Angebote pro Nummer (fertige Test-Angebote), danach Einladung zur Anmeldung.
-    DIREKTTEST_GRATIS_ANGEBOTE: z.coerce.number().int().min(0).default(2),
-    // Harte Obergrenze verarbeiteter Nachrichten pro Nummer (fängt Dauer-Kauderwelsch ab).
-    DIREKTTEST_MAX_NACHRICHTEN: z.coerce.number().int().min(1).default(12),
+    // Länge der Testphase in Tagen ab Anlage des Test-Kontos. Kommuniziert wird
+    // NUR diese Zahl ("14 Tage kostenlos testen").
+    DIREKTTEST_TAGE: z.coerce.number().int().min(1).default(14),
+    // Stiller Angebots-Deckel innerhalb der Testphase (fertige Test-Angebote pro
+    // Nummer). Wird bewusst NICHT kommuniziert — wer ihn vor Ablauf der Tage
+    // reißt, bekommt dieselbe "Testphase abgelaufen"-Nachricht.
+    DIREKTTEST_GRATIS_ANGEBOTE: z.coerce.number().int().min(0).default(10),
+    // Harte Obergrenze verarbeiteter Nachrichten pro Nummer (fängt Dauer-Kauderwelsch
+    // ab). Muss zum Angebots-Deckel passen: ~6 Nachrichten je Angebot einplanen.
+    DIREKTTEST_MAX_NACHRICHTEN: z.coerce.number().int().min(1).default(60),
     // Tages-Gesamtdeckel über alle Nummern (Kostenobergrenze).
     DIREKTTEST_MAX_PRO_TAG: z.coerce.number().int().min(1).default(80),
     // Mindestabstand zwischen zwei Nachrichten derselben Nummer, in Sekunden.

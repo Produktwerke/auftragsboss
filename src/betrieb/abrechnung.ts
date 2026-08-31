@@ -6,9 +6,9 @@
 
 /** Tarif-Presets (EUR netto/Monat) — müssen zur Preisseite der Landingpage passen. */
 export const TARIF_PRESETS: Record<string, number> = {
-  BASIS: 49,
-  PROFI: 99,
-  TEAM: 199,
+  BASIS: 29,
+  PROFI: 79,
+  TEAM: 149,
 };
 
 export const TARIFE = ["BASIS", "PROFI", "TEAM", "INDIVIDUELL"] as const;

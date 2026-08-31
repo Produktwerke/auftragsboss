@@ -30,9 +30,9 @@ describe("istTarif / Presets", () => {
     expect(istTarif("GOLD")).toBe(false);
   });
   it("Presets passen zur Preisseite", () => {
-    expect(TARIF_PRESETS.BASIS).toBe(49);
-    expect(TARIF_PRESETS.PROFI).toBe(99);
-    expect(TARIF_PRESETS.TEAM).toBe(199);
+    expect(TARIF_PRESETS.BASIS).toBe(29);
+    expect(TARIF_PRESETS.PROFI).toBe(79);
+    expect(TARIF_PRESETS.TEAM).toBe(149);
   });
 });
 

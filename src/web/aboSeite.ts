@@ -4,6 +4,7 @@
 import type { Handwerker } from "@prisma/client";
 import { appShell } from "./navigation.js";
 import { empfehlungsText } from "../empfehlung.js";
+import { TARIF_PRESETS } from "../betrieb/abrechnung.js";
 import type { RechnungsZeile } from "../betrieb/stripeCheckout.js";
 
 function escapeHtml(s: string): string {
@@ -36,11 +37,12 @@ export function aboSeite(args: {
   const waHref = `https://wa.me/?text=${encodeURIComponent(teilenText)}`;
   const mailHref = `mailto:?subject=${encodeURIComponent("Empfehlung: AuftragsBoss")}&body=${encodeURIComponent(teilenText)}`;
 
-  // Tarif-Karten — Kontingente müssen zur Preisseite der Landingpage passen.
+  // Tarif-Karten — Preise zentral aus TARIF_PRESETS (eine Quelle für Cockpit,
+  // Stripe-Zuordnung und diese Seite); Kontingente müssen zur Landingpage passen.
   const TARIF_KARTEN = [
-    { key: "basis", name: "Basis", preis: 49, angebote: 50, beliebt: false },
-    { key: "profi", name: "Profi", preis: 99, angebote: 120, beliebt: true },
-    { key: "team", name: "Team", preis: 199, angebote: 300, beliebt: false },
+    { key: "basis", name: "Basis", preis: TARIF_PRESETS.BASIS, angebote: 50, beliebt: false },
+    { key: "profi", name: "Profi", preis: TARIF_PRESETS.PROFI, angebote: 120, beliebt: true },
+    { key: "team", name: "Team", preis: TARIF_PRESETS.TEAM, angebote: 300, beliebt: false },
   ];
 
   let aboPanel: string;

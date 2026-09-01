@@ -764,12 +764,13 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 ## Zugangsdaten
 
 `.env` (nicht in Git). **Suchreihenfolge seit 01.09.2026 (`src/env.ts`):** zuerst
-`.env` im Projektordner (so läuft der Server: `/root/app/.env`), sonst
-`~/.auftragsboss/.env`. **Auf Dirks PC liegt die Datei unter
-`C:\Users\dbeer\.auftragsboss\.env`** — bewusst AUSSERHALB von OneDrive, damit
-die Schlüssel nicht in die Firmen-Cloud synchronisieren. Im Projektordner darf
-lokal KEINE `.env` liegen (sie hätte Vorrang). Vorlage: `.env.example`
-(aus der echten Datei erzeugt, alle Werte geleert). Für die KI-Tests reichen `ANTHROPIC_API_KEY` (Claude,
+`.env` im Projektordner (so läuft der Server: `/root/app/.env`), dann
+`~/Dropbox/AuftragsBoss/.env`, zuletzt `~/.auftragsboss/.env`. **Auf Dirks
+Rechnern liegt die Datei unter `C:\Users\dbeer\Dropbox\AuftragsBoss\.env`**
+(private Dropbox, synchronisiert zwischen seinen zwei Rechnern) — bewusst
+AUSSERHALB des Firmen-OneDrive. Im Projektordner darf lokal KEINE `.env`
+liegen (sie hätte Vorrang). Vorlage: `.env.example` (aus der echten Datei
+erzeugt, alle Werte geleert). Für die KI-Tests reichen `ANTHROPIC_API_KEY` (Claude,
 `sk-ant-…`) und `OPENAI_API_KEY` (Whisper, `sk-proj-…`). WhatsApp + SMTP erst
 für den Echtbetrieb. Optional: `ADMIN_TOKEN` (langer Zufallswert) schaltet die
 Lern-Auswertung `/admin/<TOKEN>` frei; ohne ihn ist sie aus (404). `HOST`

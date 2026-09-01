@@ -13,7 +13,7 @@
 //   npx tsx src/stripe-einrichten.ts
 //
 // Nach dem Lauf im Stripe-Dashboard unter Produkte kontrollierbar.
-import "dotenv/config";
+import "./env.js";
 import Stripe from "stripe";
 
 const key = process.env.STRIPE_SECRET_KEY;

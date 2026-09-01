@@ -3,7 +3,7 @@
 // Jeder Bereich wird ERST GEPRÜFT, WENN ER GEBRAUCHT WIRD (lazy). Dadurch
 // läuft z.B. das KI-Test-Skript allein mit dem Anthropic-Key, ohne dass
 // WhatsApp- oder SMTP-Zugangsdaten vorhanden sein müssen.
-import "dotenv/config";
+import "./env.js";
 import { z } from "zod";
 
 function lade<T extends z.ZodType>(name: string, schema: T): () => z.infer<T> {

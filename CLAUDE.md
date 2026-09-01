@@ -120,7 +120,49 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
-> **Update 26.08.2026 (2) — TELEFON-AKQUISE-ONBOARDING Etappe 1 (Commit fd87bc2, 156 Tests grün; ✅ 27.08. deployt inkl. db push; Meta-Vorlage eingereicht — finaler Text „Hallo {{1}}, danke für das nette Telefonat eben! Wollen wir direkt loslegen und ein erstes Angebot ausprobieren?"; ⏳ Genehmigung + Live-Test mit unregistrierter Nummer):**
+> **Update 31.08.2026 (3) — PREISSENKUNG 29/79/149 € + Testphase „14 Tage kostenlos testen" (Commit ee6071f, 156 Tests + Typecheck grün; ✅ DEPLOY DURCH — VPS + .env + Stripe-Skript + IONOS-Upload von Dirk am 31.08. abends erledigt; ⏳ LIVE-VERIFIKATION OFFEN):**
+> - **⏳ Noch zu verifizieren (nächste Session):** (1) Begrüßung von frischer Nummer nennt „14 Tage kostenlos
+>   testen". (2) auftragsboss.de zeigt 29/79/149. (3) Stripe-Skript-Ausgabe hatte „↻ Preis geändert" für alle
+>   drei Tarife (falls nicht gesehen: `/abo`-Tarifkarten im Cockpit prüfen bzw. Skript erneut laufen lassen).
+> - **Neue Tarifpreise: Basis 29 / Profi 79 / Team 149 € netto/Monat** (vorher 49/99/199; Kontingente bleiben
+>   50/120/300). Zentrale Quelle `TARIF_PRESETS` (abrechnung.ts) — **aboSeite.ts nutzt sie jetzt statt eigener
+>   Zahlen** (eine Quelle weniger, die auseinanderlaufen kann). Landingpage-Preiskarten neu; Profi-Unterzeile
+>   „nur 66 Cent je Angebot" (79/120 — alter Text „1,41 €" war rechnerisch falsch).
+> - **stripe-einrichten.ts beherrscht Preisänderungen:** Stripe-Preise sind unveränderlich → bei geändertem
+>   Betrag neuen Preis am selben Produkt anlegen, `transfer_lookup_key: true` (Checkout findet automatisch den
+>   neuen), alten deaktivieren. Bestehende (Test-)Abos behalten ihren alten Preis.
+> - **Testphase statt Angebots-Zähler (Dirks Entscheidung):** Kommuniziert wird NUR „14 Tage kostenlos testen"
+>   (`DIREKTTEST_TAGE`, Zeit ab Test-Konto-Anlage `erstelltAm`). Der Angebots-Deckel bleibt als STILLE Grenze
+>   (`DIREKTTEST_GRATIS_ANGEBOTE`, Standard jetzt 10) — Deckel gerissen ODER Zeit um → dieselbe einheitliche
+>   „🎉 Deine kostenlose Testphase ist abgelaufen"-Nachricht (mit Anmelde-Link bei Selbstregistrierung).
+>   Nachrichten-Deckel-Standard 12→60. Willkommenstext nennt die 14 Tage. Landingpage: Hero-Trust,
+>   Preis-Unterzeile, FAQ auf „14 Tage" umgestellt. Achtung: ALTE Test-Konten (>14 Tage, z. B. Dirks Freund)
+>   gelten nach dem Deploy sofort als abgelaufen — gewollt.
+> - **⏳ DEPLOY-SCHRITTE (Dirk):** (1) tar/scp/pm2 wie üblich (KEIN db push nötig). (2) Server-`.env` anpassen:
+>   `DIREKTTEST_GRATIS_ANGEBOTE=10` (stand 5) + `DIREKTTEST_MAX_NACHRICHTEN=60` (stand 20), dann pm2 restart.
+>   (3) Auf dem Server `npx tsx src/stripe-einrichten.ts` (legt die neuen Testmodus-Preise an; bei der späteren
+>   LIVE-Umstellung dort erneut). (4) `marketing/index.html` bei IONOS hochladen.
+>
+> **Update 31.08.2026 (2) — NEUE PRODUKTIDEE ANALYSIERT: Foto-Aufmaß (Wandflächen aus Smartphone-Fotos).**
+> Vollständige kritische Analyse + Konzept in **`Konzepte/Foto-Aufmass_Analyse.md`** — Kern: keine globale
+> 3D-Rekonstruktion („rundherum drehen" geht physikalisch nicht, weiße Wände killen klassisches SfM), sondern
+> **geführtes Wand-für-Wand-Aufmaß** im bestehenden WhatsApp-Dialog (Entzerrung + Raumhöhe als Maßstab,
+> VOB-Regel „Öffnungen ≤ 2,5 m² übermessen" senkt Anforderungen, Rückfall-Leiter für zu große Wände:
+> Diagonal-Trick → 0,5× → Kreppband-Split → selbst messen). **NICHTS implementieren** — ⏳ **Dirk sammelt in
+> den nächsten Tagen die MESSBANK-Daten**: Schritt-für-Schritt-Anleitung in **`Messbank/ANLEITUNG.md`**
+> (+ drei CSV-Vorlagen `wahrheit-raeume/-waende/-oeffnungen.csv` liegen bereit; ≥10 Räume, Laser-Wahrheit,
+> Fotos original + WhatsApp-Fassung, Ordnerschema Raum01/original|whatsapp). Wenn Dirk „Messbank ist fertig"
+> meldet → Claude baut das Auswertungsskript → Go-/No-Go (Konzept Abschnitt 9). Unabhängiger
+> Sofort-Gewinn-Kandidat: deterministischer **Materialrechner** (Tapetenrollen/Farbe, Abschnitt 5).
+>
+> **Update 31.08.2026 — Meta-Vorlage `angebot_ausprobieren` GENEHMIGT ✅. ⏳ NÄCHSTER SCHRITT: Live-Test
+> der Telefon-Akquise steht noch aus** — Ablauf: altes Test-Konto der Testnummer im /stasi-Cockpit löschen
+> (oder frische Nummer nehmen) → Kundenliste-Panel „📞 Telefon-Lead einladen" → Vorlage mit Knöpfen kommt an
+> → [Kurz erklären]-Zweig UND [Ja, los geht's] testen → Sprachnachricht → Angebot; im Log auf
+> LEAD_EINLADUNG_GESENDET / LEAD_KNOPF / LEAD_ERSTE_EINGABE achten. Außerdem 31.08. bestätigt:
+> Server-Root-Passwort geändert + alter geleakter OpenAI-Schlüssel gelöscht (Sicherheits-Nachlese komplett).
+>
+> **Update 26.08.2026 (2) — TELEFON-AKQUISE-ONBOARDING Etappe 1 (Commit fd87bc2, 156 Tests grün; ✅ 27.08. deployt inkl. db push; Meta-Vorlage eingereicht — finaler Text „Hallo {{1}}, danke für das nette Telefonat eben! Wollen wir direkt loslegen und ein erstes Angebot ausprobieren?"; ✅ Genehmigung durch 31.08.; ⏳ Live-Test mit unregistrierter Nummer):**
 > - **Funnel:** Telefonat (mit ausdrücklicher WhatsApp-Einwilligung, rechtliche Prüfung macht Dirk separat) →
 >   /stasi-Kundenliste Panel „📞 Telefon-Lead einladen" (Nummer/Anrede/Firma/Opt-in-Quelle) → Handwerker als
 >   Test-Konto mit dokumentiertem Opt-in (leadQuelle/optInAm/optInQuelle/onboardingStatus, Schema additiv) →
@@ -174,8 +216,8 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   Entscheidung): Cockpit-Tarifkarten + Stripe-Produktbeschreibungen angepasst; stripe-einrichten.ts zieht
 >   Beschreibungen bestehender Produkte jetzt nach (auf dem Server erneut gelaufen).
 > - 145 Tests + test:demo grün; Browser-E2E Desktop + 375 px. **Offen: Stripe Etappe 3** (Kundenportal,
->   Zahlungsausfall-UX, LIVE-Umstellung) — dann können echte Kunden zahlen. Dirk wollte außerdem das
->   Server-Root-Passwort ändern (Anleitung per `passwd` gegeben, Vollzug nicht bestätigt).
+>   Zahlungsausfall-UX, LIVE-Umstellung) — dann können echte Kunden zahlen. ✅ Server-Root-Passwort
+>   geändert (von Dirk bestätigt, 31.08.).
 >
 > **Update 14.08.2026 (2) — STRIPE-ABO-ANBINDUNG Etappen 1+2 LIVE, Testmodus-Durchstich ERFOLGREICH (Commits d0a2f95…6acd2f0, 145 Tests grün; deployt inkl. npm install + db push):**
 > - **Etappe 1:** `POST /webhook/stripe` (Signaturprüfung auf rohem Body, eigener Buffer-Parser, fail-closed ohne
@@ -337,7 +379,7 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 > - **Lehren:** (1) Bei „schiefgelaufen"-Meldungen zuerst `pm2 logs --err` lesen — der echte Grund steht drin
 >   (hier inkl. `anthropic-organization-id`, die die falsche Kasse verriet). (2) Live-Betrieb heißt: BEIDE
 >   KI-Konten (Anthropic + OpenAI) brauchen Auto-Reload/Alarm. ✅ **OpenAI Auto-Recharge aktiviert (13.08., Dirk).**
->   **⏳ TODO (Dirk, OpenAI-Konto):** den ALTEN geleakten Schlüssel (endet `…R9hYA`) in der API-keys-Liste löschen.
+>   ✅ **Alter geleakter OpenAI-Schlüssel entsorgt (bestätigt 31.08.)** — Schlüssel-Thema komplett abgeschlossen.
 > - Merkzettel: Server nutzt Claude via API (structure.ts); Guthaben wird durch API-, Claude-Code- und
 >   Workbench-Nutzung verbraucht (eine Kasse pro Organisation).
 > - 🆕 **STRIPE-KONTO EINGERICHTET (12.08. nachmittags, Dirk selbst):** Live-Konto für DAG Deutsche
@@ -721,7 +763,13 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Zugangsdaten
 
-`.env` (nicht in Git). Für die KI-Tests reichen `ANTHROPIC_API_KEY` (Claude,
+`.env` (nicht in Git). **Suchreihenfolge seit 01.09.2026 (`src/env.ts`):** zuerst
+`.env` im Projektordner (so läuft der Server: `/root/app/.env`), sonst
+`~/.auftragsboss/.env`. **Auf Dirks PC liegt die Datei unter
+`C:\Users\dbeer\.auftragsboss\.env`** — bewusst AUSSERHALB von OneDrive, damit
+die Schlüssel nicht in die Firmen-Cloud synchronisieren. Im Projektordner darf
+lokal KEINE `.env` liegen (sie hätte Vorrang). Vorlage: `.env.example`
+(aus der echten Datei erzeugt, alle Werte geleert). Für die KI-Tests reichen `ANTHROPIC_API_KEY` (Claude,
 `sk-ant-…`) und `OPENAI_API_KEY` (Whisper, `sk-proj-…`). WhatsApp + SMTP erst
 für den Echtbetrieb. Optional: `ADMIN_TOKEN` (langer Zufallswert) schaltet die
 Lern-Auswertung `/admin/<TOKEN>` frei; ohne ihn ist sie aus (404). `HOST`
@@ -733,10 +781,11 @@ deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
 
 - **Name entschieden: AuftragsBoss** (Domain AuftragsBoss.de). Alle kundensichtbaren
   Texte umbenannt; interner Ordner bleibt `voiceprotokoll-guard`.
-- **Preismodell:** 3 Stufen **49 / 99 / 199 €**, Kontingente **50/120/300** Angebote/Monat (Dirks
-  Entscheidung 26.08.2026 — die Landingpage-Zahlen gelten; Cockpit-Tarifkarten + Stripe-Beschreibungen angeglichen),
-  Logo/Export in allen Stufen, erste 3 Angebote gratis, **keine Einrichtungsgebühr**.
-  Marge ~90 % (API ~5 Cent/Angebot). Noch offen: echte Zahlungsbereitschaft testen.
+- **Preismodell (Stand 31.08.2026):** 3 Stufen **29 / 79 / 149 €** netto (gesenkt von 49/99/199),
+  Kontingente **50/120/300** Angebote/Monat (Dirks Entscheidung 26.08.2026 — die Landingpage-Zahlen gelten),
+  Logo/Export in allen Stufen, **14 Tage kostenlos testen** (intern stiller 10-Angebote-Deckel),
+  **keine Einrichtungsgebühr**. Marge weiterhin hoch (API ~5 Cent/Angebot).
+  Noch offen: echte Zahlungsbereitschaft testen.
 - **Landingpage** unter `marketing/` (deploybare Seite: `index.html` + `fonts/` +
   `auftragsboss-logo.png` + `impressum.html` + `datenschutz.html`). Dunkler Industrie-Look
   Anthrazit + Signalgelb; eigenes Logo als Favicon/Marke; Hausschriften **Inter + Space Mono**

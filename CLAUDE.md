@@ -120,6 +120,23 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 03.09.2026 (4) — HARDENING-TEIL 1: AUTHZ-TESTSUITE + SQLITE-WAL ✅ (Commit 2dff5c6; 184 Tests grün):**
+> - **NEU `src/web/authz.test.ts` (Maßnahme 17):** 14 Routen-Tests per `app.inject` gegen eine ECHTE
+>   Wegwerf-SQLite (Dateiname je Prozess eindeutig wegen Windows-Sperren; `db push` auf frische Datei —
+>   bewusst OHNE --force-reset, Prismas KI-Consent-Sperre umgangen durch Vorher-Löschen). Deckt ab:
+>   Schleuse an ALLEN Editor-Wegen (inkl. der zwei Ex-K01-Mailrouten), **Mandantentrennung**
+>   (Cookie von Betrieb A öffnet kein Dokument von B), /stasi-Login (falsch/richtig), /admin-Weg tot,
+>   Webtest-Konto-Abschottung, Webhook fail-closed + Signaturprüfung, Zod-Validierung (400),
+>   versendet-Schreibschutz (409), Test-Konten-Sonderregeln. Entfernt künftig jemand eine Prüfzeile,
+>   wird `npm test` rot. Muster: Umgebung VOR den Importen setzen, App-Module nur dynamisch importieren.
+> - **SQLite-WAL + connection_limit=1 (Maßnahme 18a):** `PRAGMA journal_mode=WAL` auf Server- UND
+>   lokaler DB (persistent); `DATABASE_URL=file:./dev.db?connection_limit=1` in Server- und Dropbox-.env —
+>   Prisma serialisiert damit seine Schreibzugriffe (kein SQLITE_BUSY-Nachrichtenverlust mehr).
+> - **⏳ Verbleibendes Hardening (18b–20, niedrige Priorität):** prisma migrate statt db push;
+>   Import-Limits (Zip-Bomben/Text-Kappung) + Export-Dateinamen + config-Boot-Gate; IONOS-Bucket-
+>   Objektversionierung; SPF/DKIM/DMARC-Check; Schleuse Stufe B (WhatsApp-OTP). Plus Routine:
+>   monatliche Wartungsrunde (npm audit/outdated), vierteljährlich /root/restore-probe.sh.
+
 > **Update 03.09.2026 (3) — 30-TAGE-PAKET (Audit-Maßnahmen 8–16) ✅ DEPLOYT + SERVER-BETRIEB GEHÄRTET
 > (Commits 97139cd + 56793e8; 170 Tests grün; alles live verifiziert):**
 > - **Rate-Limiting LIVE** (@fastify/rate-limit): global 300/Min je Client-IP (außer /health + Webhooks),

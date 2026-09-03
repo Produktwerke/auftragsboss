@@ -120,6 +120,37 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 03.09.2026 (3) — 30-TAGE-PAKET (Audit-Maßnahmen 8–16) ✅ DEPLOYT + SERVER-BETRIEB GEHÄRTET
+> (Commits 97139cd + 56793e8; 170 Tests grün; alles live verifiziert):**
+> - **Rate-Limiting LIVE** (@fastify/rate-limit): global 300/Min je Client-IP (außer /health + Webhooks),
+>   enge Zusatzlimits an 14 Routen (Login 10/15min, Mail 5–10/h, KI-Webtest 10/h, /api/plz 30/min …).
+>   Live getestet: /api/plz liefert exakt ab Anfrage 31 den Status 429. Deutsche Fehlermeldung.
+> - **Alter /admin/<ADMIN_TOKEN>-Weg ABGESCHALTET** (live 404). ADMIN_TOKEN in der Server-.env ist
+>   wirkungslos → kann bei Gelegenheit entfernt werden. Cockpit/Auswertung NUR noch via /stasi-Login.
+> - **Races gefixt:** Angebotsnummern jetzt max+1 statt count+1 (keine Doppelnummern nach Löschen; auch im
+>   Webtest); Freimonat-Einlösung atomar (kein Minus per Doppelklick); Timeout-Job läuft in der seriellen
+>   Warteschlange je Nummer (`inReiheProNummer`) mit Frisch-Prüfung (kein Doppel-Angebot mehr).
+> - **Stripe-Idempotenz hart:** neues Unique-Feld `Buchung.stripeInvoiceId` (Spalte per
+>   `stripe-invoice-spalte.sql` angelegt — bewusst OHNE --accept-data-loss, der Guard-Hook blockt das Flag;
+>   danach ist `db push` in sync). notiz-contains nur noch Altbestands-Fallback mit typ=ZAHLUNG.
+> - **Webtest-Sammelkonto abgeschottet** (kein /start-, Einstellungs-, Registrier-Zugang; „Als Kunde
+>   ansehen" erzeugt dafür keinen Token).
+> - **SERVER-BETRIEB:** prisma/ 750 + dev.db 640; **2-GB-Swap** aktiv (+fstab); **pm2-logrotate**
+>   (10 MB/14 Tage/komprimiert); **Backup v2** sichert jetzt auch `.env` + Caddyfile + SSH-Härtung +
+>   Crontab + ufw-Stand (Archiv 600, /root/backups 700) und pingt optional `/root/heartbeat-url.txt`;
+>   **Wachhund-Cron** (stündlich :20): prüft /health, Platte ≥90 %, Backup <26 h → Alarm-Mail an
+>   ADMIN_EMAIL über App-SMTP (max. 1/Problem/12 h; Testmail 03.09. angekommen? bei Dirk prüfen);
+>   **Restore-Probe ✅ BESTANDEN** (lokal: Integrität ok, 5 Betriebe/30 Dokumente; offsite: heruntergeladen
+>   + entschlüsselt). **NEU `scripts/RESTORE-RUNBOOK.md`** (RPO 24 h / RTO 4 h, Fälle A/B/C) —
+>   Repo-`scripts/backup.sh` ist wieder identisch mit dem Server-Stand.
+> - **⏳ NUR DIRK KANN (Rest des Pakets):** (1) UptimeRobot-Konto + HTTPS-Monitor auf
+>   https://api.auftragsboss.de/health (meldet „Server ganz tot"). (2) healthchecks.io-Check „Backup",
+>   Periode 1 Tag → Ping-URL nach /root/heartbeat-url.txt. (3) **2FA prüfen/aktivieren**: IONOS (wichtigste!),
+>   Meta Business, Stripe, Dropbox, Google, 1Password. (4) Alte /admin/-Lesezeichen löschen.
+>   (5) Entscheidung: alte `.env.bak` auf dem Server löschen (enthält Alt-Geheimnisse vom 07.08.).
+> - **Danach offen (Hardening 17–20):** Authz-Testsuite, SQLite WAL/busy_timeout + prisma migrate,
+>   Import-Limits, Offsite-Versionierung, Schleuse Stufe B (WhatsApp-OTP).
+
 > **Update 03.09.2026 (2) — SICHERHEITS-AUDIT + ZWINGEND-MASSNAHMEN 1–7 ✅ DEPLOYT (Commits 6438f87 + f237626; 170 Tests grün; live verifiziert):**
 > - **Vollständiger Read-only-Audit** (6 parallele Prüf-Agenten + Server-Prüfung): Bericht als Artefakt
 >   https://claude.ai/code/artifact/04c0b2c0-a2c9-4c3f-bbce-44a9a893dff5 + PDF im Repo-Root. Gesamt-Reife

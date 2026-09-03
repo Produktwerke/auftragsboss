@@ -8,6 +8,7 @@
 // Die Akzentfarbe (Kundenfarbe) erscheint AUSSCHLIESSLICH in der Vorschau bzw.
 // im generierten Angebot — nie im Dashboard-Chrome. Nutzt die gemeinsame
 // App-Shell (feste Sidebar + Topbar). Selbsttragend, kein Framework.
+import { jsonInsSkript } from "./jsonInsSkript.js";
 import type { Handwerker } from "@prisma/client";
 import type { Preisliste } from "../preisliste.js";
 import { appShell } from "./navigation.js";
@@ -300,7 +301,7 @@ export function einstellungenSeite(args: {
   }`;
 
   const scriptExtra = `
-const TOKEN = ${JSON.stringify(token)};
+const TOKEN = ${jsonInsSkript(token)};
 const FELDER = ["firma","name","strasse","plz","ort","telefon","email","ustIdNr","bank","iban","standardEinleitung","standardSchlusstext","angebotGueltigTage","zahlungsziel"];
 const val = id => document.getElementById(id).value;
 

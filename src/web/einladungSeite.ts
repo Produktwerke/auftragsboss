@@ -1,3 +1,4 @@
+import { jsonInsSkript } from "./jsonInsSkript.js";
 // Einladungs-Landingpage: Das sieht ein Kollege, der über den persönlichen
 // Empfehlungslink eines Betriebs kommt. Er trägt sich als Lead ein — beide
 // bekommen 1 Monat gratis. Selbsttragend (HTML+JS, kein Framework).
@@ -74,7 +75,7 @@ export function einladungSeite(args: { code: string; werberFirma: string }): str
 </div>
 
 <script>
-const CODE = ${JSON.stringify(code)};
+const CODE = ${jsonInsSkript(code)};
 const val = id => document.getElementById(id).value.trim();
 const btn = document.getElementById("senden");
 

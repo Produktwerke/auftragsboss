@@ -1,3 +1,4 @@
+import { jsonInsSkript } from "./jsonInsSkript.js";
 // Betreiber-Cockpit (Stufe 1): Kundenliste + Kundendetail mit Verwaltungs-
 // Aktionen (Kontakt ändern, blockieren, Gutschrift, löschen) und Usage-Zahlen.
 // Nur intern erreichbar über /admin/:ADMIN_TOKEN/betriebe (siehe betreiberRoutes.ts).
@@ -507,7 +508,7 @@ export function betreiberDetail(args: {
   <script>
     // Tarifwahl belegt den Monatspreis mit dem Preset vor (INDIVIDUELL: freilassen).
     (function () {
-      var presets = ${JSON.stringify(tarifPresets)};
+      var presets = ${jsonInsSkript(tarifPresets)};
       var wahl = document.getElementById("tarifwahl");
       var preis = document.getElementById("tarifpreis");
       if (wahl && preis) wahl.addEventListener("change", function () {

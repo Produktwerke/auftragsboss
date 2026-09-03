@@ -8,6 +8,7 @@
 // scharfgeschaltet wird. Betrieb wird über den einstellungenToken erkannt
 // (derselbe passwortlose Ansatz wie bei Editor/Einstellungen); die Ablage ist
 // streng tenant-gebunden (siehe importDienst/erzwingeTenant).
+import { jsonInsSkript } from "./jsonInsSkript.js";
 import type { FastifyInstance } from "fastify";
 import multipart from "@fastify/multipart";
 import { prisma } from "../pipeline.js";
@@ -170,7 +171,7 @@ function importSeite(
   .ir-row .ir-name{font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px;}`;
 
   const scriptExtra = `
-const TOKEN=${JSON.stringify(token)};
+const TOKEN=${jsonInsSkript(token)};
 let importIds=[];
 const $=(id)=>document.getElementById(id);
 const esc=(s)=>String(s).replace(/[&<>]/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));

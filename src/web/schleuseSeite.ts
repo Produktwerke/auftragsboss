@@ -8,6 +8,7 @@
 //
 // Reines HTML/CSS/JS, kein Framework. Schickt die Nummer per fetch als JSON an
 // POST /a/:token/zugang und leitet bei Erfolg auf das Angebot weiter.
+import { jsonInsSkript } from "./jsonInsSkript.js";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -108,7 +109,7 @@ export function schleuseSeite(opts: { token: string }): string {
   </div>
 
 <script>
-  var token = ${JSON.stringify(token)};
+  var token = ${jsonInsSkript(token)};
   var f = document.getElementById('f');
   var nr = document.getElementById('nr');
   var btn = document.getElementById('btn');

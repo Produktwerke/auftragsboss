@@ -7,6 +7,7 @@
 //
 // Bewusst als eine selbsttragende Seite mit eingebettetem CSS und JS: kein
 // Build-Schritt, kein Framework, lädt auch auf einem alten Handy schnell.
+import { jsonInsSkript } from "./jsonInsSkript.js";
 import type { Dokument, Handwerker } from "@prisma/client";
 import type { Preisliste } from "../preisliste.js";
 import { EINHEITEN } from "../preisliste.js";
@@ -622,15 +623,15 @@ export function editorSeite(args: {
 </div>
 
 <script>
-const START = ${JSON.stringify(startDaten)};
-const EINHEITEN = ${JSON.stringify(EINHEITEN)};
-const MAIL = ${JSON.stringify({ email: handwerker.email ?? "", standard: handwerker.mailStandard })};
+const START = ${jsonInsSkript(startDaten)};
+const EINHEITEN = ${jsonInsSkript(EINHEITEN)};
+const MAIL = ${jsonInsSkript({ email: handwerker.email ?? "", standard: handwerker.mailStandard })};
 // Preisgedächtnis-Stand für die Merken/Vergessen-Knöpfe je Position.
 // aktiv=false (Flag oder Betriebseinstellung aus) blendet alles aus.
-const GED = ${JSON.stringify({ aktiv: !!gedaechtnis, preise: gedaechtnis ?? {} })};
+const GED = ${jsonInsSkript({ aktiv: !!gedaechtnis, preise: gedaechtnis ?? {} })};
 // Konditionen für die "Gültig bis … Zahlungsziel: …"-Zeile der Live-Vorschau
 // (bereits mit den Betriebs-Einstellungen überlagert).
-const KOND = ${JSON.stringify({ tage: preisliste.konditionen.angebotGueltigTage, zahlungsziel: preisliste.konditionen.zahlungsziel })};
+const KOND = ${jsonInsSkript({ tage: preisliste.konditionen.angebotGueltigTage, zahlungsziel: preisliste.konditionen.zahlungsziel })};
 // Sprechende Beschriftung im Dropdown; gespeichert wird der kurze Code.
 const EINHEIT_LABEL = {m2:'m²', lfm:'lfm', Stk:'Stk.', Std:'Std.', l:'Liter', kg:'kg', Sack:'Sack', Gebinde:'Gebinde', Rolle:'Rolle', pauschal:'pauschal'};
 const einheitLabel = e => EINHEIT_LABEL[e] || e;

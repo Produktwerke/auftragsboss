@@ -499,11 +499,21 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       const handwerker = await prisma.handwerker.findUniqueOrThrow({
         where: { id: dokument.handwerkerId },
       });
+      // Test-Konten dürfen die (beim Webtest geteilte) Konto-E-Mail nicht ändern.
+      if (handwerker.istTest) return reply.code(403).send({ fehler: "Im Test nicht verfügbar, nur über WhatsApp." });
+      // Zugangs-Schleuse: Die Konto-E-Mail ist mandantenweit — ohne vertrautes
+      // Gerät darf sie weder gelesen noch geändert werden (sonst könnte ein
+      // weitergeleiteter Bearbeiten-Link alle künftigen Angebote umleiten).
+      if (!darfZugreifen(req, handwerker.id, handwerker.istTest)) {
+        return reply.code(401).send({ fehler: "Bitte zuerst den Zugang bestätigen." });
+      }
 
       const daten: { email?: string; mailStandard?: boolean } = {};
       if (typeof req.body.email === "string") {
         const e = req.body.email.trim();
-        if (e && !/^.+@.+\..+$/.test(e)) {
+        // Genau EINE Adresse: keine Leerzeichen, Kommas oder Semikolons —
+        // nodemailer würde "a@x.de, b@y.de" sonst als Empfängerliste deuten.
+        if (e && !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(e)) {
           return reply.code(400).send({ fehler: "ungültige E-Mail-Adresse" });
         }
         if (e) daten.email = e; // leere Eingabe nicht übernehmen (E-Mail ist Pflichtfeld)
@@ -531,6 +541,11 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       });
       // Test-Angebote: kein E-Mail-Versand.
       if (handwerker.istTest) return reply.code(403).send({ fehler: "Im Test nicht verfügbar, nur über WhatsApp." });
+      // Zugangs-Schleuse: gleicher Schutz wie Export und mail-link — sonst
+      // könnte ein weitergeleiteter Link das Angebot per E-Mail abziehen.
+      if (!darfZugreifen(req, handwerker.id, handwerker.istTest)) {
+        return reply.code(401).send({ fehler: "Bitte zuerst den Zugang bestätigen." });
+      }
 
       // SMTP muss eingerichtet sein — sonst würde emailConfig() den Server
       // beenden. Deshalb hier höflich ablehnen statt abzustürzen.

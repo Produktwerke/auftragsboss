@@ -27,9 +27,13 @@ function escapeHtml(s: string): string {
 const datumDE = (d: Date) => d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 function posZeile(p: Pos): string {
-  const menge = p.menge != null ? ` · ${p.menge} ${escapeHtml(p.einheit ?? "")}`.trimEnd() : "";
-  const preis = p.einzelpreis != null ? ` · ${p.einzelpreis.toLocaleString("de-DE")} €` : ' · <span class="leer">Preis offen</span>';
-  return `<li><span class="kat">${p.kategorie === "MATERIAL" ? "M" : p.kategorie === "LEISTUNG" ? "A" : "+"}</span> ${escapeHtml(p.beschreibung)}${menge}${preis}</li>`;
+  // Die Werte kommen aus gespeichertem JSON und sind NICHT vertrauenswürdig
+  // typisiert (Altbestand/Fremdeingaben können Strings statt Zahlen sein).
+  // Deshalb: immer erst zu String machen, dann escapen — nie roh ins HTML.
+  const zahl = (w: unknown) => (typeof w === "number" && Number.isFinite(w) ? w.toLocaleString("de-DE") : escapeHtml(String(w)));
+  const menge = p.menge != null ? ` · ${zahl(p.menge)} ${escapeHtml(String(p.einheit ?? ""))}`.trimEnd() : "";
+  const preis = p.einzelpreis != null ? ` · ${zahl(p.einzelpreis)} €` : ' · <span class="leer">Preis offen</span>';
+  return `<li><span class="kat">${p.kategorie === "MATERIAL" ? "M" : p.kategorie === "LEISTUNG" ? "A" : "+"}</span> ${escapeHtml(String(p.beschreibung ?? ""))}${menge}${preis}</li>`;
 }
 
 function posListe(positionen: Pos[]): string {

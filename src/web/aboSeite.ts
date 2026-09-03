@@ -1,6 +1,7 @@
 // "Abo & Abrechnung" — eigene Seite in der App-Shell (aus der Übersicht
 // hierher gezogen, dort war es unerwartet): aktuelles Abo bzw. die Tarife
 // zum Buchen, plus das Empfehlungs-Panel ("1 Monat gratis").
+import { jsonInsSkript } from "./jsonInsSkript.js";
 import type { Handwerker } from "@prisma/client";
 import { appShell } from "./navigation.js";
 import { empfehlungsText } from "../empfehlung.js";
@@ -167,7 +168,7 @@ ${rechnungsPanel}
       </div>`;
 
   const scriptExtra = `
-const TOKEN = ${JSON.stringify(token)};
+const TOKEN = ${jsonInsSkript(token)};
 function setWerbeStatus(text, farbe){ var s=document.getElementById("werbeStatus"); s.textContent=text; s.style.color=farbe; }
 async function linkKopieren(){
   var inp=document.getElementById("werbeUrl");

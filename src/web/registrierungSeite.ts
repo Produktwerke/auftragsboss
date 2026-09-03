@@ -1,3 +1,4 @@
+import { jsonInsSkript } from "./jsonInsSkript.js";
 // Selbst-Registrierung: Ein WhatsApp-verifiziertes Test-Konto wird hier zum
 // echten Betrieb. Die Nummer ist bereits belegt (der Interessent hat uns von
 // ihr aus geschrieben), deshalb fragen wir nur noch die Stammdaten ab.
@@ -95,7 +96,7 @@ export function registrierungSeite(opts: {
   </div>
 
 <script>
-  var token = ${JSON.stringify(token)};
+  var token = ${jsonInsSkript(token)};
   var f = document.getElementById('f');
   var btn = document.getElementById('btn');
   var fehler = document.getElementById('fehler');

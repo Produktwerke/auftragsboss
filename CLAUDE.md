@@ -120,10 +120,29 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 02.09.2026 — SERVER-HÄRTUNG Phase A ✅ (von Dirk ausgeführt, Statusausgabe verifiziert):**
+> - **SSH-Schlüssel** für den Büro-Rechner erzeugt (`%USERPROFILE%\.ssh\id_ed25519`, ohne Passphrase) und in
+>   `authorized_keys` des Servers hinterlegt. ✅ Schlüssel-Login VERIFIZIERT („SCHLUESSEL-LOGIN OK" ohne
+>   Passwortfrage, von Dirk bestätigt 02.09.).
+> - **ufw-Firewall AKTIV:** nur 22 (SSH) / 80 / 443 offen (v4+v6), Rest deny incoming. **fail2ban AKTIV**
+>   (sshd-Jail; sperrte binnen Minuten 3 echte Angreifer-IPs, 25 Fehlversuche — Brute-Force lief also längst).
+>   **unattended-upgrades AKTIV** (automatische Sicherheits-Updates).
+> - **✅ Phase B DURCH (03.09.2026, von Dirk am Heimrechner ausgeführt, beide Tests verifiziert):**
+>   Heimrechner hatte schon einen `id_ed25519` (NICHT überschrieben — Pubkey einfach angehängt), Schlüssel-
+>   Login von BEIDEN Rechnern bestätigt. Dann **Passwort-Auth abgeschaltet**: Die Ubuntu-Falle war real
+>   (`50-cloud-init.conf` stand auf `PasswordAuthentication yes`) → `/etc/ssh/sshd_config.d/00-hardening.conf`
+>   (PasswordAuthentication no, PermitRootLogin prohibit-password) gewinnt als erste Datei; `sshd -T` zeigt
+>   effektiv `passwordauthentication no` + `permitrootlogin without-password` (= prohibit-password, alter
+>   Anzeigename). Nach `systemctl restart ssh` aus zweitem Fenster verifiziert: Schlüssel-Login ok,
+>   Passwort-Versuch „Permission denied (publickey)" ohne Passwortfrage. **Der Server ist jetzt Key-only** —
+>   bei Schlüsselverlust beider Rechner hilft nur die IONOS-VNC-Konsole. (Offen/optional: App nicht mehr als
+>   root laufen lassen — größerer Umbau; Server-`reboot` wegen anstehender Kernel-Updates.)
+
 > **Update 31.08.2026 (3) — PREISSENKUNG 29/79/149 € + Testphase „14 Tage kostenlos testen" (Commit ee6071f, 156 Tests + Typecheck grün; ✅ DEPLOY DURCH — VPS + .env + Stripe-Skript + IONOS-Upload von Dirk am 31.08. abends erledigt; ⏳ LIVE-VERIFIKATION OFFEN):**
-> - **⏳ Noch zu verifizieren (nächste Session):** (1) Begrüßung von frischer Nummer nennt „14 Tage kostenlos
->   testen". (2) auftragsboss.de zeigt 29/79/149. (3) Stripe-Skript-Ausgabe hatte „↻ Preis geändert" für alle
->   drei Tarife (falls nicht gesehen: `/abo`-Tarifkarten im Cockpit prüfen bzw. Skript erneut laufen lassen).
+> - **Verifikation:** ✅ (2) auftragsboss.de zeigt 29/79/149 + „14 Tage" (live geprüft 02.09., inkl. „66 Cent
+>   je Angebot"-Zeile). ✅ (3) Stripe-Testmodus-Preise stimmen (Skript-Wiederholungslauf 02.09.: dreimal
+>   „✓ Preis existiert schon" — ✓ erscheint nur bei exakt passendem Betrag). ⏳ (1) Begrüßung von frischer
+>   Nummer nennt „14 Tage" — offen, am besten mit dem Telefon-Akquise-Live-Test kombinieren.
 > - **Neue Tarifpreise: Basis 29 / Profi 79 / Team 149 € netto/Monat** (vorher 49/99/199; Kontingente bleiben
 >   50/120/300). Zentrale Quelle `TARIF_PRESETS` (abrechnung.ts) — **aboSeite.ts nutzt sie jetzt statt eigener
 >   Zahlen** (eine Quelle weniger, die auseinanderlaufen kann). Landingpage-Preiskarten neu; Profi-Unterzeile

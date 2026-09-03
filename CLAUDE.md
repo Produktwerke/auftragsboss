@@ -120,6 +120,27 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 03.09.2026 — APP LÄUFT NICHT MEHR ALS ROOT ✅ (Umbau von Claude per SSH-Schlüssel ausgeführt,
+> Reboot-Feuerprobe bestanden: App startet automatisch unter dem neuen Konto, /health 200):**
+> - **Neues Konto `auftragsboss`** (ohne Passwort, kein SSH-Zugang — nur root kann per `su - auftragsboss`
+>   hinein). **App liegt jetzt in `/home/auftragsboss/app`** (vorher /root/app), alles chown auftragsboss;
+>   `.env` und alte `.env.bak` auf chmod 600. Ein Einbruch über die App erbeutet damit nur noch dieses
+>   Konto, nicht mehr den ganzen Server.
+> - **pm2 läuft je Benutzer:** eigener Daemon unter auftragsboss (`su - auftragsboss -c 'pm2 …'`),
+>   Autostart via `pm2-auftragsboss.service` (enabled, Reboot-getestet); alter `pm2-root` disabled,
+>   root-Eintrag gelöscht, root-Daemon gekillt. Backup-Skript `/root/backup-auftragsboss.sh` auf
+>   `APP=/home/auftragsboss/app` umgestellt + Testlauf ok (Cron + /root/backups + Offsite unverändert
+>   als root — root darf die Nutzer-Dateien lesen).
+> - **⚠️ NEUES DEPLOY-RITUAL (ersetzt die /root/app-Befehle in älteren Blöcken!):** tar packen wie gehabt,
+>   `scp … root@87.106.165.151:/root/`, dann:
+>   `ssh root@87.106.165.151 "tar xzf /root/deploy.tar.gz -C /home/auftragsboss/app && chown -R auftragsboss:auftragsboss /home/auftragsboss/app && su - auftragsboss -c 'pm2 restart auftragsboss'"`
+>   Bei npm install/db push: `su - auftragsboss -c 'cd ~/app && npm install && npx prisma db push && pm2 restart auftragsboss'`.
+>   Das `chown` nach dem Entpacken ist PFLICHT (tar als root erzeugt root-Dateien). Server-`.env` liegt
+>   jetzt unter `/home/auftragsboss/app/.env`; `pm2 logs/status` immer über `su - auftragsboss -c '…'`.
+>   Server-SQL: `su - auftragsboss -c 'cd ~/app && npx prisma db execute --file … --schema prisma/schema.prisma'`.
+> - Claude kann Server-Wartung jetzt selbst per SSH-Schlüssel ausführen (Heimrechner-Schlüssel seit Phase B);
+>   Dirks Guard-Hook blockiert dabei bewusst `systemctl`-Befehle → die tippt Dirk selbst.
+
 > **Update 02.09.2026 — SERVER-HÄRTUNG Phase A ✅ (von Dirk ausgeführt, Statusausgabe verifiziert):**
 > - **SSH-Schlüssel** für den Büro-Rechner erzeugt (`%USERPROFILE%\.ssh\id_ed25519`, ohne Passphrase) und in
 >   `authorized_keys` des Servers hinterlegt. ✅ Schlüssel-Login VERIFIZIERT („SCHLUESSEL-LOGIN OK" ohne

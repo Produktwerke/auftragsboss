@@ -120,6 +120,36 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 03.09.2026 (2) — SICHERHEITS-AUDIT + ZWINGEND-MASSNAHMEN 1–7 ✅ DEPLOYT (Commits 6438f87 + f237626; 170 Tests grün; live verifiziert):**
+> - **Vollständiger Read-only-Audit** (6 parallele Prüf-Agenten + Server-Prüfung): Bericht als Artefakt
+>   https://claude.ai/code/artifact/04c0b2c0-a2c9-4c3f-bbce-44a9a893dff5 + PDF im Repo-Root. Gesamt-Reife
+>   52/100; 3 kritische Funde — alle noch am selben Tag behoben:
+> - **Block A (Commit 6438f87):** (K01) `mail-einstellung` + `mail.:format` prüfen jetzt `darfZugreifen`
+>   (401 ohne vertrautes Gerät; mail-einstellung zusätzlich istTest→403) — DB-Check ergab: Lücke wurde NIE
+>   ausgenutzt (einzige hinterlegte E-Mail = Dirks eigene). (K02) adminSeite escaped menge/einzelpreis/
+>   beschreibung typrobust (kein Stored-XSS/Crash über die Lern-Auswertung mehr). (H01) NEU
+>   `web/jsonInsSkript.ts` — alle 12 `${JSON.stringify(…)}`-Einbettungen in Script-Blöcken umgestellt
+>   (</script>-Breakout unmöglich).
+> - **Block B (Commit f237626):** (K03) NEU `web/eingabeSchemata.ts` — Zod-Laufzeitvalidierung für
+>   Editor-Speichern/Einstellungen/Registrierung/Feedback/Empfehlung (Mengen positiv+endlich, Preise
+>   begrenzt — Nachlass erlaubt, Texte mit Obergrenzen, E-Mail = genau EINE Adresse). (H04) WhatsApp-
+>   Webhook FAIL-CLOSED ohne APP_SECRET + Dedup per msg.id (RAM, 5000). (H02) `trustProxy: "127.0.0.1"` —
+>   `req.ip` = echte Client-IP, Webtest-Limits nicht mehr per Header fälschbar. (H05) Logger maskiert
+>   Token-URLs als `/[token]` (live verifiziert). (H09) `npm audit fix` + **fastify 5.12.1** — alle 7
+>   Server-Schwachstellen zu; übrig nur deepmerge-ts im Prisma-CLI (kein Serverpfad, Fix wäre Downgrade).
+> - **(M01) Caddy-Security-Header LIVE** (Caddyfile neu, Backup `Caddyfile.bak-20260903`): HSTS 180 Tage,
+>   nosniff, `Referrer-Policy: no-referrer` (Tokens leaken nicht mehr per Referer!), X-Frame-Options DENY,
+>   CSP (self + unsafe-inline, connect-src self → eingeschleustes Skript kann nicht exfiltrieren).
+>   /testen + /stasi unter CSP fehlerfrei (Konsole leer). Reload via `caddy reload` (ohne systemctl).
+> - **⚠️ NEUE STOLPERFALLE:** Lokale Prisma-CLI-Befehle (`db push`, `db execute`, `studio`) finden die
+>   DATABASE_URL nicht mehr (lokale .env liegt jetzt in der Dropbox; Prisma-CLI liest nur ./.env) →
+>   vorher `$env:DATABASE_URL="file:./dev.db"` setzen. Server unverändert (dort liegt die .env im App-Ordner).
+> - **Rollback-Kopie** des alten Server-Codes: `/root/rollback-src-vor-audit` (nach ein paar Tagen löschen).
+> - **⏳ OFFEN aus dem Audit (30-Tage-Paket, Maßnahmen 8–16):** Rate-Limiting, Monitoring/Uptime-Alarm,
+>   .env ins Backup + Restore-Probe, `/admin/:token` abschalten, 2FA-Check aller Dienst-Konten,
+>   Webtest-Konto vom /start-Listing trennen, Freimonat-Race, Stripe-Idempotenz-Feld, Dateirechte/Swap/
+>   pm2-Logrotation. Danach Hardening (17–20). Details im Bericht.
+
 > **Update 03.09.2026 — APP LÄUFT NICHT MEHR ALS ROOT ✅ (Umbau von Claude per SSH-Schlüssel ausgeführt,
 > Reboot-Feuerprobe bestanden; ✅ End-to-End bestätigt: Dirks Sprachnachricht → Angebot lief unter dem
 > neuen Konto fehlerfrei durch):**

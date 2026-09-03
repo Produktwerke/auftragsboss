@@ -15,9 +15,14 @@ import { einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
 import { cockpitLink } from "./tokens.js";
 import { sendeMail } from "../email/send.js";
 import { sendeWhatsAppText } from "../whatsapp/send.js";
+import { pruefeEingabe, registrierungSchema } from "./eingabeSchemata.js";
 
 const TEAM_MAIL = process.env.TEAM_MAIL?.trim() || "kontakt@auftragsboss.de";
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
 
 /** Hübsche Handynummer fürs Anzeigen: 491749364823 → +49 174 9364823 */
 function nummerHuebsch(n: string): string {
@@ -57,7 +62,7 @@ export async function registrierungRoutes(app: FastifyInstance): Promise<void> {
       return reply.type("text/html; charset=utf-8").send(
         miniSeite(
           "Schon angemeldet",
-          `Dein Betrieb <b>${handwerker.firma || ""}</b> ist bereits angemeldet. Hier geht es zu deinen Einstellungen und Angeboten.`,
+          `Dein Betrieb <b>${escapeHtml(handwerker.firma || "")}</b> ist bereits angemeldet. Hier geht es zu deinen Einstellungen und Angeboten.`,
           cockpitLink(req.params.token),
           "Zu meinem Cockpit",
         ),
@@ -90,9 +95,12 @@ export async function registrierungRoutes(app: FastifyInstance): Promise<void> {
         return reply.send({ ok: true, cockpitUrl: cockpitLink(req.params.token) });
       }
 
-      const firma = (req.body?.firma ?? "").trim();
-      const name = (req.body?.name ?? "").trim();
-      const email = (req.body?.email ?? "").trim();
+      // Laufzeit-Validierung: Längen + genau EINE E-Mail-Adresse (Audit AB-K03).
+      const koerper = pruefeEingabe(registrierungSchema, req.body ?? {}, reply);
+      if (!koerper) return;
+      const firma = koerper.firma.trim();
+      const name = koerper.name.trim();
+      const email = koerper.email.trim();
       if (firma.length < 2 || name.length < 2 || !EMAIL_RE.test(email)) {
         return reply.code(400).send({ fehler: "Bitte Firma, Ansprechpartner und eine gültige E-Mail angeben." });
       }
@@ -123,8 +131,8 @@ export async function registrierungRoutes(app: FastifyInstance): Promise<void> {
             TEAM_MAIL,
             `Neue Selbst-Anmeldung: ${firma}`,
             `<p>Neuer Betrieb hat sich selbst angemeldet:</p><ul>` +
-              `<li>Firma: ${firma}</li><li>Ansprechpartner: ${name}</li>` +
-              `<li>E-Mail: ${email}</li><li>WhatsApp: ${handwerker.whatsappNummer}</li></ul>`,
+              `<li>Firma: ${escapeHtml(firma)}</li><li>Ansprechpartner: ${escapeHtml(name)}</li>` +
+              `<li>E-Mail: ${escapeHtml(email)}</li><li>WhatsApp: ${escapeHtml(handwerker.whatsappNummer)}</li></ul>`,
           );
         } catch (err) {
           req.log.error({ err }, "Team-Benachrichtigung (Selbstregistrierung) fehlgeschlagen");
@@ -152,7 +160,7 @@ function willkommensMail(name: string, firma: string, cockpitUrl: string): strin
   const vorname = name.split(" ")[0] || "";
   return `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1a1d22">
     <h2 style="margin:0 0 8px">Willkommen an Bord, ${vorname}! 🎉</h2>
-    <p>Dein Betrieb <b>${firma}</b> ist jetzt bei AuftragsBoss angemeldet.</p>
+    <p>Dein Betrieb <b>${escapeHtml(firma)}</b> ist jetzt bei AuftragsBoss angemeldet.</p>
     <p>Richte einmal dein Logo, deine Adresse und deine Standardtexte ein, dann stehen sie
        automatisch auf jedem Angebot:</p>
     <p><a href="${cockpitUrl}" style="display:inline-block;padding:12px 20px;background:#ffd21e;color:#12151a;font-weight:700;border-radius:10px;text-decoration:none">Zu meinen Einstellungen</a></p>

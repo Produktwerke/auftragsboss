@@ -68,6 +68,26 @@ export function signaturGueltig(secret: string, roh: Buffer | undefined, signatu
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+// Zuletzt gesehene Nachrichten-IDs (Einfüge-Reihenfolge = Alter). Im RAM:
+// deckt das reale Wiederholungsfenster von Meta (Sekunden bis Minuten) ab.
+// Nach einem Neustart beginnt die Liste leer — die harten DB-Grenzen
+// (Kontingente) bleiben davon unberührt.
+const gesehen = new Set<string>();
+const GESEHEN_MAX = 5000;
+
+export function schonVerarbeitet(id: string | undefined): boolean {
+  if (!id) return false;
+  if (gesehen.has(id)) return true;
+  gesehen.add(id);
+  if (gesehen.size > GESEHEN_MAX) {
+    for (const alt of gesehen) {
+      gesehen.delete(alt);
+      if (gesehen.size <= GESEHEN_MAX / 2) break;
+    }
+  }
+  return false;
+}
+
 export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
   // Den rohen Body byte-genau aufbewahren (für die Signaturprüfung) und dabei
   // wie gewohnt als JSON parsen. Scoped auf diese Routen.
@@ -92,17 +112,20 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
 
   // ── Eingehende Nachrichten ────────────────────────────────
   app.post("/webhook/whatsapp", async (req, reply) => {
-    // Signatur prüfen, sofern ein App-Secret hinterlegt ist.
+    // FAIL CLOSED (wie der Stripe-Webhook): Ohne App-Secret wird NICHTS
+    // verarbeitet. Vorher lief der Webhook in dem Fall mit bloßer Warnung
+    // weiter — dann hätte jeder beliebige Absendernummern simulieren und
+    // KI-Kosten auslösen können (Audit AB-H04).
     const appSecret = process.env.WHATSAPP_APP_SECRET;
-    if (appSecret) {
-      const signatur = req.headers["x-hub-signature-256"] as string | undefined;
-      const roh = (req as FastifyRequest & { rawBody?: Buffer }).rawBody;
-      if (!signaturGueltig(appSecret, roh, signatur)) {
-        app.log.warn("Webhook mit ungültiger Signatur abgelehnt.");
-        return reply.code(401).send({ fehler: "ungültige Signatur" });
-      }
-    } else {
-      app.log.warn("WHATSAPP_APP_SECRET nicht gesetzt — Webhook-Signatur wird NICHT geprüft.");
+    if (!appSecret) {
+      app.log.error("WHATSAPP_APP_SECRET fehlt in der .env — Webhook lehnt alle Nachrichten ab (fail closed).");
+      return reply.code(401).send({ fehler: "Webhook nicht konfiguriert" });
+    }
+    const signatur = req.headers["x-hub-signature-256"] as string | undefined;
+    const roh = (req as FastifyRequest & { rawBody?: Buffer }).rawBody;
+    if (!signaturGueltig(appSecret, roh, signatur)) {
+      app.log.warn("Webhook mit ungültiger Signatur abgelehnt.");
+      return reply.code(401).send({ fehler: "ungültige Signatur" });
     }
 
     // Sofort bestätigen — Verarbeitung läuft asynchron weiter
@@ -116,6 +139,13 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     // so liefern, wie es ihm im Moment leichter fällt (diktieren, Aufmaß-Zettel
     // fotografieren oder tippen).
     for (const msg of messages) {
+      // Meta stellt mindestens-einmal zu: bei Timeout/Netzfehler kommt
+      // dieselbe Nachricht erneut. Ohne Deduplizierung würde sie doppelt
+      // transkribiert, doppelt bezahlt und doppelt beantwortet (AB-H04).
+      if (schonVerarbeitet(msg.id)) {
+        app.log.info({ msgId: msg.id }, "Doppelt zugestellte Nachricht übersprungen.");
+        continue;
+      }
       const eingabe = extrahiereEingabe(msg);
       if (!eingabe) continue;
 

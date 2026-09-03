@@ -41,6 +41,13 @@ import {
   merkeFehlversuch,
   setzeVersucheZurueck,
 } from "./geraetevertrauen.js";
+import {
+  pruefeEingabe,
+  speicherSchema,
+  einstellungenSchema,
+  feedbackSchema,
+  empfehlungMailSchema,
+} from "./eingabeSchemata.js";
 
 interface SpeicherKoerper {
   kundeName?: string;
@@ -202,7 +209,10 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     if (dokument.eingefroren) return reply.code(409).send({ fehler: "angenommen, eingefroren" });
     if (dokument.versendetAm) return reply.code(409).send({ fehler: "versendet, schreibgeschützt" });
 
-    const k = req.body;
+    // Laufzeit-Validierung: Typen, Grenzen, keine NaN/Infinity — die
+    // TypeScript-Typen allein prüfen zur Laufzeit nichts (Audit AB-K03).
+    const k = pruefeEingabe(speicherSchema, req.body, reply);
+    if (!k) return;
     const positionen = k.positionen ? editorZuPositionen(k.positionen) : undefined;
     const preisliste = ladePreisliste();
     const summe = positionen ? berechneAngebot(positionen, preisliste, dokument.datum) : null;
@@ -391,7 +401,9 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     "/api/testen/audio",
     { bodyLimit: 25 * 1024 * 1024 },
     async (req, reply) => {
-      const ip = (((req.headers["x-forwarded-for"] as string) ?? "").split(",")[0] ?? "").trim() || req.ip;
+      // req.ip ist dank trustProxy die ECHTE Client-IP (von Caddy angehängt);
+      // den X-Forwarded-For-Header selbst zu lesen wäre fälschbar (AB-H02).
+      const ip = req.ip;
       const erlaubt = testErlaubt(ip);
       if (!erlaubt.ok) return reply.code(429).send({ fehler: erlaubt.grund });
       const b64 = (req.body?.audio ?? "").split(",").pop() ?? "";
@@ -410,7 +422,8 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
   );
 
   app.post("/api/testen/beispiel", async (req, reply) => {
-    const ip = (((req.headers["x-forwarded-for"] as string) ?? "").split(",")[0] ?? "").trim() || req.ip;
+    // req.ip = echte Client-IP dank trustProxy (siehe /api/testen/audio).
+    const ip = req.ip;
     const erlaubt = testErlaubt(ip);
     if (!erlaubt.ok) return reply.code(429).send({ fehler: erlaubt.grund });
     try {
@@ -717,9 +730,12 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       if (!handwerker) return reply.code(404).send({ fehler: "nicht gefunden" });
       if (!smtpKonfiguriert()) return reply.code(503).send({ fehler: "E-Mail-Versand ist nicht eingerichtet." });
 
-      const name = (req.body.name ?? "").trim();
-      const email = (req.body.email ?? "").trim();
-      if (name.length < 2 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      // Genau EINE Empfänger-Adresse (keine Kommas → keine nodemailer-Liste).
+      const koerper = pruefeEingabe(empfehlungMailSchema, req.body, reply);
+      if (!koerper) return;
+      const name = (koerper.name ?? "").trim();
+      const email = koerper.email.trim();
+      if (name.length < 2) {
         return reply.code(400).send({ fehler: "Bitte Name und gültige E-Mail angeben." });
       }
 
@@ -793,7 +809,9 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       });
       if (!handwerker) return reply.code(404).send({ fehler: "nicht gefunden" });
 
-      const k = req.body;
+      // Laufzeit-Validierung (Typen, Längen, E-Mail-Format) — Audit AB-K03.
+      const k = pruefeEingabe(einstellungenSchema, req.body, reply);
+      if (!k) return;
       // Leere Texteingaben als "nicht gesetzt" (null) speichern, damit wieder
       // die Vorgabe greift. Farbe nur übernehmen, wenn sie ein gültiger
       // Hex-Wert ist.
@@ -879,7 +897,9 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       });
       if (!handwerker) return reply.code(404).send({ fehler: "nicht gefunden" });
 
-      const text = (req.body.text ?? "").trim();
+      const koerper = pruefeEingabe(feedbackSchema, req.body, reply);
+      if (!koerper) return;
+      const text = koerper.text.trim();
       if (text.length < 3) return reply.code(400).send({ fehler: "leer" });
 
       await prisma.feedback.create({

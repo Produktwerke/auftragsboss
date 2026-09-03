@@ -4,7 +4,7 @@
 // aus seiner Sicht wäre das Diktat verloren. Stattdessen wird nach kurzer
 // Funkstille mit den vorhandenen Angaben fertiggestellt.
 import cron from "node-cron";
-import { prisma, erstelleDokument } from "../pipeline.js";
+import { prisma, erstelleDokument, inReiheProNummer } from "../pipeline.js";
 import { strukturiereDialog } from "../ai/structure.js";
 import { ladePreisliste } from "../preisliste.js";
 import { sendeWhatsAppText } from "../whatsapp/send.js";
@@ -31,20 +31,32 @@ async function schliesseAbgelaufeneVorgaenge(): Promise<void> {
     }
 
     try {
-      const preisliste = ladePreisliste();
-      const daten = await strukturiereDialog(dialog, preisliste);
-      await sendeWhatsAppText(
-        vorgang.handwerker.whatsappNummer,
-        "⏱️ Ich habe nichts mehr von dir gehört — ich mache das Angebot mit den vorhandenen Angaben fertig.",
-      );
-      await erstelleDokument({
-        vorgang,
-        handwerkerId: vorgang.handwerkerId,
-        vonNummer: vorgang.handwerker.whatsappNummer,
-        daten,
-        preisliste,
+      // In die Warteschlange DIESER Nummer einreihen (Audit AB-M03): so kann
+      // der Job nie parallel zu einer gerade eintreffenden Nachricht laufen.
+      // Nach dem Warten den Vorgang FRISCH prüfen — hat der Handwerker
+      // inzwischen geantwortet (oder die Pipeline ihn abgeschlossen), ist
+      // hier nichts mehr zu tun.
+      await inReiheProNummer(vorgang.handwerker.whatsappNummer, async () => {
+        const frisch = await prisma.vorgang.findUnique({ where: { id: vorgang.id } });
+        const grenzeJetzt = new Date(Date.now() - TIMEOUT_MINUTEN * 60_000);
+        if (!frisch || frisch.status !== "OFFEN" || frisch.letzteAktivitaet >= grenzeJetzt) {
+          return;
+        }
+        const preisliste = ladePreisliste();
+        const daten = await strukturiereDialog(dialog, preisliste);
+        await sendeWhatsAppText(
+          vorgang.handwerker.whatsappNummer,
+          "⏱️ Ich habe nichts mehr von dir gehört — ich mache das Angebot mit den vorhandenen Angaben fertig.",
+        );
+        await erstelleDokument({
+          vorgang,
+          handwerkerId: vorgang.handwerkerId,
+          vonNummer: vorgang.handwerker.whatsappNummer,
+          daten,
+          preisliste,
+        });
+        console.log(`⏱️ Vorgang ${vorgang.id} nach Zeitablauf fertiggestellt.`);
       });
-      console.log(`⏱️ Vorgang ${vorgang.id} nach Zeitablauf fertiggestellt.`);
     } catch (err) {
       console.error(`Zeitablauf-Abschluss fehlgeschlagen (${vorgang.id}):`, err);
       // Nicht endlos wiederholen — sonst läuft bei einem Dauerfehler jede

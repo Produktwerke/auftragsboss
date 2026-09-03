@@ -51,7 +51,7 @@ export async function importRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── Upload verarbeiten (mehrere Dateien je Stapel) ────
-  app.post<{ Params: { token: string } }>("/api/import/:token", async (req, reply) => {
+  app.post<{ Params: { token: string } }>("/api/import/:token", { config: { rateLimit: { max: 10, timeWindow: "1 hour" } } }, async (req, reply) => {
     const handwerker = await prisma.handwerker.findUnique({
       where: { einstellungenToken: req.params.token },
       select: { id: true },

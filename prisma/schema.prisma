@@ -149,6 +149,10 @@ model Buchung {
   betrag       Float // EUR; ZAHLUNG positiv, KORREKTUR auch negativ möglich
   zeitraum     String // abgedeckter Monat "JJJJ-MM", z.B. "2026-08"
   notiz        String @default("")
+  // Stripe-Rechnungs-Id der ZAHLUNG (Idempotenz-Anker, Audit AB-M04).
+  // Nur bei automatischen Stripe-Zahlungsbuchungen gesetzt; unique verhindert
+  // Doppelbuchungen hart auf DB-Ebene (mehrere NULLs sind in SQLite erlaubt).
+  stripeInvoiceId String? @unique
 
   erstelltAm DateTime @default(now())
 

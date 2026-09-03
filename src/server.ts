@@ -1,5 +1,6 @@
 // Einstiegspunkt: Fastify-Server + Webhook-Routen + Cron-Jobs.
 import Fastify from "fastify";
+import rateLimit from "@fastify/rate-limit";
 import { serverConfig } from "./config.js";
 import { whatsappRoutes } from "./whatsapp/webhook.js";
 import { editorRoutes } from "./web/routes.js";
@@ -34,6 +35,22 @@ const app = Fastify({
       },
     },
   },
+});
+
+// Ratenbegrenzung (Audit AB-H03): großzügige globale Grenze pro Client-IP;
+// die heiklen Routen (Login, Mail-Versand, KI, Uploads) haben zusätzlich
+// eigene, engere Grenzen per config.rateLimit an der Route. Ausgenommen:
+// /health (Monitoring) und die signaturgeprüften Webhooks (Meta/Stripe
+// senden legitime Bursts und wiederholen bei 4xx unnötig).
+await app.register(rateLimit, {
+  global: true,
+  max: 300,
+  timeWindow: "1 minute",
+  allowList: (req) => req.url === "/health" || req.url.startsWith("/webhook/"),
+  errorResponseBuilder: () => ({
+    statusCode: 429,
+    fehler: "Zu viele Anfragen. Bitte einen Moment warten und erneut versuchen.",
+  }),
 });
 
 // Health-Check (für Hosting/Uptime-Monitoring)

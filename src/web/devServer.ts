@@ -96,9 +96,8 @@ function M(beschreibung: string, menge: number | null, einheit: string) {
 }
 
 async function main(): Promise<void> {
-  // Für die Vorschau einen festen Demo-Admin-Token setzen (in Produktion via .env).
-  process.env.ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? "admin-demo-token";
   // Demo-Zugangsdaten für den /stasi-Login (in Produktion via .env + stasi-passwort.ts).
+  // Der alte ADMIN_TOKEN-Weg ist abgeschaltet — Zugang nur noch über den Login.
   process.env.ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "admin@demo.de";
   process.env.ADMIN_PASSWORT_HASH = process.env.ADMIN_PASSWORT_HASH ?? passwortHashErzeugen("demo-passwort");
 
@@ -119,9 +118,8 @@ async function main(): Promise<void> {
   console.log(`\n  Angebots-Editor:\n  ${bearbeitenLink(tokens.bearbeiten)}\n`);
   console.log(`  Einstellungen:\n  ${einstellungenLink(tokens.einstellungen)}\n`);
   console.log(`  Kundenansicht: ${kundenLink(tokens.kunde)}\n`);
-  console.log(`  Lern-Auswertung (Admin):\n  ${basisUrl()}/admin/${process.env.ADMIN_TOKEN}\n`);
-  console.log(`  Betreiber-Cockpit (Kunden):\n  ${basisUrl()}/admin/${process.env.ADMIN_TOKEN}/betriebe\n`);
-  console.log(`  Betreiber-Login (neu):\n  ${basisUrl()}/stasi  (admin@demo.de / demo-passwort)\n`);
+  console.log(`  Betreiber-Login (Cockpit + Lern-Auswertung):\n  ${basisUrl()}/stasi  (admin@demo.de / demo-passwort)\n`);
+  console.log(`  → nach dem Login: /stasi/betriebe (Kunden) und /stasi/auswertung\n`);
   console.log(`  Einladung (Empfehlung):\n  ${werbeLink(tokens.werbe)}`);
   console.log("\n  Beenden mit Strg+C");
   console.log(linie + "\n");

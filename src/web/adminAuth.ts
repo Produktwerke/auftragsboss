@@ -4,7 +4,7 @@
 // Screenshots. Neuer Weg: klassischer Login, danach ein signiertes
 // httpOnly-Cookie (30 Tage). Der unauffällige Pfad /stasi ist bewusst gewählt
 // (schwerer zu erraten) — die eigentliche Sicherheit kommt vom Login.
-// Der alte Token-Weg /admin/<ADMIN_TOKEN>/… bleibt als Notfall-Zugang bestehen.
+// Der alte Token-Weg /admin/<ADMIN_TOKEN>/… wurde am 03.09.2026 ABGESCHALTET (Audit AB-H06).
 //
 // Zugangsdaten in der Server-.env (fehlt eines, ist der Login komplett aus — fail closed):
 //   ADMIN_EMAIL=du@deine-mail.de
@@ -174,7 +174,7 @@ export async function adminAuthRoutes(app: FastifyInstance): Promise<void> {
     return reply.type("text/html; charset=utf-8").send(loginSeite());
   });
 
-  app.post<{ Body: { email?: string; passwort?: string } }>("/stasi/login", async (req, reply) => {
+  app.post<{ Body: { email?: string; passwort?: string } }>("/stasi/login", { config: { rateLimit: { max: 10, timeWindow: "15 minutes" } } }, async (req, reply) => {
     const k = konfig();
     if (!k) return reply.code(404).send({ fehler: "nicht verfügbar" });
 

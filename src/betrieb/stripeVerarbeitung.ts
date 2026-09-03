@@ -188,23 +188,44 @@ export async function verarbeiteStripeEvent(
         console.error(`Stripe: Rechnung ${r.invoiceId} keinem Betrieb zuzuordnen (Abo ${r.subscriptionId}).`);
         return { aktion: "ignoriert", detail: `Rechnung ${r.invoiceId} ohne Betrieb` };
       }
-      // Idempotenz: dieselbe Stripe-Rechnung nie doppelt buchen.
+      // Idempotenz: dieselbe Stripe-Rechnung nie doppelt buchen. Anker ist
+      // das eigene Unique-Feld stripeInvoiceId (Audit AB-M04) — die frühere
+      // Textsuche in der Notiz konnte durch eine manuelle Notiz mit derselben
+      // Rechnungs-Id oder eine VOR der Zahlung eintreffende Erstattungs-
+      // Korrektur fälschlich anspringen (stiller Umsatzverlust im Ledger).
+      // Der notiz-Vergleich bleibt NUR für Altbestände (vor diesem Feld),
+      // eingeschränkt auf typ ZAHLUNG.
       const schonDa = await prisma.buchung.findFirst({
-        where: { notiz: { contains: r.invoiceId } },
+        where: {
+          OR: [
+            { stripeInvoiceId: r.invoiceId },
+            { typ: "ZAHLUNG", notiz: { contains: r.invoiceId } },
+          ],
+        },
       });
       if (schonDa) return { aktion: "schon-gebucht", detail: r.invoiceId };
 
       const hw = await prisma.handwerker.findUnique({ where: { id: handwerkerId } });
-      await prisma.buchung.create({
-        data: {
-          handwerkerId,
-          betrieb: hw ? hw.firma || hw.name : "(unbekannt)",
-          typ: "ZAHLUNG",
-          betrag: r.nettoEuro,
-          zeitraum: r.zeitraum,
-          notiz: `Stripe-Rechnung ${r.invoiceId}`,
-        },
-      });
+      try {
+        await prisma.buchung.create({
+          data: {
+            handwerkerId,
+            betrieb: hw ? hw.firma || hw.name : "(unbekannt)",
+            typ: "ZAHLUNG",
+            betrag: r.nettoEuro,
+            zeitraum: r.zeitraum,
+            notiz: `Stripe-Rechnung ${r.invoiceId}`,
+            stripeInvoiceId: r.invoiceId,
+          },
+        });
+      } catch (err) {
+        // Unique-Verletzung = zwei Zustellungen zeitgleich: die andere hat
+        // gewonnen, diese hier ist damit erledigt.
+        if ((err as { code?: string }).code === "P2002") {
+          return { aktion: "schon-gebucht", detail: r.invoiceId };
+        }
+        throw err;
+      }
       return { aktion: "gebucht", detail: `${r.invoiceId} → ${r.zeitraum}` };
     }
 
@@ -243,7 +264,10 @@ export async function verarbeiteStripeEvent(
         return { aktion: "ignoriert", detail: `Erstattung ${invoiceId} ohne Betrag` };
       }
       const orig = await prisma.buchung.findFirst({
-        where: { typ: "ZAHLUNG", notiz: { contains: invoiceId } },
+        where: {
+          typ: "ZAHLUNG",
+          OR: [{ stripeInvoiceId: invoiceId }, { notiz: { contains: invoiceId } }],
+        },
       });
       if (!orig) return { aktion: "ignoriert", detail: `Keine Buchung zu Rechnung ${invoiceId}` };
 

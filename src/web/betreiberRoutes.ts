@@ -1,15 +1,15 @@
 // Betreiber-Cockpit (Stufe 1) — Routen.
 //
-//   GET  /admin/:token/betriebe            → Kundenliste (Filter: ?filter=…)
-//   GET  /admin/:token/betrieb/:id         → Kundendetail
-//   POST /admin/:token/betrieb/:id/kontakt     { nummer, email }
-//   POST /admin/:token/betrieb/:id/blockieren  { grund }
-//   POST /admin/:token/betrieb/:id/entsperren  {}
-//   POST /admin/:token/betrieb/:id/gutschrift  { monate, grund }
-//   POST /admin/:token/betrieb/:id/loeschen    { bestaetigung }  ← Firmenname
+//   GET  /stasi/betriebe            → Kundenliste (Filter: ?filter=…)
+//   GET  /stasi/betrieb/:id         → Kundendetail
+//   POST /stasi/betrieb/:id/kontakt     { nummer, email }
+//   POST /stasi/betrieb/:id/blockieren  { grund }
+//   POST /stasi/betrieb/:id/entsperren  {}
+//   POST /stasi/betrieb/:id/gutschrift  { monate, grund }
+//   POST /stasi/betrieb/:id/loeschen    { bestaetigung }  ← Firmenname
 //
-// Schutz wie die Lern-Auswertung: nur mit gesetztem ADMIN_TOKEN (>=8 Zeichen),
-// sonst 404. Jede schreibende Aktion landet im AdminLog (Nachvollziehbarkeit).
+// Schutz: /stasi-Login-Cookie (adminAuth.ts), sonst 404. Jede schreibende
+// Aktion landet im AdminLog (Nachvollziehbarkeit).
 import type { FastifyInstance } from "fastify";
 import { unlink } from "node:fs/promises";
 import { prisma } from "../pipeline.js";
@@ -38,21 +38,17 @@ import { einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
 import { cockpitLink, einstellungenLink } from "./tokens.js";
 import { hatAdminSitzung } from "./adminAuth.js";
 import { legeLeadAnUndLadeEin } from "../lead/onboarding.js";
+import { WEBTEST_NUMMER } from "./webtest.js";
 import type { FastifyRequest } from "fastify";
 
-function adminOk(token: string): boolean {
-  const admin = process.env.ADMIN_TOKEN;
-  return !!admin && admin.length >= 8 && token === admin;
-}
+// Der alte Notfall-Zugang /admin/<ADMIN_TOKEN>/… ist ABGESCHALTET (Audit
+// AB-H06: nicht timing-sicher, ungedrosselt, Token stand in URLs und Logs).
+// Zugang nur noch über den /stasi-Login mit E-Mail + Passwort. Der Helfer
+// bleibt als Liste, damit die Routen-Registrierung unverändert lesbar ist.
+const beide = (rest: string): string[] => [`/stasi${rest}`];
 
-// Jede Cockpit-Route läuft unter ZWEI Pfaden: neu /stasi/… (Login-Cookie)
-// und übergangsweise weiter /admin/<ADMIN_TOKEN>/… (Notfall-Zugang).
-const beide = (rest: string): string[] => [`/stasi${rest}`, `/admin/:token${rest}`];
-
-/** Zugangsprüfung + Link-Basis für die gerenderte Seite — je nach Weg. */
+/** Zugangsprüfung + Link-Basis für die gerenderte Seite. */
 function zugang(req: FastifyRequest): { ok: boolean; basis: string } {
-  const token = (req.params as { token?: string }).token;
-  if (token !== undefined) return { ok: adminOk(token), basis: `/admin/${token}` };
   return { ok: hatAdminSitzung(req), basis: "/stasi" };
 }
 
@@ -365,6 +361,11 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
       if (!z.ok) return z.basis === "/stasi" ? reply.redirect("/stasi") : reply.code(404).type("text/html").send(nichtGefunden());
       const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
       if (!h) return reply.code(404).type("text/html").send(nichtGefunden());
+      // Für das anonyme Webtest-Sammelkonto darf NIE ein Einstellungs-Token
+      // entstehen — sein Cockpit würde die Diktate aller Tester bündeln (AB-M05).
+      if (h.whatsappNummer === WEBTEST_NUMMER) {
+        return reply.code(400).type("text/html").send(nichtGefunden());
+      }
 
       const kundenToken = await einstellungenTokenBereit(prisma, h);
       const ziel = req.query.ziel === "einstellungen" ? einstellungenLink(kundenToken) : cockpitLink(kundenToken);
@@ -444,16 +445,24 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
       if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
       const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
       if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
-      if (h.freimonate < 1) return reply.code(400).send({ fehler: "Keine Freimonate übrig" });
       const zeitraum = (req.body.zeitraum ?? "").trim();
       if (!istZeitraum(zeitraum)) return reply.code(400).send({ fehler: "Monat bitte als JJJJ-MM angeben" });
 
-      await prisma.$transaction([
-        prisma.handwerker.update({ where: { id: h.id }, data: { freimonate: { decrement: 1 } } }),
-        prisma.buchung.create({
+      // Bedingung IN der Abzieh-Operation (Audit AB-M03): ein Doppelklick
+      // fand vorher zweimal freimonate=1 vor und buchte ins Minus. Jetzt
+      // zieht nur ab, wer wirklich noch >= 1 vorfindet — atomar.
+      const eingeloest = await prisma.$transaction(async (tx) => {
+        const abgezogen = await tx.handwerker.updateMany({
+          where: { id: h.id, freimonate: { gte: 1 } },
+          data: { freimonate: { decrement: 1 } },
+        });
+        if (abgezogen.count === 0) return false;
+        await tx.buchung.create({
           data: { handwerkerId: h.id, betrieb: h.firma, typ: "FREIMONAT", betrag: 0, zeitraum, notiz: "Freimonat eingelöst" },
-        }),
-      ]);
+        });
+        return true;
+      });
+      if (!eingeloest) return reply.code(400).send({ fehler: "Keine Freimonate übrig" });
       await protokolliere(h.id, h.firma, "FREIMONAT", `eingelöst für ${zeitraum} (Rest: ${h.freimonate - 1})`);
       return reply.send({ ok: true, meldung: `Freimonat für ${zeitraum} eingelöst.` });
     },

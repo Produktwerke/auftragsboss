@@ -16,6 +16,7 @@ import { cockpitLink } from "./tokens.js";
 import { sendeMail } from "../email/send.js";
 import { sendeWhatsAppText } from "../whatsapp/send.js";
 import { pruefeEingabe, registrierungSchema } from "./eingabeSchemata.js";
+import { WEBTEST_NUMMER } from "./webtest.js";
 
 const TEAM_MAIL = process.env.TEAM_MAIL?.trim() || "kontakt@auftragsboss.de";
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -82,6 +83,7 @@ export async function registrierungRoutes(app: FastifyInstance): Promise<void> {
   // ── Anmeldung absenden: Test-Konto → echter Betrieb ──
   app.post<{ Params: { token: string }; Body: { firma?: string; name?: string; email?: string } }>(
     "/api/registrieren/:token",
+    { config: { rateLimit: { max: 5, timeWindow: "1 hour" } } },
     async (req, reply) => {
       if (!featureConfig().FEATURE_SELBSTREGISTRIERUNG) {
         return reply.code(404).send({ fehler: "Selbst-Anmeldung ist nicht aktiv." });
@@ -90,6 +92,10 @@ export async function registrierungRoutes(app: FastifyInstance): Promise<void> {
         where: { einstellungenToken: req.params.token },
       });
       if (!handwerker) return reply.code(404).send({ fehler: "Anmelde-Link ungültig." });
+      // Das anonyme Webtest-Sammelkonto kann nicht zum Betrieb werden (AB-M05).
+      if (handwerker.whatsappNummer === WEBTEST_NUMMER) {
+        return reply.code(404).send({ fehler: "Anmelde-Link ungültig." });
+      }
       if (!handwerker.istTest) {
         // Schon echt — idempotent: einfach Erfolg + Cockpit-Link zurückgeben.
         return reply.send({ ok: true, cockpitUrl: cockpitLink(req.params.token) });

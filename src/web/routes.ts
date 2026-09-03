@@ -29,7 +29,7 @@ import { merkePreise, vergissPreis } from "../betrieb/preisgedaechtnis.js";
 import { spurEvent, geraetAusUA } from "../analytics/event.js";
 import { findePlz } from "../betrieb/plzLookup.js";
 import { testSeite } from "./testSeite.js";
-import { testErlaubt, testAngebotAusAudio, testAngebotBeispiel, pruefeAudio } from "./webtest.js";
+import { testErlaubt, testAngebotAusAudio, testAngebotBeispiel, pruefeAudio, WEBTEST_NUMMER } from "./webtest.js";
 import { schleuseSeite } from "./schleuseSeite.js";
 import { hatAdminSitzung } from "./adminAuth.js";
 import {
@@ -159,6 +159,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
   // des Betriebs. Passt sie, wird das Gerät dauerhaft vertraut (Cookie).
   app.post<{ Params: { token: string }; Body: { nummer?: string } }>(
     "/a/:token/zugang",
+    { config: { rateLimit: { max: 20, timeWindow: "15 minutes" } } },
     async (req, reply) => {
       const sperre = zugangGesperrt(req.params.token);
       if (sperre.gesperrt) {
@@ -373,7 +374,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
 
   // ── PLZ-Nachschlag (OpenPLZ, EU/DE) ───────────────────
   // Manueller Knopf im Editor: liefert die PLZ zu Straße + Ort. Hinter Flag.
-  app.get<{ Querystring: { strasse?: string; ort?: string } }>("/api/plz", async (req, reply) => {
+  app.get<{ Querystring: { strasse?: string; ort?: string } }>("/api/plz", { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } }, async (req, reply) => {
     if (!featureConfig().FEATURE_PLZ_LOOKUP) return reply.code(404).send({ fehler: "nicht aktiv" });
     const plz = await findePlz(req.query.strasse ?? "", req.query.ort ?? "");
     return reply.send({ plz });
@@ -399,7 +400,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
 
   app.post<{ Body: { audio?: string; mime?: string } }>(
     "/api/testen/audio",
-    { bodyLimit: 25 * 1024 * 1024 },
+    { bodyLimit: 25 * 1024 * 1024, config: { rateLimit: { max: 10, timeWindow: "1 hour" } } },
     async (req, reply) => {
       // req.ip ist dank trustProxy die ECHTE Client-IP (von Caddy angehängt);
       // den X-Forwarded-For-Header selbst zu lesen wäre fälschbar (AB-H02).
@@ -421,7 +422,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post("/api/testen/beispiel", async (req, reply) => {
+  app.post("/api/testen/beispiel", { config: { rateLimit: { max: 10, timeWindow: "1 hour" } } }, async (req, reply) => {
     // req.ip = echte Client-IP dank trustProxy (siehe /api/testen/audio).
     const ip = req.ip;
     const erlaubt = testErlaubt(ip);
@@ -504,6 +505,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
   // Speichert die E-Mail-Adresse und/oder den "auch als E-Mail senden"-Haken.
   app.put<{ Params: { token: string }; Body: { email?: string; aktiv?: boolean } }>(
     "/api/a/:token/mail-einstellung",
+    { config: { rateLimit: { max: 30, timeWindow: "1 hour" } } },
     async (req, reply) => {
       const dokument = await prisma.dokument.findUnique({
         where: { bearbeitenToken: req.params.token },
@@ -544,6 +546,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
   // Erzeugt PDF/Word wie beim Export und schickt es an die hinterlegte Adresse.
   app.post<{ Params: { token: string; format: string } }>(
     "/api/a/:token/mail.:format",
+    { config: { rateLimit: { max: 10, timeWindow: "1 hour" } } },
     async (req, reply) => {
       const dokument = await prisma.dokument.findUnique({
         where: { bearbeitenToken: req.params.token },
@@ -634,7 +637,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
   // Postfach legen, abends am Rechner in Ruhe fertig machen. Gleiche Vorlage
   // wie der Datei-Versand (Vorschau + „Jetzt bearbeiten"-Knopf), nur ohne
   // Anhang — dokumentMail ohne wordDateiname lässt den Anhang-Kasten weg.
-  app.post<{ Params: { token: string } }>("/api/a/:token/mail-link", async (req, reply) => {
+  app.post<{ Params: { token: string } }>("/api/a/:token/mail-link", { config: { rateLimit: { max: 10, timeWindow: "1 hour" } } }, async (req, reply) => {
     const dokument = await prisma.dokument.findUnique({
       where: { bearbeitenToken: req.params.token },
     });
@@ -680,6 +683,9 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       where: { einstellungenToken: req.params.token },
     });
     if (!handwerker) return reply.code(404).type("text/html").send(nichtGefunden());
+    // Das gemeinsame anonyme Webtest-Konto hat KEIN Cockpit: die Liste würde
+    // die Diktate (und Bearbeiten-Tokens!) aller Website-Tester zeigen (AB-M05).
+    if (handwerker.whatsappNummer === WEBTEST_NUMMER) return reply.code(404).type("text/html").send(nichtGefunden());
 
     const eff = effektivePreisliste(handwerker, ladePreisliste());
     const logo = ladeLogo(eff.betrieb.logo);
@@ -723,6 +729,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
   // Einmalige, klar gekennzeichnete persönliche Empfehlung.
   app.post<{ Params: { token: string }; Body: { name?: string; email?: string } }>(
     "/api/empfehlung/:token/email",
+    { config: { rateLimit: { max: 5, timeWindow: "1 hour" } } },
     async (req, reply) => {
       const handwerker = await prisma.handwerker.findUnique({
         where: { einstellungenToken: req.params.token },
@@ -762,6 +769,8 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       where: { einstellungenToken: req.params.token },
     });
     if (!handwerker) return reply.code(404).type("text/html").send(nichtGefunden());
+    // Webtest-Sammelkonto: keine Einstellungen (AB-M05).
+    if (handwerker.whatsappNummer === WEBTEST_NUMMER) return reply.code(404).type("text/html").send(nichtGefunden());
 
     const vorgabe = ladePreisliste();
     const eff = effektivePreisliste(handwerker, vorgabe);
@@ -863,7 +872,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
   // ── Logo hochladen oder entfernen ─────────────────────
   app.post<{ Params: { token: string }; Body: { dataUrl?: string; entfernen?: boolean } }>(
     "/api/einstellungen/:token/logo",
-    { bodyLimit: 8 * 1024 * 1024 }, // Base64 bläht das Bild auf — Grenze hochsetzen
+    { bodyLimit: 8 * 1024 * 1024, config: { rateLimit: { max: 20, timeWindow: "1 hour" } } }, // Base64 bläht das Bild auf — Grenze hochsetzen
     async (req, reply) => {
       const handwerker = await prisma.handwerker.findUnique({
         where: { einstellungenToken: req.params.token },
@@ -891,6 +900,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
   // ── Feedback von der Einstellungsseite ────────────────
   app.post<{ Params: { token: string }; Body: { text?: string } }>(
     "/api/einstellungen/:token/feedback",
+    { config: { rateLimit: { max: 10, timeWindow: "1 hour" } } },
     async (req, reply) => {
       const handwerker = await prisma.handwerker.findUnique({
         where: { einstellungenToken: req.params.token },
@@ -909,21 +919,12 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     },
   );
 
-  // ── Interne Lern-Auswertung (nur mit gesetztem ADMIN_TOKEN) ─
-  // Ohne ADMIN_TOKEN in der .env ist die Seite komplett aus (404).
-  app.get<{ Params: { token: string } }>("/admin/:token", async (req, reply) => {
-    const admin = process.env.ADMIN_TOKEN;
-    if (!admin || admin.length < 8 || req.params.token !== admin) {
-      return reply.code(404).type("text/html").send(nichtGefunden());
-    }
-    const dokumente = await prisma.dokument.findMany({
-      orderBy: { erstelltAm: "desc" },
-      take: 50,
-    });
-    return reply.type("text/html; charset=utf-8").send(adminSeite({ dokumente, basis: `/admin/${req.params.token}` }));
-  });
+  // Der alte Token-Weg /admin/<ADMIN_TOKEN> für die Lern-Auswertung ist
+  // ABGESCHALTET (Audit AB-H06) — die Auswertung gibt es nur noch unter
+  // /stasi/auswertung nach dem Login. ADMIN_TOKEN in der .env ist damit
+  // wirkungslos und kann dort entfernt werden.
 
-  // Neuer Login-Weg: dieselbe Lern-Auswertung unter /stasi/auswertung
+  // Lern-Auswertung unter /stasi/auswertung
   // (Sitzungs-Cookie statt Token in der URL).
   app.get("/stasi/auswertung", async (req, reply) => {
     if (!hatAdminSitzung(req)) return reply.redirect("/stasi");
@@ -946,6 +947,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
   // ── Empfehlung: Kollege trägt sich als Lead ein ───────
   app.post<{ Params: { code: string }; Body: { firma?: string; name?: string; nummer?: string; email?: string } }>(
     "/api/einladung/:code",
+    { config: { rateLimit: { max: 20, timeWindow: "1 hour" } } },
     async (req, reply) => {
       const werber = await prisma.handwerker.findUnique({ where: { werbeCode: req.params.code } });
       if (!werber) return reply.code(404).send({ fehler: "nicht gefunden" });

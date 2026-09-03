@@ -84,11 +84,18 @@ function addiereMonate(datum: Date, monate: number): Date {
  * Zählt nur Erstfassungen — Nachträge behalten ihre Nummer.
  */
 async function naechsteNummer(handwerkerId: string, art: string, datum: Date): Promise<string> {
-  const jahresBeginn = new Date(datum.getFullYear(), 0, 1);
-  const bisher = await prisma.dokument.count({
-    where: { handwerkerId, art, version: 1, datum: { gte: jahresBeginn } },
+  // HÖCHSTE vergebene Nummer + 1 — NICHT Anzahl + 1: Nach dem Löschen eines
+  // Angebots würde count()+1 eine schon vergebene Nummer erneut ausgeben
+  // (doppelte Angebotsnummern = Buchhaltungsproblem, Audit AB-M03).
+  // Zero-Padding macht die String-Sortierung zur Zahlensortierung.
+  const praefix = `${art === "ANGEBOT" ? "ANG" : "PRO"}-${datum.getFullYear()}-`;
+  const letztes = await prisma.dokument.findFirst({
+    where: { handwerkerId, art, version: 1, nummer: { startsWith: praefix } },
+    orderBy: { nummer: "desc" },
+    select: { nummer: true },
   });
-  return `${art === "ANGEBOT" ? "ANG" : "PRO"}-${datum.getFullYear()}-${String(bisher + 1).padStart(4, "0")}`;
+  const bisher = letztes ? parseInt(letztes.nummer.slice(praefix.length), 10) : 0;
+  return `${praefix}${String((Number.isFinite(bisher) ? bisher : 0) + 1).padStart(4, "0")}`;
 }
 
 /**
@@ -507,6 +514,24 @@ export async function verarbeiteNachricht(args: {
 // dann korrekt als Nachtrag zum selben Angebot erkannt (siehe holeNachtragsVorgang).
 const laufendeVerarbeitung = new Map<string, Promise<unknown>>();
 
+/**
+ * Reiht eine Arbeit in die Warteschlange DIESER Nummer ein. Auch der
+ * Timeout-Job nutzt das (Audit AB-M03): vorher lief er an der Schlange
+ * vorbei und konnte parallel zu einer eintreffenden Nachricht ein
+ * zweites Angebot aus demselben Diktat erzeugen.
+ */
+export function inReiheProNummer(nummer: string, arbeit: () => Promise<void>): Promise<void> {
+  const vorher = laufendeVerarbeitung.get(nummer) ?? Promise.resolve();
+  const lauf = vorher.catch(() => {}).then(arbeit);
+  laufendeVerarbeitung.set(nummer, lauf);
+  // Aufräumen, sobald diese Arbeit durch ist (Fehler hier ignorieren — der
+  // Aufrufer behandelt Fehler des zurückgegebenen Promise selbst).
+  lauf.catch(() => {}).finally(() => {
+    if (laufendeVerarbeitung.get(nummer) === lauf) laufendeVerarbeitung.delete(nummer);
+  });
+  return lauf;
+}
+
 export function verarbeiteNachrichtSeriell(args: {
   vonNummer: string;
   mediaId?: string;
@@ -514,16 +539,7 @@ export function verarbeiteNachrichtSeriell(args: {
   text?: string;
   knopfPayload?: string;
 }): Promise<void> {
-  const key = args.vonNummer;
-  const vorher = laufendeVerarbeitung.get(key) ?? Promise.resolve();
-  const lauf = vorher.catch(() => {}).then(() => verarbeiteNachricht(args));
-  laufendeVerarbeitung.set(key, lauf);
-  // Aufräumen, sobald diese Nachricht durch ist (Fehler hier ignorieren — der
-  // Aufrufer im Webhook behandelt Fehler des zurückgegebenen Promise selbst).
-  lauf.catch(() => {}).finally(() => {
-    if (laufendeVerarbeitung.get(key) === lauf) laufendeVerarbeitung.delete(key);
-  });
-  return lauf;
+  return inReiheProNummer(args.vonNummer, () => verarbeiteNachricht(args));
 }
 
 /** Erzeugt Word-Datei, E-Mail und Archiv-Eintrag und schließt den Vorgang. */

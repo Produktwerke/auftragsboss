@@ -18,7 +18,10 @@ import { featureConfig, webtestConfig } from "../config.js";
 import { spurEvent } from "../analytics/event.js";
 
 // Sentinel-Nummer des gemeinsamen, anonymen Test-Betriebs (istTest).
-const WEBTEST_NUMMER = "webtest-anonym";
+// Exportiert, damit Cockpit/Einstellungen/Abo/Import/Registrierung dieses
+// Sammelkonto ABLEHNEN können (Audit AB-M05: ein geleakter Token wäre sonst
+// ein Sammelleak über die Diktate aller anonymen Website-Tester).
+export const WEBTEST_NUMMER = "webtest-anonym";
 
 // Beispiel-Diktat für den "Beispiel"-Knopf (wer nicht selbst sprechen mag).
 // Bewusst KOMPLETT diktiert (volle Adresse, alle Preise, wenige große
@@ -142,9 +145,16 @@ async function erzeugeAusText(haupttext: string, zweitfassung?: string): Promise
 
   const datum = new Date();
   const summe = berechneAngebot(daten.positionen, eff, datum);
-  const anzahl = await prisma.dokument.count({ where: { handwerkerId: handwerker.id, art: daten.art } });
-  const praefix = daten.art === "PROTOKOLL" ? "PRO" : "ANG";
-  const nummer = `${praefix}-${datum.getFullYear()}-${String(anzahl + 1).padStart(4, "0")}`;
+  // Höchste Nummer + 1 statt Anzahl + 1 (Audit AB-M03: nach Löschungen oder
+  // bei zwei gleichzeitigen Tests vergab count()+1 doppelte Nummern).
+  const praefix = `${daten.art === "PROTOKOLL" ? "PRO" : "ANG"}-${datum.getFullYear()}-`;
+  const letztes = await prisma.dokument.findFirst({
+    where: { handwerkerId: handwerker.id, art: daten.art, nummer: { startsWith: praefix } },
+    orderBy: { nummer: "desc" },
+    select: { nummer: true },
+  });
+  const bisher = letztes ? parseInt(letztes.nummer.slice(praefix.length), 10) : 0;
+  const nummer = `${praefix}${String((Number.isFinite(bisher) ? bisher : 0) + 1).padStart(4, "0")}`;
 
   const dok = await prisma.dokument.create({
     data: {

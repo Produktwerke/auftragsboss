@@ -143,11 +143,13 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   **Restore-Probe ✅ BESTANDEN** (lokal: Integrität ok, 5 Betriebe/30 Dokumente; offsite: heruntergeladen
 >   + entschlüsselt). **NEU `scripts/RESTORE-RUNBOOK.md`** (RPO 24 h / RTO 4 h, Fälle A/B/C) —
 >   Repo-`scripts/backup.sh` ist wieder identisch mit dem Server-Stand.
-> - **⏳ NUR DIRK KANN (Rest des Pakets):** (1) UptimeRobot-Konto + HTTPS-Monitor auf
->   https://api.auftragsboss.de/health (meldet „Server ganz tot"). (2) healthchecks.io-Check „Backup",
->   Periode 1 Tag → Ping-URL nach /root/heartbeat-url.txt. (3) **2FA prüfen/aktivieren**: IONOS (wichtigste!),
->   Meta Business, Stripe, Dropbox, Google, 1Password. (4) Alte /admin/-Lesezeichen löschen.
->   (5) Entscheidung: alte `.env.bak` auf dem Server löschen (enthält Alt-Geheimnisse vom 07.08.).
+> - **✅ DIRK-PUNKTE ALLE ERLEDIGT (03.09. mittags):** (1) UptimeRobot-Monitor auf
+>   https://api.auftragsboss.de/health aktiv (Alarm an d.beer@deutsche-automotive.de). (2) healthchecks.io-
+>   Check „AuftragsBoss Backup" (1 Tag/3 h Kulanz) grün, Ping-URL in /root/heartbeat-url.txt, Test-Ping ok.
+>   (3) **2FA überall aktiviert** (IONOS, Meta — inkl. Passkey, Stripe, Dropbox, Google, 1Password;
+>   Facebook-Login läuft über tooltide.ai@gmail.com — auch gesichert). (4) Alte /admin/-Lesezeichen
+>   gelöscht. (5) `.env.bak` auf dem Server gelöscht + ADMIN_TOKEN-Zeile aus der Server-.env entfernt
+>   (App-Neustart, Health 200).
 > - **Danach offen (Hardening 17–20):** Authz-Testsuite, SQLite WAL/busy_timeout + prisma migrate,
 >   Import-Limits, Offsite-Versionierung, Schleuse Stufe B (WhatsApp-OTP).
 

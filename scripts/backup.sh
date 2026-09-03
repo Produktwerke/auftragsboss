@@ -1,48 +1,59 @@
 #!/bin/bash
 # Tägliches Backup von AuftragsBoss auf dem VPS — MIT Offsite-Kopie.
+# (v2, 03.09.2026 — Audit AB-H07: sichert jetzt auch .env + Server-Konfigs.)
 #
 # Ablauf:
 #   1. Konsistente Kopie der SQLite-Datenbank (sqlite3 .backup, läuft gefahrlos
-#      während die App aktiv ist) + uploads/-Ordner (Logos) in EIN tar.gz.
-#   2. Lokale Aufbewahrung in /root/backups, 14 Tage (ältere werden gelöscht).
-#   3. Das Archiv wird VERSCHLÜSSELT (AES-256, Passwort aus einer Datei) und die
-#      verschlüsselte Kopie zu IONOS S3 (außer Haus) hochgeladen — dort 30 Tage.
-#      Das Ziel sieht nur die verschlüsselte Datei; ohne das Passwort ist sie
-#      wertlos. Deshalb enthält die Sicherung gefahrlos echte Kundendaten.
+#      während die App aktiv ist) + uploads/ (Logos) + KONFIGURATION
+#      (.env der App, Caddyfile, SSH-Härtung, Cron-Einträge, Firewall-Stand)
+#      in EIN tar.gz. Damit ist ein kompletter Server-Wiederaufbau möglich —
+#      vorher wären beim Totalverlust alle Produktions-Geheimnisse weg gewesen.
+#   2. Lokale Aufbewahrung in /root/backups (nur root lesbar), 14 Tage.
+#   3. Verschlüsselt (AES-256, Passwort aus Datei) zu IONOS S3 — dort 30 Tage.
+#   4. Optional: Heartbeat-Ping. Steht in /root/heartbeat-url.txt eine URL
+#      (z. B. von healthchecks.io), wird sie nach ERFOLG aufgerufen — bleibt
+#      der Ping aus, schlägt der Dienst extern Alarm ("Backup lief nicht").
 #
-# Einrichtung: siehe scripts/OFFSITE-BACKUP-EINRICHTEN.md
 # Cron (täglich 03:15):
 #   15 3 * * * /root/backup-auftragsboss.sh >> /root/backup.log 2>&1
 #
-# Wiederherstellen (lokal): Archiv entpacken, dev.db nach prisma/ und uploads/
-#   zurück, dann `pm2 restart auftragsboss`.
-# Wiederherstellen (aus der Offsite-Kopie): erst entschlüsseln, dann wie oben:
-#   openssl enc -d -aes-256-cbc -pbkdf2 -in DATEI.tar.gz.enc -out DATEI.tar.gz \
-#     -pass file:/root/backup-passphrase.txt
+# Wiederherstellen: siehe scripts/RESTORE-RUNBOOK.md (Schritt für Schritt).
+# Probe: /root/restore-probe.sh (vierteljährlich laufen lassen!).
 set -euo pipefail
 
-APP=/root/app
+APP=/home/auftragsboss/app
 DEST=/root/backups
 STAMP=$(date +%Y-%m-%d_%H%M)
 
 # ── Offsite-Einstellungen (IONOS S3 via rclone) ──────────────────────────────
-# Name des rclone-Remotes (aus rclone.conf) und Bucket/Prefix am Ziel.
-OFFSITE_REMOTE=offsite          # so heißt das Remote in ~/.config/rclone/rclone.conf
-OFFSITE_BUCKET=auftragsboss-backup   # dein Bucket-Name bei IONOS
-OFFSITE_PREFIX=daily            # Unterordner im Bucket
-OFFSITE_TAGE=30                 # so lange die Offsite-Kopien aufbewahrt werden
-PASSDATEI=/root/backup-passphrase.txt   # enthält NUR das Backup-Passwort
+OFFSITE_REMOTE=offsite               # Name in ~/.config/rclone/rclone.conf
+OFFSITE_BUCKET=auftragsboss-backup   # Bucket bei IONOS
+OFFSITE_PREFIX=daily
+OFFSITE_TAGE=30
+PASSDATEI=/root/backup-passphrase.txt
+HEARTBEAT=/root/heartbeat-url.txt    # optional: eine Zeile mit der Ping-URL
 
 mkdir -p "$DEST" "$APP/uploads"
+chmod 700 "$DEST"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 # 1) Konsistente Momentaufnahme der Datenbank (kein Stopp der App nötig).
 sqlite3 "$APP/prisma/dev.db" ".backup '$TMP/dev.db'"
 
-# 2) DB-Kopie + Logos in EIN Archiv (lokal, unverschlüsselt).
+# 1b) Konfiguration einsammeln — alles, was ein Wiederaufbau braucht.
+mkdir -p "$TMP/konfig"
+cp "$APP/.env"                          "$TMP/konfig/app.env"
+cp /etc/caddy/Caddyfile                 "$TMP/konfig/Caddyfile"            2>/dev/null || true
+cp /etc/ssh/sshd_config.d/00-hardening.conf "$TMP/konfig/00-hardening.conf" 2>/dev/null || true
+crontab -l                            > "$TMP/konfig/crontab-root.txt"     2>/dev/null || true
+ufw status verbose                    > "$TMP/konfig/ufw-status.txt"       2>/dev/null || true
+chmod -R go-rwx "$TMP/konfig"
+
+# 2) Alles in EIN Archiv (lokal; enthält Geheimnisse → nur root lesbar).
 ARCHIV="$DEST/auftragsboss_$STAMP.tar.gz"
-tar -czf "$ARCHIV" -C "$TMP" dev.db -C "$APP" uploads
+tar -czf "$ARCHIV" -C "$TMP" dev.db konfig -C "$APP" uploads
+chmod 600 "$ARCHIV"
 
 # Lokale Backups älter als 14 Tage entfernen.
 find "$DEST" -name 'auftragsboss_*.tar.gz' -mtime +14 -delete
@@ -50,8 +61,6 @@ find "$DEST" -name 'auftragsboss_*.tar.gz' -mtime +14 -delete
 echo "$(date '+%F %T')  Lokales Backup OK: $ARCHIV ($(du -h "$ARCHIV" | cut -f1))"
 
 # 3) Offsite-Kopie: verschlüsseln und zu IONOS S3 hochladen.
-#    Übersprungen (mit Hinweis), falls rclone oder die Passwort-Datei fehlen —
-#    das lokale Backup ist dann trotzdem schon sicher geschrieben.
 if ! command -v rclone >/dev/null 2>&1; then
   echo "$(date '+%F %T')  WARNUNG: rclone nicht installiert — Offsite-Upload übersprungen."
   exit 0
@@ -71,3 +80,10 @@ rclone copyto "$ENC" "$ZIEL"
 rclone delete --min-age "${OFFSITE_TAGE}d" "$OFFSITE_REMOTE:$OFFSITE_BUCKET/$OFFSITE_PREFIX" || true
 
 echo "$(date '+%F %T')  Offsite-Kopie OK: $ZIEL"
+
+# 4) Heartbeat: nur nach VOLLEM Erfolg pingen.
+if [ -s "$HEARTBEAT" ]; then
+  curl -fsS --max-time 10 "$(head -1 "$HEARTBEAT")" >/dev/null \
+    && echo "$(date '+%F %T')  Heartbeat gemeldet." \
+    || echo "$(date '+%F %T')  WARNUNG: Heartbeat-Ping fehlgeschlagen."
+fi

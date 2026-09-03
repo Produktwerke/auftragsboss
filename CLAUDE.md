@@ -121,7 +121,8 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 ## Stand (August 2026)
 
 > **Update 03.09.2026 — APP LÄUFT NICHT MEHR ALS ROOT ✅ (Umbau von Claude per SSH-Schlüssel ausgeführt,
-> Reboot-Feuerprobe bestanden: App startet automatisch unter dem neuen Konto, /health 200):**
+> Reboot-Feuerprobe bestanden; ✅ End-to-End bestätigt: Dirks Sprachnachricht → Angebot lief unter dem
+> neuen Konto fehlerfrei durch):**
 > - **Neues Konto `auftragsboss`** (ohne Passwort, kein SSH-Zugang — nur root kann per `su - auftragsboss`
 >   hinein). **App liegt jetzt in `/home/auftragsboss/app`** (vorher /root/app), alles chown auftragsboss;
 >   `.env` und alte `.env.bak` auf chmod 600. Ein Einbruch über die App erbeutet damit nur noch dieses

@@ -120,6 +120,21 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 04.09.2026 — 📷 MESSBANK KOMPLETT (Commit 2d61285) — bereit fürs Auswertungsskript (Go/No-Go Foto-Aufmaß):**
+> - Dirk hat 11 Räume erfasst: **42 Wand-Fotos** (Original in `Messbank/RaumXX/original/` +
+>   **WhatsApp-Fassungen** in `RaumXX/whatsapp/`, wandweise benannt `wandN_<zeit>...`), Laser-Wahrheit in den
+>   drei CSVs: **42 Wände** (waende), **39 Öffnungen** (oeffnungen, aus Dirks handschriftlichem Formular-PDF
+>   übertragen), **11 Räume** mit Höhe/Farbe/Raumart (raeume). Fotos NICHT in Git (.gitignore), Quelle:
+>   Dropbox/ABO (Originale) + `Messbank/Raumfotos Whatsapp/`.
+> - **Zuordnungs-Kniffe (für Nachvollzug):** Handschrift-Notizzettel = Foto 20260904_182431 (Spaltenprinzip
+>   Höhe über Strich, Wandbreiten darunter; Dirks Korrekturen: R5W2=398, R7 Höhe 255/W3=397/W4=219).
+>   WhatsApp-Dateien kamen in 4 Batches ({1-12},{13-24},{25-36},{37-42}); die unnummerierte Datei je Batch
+>   ist ein VERSETZTER Startpunkt, (k) zählt ZYKLISCH ab Basis weiter — Modell mit 12 Bildproben verifiziert.
+> - **Highlight fürs Malerszenario:** Raum 3 (Wohnzimmer) ist real IN RENOVIERUNG (Spachtelstellen,
+>   Farbmuster) — perfekter Testfall. Raum 3 Wand 3 = 10,49 m (Langwand!), R7/R8 haben kleine Wände ≤1,64 m.
+> - **⏳ NÄCHSTER SCHRITT:** Auswertungsskript bauen (Foto-Aufmaß vs. Laser-Wahrheit, VOB-Übermessen-Regel
+>   ≤2,5 m², Rückfall-Leiter) → Go/No-Go nach Konzept `Konzepte/Foto-Aufmass_Analyse.md` Abschnitt 9.
+
 > **Update 03.09.2026 (4) — HARDENING-TEIL 1: AUTHZ-TESTSUITE + SQLITE-WAL ✅ (Commit 2dff5c6; 184 Tests grün):**
 > - **NEU `src/web/authz.test.ts` (Maßnahme 17):** 14 Routen-Tests per `app.inject` gegen eine ECHTE
 >   Wegwerf-SQLite (Dateiname je Prozess eindeutig wegen Windows-Sperren; `db push` auf frische Datei —

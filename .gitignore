@@ -60,3 +60,12 @@ _kostentest.ts
 Messbank/Raum*/
 Messbank/Raumfotos Whatsapp/
 Messbank/*.pdf
+
+# Testreste (Wegwerf-Datenbanken der Authz-Tests, falscher Pfad)
+prisma/prisma/
+
+# Wettbewerbs-Recherche (WhatsApp-Chatexporte, echte Personendaten)
+Wettbewerb/
+
+# Interne Berichte
+AuftragsBoss Sicherheits-Audit.pdf

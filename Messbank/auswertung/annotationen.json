@@ -1,0 +1,310 @@
+[
+  {
+    "raum": "Raum01", "wand": 1, "datei": "wand1_20260904_174526_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Rechte Ecke zwischen den Gitarren; Deckenlinie rechts knapp ausserhalb des Bildes extrapoliert",
+    "wandEcken": { "ol": [229, 52], "or": [1239, -1], "ur": [1239, 723], "ul": [229, 706] },
+    "oeffnungen": [
+      { "art": "Tuer", "ecken": { "ol": [824, 170], "or": [1076, 172], "ur": [1078, 718], "ul": [822, 711] } }
+    ]
+  },
+  {
+    "raum": "Raum01", "wand": 2, "datei": "wand2_20260904_174544_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Bodenlinie hinter Moebeln, aus Fenster-Massstab und Deckenlinie abgeleitet",
+    "wandEcken": { "ol": [257, 64], "or": [1281, 14], "ur": [1281, 738], "ul": [257, 681] },
+    "oeffnungen": [
+      { "art": "Fenster", "ecken": { "ol": [612, 127], "or": [910, 124], "ur": [910, 436], "ul": [612, 441] } }
+    ]
+  },
+  {
+    "raum": "Raum01", "wand": 3, "datei": "wand3_20260904_174947_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "nicht_messbar",
+    "grund": "Bodenlinie vollstaendig durch Sofa und Sideboard verdeckt, kein Hoehenmassstab ableitbar"
+  },
+  {
+    "raum": "Raum01", "wand": 4, "datei": "wand4_20260904_174958_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "wandEcken": { "ol": [497, 121], "or": [1409, 87], "ur": [1420, 748], "ul": [498, 688] }
+  },
+  {
+    "raum": "Raum02", "wand": 1, "datei": "wand1_20260904_175041_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Rechter Wandteil reicht in die offene Galerie, Deckenlinie dorthin verlaengert; Tuer steht offen, Sturz aus Rahmenkanten",
+    "wandEcken": { "ol": [335, 27], "or": [1418, 119], "ur": [1418, 598], "ul": [358, 700] },
+    "oeffnungen": [
+      { "art": "Tuer", "ecken": { "ol": [822, 207], "or": [957, 225], "ur": [957, 642], "ul": [822, 655] } }
+    ]
+  },
+  {
+    "raum": "Raum02", "wand": 2, "datei": "wand2_20260904_175116_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Linke Ecke dicht neben dem Durchgang (Sprechanlage), rechte Ecke am Skizzenbild; Deckenlinie teils extrapoliert",
+    "wandEcken": { "ol": [530, 52], "or": [1406, 40], "ur": [1370, 568], "ul": [530, 602] },
+    "oeffnungen": [
+      { "art": "Durchgang", "ecken": { "ol": [588, 108], "or": [895, 103], "ur": [897, 572], "ul": [586, 584] } }
+    ]
+  },
+  {
+    "raum": "Raum02", "wand": 3, "datei": "wand3_20260904_175122_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Starke Schraegsicht von rechts; beide Tueren offen, lichte Kanten an den Zargeninnenseiten",
+    "wandEcken": { "ol": [432, 112], "or": [1439, 81], "ur": [1385, 724], "ul": [430, 521] },
+    "oeffnungen": [
+      { "art": "Tuer", "ecken": { "ol": [442, 221], "or": [517, 212], "ur": [519, 527], "ul": [444, 531] } },
+      { "art": "Tuer", "ecken": { "ol": [752, 185], "or": [895, 181], "ur": [897, 608], "ul": [750, 613] } }
+    ]
+  },
+  {
+    "raum": "Raum02", "wand": 4, "datei": "wand4_20260904_175138_whatsapp.jpeg",
+    "bildBreite": 739, "bildHoehe": 1600, "status": "ok",
+    "hinweis": "Hochformat; Haustuer-Element (Tuer + Seitenteil) als eine Oeffnung im lichten Loch",
+    "wandEcken": { "ol": [97, 430], "or": [693, 402], "ur": [693, 1210], "ul": [95, 1235] },
+    "oeffnungen": [
+      { "art": "Haustuer", "ecken": { "ol": [108, 530], "or": [637, 527], "ur": [639, 1187], "ul": [106, 1192] } }
+    ]
+  },
+  {
+    "raum": "Raum02", "wand": 5, "datei": "wand5_20260904_175212_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "wandEcken": { "ol": [372, 63], "or": [1078, 22], "ur": [1078, 722], "ul": [372, 649] }
+  },
+  {
+    "raum": "Raum03", "wand": 1, "datei": "wand1_20260904_175229_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Rechte Ecke am Kaminschacht (verputzter Block), Deckenanschluss dort offen (Trockenbaufuge)",
+    "wandEcken": { "ol": [415, 88], "or": [1310, 45], "ur": [1310, 702], "ul": [415, 658] }
+  },
+  {
+    "raum": "Raum03", "wand": 2, "datei": "wand2_20260904_175308_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Bodenlinie links vom Sofa verdeckt (extrapoliert); Fenster fast bodentief, Unterkante hinter Sofa geschaetzt",
+    "wandEcken": { "ol": [195, 42], "or": [1414, 50], "ur": [1410, 660], "ul": [195, 630] },
+    "oeffnungen": [
+      { "art": "Fenster", "ecken": { "ol": [537, 117], "or": [818, 108], "ur": [820, 618], "ul": [539, 626] } }
+    ]
+  },
+  {
+    "raum": "Raum03", "wand": 3, "datei": "wand3_20260904_175359_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "nicht_messbar",
+    "grund": "Wand 10,49 m nicht vollstaendig im Bild, linkes Ende (Fenstertuer links) und linke Ecke fehlen"
+  },
+  {
+    "raum": "Raum03", "wand": 4, "datei": "wand4_20260904_175411_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "nicht_messbar",
+    "grund": "Bodenlinie liegt unterhalb des Bildrandes (Kamera zu hoch gerichtet), Wandhoehe nicht bestimmbar"
+  },
+  {
+    "raum": "Raum03", "wand": 5, "datei": "wand5_20260904_175445_whatsapp.jpeg",
+    "bildBreite": 739, "bildHoehe": 1600, "status": "ok",
+    "hinweis": "Hochformat-Nische; Boden rechts hinter Tisch/Highboard extrapoliert",
+    "wandEcken": { "ol": [108, 552], "or": [652, 520], "ur": [655, 1290], "ul": [105, 1252] }
+  },
+  {
+    "raum": "Raum03", "wand": 6, "datei": "wand6_20260904_175659_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Linke Ecke hinter Kaminofen extrapoliert; rechte Ecke am Uebergang zur Nische (Highboard-Seite)",
+    "wandEcken": { "ol": [70, 78], "or": [1550, 34], "ur": [1543, 668], "ul": [70, 632] },
+    "oeffnungen": [
+      { "art": "Durchgang", "ecken": { "ol": [711, 101], "or": [1079, 84], "ur": [1079, 626], "ul": [711, 644] } }
+    ]
+  },
+  {
+    "raum": "Raum05", "wand": 1, "datei": "wand1_20260904_175941_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Linke Ecke am Hochbett (Dreipunkt im Zoom bestaetigt); Boden links hinter Futon extrapoliert",
+    "wandEcken": { "ol": [558, 25], "or": [1530, 103], "ur": [1530, 636], "ul": [535, 714] },
+    "oeffnungen": [
+      { "art": "Fenster", "ecken": { "ol": [563, 158], "or": [831, 147], "ur": [833, 447], "ul": [565, 457] } }
+    ]
+  },
+  {
+    "raum": "Raum05", "wand": 2, "datei": "wand2_20260904_180025_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Fenstertuer bodentief; Boden an den Ecken aus Schwellenlinie extrapoliert",
+    "wandEcken": { "ol": [247, 68], "or": [1351, 36], "ur": [1305, 625], "ul": [240, 665] },
+    "oeffnungen": [
+      { "art": "Fenstertuer", "ecken": { "ol": [440, 118], "or": [893, 108], "ur": [890, 642], "ul": [443, 658] } }
+    ]
+  },
+  {
+    "raum": "Raum05", "wand": 3, "datei": "wand3_20260904_180042_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Rechte Ecke hinter dem Hochbett, aus Deckenknick geschaetzt",
+    "wandEcken": { "ol": [22, 57], "or": [870, 50], "ur": [870, 649], "ul": [22, 605] },
+    "oeffnungen": [
+      { "art": "Tuer", "ecken": { "ol": [163, 180], "or": [318, 174], "ur": [320, 603], "ul": [165, 612] } }
+    ]
+  },
+  {
+    "raum": "Raum05", "wand": 4, "datei": "wand4_20260904_180052_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "nicht_messbar",
+    "grund": "Wand nicht eben: rechte Tuer liegt in einem zurueckspringenden Wandteil (Knick), Einzelbild-Planarmessung nicht anwendbar"
+  },
+  {
+    "raum": "Raum06", "wand": 1, "datei": "wand1_20260904_180200_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Rechte Ecke hinter Eckschrank, Decken- und Bodenlinie dorthin extrapoliert",
+    "wandEcken": { "ol": [280, 25], "or": [1190, 18], "ur": [1190, 703], "ul": [280, 637] },
+    "oeffnungen": [
+      { "art": "Tuer", "ecken": { "ol": [333, 180], "or": [508, 172], "ur": [510, 650], "ul": [335, 642] } }
+    ]
+  },
+  {
+    "raum": "Raum06", "wand": 2, "datei": "wand2_20260904_180205_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Beide Ecken nur schwach erkennbar (glatte graue Flaechen), Boden links hinter Bett extrapoliert",
+    "wandEcken": { "ol": [228, 24], "or": [1325, 49], "ur": [1322, 706], "ul": [228, 668] }
+  },
+  {
+    "raum": "Raum06", "wand": 3, "datei": "wand3_20260904_180235_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Rechte Ecke hinter Etagenbett geschaetzt; Boden teils von Moebeln verdeckt",
+    "wandEcken": { "ol": [310, 95], "or": [1080, 58], "ur": [1080, 699], "ul": [310, 660] },
+    "oeffnungen": [
+      { "art": "Fenster", "ecken": { "ol": [640, 155], "or": [880, 150], "ur": [884, 470], "ul": [642, 475] } }
+    ]
+  },
+  {
+    "raum": "Raum06", "wand": 4, "datei": "wand4_20260904_180239_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Linke Ecke hinter Eckschrank extrapoliert",
+    "wandEcken": { "ol": [94, 38], "or": [1106, 55], "ur": [1106, 636], "ul": [94, 664] },
+    "oeffnungen": [
+      { "art": "Fenstertuer", "ecken": { "ol": [602, 122], "or": [1028, 113], "ur": [1030, 638], "ul": [605, 650] } }
+    ]
+  },
+  {
+    "raum": "Raum07", "wand": 1, "datei": "wand1_20260904_180326_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Rechte Ecke am Uebergang zur Duschzone, Deckenlinie dorthin verlaengert",
+    "wandEcken": { "ol": [128, 62], "or": [1225, 20], "ur": [1225, 687], "ul": [128, 730] },
+    "oeffnungen": [
+      { "art": "Tuer", "ecken": { "ol": [608, 208], "or": [830, 202], "ur": [833, 705], "ul": [610, 712] } }
+    ]
+  },
+  {
+    "raum": "Raum07", "wand": 2, "datei": "wand2_20260904_180355_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "nicht_messbar",
+    "grund": "Wand nicht eben: zurueckliegende Tapetennische am Waschtisch und vorspringende Installationswand rechts"
+  },
+  {
+    "raum": "Raum07", "wand": 3, "datei": "wand3_20260904_180402_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Boden teils verdeckt (Muelleimer), Linie interpoliert",
+    "wandEcken": { "ol": [308, 100], "or": [1433, 48], "ur": [1433, 733], "ul": [308, 694] },
+    "oeffnungen": [
+      { "art": "Fenster", "ecken": { "ol": [515, 195], "or": [770, 185], "ur": [772, 492], "ul": [517, 500] } }
+    ]
+  },
+  {
+    "raum": "Raum07", "wand": 4, "datei": "wand4_20260904_180428_whatsapp.jpeg",
+    "bildBreite": 739, "bildHoehe": 1600, "status": "ok",
+    "hinweis": "Hochformat; Boden rechts hinter Handtuchstaender/Waschtisch extrapoliert",
+    "wandEcken": { "ol": [35, 515], "or": [725, 437], "ur": [725, 1425], "ul": [35, 1282] }
+  },
+  {
+    "raum": "Raum07", "wand": 5, "datei": "wand5_20260904_180452_whatsapp.jpeg",
+    "bildBreite": 739, "bildHoehe": 1600, "status": "nicht_messbar",
+    "grund": "Rechte Ecke ausserhalb des Bildes bzw. hinter der WC-Trennwand, Wandbreite nicht bestimmbar"
+  },
+  {
+    "raum": "Raum07", "wand": 6, "datei": "wand6_20260904_180510_whatsapp.jpeg",
+    "bildBreite": 739, "bildHoehe": 1600, "status": "ok",
+    "hinweis": "Hochformat WC-Nische; Boden hinter WC interpoliert",
+    "wandEcken": { "ol": [100, 118], "or": [688, 80], "ur": [690, 1505], "ul": [100, 1462] }
+  },
+  {
+    "raum": "Raum08", "wand": 1, "datei": "wand1_20260904_180942_whatsapp.jpeg",
+    "bildBreite": 739, "bildHoehe": 1600, "status": "ok",
+    "hinweis": "Bildwand; die zugehoerige Tuer (KiZi 1) liegt hinter dem offenen Tuerblatt am linken Bildrand und ist nicht annotierbar",
+    "wandEcken": { "ol": [98, 503], "or": [680, 472], "ur": [680, 1125], "ul": [100, 1137] }
+  },
+  {
+    "raum": "Raum08", "wand": 2, "datei": "wand2_20260904_180951_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "nicht_messbar",
+    "grund": "Beide Ecken ausserhalb des Bildes, 5,49-m-Wand im engen Flur nicht vollstaendig aufnehmbar"
+  },
+  {
+    "raum": "Raum08", "wand": 3, "datei": "wand3_20260904_181032_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "nicht_messbar",
+    "grund": "Beide Ecken ausserhalb des Bildes, 5,49-m-Wand im engen Flur nicht vollstaendig aufnehmbar"
+  },
+  {
+    "raum": "Raum09", "wand": 1, "datei": "wand1_20260904_181300_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Kellerraum, dunkle Wand; Boden teils von Geraeten verdeckt",
+    "wandEcken": { "ol": [390, 92], "or": [1215, 108], "ur": [1215, 623], "ul": [390, 713] },
+    "oeffnungen": [
+      { "art": "Kellerfenster", "ecken": { "ol": [655, 152], "or": [805, 148], "ur": [807, 258], "ul": [657, 262] } }
+    ]
+  },
+  {
+    "raum": "Raum09", "wand": 2, "datei": "wand2_20260904_181425_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Backsteinwand; Boden hinter Geraeten interpoliert",
+    "wandEcken": { "ol": [360, 72], "or": [1205, 62], "ur": [1205, 656], "ul": [360, 719] }
+  },
+  {
+    "raum": "Raum09", "wand": 3, "datei": "wand3_20260904_181435_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Dunkle Wand, rechte Ecke am Backstein-Uebergang; Boden rechts hinter Laufband extrapoliert",
+    "wandEcken": { "ol": [370, 62], "or": [1280, 38], "ur": [1280, 585], "ul": [370, 655] },
+    "oeffnungen": [
+      { "art": "Tuer", "ecken": { "ol": [408, 205], "or": [600, 198], "ur": [605, 635], "ul": [412, 650] } }
+    ]
+  },
+  {
+    "raum": "Raum09", "wand": 4, "datei": "wand4_20260904_181440_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Sehr dunkle Aufnahme, linke Ecke am gelben Rohr, Kanten unsicher",
+    "wandEcken": { "ol": [410, 95], "or": [1270, 112], "ur": [1270, 706], "ul": [410, 690] }
+  },
+  {
+    "raum": "Raum10", "wand": 1, "datei": "wand1_20260904_181636_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Bodentiefe Glaselemente, Fluegel offen; Kanten der Elemente naeherungsweise, Boden links von Tisch verdeckt",
+    "wandEcken": { "ol": [168, 103], "or": [1585, 112], "ur": [1585, 660], "ul": [168, 611] },
+    "oeffnungen": [
+      { "art": "Fenstertuer", "ecken": { "ol": [287, 126], "or": [530, 118], "ur": [532, 607], "ul": [290, 612] } },
+      { "art": "Terrassentuer", "ecken": { "ol": [1092, 112], "or": [1490, 122], "ur": [1492, 655], "ul": [1094, 640] } }
+    ]
+  },
+  {
+    "raum": "Raum10", "wand": 2, "datei": "wand2_20260904_181708_whatsapp.jpeg",
+    "bildBreite": 739, "bildHoehe": 1600, "status": "ok",
+    "hinweis": "Stark nach oben gekippte Aufnahme, Ecken und Elementkanten unsicher",
+    "wandEcken": { "ol": [75, 748], "or": [695, 728], "ur": [695, 1345], "ul": [80, 1235] },
+    "oeffnungen": [
+      { "art": "Fenstertuer", "ecken": { "ol": [175, 795], "or": [450, 780], "ur": [452, 1260], "ul": [178, 1225] } }
+    ]
+  },
+  {
+    "raum": "Raum11", "wand": 1, "datei": "wand1_20260904_181717_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "nicht_messbar",
+    "grund": "Wand 10,38 m nicht vollstaendig im Bild, linkes Wandende (Kuechenzeile) ausserhalb bzw. extrem verkuerzt"
+  },
+  {
+    "raum": "Raum04", "wand": 1, "datei": "wand1_20260904_175757_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Boden links vom Bett verdeckt, sichtbare Bodenlinie verlaengert",
+    "wandEcken": { "ol": [435, 98], "or": [1438, 21], "ur": [1438, 733], "ul": [444, 726] },
+    "oeffnungen": [
+      { "art": "Tuer", "ecken": { "ol": [1029, 198], "or": [1257, 190], "ur": [1259, 715], "ul": [1031, 729] } }
+    ]
+  },
+  {
+    "raum": "Raum04", "wand": 2, "datei": "wand2_20260904_175804_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "ok",
+    "hinweis": "Bodenlinie links vom Bett verdeckt, sichtbares Bodenstueck verlaengert",
+    "wandEcken": { "ol": [519, 93], "or": [1347, 50], "ur": [1312, 639], "ul": [519, 567] },
+    "oeffnungen": [
+      { "art": "Fenster", "ecken": { "ol": [830, 150], "or": [972, 148], "ur": [972, 295], "ul": [830, 297] } }
+    ]
+  },
+  {
+    "raum": "Raum04", "wand": 3, "datei": "wand3_20260904_175831_whatsapp.jpeg",
+    "bildBreite": 1600, "bildHoehe": 739, "status": "nicht_messbar",
+    "grund": "Linke Ecke hinter Einbauschrank verdeckt (rund 0,6 m Wand nicht im Bild), sichtbare Kante ist die Schrankkante"
+  }
+]

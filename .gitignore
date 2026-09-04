@@ -55,3 +55,8 @@ index.html.bak-*
 _plztest.ts
 _permtest.ts
 _kostentest.ts
+
+# Messbank: Fotos nicht ins Repo (nur CSVs/Anleitung/Formular)
+Messbank/Raum*/
+Messbank/Raumfotos Whatsapp/
+Messbank/*.pdf

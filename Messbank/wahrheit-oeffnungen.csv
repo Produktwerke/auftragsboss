@@ -1,0 +1,40 @@
+Raum;WandNr;Art;BreiteMeter;HoeheMeter;Bemerkung
+Raum01;1;Tuer;0,82;1,975;
+Raum01;2;Fenster;1,065;1,215;
+Raum01;3;Fenster;1,065;1,215;ueber Sofa
+Raum02;1;Tuer;0,82;1,975;zum Musikzimmer
+Raum02;2;Durchgang;1,485;2,325;offen, ohne Tuerblatt
+Raum02;3;Tuer;0,70;1,975;Garderobe/Schuhraum
+Raum02;3;Tuer;0,70;1,975;zweite Tuer
+Raum02;4;Haustuer;1,70;2,205;mit Glasausschnitten
+Raum03;2;Fenster;1,065;2,21;
+Raum03;3;Fenstertuer;1,69;2,21;links
+Raum03;3;Fenstertuer;1,69;2,21;Mitte, 2-fluegelig
+Raum03;3;Fenster;1,69;2,21;rechts, gross, 2-fluegelig
+Raum03;4;Fenster;1,94;0,99;2-fluegelig
+Raum03;6;Durchgang;1,485;2,325;offen, zum Flur
+Raum04;1;Tuer;0,82;1,975;
+Raum04;2;Fenster;0,69;0,74;klein
+Raum04;3;Fenster;1,06;1,37;
+Raum05;1;Fenster;1,065;1,23;
+Raum05;2;Fenstertuer;1,69;2,22;bodentief, 2-fluegelig
+Raum05;3;Tuer;0,69;1,975;
+Raum05;4;Tuer;0,70;1,975;links
+Raum05;4;Tuer;0,69;1,975;rechts
+Raum06;1;Tuer;0,69;1,975;
+Raum06;3;Fenster;1,065;1,37;
+Raum06;4;Fenstertuer;1,69;2,22;bodentief, 2-fluegelig
+Raum07;1;Tuer;0,82;1,975;
+Raum07;3;Fenster;1,04;1,21;
+Raum07;5;Fenster;0,69;0,72;klein, WC-Nische
+Raum08;1;Tuer;0,69;1,975;laut Notiz: gehoert zu Kinderzimmer 1
+Raum08;2;Tuer;0,82;1,975;Bad
+Raum08;2;Tuer;0,69;1,975;Kinderzimmer
+Raum08;3;Tuer;0,69;1,975;Kinderzimmer 2
+Raum08;3;Tuer;0,82;1,975;Schlafzimmer
+Raum09;1;Fenster;0,795;0,545;Kellerfenster klein
+Raum09;3;Tuer;0,82;1,96;
+Raum10;1;Fenstertuer;1,70;2,185;links, 2-fluegelig
+Raum10;1;Terrassentuer;1,70;2,185;rechts, 2-fluegelig, gross
+Raum10;2;Fenstertuer;1,70;2,185;mit Festteil
+Raum11;1;Tuer;0,82;1,97;Glastuer zum Treppenhaus

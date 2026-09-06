@@ -1,6 +1,6 @@
 # Messbank-Report Foto-Aufmaß
 
-Stand 2026-09-04 · gemessen auf den **WhatsApp-Fassungen** (Produkt-Realität) · Raumhöhe als Maßstab · Brennweiten-Prior 0,70×Bildbreite · Öffnungen im lichten Maß.
+Stand 2026-09-06 · gemessen auf den **WhatsApp-Fassungen** (Produkt-Realität) · Raumhöhe als Maßstab · Brennweiten-Prior 0,70×Bildbreite · Öffnungen im lichten Maß.
 
 ## Wände (32/42 messbar)
 

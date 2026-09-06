@@ -22,7 +22,7 @@ import {
 } from "docx";
 import { liesFoto } from "../betrieb/fotoAblage.js";
 import { leseMasse } from "../betrieb/logo.js";
-import { fotoProbleme, oeffnungenBeschreibung, unsichereOeffnungen, type WandfotoAnalyse } from "../ai/wandfoto.js";
+import { oeffnungenBeschreibung, unsichereOeffnungen, type WandfotoAnalyse } from "../ai/wandfoto.js";
 
 export interface Belegfoto {
   id: string;
@@ -56,7 +56,8 @@ export function fotoBeschreibung(erkennungJson: string): string {
   const rand = unsichereOeffnungen(a);
   if (rand.length) teile.push(`am Bildrand: ${rand.length} Öffnung${rand.length > 1 ? "en" : ""} der Nachbarwand`);
   if (Array.isArray(a.besonderheiten) && a.besonderheiten.length) teile.push(a.besonderheiten.join(", "));
-  for (const p of fotoProbleme(a)) if (p.schwere === "hinweis") teile.push(p.text.replace(/\.$/, ""));
+  // Fotoqualität (zu dunkel, Wand nicht ganz im Bild) bleibt bewusst draußen: das ist
+  // ein Hinweis für den Moment des Fotografierens, im Angebot klänge es wie Kritik am Maler.
   return teile.join(". ");
 }
 

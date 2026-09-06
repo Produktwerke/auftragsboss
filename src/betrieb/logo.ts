@@ -30,7 +30,7 @@ const MIME: Record<LogoTyp, string> = {
 };
 
 /** Liest die Bildmaße direkt aus dem Dateikopf — ohne zusätzliche Bibliothek. */
-function leseMasse(daten: Buffer, typ: LogoTyp): { breite: number; hoehe: number } | null {
+export function leseMasse(daten: Buffer, typ: LogoTyp): { breite: number; hoehe: number } | null {
   try {
     if (typ === "png") {
       // PNG: IHDR-Block ab Byte 16, je 4 Byte Breite und Höhe

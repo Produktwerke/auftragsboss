@@ -30,22 +30,39 @@ export interface RaumMasse {
   waendeStreichen: boolean;
   deckeStreichen: boolean;
   oeffnungen: Oeffnung[];
+  /** Halbhohe Fläche (Teiletappe 3): Oberkante einer unten NICHT zu streichenden
+   *  Zone (Lambris, Paneele, Fliesenspiegel) in Metern. Gestrichen wird nur darüber. */
+  paneelHoeheM?: number | null;
+  /** Deckenfläche, wenn sie direkt genannt wurde (bei Vielecken die einzige Quelle). */
+  deckeM2Genannt?: number | null;
+  /** Laibungstiefe der abgezogenen Öffnungen in Metern; nur, wenn genannt. */
+  laibungTiefeM?: number | null;
 }
 
 export interface OeffnungBewertet extends Oeffnung {
+  /** Volle Öffnungsfläche (Breite × Höhe). */
   flaecheM2: number;
+  /** Anteil der Öffnung innerhalb der gestrichenen Zone (bei Paneelen kleiner). */
+  wirksamM2: number;
   abgezogen: boolean;
   grauzone: boolean;
+  /** Laibungsfläche dieser Öffnung (nur bei Abzug und genannter Tiefe, sonst 0). */
+  laibungM2: number;
 }
 
 export interface RaumAufmass {
   name: string;
   hoeheM: number;
+  /** Höhe der gestrichenen Zone: Raumhöhe minus Paneelhöhe. */
+  streichHoeheM: number;
+  paneelHoeheM: number | null;
   umfangM: number;
   /** true, wenn genau zwei Wandlängen genannt wurden (a × b). */
   rechteck: boolean;
   wandBruttoM2: number;
   abzugM2: number;
+  /** Laibungen der abgezogenen Öffnungen (VOB: gesondert zu rechnen), fließen in netto ein. */
+  laibungM2: number;
   wandNettoM2: number;
   /** Deckenfläche; null, wenn die Decke nicht gestrichen wird oder der Raum
    *  kein Rechteck ist (dann fehlt die Grundfläche). */
@@ -70,6 +87,9 @@ const masz = (x: number): string => rund2(x).toString().replace(".", ",");
 const istMass = (x: unknown, min: number, max: number): x is number =>
   typeof x === "number" && Number.isFinite(x) && x >= min && x <= max;
 
+/** Öffnungen, die auf dem Boden stehen (Türen, Durchgänge): bei Paneelen zählt nur ihr Teil oberhalb. */
+export const stehtAufBoden = (art: string): boolean => /t[üu]r|durchgang|durchbruch|bogen|portal|nische/i.test(art);
+
 /** Rechnet einen Raum. Wirft nicht: Unbrauchbare Angaben liefern null. */
 export function berechneRaum(raum: RaumMasse): RaumAufmass | { grund: string } {
   const name = raum.name.trim() || "Raum";
@@ -78,38 +98,72 @@ export function berechneRaum(raum: RaumMasse): RaumAufmass | { grund: string } {
   if (laengen.length === 0) return { grund: "keine Wandlängen genannt" };
   if (laengen.length !== (raum.wandlaengenM ?? []).length) return { grund: "unplausible Wandlänge" };
 
+  // Halbhohe Fläche: gestrichen wird nur oberhalb der Paneele/Fliesen.
+  const paneelHoeheM = istMass(raum.paneelHoeheM, 0.1, raum.hoeheM - 0.2) ? raum.paneelHoeheM : null;
+  if (raum.paneelHoeheM != null && paneelHoeheM === null) return { grund: "Paneelhöhe unplausibel" };
+  const streichHoeheM = rund2(raum.hoeheM - (paneelHoeheM ?? 0));
+  const laibungTiefeM = istMass(raum.laibungTiefeM, 0.03, 1.0) ? raum.laibungTiefeM : null;
+
   const rechteck = laengen.length === 2;
   const umfangM = rechteck ? 2 * (laengen[0]! + laengen[1]!) : laengen.reduce((s, l) => s + l, 0);
-  const wandBruttoM2 = rund2(umfangM * raum.hoeheM);
+  const wandBruttoM2 = rund2(umfangM * streichHoeheM);
 
   const oeffnungen: OeffnungBewertet[] = (raum.oeffnungen ?? [])
     .filter((o) => istMass(o.breiteM, 0.1, 10) && istMass(o.hoeheM, 0.1, 10))
     .map((o) => {
       const flaecheM2 = rund2(o.breiteM * o.hoeheM);
+      // Anteil in der gestrichenen Zone: Türen ragen von unten in die Paneele,
+      // Fenster sitzen erfahrungsgemäß darüber (höchstens so hoch wie die Zone).
+      const wirksameHoehe = paneelHoeheM
+        ? stehtAufBoden(o.art)
+          ? Math.max(0, o.hoeheM - paneelHoeheM)
+          : Math.min(o.hoeheM, streichHoeheM)
+        : o.hoeheM;
+      const wirksamM2 = rund2(o.breiteM * wirksameHoehe);
+      const abgezogen = wirksamM2 > VOB_ABZUGSGRENZE_M2;
+      const laibungM2 =
+        abgezogen && laibungTiefeM
+          ? rund2((2 * wirksameHoehe + (stehtAufBoden(o.art) ? 0 : o.breiteM)) * laibungTiefeM)
+          : 0;
       return {
         ...o,
         flaecheM2,
-        abgezogen: flaecheM2 > VOB_ABZUGSGRENZE_M2,
-        grauzone: flaecheM2 >= GRAUZONE_M2[0] && flaecheM2 <= GRAUZONE_M2[1],
+        wirksamM2,
+        abgezogen,
+        grauzone: wirksamM2 >= GRAUZONE_M2[0] && wirksamM2 <= GRAUZONE_M2[1],
+        laibungM2,
       };
     });
 
-  const abzugM2 = rund2(oeffnungen.filter((o) => o.abgezogen).reduce((s, o) => s + o.flaecheM2, 0));
-  const wandNettoM2 = rund2(Math.max(0, wandBruttoM2 - abzugM2));
-  const deckeM2 = raum.deckeStreichen && rechteck ? rund2(laengen[0]! * laengen[1]!) : null;
+  const abzugM2 = rund2(oeffnungen.filter((o) => o.abgezogen).reduce((s, o) => s + o.wirksamM2, 0));
+  const laibungM2 = rund2(oeffnungen.reduce((s, o) => s + o.laibungM2, 0));
+  const wandNettoM2 = rund2(Math.max(0, wandBruttoM2 - abzugM2) + laibungM2);
+  const deckeM2 = !raum.deckeStreichen
+    ? null
+    : istMass(raum.deckeM2Genannt, 0.5, 500)
+      ? rund2(raum.deckeM2Genannt)
+      : rechteck
+        ? rund2(laengen[0]! * laengen[1]!)
+        : null;
 
   const abgezogen = oeffnungen.filter((o) => o.abgezogen);
   const uebermessen = oeffnungen.filter((o) => !o.abgezogen);
   const beschreibe = (o: OeffnungBewertet) => `${o.art} ${masz(o.breiteM)} × ${masz(o.hoeheM)} m`;
   const teile: string[] = [];
   const masse = rechteck ? `${masz(laengen[0]!)} × ${masz(laengen[1]!)} m` : `Wände ${laengen.map(masz).join(" + ")} m`;
-  teile.push(`${name} (Höhe ${masz(raum.hoeheM)} m, ${masse})`);
+  teile.push(
+    `${name} (Höhe ${masz(raum.hoeheM)} m, ${masse}${paneelHoeheM ? `, gestrichen wird nur oberhalb der Paneele ab ${masz(paneelHoeheM)} m` : ""})`,
+  );
   if (raum.waendeStreichen) {
-    teile.push(`Wandfläche brutto ${zahl(wandBruttoM2)} m²`);
+    teile.push(
+      paneelHoeheM
+        ? `Wandfläche brutto ${zahl(wandBruttoM2)} m² (Umfang ${masz(umfangM)} m × ${masz(streichHoeheM)} m über den Paneelen)`
+        : `Wandfläche brutto ${zahl(wandBruttoM2)} m²`,
+    );
     if (abgezogen.length) {
       teile.push(
         `${abgezogen.length} Öffnung${abgezogen.length > 1 ? "en" : ""} über 2,5 m² abgezogen (${abgezogen
-          .map((o) => `${beschreibe(o)} = ${zahl(o.flaecheM2)} m²`)
+          .map((o) => `${beschreibe(o)} = ${zahl(o.wirksamM2)} m²${paneelHoeheM && o.wirksamM2 !== o.flaecheM2 ? " über den Paneelen" : ""}`)
           .join("; ")})`,
       );
     }
@@ -121,19 +175,28 @@ export function berechneRaum(raum: RaumMasse): RaumAufmass | { grund: string } {
       );
     }
     if (oeffnungen.length === 0) teile.push("keine Öffnungen erfasst");
+    if (laibungM2 > 0) teile.push(`Laibungen ${zahl(laibungM2)} m² (Tiefe ${masz(laibungTiefeM!)} m) hinzugerechnet`);
+    else if (abgezogen.length && !laibungTiefeM) teile.push("Laibungen der abgezogenen Öffnungen nicht enthalten (Tiefe nicht genannt)");
     teile.push(`Wandfläche netto ${zahl(wandNettoM2)} m²`);
   }
   if (raum.deckeStreichen) {
-    teile.push(deckeM2 !== null ? `Decke ${zahl(deckeM2)} m²` : "Decke: Grundfläche nicht berechenbar (kein Rechteck)");
+    teile.push(
+      deckeM2 !== null
+        ? `Decke ${zahl(deckeM2)} m²${istMass(raum.deckeM2Genannt, 0.5, 500) ? " (wie genannt)" : ""}`
+        : "Decke: Grundfläche nicht berechenbar (kein Rechteck, Fläche nicht genannt)",
+    );
   }
 
   return {
     name,
     hoeheM: raum.hoeheM,
+    streichHoeheM,
+    paneelHoeheM,
     umfangM: rund2(umfangM),
     rechteck,
     wandBruttoM2,
     abzugM2,
+    laibungM2,
     wandNettoM2,
     deckeM2,
     oeffnungen,
@@ -154,10 +217,16 @@ export function berechneAufmass(raeume: RaumMasse[]): AufmassErgebnis {
     for (const o of a.oeffnungen) {
       if (o.grauzone) {
         ergebnis.rueckfragen.push(
-          `${a.name}: ${o.art} ${masz(o.breiteM)} × ${masz(o.hoeheM)} m hat ${zahl(o.flaecheM2)} m² und liegt nahe der ` +
+          `${a.name}: ${o.art} ${masz(o.breiteM)} × ${masz(o.hoeheM)} m hat ${zahl(o.wirksamM2)} m²` +
+            `${a.paneelHoeheM && o.wirksamM2 !== o.flaecheM2 ? " über den Paneelen" : ""} und liegt nahe der ` +
             `VOB-Grenze von 2,5 m². Bitte das Maß prüfen, es entscheidet über Abzug oder Übermessen.`,
         );
       }
+    }
+    if (a.oeffnungen.some((o) => o.abgezogen) && a.laibungM2 === 0) {
+      ergebnis.rueckfragen.push(
+        `${a.name}: Sollen die Laibungen der abgezogenen Öffnungen mitgestrichen werden? Dann nenne die Laibungstiefe (z.B. „Laibungen 25 cm“).`,
+      );
     }
   }
   return ergebnis;
@@ -219,8 +288,9 @@ export function aufmassText(aufmass: AufmassErgebnis): string {
 export function aufmassKurz(aufmass: AufmassErgebnis): string[] {
   return aufmass.raeume.map((r) => {
     const teile: string[] = [];
-    teile.push(`Wände ${zahl(r.wandNettoM2)} m²`);
+    teile.push(`Wände ${zahl(r.wandNettoM2)} m²${r.paneelHoeheM ? ` (nur oberhalb der Paneele ab ${masz(r.paneelHoeheM)} m)` : ""}`);
     if (r.abzugM2 > 0) teile.push(`(${zahl(r.abzugM2)} m² Öffnungen abgezogen)`);
+    if (r.laibungM2 > 0) teile.push(`(${zahl(r.laibungM2)} m² Laibungen dazu)`);
     if (r.deckeM2 !== null) teile.push(`Decke ${zahl(r.deckeM2)} m²`);
     return `${r.name}: ${teile.join(", ")}`;
   });
@@ -278,7 +348,15 @@ export function parseRaeumeText(text: string | null | undefined): RaumMasse[] {
     const hoeheRoh = felder.get("höhe") ?? felder.get("hoehe") ?? "";
     const hoehe = zahlenAus(hoeheRoh)[0] ?? null;
     const wandlaengen = zahlenAus(felder.get("wände") ?? felder.get("waende") ?? "");
-    const decke = /^(ja|yes|true)/i.test(felder.get("decke") ?? "");
+    // Decke: "ja"/"nein" oder direkt die Fläche ("Decke: 14,2"), z.B. bei Vielecken.
+    const deckeRoh = felder.get("decke") ?? "";
+    const deckeZahl = zahlenAus(deckeRoh)[0] ?? null;
+    const decke = /^(ja|yes|true)/i.test(deckeRoh) || (deckeZahl !== null && !/^(nein|no|false)/i.test(deckeRoh));
+    // Teiletappe 3: Paneelhöhe (Lambris, Fliesenspiegel) und Laibungstiefe, beide optional.
+    const paneel = zahlenAus(felder.get("paneel") ?? felder.get("paneele") ?? felder.get("paneelhöhe") ?? felder.get("paneelhoehe") ?? "")[0] ?? null;
+    const laibungRoh = zahlenAus(felder.get("laibung") ?? felder.get("laibungen") ?? felder.get("laibungstiefe") ?? "")[0] ?? null;
+    // Laibungstiefe wird oft in Zentimetern gesagt ("25"): alles über 1 gilt als cm.
+    const laibung = laibungRoh === null ? null : laibungRoh > 1 ? laibungRoh / 100 : laibungRoh;
     raeume.push({
       name,
       hoeheM: hoehe,
@@ -286,6 +364,9 @@ export function parseRaeumeText(text: string | null | undefined): RaumMasse[] {
       waendeStreichen: true,
       deckeStreichen: decke,
       oeffnungen: oeffnungenAus(felder.get("öffnungen") ?? felder.get("oeffnungen") ?? ""),
+      paneelHoeheM: paneel,
+      deckeM2Genannt: decke && deckeZahl !== null ? deckeZahl : null,
+      laibungTiefeM: laibung,
     });
   }
   return raeume;

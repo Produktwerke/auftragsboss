@@ -49,7 +49,10 @@ export const WandfotoSchema = z.object({
     .describe("Alle sichtbaren Öffnungen (Nachbarwände mit inNachbarwand=true markieren; keine Bilder/Spiegel/Schränke). Leer, wenn keine."),
   besonderheiten: z
     .array(z.string())
-    .describe("Kurz: z.B. 'Lambris halbhoch', 'Fliesenspiegel', 'Heizkörper', 'Dachschräge', 'Tapete', 'Spachtelstellen'. Leer, wenn nichts."),
+    .describe(
+      "Kurz: z.B. 'Heizkörper', 'Dachschräge', 'Tapete', 'Spachtelstellen'. Bei halbhohen Verkleidungen (Lambris, Holzpaneele, Fliesenspiegel) " +
+        "die Oberkante in Metern schätzen und so notieren: 'Lambris bis ca. 1,10 m'. Leer, wenn nichts.",
+    ),
 });
 
 export type WandfotoAnalyse = z.infer<typeof WandfotoSchema>;

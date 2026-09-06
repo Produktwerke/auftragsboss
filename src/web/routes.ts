@@ -11,6 +11,8 @@ import { ladePreisliste } from "../preisliste.js";
 import { berechneAngebot } from "../angebot/berechnung.js";
 import { erzeugeAngebotWord, wordDateiname } from "../angebot/word.js";
 import { erzeugeAngebotPdf } from "../angebot/pdf.js";
+import { fotoBeschreibung, ladeAufmassAnlage } from "../angebot/aufmassblatt.js";
+import { liesFoto } from "../betrieb/fotoAblage.js";
 import { editorSeite } from "./editorSeite.js";
 import { einstellungenSeite, type DokUebersicht } from "./einstellungenSeite.js";
 import { cockpitSeite } from "./cockpitSeite.js";
@@ -140,6 +142,13 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       data: { ziel: "editor", geraet: geraetAusUA(req.headers["user-agent"]), istTest: handwerker.istTest },
     });
 
+    // Aufmaß (Teiletappe 3): Notizen und Belegfotos, im Editor nur zum Ansehen.
+    const belegfotos = await prisma.foto.findMany({
+      where: { dokumentId: dokument.id },
+      orderBy: [{ raum: "asc" }, { wandNr: "asc" }, { erstelltAm: "asc" }],
+      select: { id: true, raum: true, wandNr: true, erkennungJson: true },
+    });
+
     return reply.type("text/html; charset=utf-8").send(
       editorSeite({
         dokument,
@@ -148,11 +157,30 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
         einstellungenUrl,
         plzLookup: featureConfig().FEATURE_PLZ_LOOKUP,
         gedaechtnis,
+        aufmass: {
+          notizen: dokument.aufmassNotizen,
+          fotos: belegfotos.map((f) => ({ id: f.id, raum: f.raum, wandNr: f.wandNr, beschreibung: fotoBeschreibung(f.erkennungJson) })),
+        },
       }),
     );
   };
   app.get<{ Params: { token: string } }>("/a/:token", editorAnzeigen);
   app.get<{ Params: { token: string } }>("/:token", editorAnzeigen);
+
+  // ── Belegfoto anzeigen (nur mit Bearbeiten-Link und vertrautem Gerät) ──
+  app.get<{ Params: { token: string; fotoId: string } }>("/api/a/:token/foto/:fotoId", async (req, reply) => {
+    const dokument = await prisma.dokument.findUnique({ where: { bearbeitenToken: req.params.token } });
+    if (!dokument) return reply.code(404).send("nicht gefunden");
+    const handwerker = await prisma.handwerker.findUniqueOrThrow({ where: { id: dokument.handwerkerId } });
+    if (!darfZugreifen(req, handwerker.id, handwerker.istTest)) return reply.code(403).send("kein Zugriff");
+    // Das Foto muss zu GENAU diesem Dokument gehören, sonst ließe sich mit einem
+    // fremden Bearbeiten-Link durch Foto-IDs raten.
+    const foto = await prisma.foto.findFirst({ where: { id: req.params.fotoId, dokumentId: dokument.id } });
+    if (!foto) return reply.code(404).send("nicht gefunden");
+    const daten = liesFoto(foto.datei);
+    if (!daten) return reply.code(404).send("Datei fehlt");
+    return reply.type(foto.mimeType).header("Cache-Control", "private, max-age=3600").send(daten);
+  });
 
   // ── Zugang bestätigen (Schleuse) ──────────────────────
   // Nimmt die eingegebene Handynummer, vergleicht sie mit der WhatsApp-Nummer
@@ -490,6 +518,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
         nummer: dokument.nummer,
         datum: dokument.datum,
         kundenNummer: dokument.kundenNummer,
+        aufmass: await ladeAufmassAnlage(prisma, dokument),
       });
       return reply
         .type("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
@@ -599,6 +628,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
           nummer: dokument.nummer,
           datum: dokument.datum,
           kundenNummer: dokument.kundenNummer,
+          aufmass: await ladeAufmassAnlage(prisma, dokument),
         });
         anhangName = wordDateiname(dokument.art, dokument.nummer, dokument.kundeName);
         mime = WORD_MIME;

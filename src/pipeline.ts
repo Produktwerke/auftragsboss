@@ -17,6 +17,7 @@ import { transkribiereAudio } from "./ai/transcribe.js";
 import { liesBildNotiz } from "./ai/bildLesen.js";
 import { analysiereWandfoto, fotoAlsDialogText, fotoFeedback, type WandfotoAnalyse } from "./ai/wandfoto.js";
 import { speichereFoto } from "./betrieb/fotoAblage.js";
+import { ladeAufmassAnlage } from "./angebot/aufmassblatt.js";
 import { ordneFotoZu } from "./maler/fotoZuordnung.js";
 import { strukturiereDialog } from "./ai/structure.js";
 import { berechneAngebot, euro } from "./angebot/berechnung.js";
@@ -600,9 +601,10 @@ async function verarbeiteWandfoto(args: {
   if (!vorgang) vorgang = await holeNachtragsVorgang(prisma, handwerker.id);
   if (!vorgang) vorgang = await prisma.vorgang.create({ data: { handwerkerId: handwerker.id } });
 
-  const bisher = nachrichtenLesen(vorgang).filter((n) => n.art === "foto").length;
-  const wandNr = zuordnung.wandNrAusText ?? bisher + 1;
+  // Wandzähler je Raum: „Wand 3" ist die dritte Wand DIESES Raums, nicht das dritte Foto insgesamt.
   const raumName = zuordnung.raumName;
+  const bisher = await prisma.foto.count({ where: { vorgangId: vorgang.id, raum: raumName } });
+  const wandNr = zuordnung.wandNrAusText ?? bisher + 1;
 
   let datei = "";
   try {
@@ -846,8 +848,8 @@ export async function erstelleDokument(args: {
   // Wandfotos dieses Vorgangs als Belegfotos ans Dokument hängen.
   await prisma.foto.updateMany({ where: { vorgangId: vorgang.id, dokumentId: null }, data: { dokumentId: dokument.id } });
 
-  // Word-Datei + E-Mail
-  const word = await erzeugeAngebotWord({ daten, summe, preisliste: eff, nummer, datum });
+  // Word-Datei (mit Aufmaßblatt und Belegfotos als Anlage) + E-Mail
+  const word = await erzeugeAngebotWord({ daten, summe, preisliste: eff, nummer, datum, aufmass: await ladeAufmassAnlage(prisma, dokument) });
   const dateiname = wordDateiname(daten.art, nummer, daten.kunde.name);
   const mail = dokumentMail({
     daten,

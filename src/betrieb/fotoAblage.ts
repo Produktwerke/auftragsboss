@@ -4,7 +4,7 @@
 // (im Nacht-Backup enthalten, nicht in Git). Struktur:
 //   uploads/fotos/<handwerkerId>/<vorgangId>/wand<N>_<zeit>.<endung>
 // Beim DSGVO-Löschen eines Betriebs wird der ganze Betriebsordner entfernt.
-import { mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { resolve, join } from "node:path";
 
 const FOTO_DIR = resolve("uploads", "fotos");
@@ -52,5 +52,20 @@ export function loescheFotosVonBetrieb(handwerkerId: string): void {
     rmSync(ordner, { recursive: true, force: true });
   } catch {
     /* Dateien fehlen schon oder sind gesperrt — DB-Löschung ist maßgeblich */
+  }
+}
+
+/**
+ * Liest ein gespeichertes Foto anhand des relativen Pfads aus der Datenbank.
+ * Nur Pfade unterhalb von uploads/fotos werden bedient (kein Ausbruch per "..").
+ */
+export function liesFoto(relPfad: string): Buffer | null {
+  const pfad = resolve(relPfad);
+  if (!pfad.startsWith(FOTO_DIR)) return null;
+  if (!existsSync(pfad)) return null;
+  try {
+    return readFileSync(pfad);
+  } catch {
+    return null;
   }
 }

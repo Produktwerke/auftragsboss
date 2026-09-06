@@ -22,6 +22,37 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/** Karte „Aufmaß": Notizen je Raum und Belegfotos. Leer, wenn es nichts zu zeigen gibt. */
+function aufmassKarte(
+  aufmass: { notizen: string | null; fotos: { id: string; raum: string | null; wandNr: number; beschreibung: string }[] } | null | undefined,
+  token: string,
+): string {
+  const notizen = (aufmass?.notizen ?? "").split(/\r?\n/).map((z) => z.trim()).filter(Boolean);
+  const fotos = aufmass?.fotos ?? [];
+  if (!notizen.length && !fotos.length) return "";
+  const zeilen = notizen
+    .map((z) => {
+      const i = z.indexOf("): ");
+      const kopf = i > 0 ? z.slice(0, i + 1) : "";
+      const rest = i > 0 ? z.slice(i + 3) : z;
+      return `<div class="aufmass-zeile">${kopf ? `<b>${escapeHtml(kopf)}:</b> ` : ""}${escapeHtml(rest)}</div>`;
+    })
+    .join("");
+  const bilder = fotos
+    .map(
+      (f) =>
+        `<figure><a href="/api/a/${encodeURIComponent(token)}/foto/${encodeURIComponent(f.id)}" target="_blank" rel="noopener"><img src="/api/a/${encodeURIComponent(token)}/foto/${encodeURIComponent(f.id)}" alt="Wandfoto" loading="lazy"></a>` +
+        `<figcaption><b>${escapeHtml(f.raum ? f.raum + ", " : "")}Wand ${f.wandNr}</b>${f.beschreibung ? ": " + escapeHtml(f.beschreibung) : ""}</figcaption></figure>`,
+    )
+    .join("");
+  return `<div class="karte">
+    <label style="margin-top:0;">Aufmaß</label>
+    <div class="aufmass-hinweis">Flächen nach VOB (Öffnungen bis 2,5 m² übermessen, größere abgezogen). Wird als Anlage in die Word-Datei übernommen. Korrekturen einfach per WhatsApp nachsprechen, dann kommt eine neue Fassung.</div>
+    ${zeilen}
+    ${bilder ? `<div class="fotos-raster">${bilder}</div>` : ""}
+  </div>`;
+}
+
 export function editorSeite(args: {
   dokument: Dokument;
   handwerker: Handwerker;
@@ -34,8 +65,10 @@ export function editorSeite(args: {
    *  Leistungs-Schlüssel → gemerkter Preis. Null/undefined = Funktion aus
    *  (Flag oder Betriebseinstellung), die Knöpfe erscheinen dann nicht. */
   gedaechtnis?: Record<string, number> | null;
+  /** Aufmaß (Teiletappe 3): Notizen je Raum und Belegfotos, nur zum Ansehen. */
+  aufmass?: { notizen: string | null; fotos: { id: string; raum: string | null; wandNr: number; beschreibung: string }[] } | null;
 }): string {
-  const { dokument, preisliste, einstellungenUrl, handwerker, plzLookup, gedaechtnis } = args;
+  const { dokument, preisliste, einstellungenUrl, handwerker, plzLookup, gedaechtnis, aufmass } = args;
   const b = preisliste.betrieb;
   const akzent = `#${/^[0-9a-fA-F]{6}$/.test(b.farbe) ? b.farbe : "0B5CAD"}`;
   const logo = ladeLogo(b.logo);
@@ -148,6 +181,14 @@ export function editorSeite(args: {
   .zurueck { display:inline-block; margin-bottom:12px; color:var(--akzent); text-decoration:none;
              font-size:14px; font-weight:600; }
   .zurueck:hover { text-decoration:underline; }
+  .aufmass-zeile { font-size:14px; line-height:1.5; color:#374151; padding:8px 0; border-bottom:1px solid #eef0f3; }
+  .aufmass-zeile b { color:#111827; }
+  .aufmass-hinweis { font-size:12px; color:#6b7280; margin:6px 0 10px; }
+  .fotos-raster { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:12px; margin-top:12px; }
+  .fotos-raster figure { margin:0; }
+  .fotos-raster img { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb; display:block; background:#f3f4f6; }
+  .fotos-raster figcaption { font-size:12px; color:#4b5563; margin-top:4px; line-height:1.35; }
+  .fotos-raster figcaption b { color:#111827; }
   .karte { background:#fff; border-radius:12px; padding:22px; margin-bottom:16px;
            box-shadow:0 1px 4px rgba(0,0,0,.08); }
   .kopf { display:flex; justify-content:space-between; align-items:center; gap:16px;
@@ -541,6 +582,8 @@ export function editorSeite(args: {
     <label style="margin-top:0;">Schlusstext</label>
     <textarea id="schlusstext">${escapeHtml(startDaten.schlusstext)}</textarea>
   </div>
+
+  ${aufmassKarte(aufmass, dokument.bearbeitenToken)}
 
   ${
     handwerker.istTest

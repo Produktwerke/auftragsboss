@@ -29,6 +29,7 @@ import type { DokumentDaten } from "../ai/structure.js";
 import type { Angebotssumme, BerechnetePosition } from "./berechnung.js";
 import { euro, mengeMitEinheit } from "./berechnung.js";
 import type { Preisliste } from "../preisliste.js";
+import { anlageVorhanden, aufmassAnlage, type AufmassAnlage } from "./aufmassblatt.js";
 
 const GRAU = "666666";
 const OHNE_RAHMEN = {
@@ -201,8 +202,10 @@ export async function erzeugeAngebotWord(args: {
   nummer: string;
   datum: Date;
   kundenNummer?: string | null;
+  /** Aufmaßblatt mit Belegfotos als Anlage (Teiletappe 3); ohne Inhalt entfällt es. */
+  aufmass?: AufmassAnlage | null;
 }): Promise<Buffer> {
-  const { daten, summe, preisliste, nummer, datum, kundenNummer } = args;
+  const { daten, summe, preisliste, nummer, datum, kundenNummer, aufmass } = args;
   const b = preisliste.betrieb;
   const akzent = /^[0-9a-fA-F]{6}$/.test(b.farbe) ? b.farbe.toUpperCase() : "0B5CAD";
   const logo = ladeLogo(b.logo);
@@ -354,6 +357,9 @@ export async function erzeugeAngebotWord(args: {
       }),
     );
   }
+
+  // ── Anlage: Aufmaß mit Belegfotos ──────────────────────
+  if (anlageVorhanden(aufmass)) kinder.push(...aufmassAnlage(aufmass, akzent));
 
   // Fußzeile in zwei Zeilen: 1) Firma, Anschrift, Ansprechpartner  2) USt-IdNr., Bank
   const fussZeile1 = [

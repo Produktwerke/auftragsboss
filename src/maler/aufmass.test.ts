@@ -81,9 +81,67 @@ describe("berechneRaum", () => {
       "Schlafzimmer (Höhe 2,55 m, 3,84 × 3,99 m): Wandfläche brutto 39,93 m²; " +
         "1 Öffnung über 2,5 m² abgezogen (Fenstertür 1,69 × 2,22 m = 3,75 m²); " +
         "2 Öffnungen bis 2,5 m² übermessen (Tür 0,82 × 1,98 m; Fenster 0,69 × 0,74 m); " +
+        "Laibungen der abgezogenen Öffnungen nicht enthalten (Tiefe nicht genannt); " +
         "Wandfläche netto 36,18 m²; Decke 15,32 m².",
     );
     expect(a.erklaerung).not.toMatch(/[—–]/);
+  });
+
+  // ── Teiletappe 3: halbhohe Flächen, Laibungen, genannte Decke ──
+  it("Paneele: gestrichen wird nur oberhalb, Türen zählen nur mit ihrem Teil darüber", () => {
+    // Kinderzimmer aus dem Live-Test: 4,32 × 3,98, Höhe 2,55, Holzpaneele bis 1,10 m
+    const a = berechneRaum({
+      name: "Kinderzimmer",
+      hoeheM: 2.55,
+      wandlaengenM: [4.32, 3.98],
+      waendeStreichen: true,
+      deckeStreichen: false,
+      paneelHoeheM: 1.1,
+      oeffnungen: [
+        { art: "Fenstertür", breiteM: 1.7, hoeheM: 2.3 }, // voll 3,91 m², über den Paneelen 1,7 × 1,2 = 2,04 → übermessen
+        { art: "Fenster", breiteM: 1.0, hoeheM: 1.2 }, // sitzt über den Paneelen: bleibt 1,2 m²
+        { art: "Durchgang", breiteM: 2.0, hoeheM: 2.4 }, // über den Paneelen 2,0 × 1,3 = 2,6 → abgezogen
+      ],
+    });
+    if ("grund" in a) throw new Error(a.grund);
+    expect(a.streichHoeheM).toBe(1.45);
+    expect(a.wandBruttoM2).toBe(24.07); // 16,6 × 1,45
+    expect(a.oeffnungen.map((o) => o.wirksamM2)).toEqual([2.04, 1.2, 2.6]);
+    expect(a.oeffnungen.map((o) => o.abgezogen)).toEqual([false, false, true]);
+    expect(a.abzugM2).toBe(2.6);
+    expect(a.wandNettoM2).toBe(21.47);
+    expect(a.erklaerung).toContain("gestrichen wird nur oberhalb der Paneele ab 1,1 m");
+    expect(a.erklaerung).toContain("Durchgang 2 × 2,4 m = 2,60 m² über den Paneelen");
+    expect(aufmassKurz({ raeume: [a], uebersprungen: [], rueckfragen: [] })[0]).toContain("(nur oberhalb der Paneele ab 1,1 m)");
+  });
+
+  it("Paneelhöhe muss unter der Raumhöhe liegen", () => {
+    expect(berechneRaum({ ...schlafzimmer, paneelHoeheM: 2.5 })).toEqual({ grund: "Paneelhöhe unplausibel" });
+  });
+
+  it("Laibungen: bei abgezogenen Öffnungen und genannter Tiefe hinzugerechnet (Fenster mit Sturz, Tür ohne Boden)", () => {
+    const a = berechneRaum({
+      ...schlafzimmer,
+      laibungTiefeM: 0.25,
+      oeffnungen: [
+        { art: "Fenster", breiteM: 2.0, hoeheM: 1.5 }, // 3,0 m² abgezogen; Laibung (2×1,5 + 2,0) × 0,25 = 1,25
+        { art: "Tür", breiteM: 1.4, hoeheM: 2.1 }, // 2,94 m² abgezogen; Laibung (2×2,1) × 0,25 = 1,05
+        { art: "Fenster", breiteM: 0.8, hoeheM: 1.0 }, // übermessen, keine Laibung
+      ],
+    });
+    if ("grund" in a) throw new Error(a.grund);
+    expect(a.oeffnungen.map((o) => o.laibungM2)).toEqual([1.25, 1.05, 0]);
+    expect(a.laibungM2).toBe(2.3);
+    expect(a.wandNettoM2).toBe(39.93 - 5.94 + 2.3);
+    expect(a.erklaerung).toContain("Laibungen 2,30 m² (Tiefe 0,25 m) hinzugerechnet");
+    expect(a.erklaerung).not.toContain("nicht enthalten");
+  });
+
+  it("Decke: direkt genannte Fläche gilt auch für Vielecke", () => {
+    const a = berechneRaum({ name: "Flur", hoeheM: 2.5, wandlaengenM: [4.5, 2.0, 1.5, 1.0, 3.0], waendeStreichen: true, deckeStreichen: true, oeffnungen: [], deckeM2Genannt: 7.4 });
+    if ("grund" in a) throw new Error(a.grund);
+    expect(a.deckeM2).toBe(7.4);
+    expect(a.erklaerung).toContain("Decke 7,40 m² (wie genannt)");
   });
 });
 
@@ -96,8 +154,10 @@ describe("berechneAufmass", () => {
     ]);
     expect(e.raeume.map((r) => r.name)).toEqual(["Schlafzimmer", "Küche"]);
     expect(e.uebersprungen).toEqual([{ name: "Bad", grund: "Raumhöhe fehlt oder unplausibel" }]);
-    expect(e.rueckfragen).toHaveLength(1);
-    expect(e.rueckfragen[0]).toContain("Küche: Fenster 1,4 × 1,7 m hat 2,38 m²");
+    // Schlafzimmer: Laibungsfrage zur abgezogenen Fenstertür; Küche: Grauzone
+    expect(e.rueckfragen).toHaveLength(2);
+    expect(e.rueckfragen[0]).toContain("Schlafzimmer: Sollen die Laibungen der abgezogenen Öffnungen mitgestrichen werden?");
+    expect(e.rueckfragen[1]).toContain("Küche: Fenster 1,4 × 1,7 m hat 2,38 m²");
     expect(aufmassText(e)).toContain("Bad: nicht berechnet (Raumhöhe fehlt oder unplausibel).");
     expect(aufmassKurz(e)[0]).toBe("Schlafzimmer: Wände 36,18 m², (3,75 m² Öffnungen abgezogen), Decke 15,32 m²");
   });
@@ -156,7 +216,17 @@ describe("parseRaeumeText", () => {
         { art: "Fenster", breiteM: 1.1, hoeheM: 1.2 },
         { art: "Zimmertür", breiteM: 0.82, hoeheM: 1.98 },
       ],
+      paneelHoeheM: null,
+      deckeM2Genannt: null,
+      laibungTiefeM: null,
     });
+  });
+
+  it("liest Paneelhöhe, Laibungstiefe (auch in cm) und direkt genannte Deckenfläche", () => {
+    const [r] = parseRaeumeText("Raum: Bad; Höhe: 2,40; Wände: 2,10 x 1,80; Decke: 3,8; Öffnungen: Tür 0,76 x 2,00; Paneel: 1,20; Laibung: 25");
+    expect(r).toMatchObject({ paneelHoeheM: 1.2, laibungTiefeM: 0.25, deckeStreichen: true, deckeM2Genannt: 3.8 });
+    const [s] = parseRaeumeText("Raum: Küche; Höhe: 2,5; Wände: 3 x 4; Decke: nein; Öffnungen: keine; Paneelhöhe: 0,90; Laibungstiefe: 0,3");
+    expect(s).toMatchObject({ paneelHoeheM: 0.9, laibungTiefeM: 0.3, deckeStreichen: false, deckeM2Genannt: null });
   });
 
   it("versteht Vielecke, 'mal', Punkt-Dezimale, 'keine' und mehrere Zeilen", () => {

@@ -120,6 +120,27 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 06.09.2026 (3) — TEILETAPPE 3 ✅ GEBAUT + DEPLOYT (Commit e3ca128; 213 Tests grün; KI-Probe `scratch/paneel-probe.ts` bestanden; ⏳ Live-Test durch Dirk offen):**
+> - **Halbhohe Flächen:** Raumzeile kennt `Paneel: 1,10` (Oberkante Lambris/Paneele/Fliesenspiegel). Rechner:
+>   brutto = Umfang × (H − Paneelhöhe); Türen/Durchgänge zählen nur mit ihrem Teil über den Paneelen, Fenster voll
+>   (höchstens Zonenhöhe); VOB-Klasse auf dem wirksamen Anteil. Prompt: Paneelhöhe fehlt = PFLICHT-Rückfrage, Schätzung
+>   aus FOTO-Zeile („Lambris bis ca. 1,10 m", neue Vision-Regel) darf vorläufig rein + normale Rückfrage. Nie selbst schätzen.
+> - **Laibungen:** nur bei genannter Tiefe (`Laibung: 0,25`, cm werden erkannt) und nur bei ABGEZOGENEN Öffnungen:
+>   Fenster (2h + b) × t, bodenstehende (2h) × t, fließen in netto ein. Ohne Tiefe: Hinweis im Aufmaßtext + Rückfrage
+>   in `rueckfragen` (nicht per WhatsApp).
+> - **Decke bei Vielecken:** `Decke: 14,2` = direkt genannte Fläche („wie genannt" im Text).
+> - **Aufmaßblatt (`src/angebot/aufmassblatt.ts`):** Word bekommt „Anlage: Aufmaß" auf neuer Seite: VOB-Hinweis,
+>   Notizen je Raum (Raumkopf fett), Belegfotos in zwei Spalten mit Unterschrift aus `erkennungJson`. Geladen über
+>   `ladeAufmassAnlage(prisma, dokument)` in Pipeline, Export-Route und Mail-Export. WebP-Fotos fallen im Word weg.
+>   PDF (Kundenweg) bleibt ohne Anlage. Probe: `scratch/aufmassblatt-probe.ts <ziel.docx>` (Messbank-Fotos, ohne KI/DB).
+> - **Editor:** Karte „Aufmaß" (nur Ansicht) mit Notizen + Foto-Raster; Fotos über `/api/a/:token/foto/:fotoId`
+>   (Schleuse + Foto muss zum Dokument gehören). Lokale Vorschau: `scratch/editor-fotos-seed.ts` hängt zwei Fotos ans Demo-Dokument.
+> - **Wandzähler je Raum** (`prisma.foto.count` je Vorgang+Raum) statt je Vorgang.
+> - **Lehre:** Regex-Literale nie per Heredoc-Skript in TS einfügen (`\r?\n` wurde zu echten Zeilenumbrüchen); PDF-Sichtprüfung
+>   ohne poppler: Word-COM → PDF, dann `Windows.Data.Pdf` in PowerShell rendert Seiten als PNG.
+> - **⏳ NÄCHSTES:** Live-Test (Raum mit Paneelen diktieren + Fotos, Word öffnen: Anlage prüfen). Danach Endkunden-Variante
+>   (WhatsApp-Link) laut Gedächtnis, nicht MVP.
+
 > **Update 06.09.2026 (2) — WANDFOTOS TEILETAPPE 2 ✅ DEPLOYT + LIVE-BESTÄTIGT (Commits 9ca7910…15b02d8; 208 Tests grün; Prüfstand 3 Läufe; Live-Test Raum 5 komplett: 4 Fotos, Fenstertür 3,91 m² abgezogen, ❓-Randtür per Text geklärt, Fassung 4 = 38,42 m²):**
 > - **Ablauf live:** Maler spricht Maße (Teiletappe 1) und schickt ein Foto je Wand. Jedes Foto → EIN Vision-Aufruf
 >   (`src/ai/wandfoto.ts`, eigenes kleines Structured-Output-Schema `WandfotoSchema`, Modell claude-fable-5):

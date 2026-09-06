@@ -225,3 +225,68 @@ export function aufmassKurz(aufmass: AufmassErgebnis): string[] {
     return `${r.name}: ${teile.join(", ")}`;
   });
 }
+
+// ── Parser für die Raumzeilen der KI ───────────────────────────────────
+//
+// Das Structured-Output-Schema ist an der Größengrenze; ein verschachteltes
+// Objekt-Array für Räume sprengt die Grammatik. Deshalb liefert die KI EINE
+// Textzeile je Raum in festem Format, und dieser Parser macht daraus Zahlen.
+// Alles, was nicht sauber parsebar ist, wird verworfen (kein falsches Maß).
+//   Raum: Wohnzimmer; Höhe: 2,52; Wände: 4,49 x 4,36; Decke: ja; Öffnungen: Fenstertür 1,70 x 2,20, Fenster 1,10 x 1,20
+
+const dezimal = (s: string): number | null => {
+  const n = Number(s.trim().replace(/\s/g, "").replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+};
+
+/** Zahlenliste aus "4,49 x 4,36" / "4,49 mal 4,36" / "10,38, 3,20 und 5,10". */
+function zahlenAus(text: string): number[] {
+  const treffer = text.match(/\d+(?:[.,]\d+)?/g) ?? [];
+  return treffer.map((z) => dezimal(z)).filter((n): n is number => n !== null);
+}
+
+function oeffnungenAus(text: string): Oeffnung[] {
+  const t = text.trim();
+  if (!t || /^(keine|none|-|null)$/i.test(t)) return [];
+  const ergebnis: Oeffnung[] = [];
+  // Ein Eintrag = beliebiger Name + Breite (x|×|mal|*) Höhe; Trenner zwischen Einträgen: Komma oder Semikolon
+  const muster = /([^\d,;]+?)\s*(\d+(?:[.,]\d+)?)\s*(?:x|×|\*|mal)\s*(\d+(?:[.,]\d+)?)/gi;
+  let m: RegExpExecArray | null;
+  while ((m = muster.exec(t)) !== null) {
+    const breiteM = dezimal(m[2]!), hoeheM = dezimal(m[3]!);
+    if (breiteM === null || hoeheM === null) continue;
+    const art = m[1]!.replace(/^[\s,;]+|[\s,;]+$/g, "").trim() || "Öffnung";
+    ergebnis.push({ art, breiteM, hoeheM });
+  }
+  return ergebnis;
+}
+
+/** Zerlegt den Raumtext der KI in Raummaße. Unbrauchbare Zeilen werden übersprungen. */
+export function parseRaeumeText(text: string | null | undefined): RaumMasse[] {
+  if (!text?.trim()) return [];
+  const raeume: RaumMasse[] = [];
+  for (const zeile of text.split(/\r?\n/)) {
+    if (!zeile.trim()) continue;
+    const felder = new Map<string, string>();
+    for (const teil of zeile.split(";")) {
+      const i = teil.indexOf(":");
+      if (i < 0) continue;
+      felder.set(teil.slice(0, i).trim().toLowerCase(), teil.slice(i + 1).trim());
+    }
+    const name = felder.get("raum") ?? "";
+    if (!name) continue;
+    const hoeheRoh = felder.get("höhe") ?? felder.get("hoehe") ?? "";
+    const hoehe = zahlenAus(hoeheRoh)[0] ?? null;
+    const wandlaengen = zahlenAus(felder.get("wände") ?? felder.get("waende") ?? "");
+    const decke = /^(ja|yes|true)/i.test(felder.get("decke") ?? "");
+    raeume.push({
+      name,
+      hoeheM: hoehe,
+      wandlaengenM: wandlaengen,
+      waendeStreichen: true,
+      deckeStreichen: decke,
+      oeffnungen: oeffnungenAus(felder.get("öffnungen") ?? felder.get("oeffnungen") ?? ""),
+    });
+  }
+  return raeume;
+}

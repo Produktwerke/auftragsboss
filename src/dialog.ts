@@ -7,7 +7,7 @@
 import type { PrismaClient, Vorgang } from "@prisma/client";
 import type { DialogNachricht, DokumentDaten } from "./ai/structure.js";
 import { euro } from "./angebot/berechnung.js";
-import { aufmassKurz, berechneAufmass } from "./maler/aufmass.js";
+import { aufmassKurz, berechneAufmass, parseRaeumeText } from "./maler/aufmass.js";
 
 /** Höchstens so viele Rückfrage-Runden, dann wird abgeschlossen. */
 export const MAX_RUNDEN = 2;
@@ -113,7 +113,7 @@ export function baueZusammenfassung(daten: DokumentDaten): string {
 
   // Aus Raummaßen berechnete Flächen: Das ist die eine Maß-Zeile, die sich
   // lohnt, weil sie gerechnet ist (VOB) und der Handwerker sie hier prüft.
-  const aufmass = berechneAufmass(daten.raeume ?? []);
+  const aufmass = berechneAufmass(parseRaeumeText(daten.raeumeText));
   if (aufmass.raeume.length) {
     zeilen.push("*Flächen (VOB-gerecht gerechnet):*");
     for (const z of aufmassKurz(aufmass)) zeilen.push(`• ${z}`);

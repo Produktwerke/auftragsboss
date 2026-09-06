@@ -29,7 +29,7 @@ import { starteTestFuerNeueNummer, testNachrichtBlockiert } from "./direkttest.j
 import { verarbeiteOnboardingKnopf, markiereLeadAktiv } from "./lead/onboarding.js";
 import { direkttestConfig, featureConfig } from "./config.js";
 import { validierePositionen } from "./validierung/validator.js";
-import { aufmassText, berechneAufmass, wendeAufmassAn } from "./maler/aufmass.js";
+import { aufmassText, berechneAufmass, parseRaeumeText, wendeAufmassAn } from "./maler/aufmass.js";
 import { schlagePreiseVor } from "./betrieb/preisgedaechtnis.js";
 import { spurEvent } from "./analytics/event.js";
 import { schaetzeAudioSekunden, kostenAudioCent, kostenClaudeCent } from "./analytics/kikosten.js";
@@ -423,7 +423,7 @@ export async function verarbeiteNachricht(args: {
     // 4b. Aufmaß aus Raummaßen: Die KI hat nur Zahlen ausgelesen, gerechnet wird
     //     hier (VOB: Öffnungen bis 2,5 m² übermessen, größere abgezogen). Vor der
     //     Zusammenfassung, damit der Handwerker die Flächen schon dort sieht.
-    const aufmass = berechneAufmass(daten.raeume ?? []);
+    const aufmass = berechneAufmass(parseRaeumeText(daten.raeumeText));
     if (aufmass.raeume.length > 0 || aufmass.uebersprungen.length > 0) {
       daten.positionen = wendeAufmassAn(daten.positionen, aufmass);
       daten.aufmassNotizen = [aufmassText(aufmass), daten.aufmassNotizen?.trim()].filter(Boolean).join("\n");

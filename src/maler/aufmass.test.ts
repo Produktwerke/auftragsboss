@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aufmassKurz, aufmassText, berechneAufmass, berechneRaum, wendeAufmassAn, type RaumMasse } from "./aufmass.js";
+import { aufmassKurz, aufmassText, berechneAufmass, berechneRaum, parseRaeumeText, wendeAufmassAn, type RaumMasse } from "./aufmass.js";
 
 const schlafzimmer: RaumMasse = {
   name: "Schlafzimmer",
@@ -137,5 +137,44 @@ describe("wendeAufmassAn", () => {
     const leer = berechneAufmass([{ ...schlafzimmer, hoeheM: null }]);
     const p = pos({ flaechenArt: "WAND", raumBezug: "Schlafzimmer" });
     expect(wendeAufmassAn([p], leer)).toEqual([p]);
+  });
+});
+
+describe("parseRaeumeText", () => {
+  it("liest das vorgegebene Zeilenformat inklusive Öffnungen", () => {
+    const [r] = parseRaeumeText(
+      "Raum: Wohnzimmer; Höhe: 2,52; Wände: 4,49 x 4,36; Decke: ja; Öffnungen: Fenstertür 1,70 x 2,20, Fenster 1,10 x 1,20, Zimmertür 0,82 x 1,98",
+    );
+    expect(r).toEqual({
+      name: "Wohnzimmer",
+      hoeheM: 2.52,
+      wandlaengenM: [4.49, 4.36],
+      waendeStreichen: true,
+      deckeStreichen: true,
+      oeffnungen: [
+        { art: "Fenstertür", breiteM: 1.7, hoeheM: 2.2 },
+        { art: "Fenster", breiteM: 1.1, hoeheM: 1.2 },
+        { art: "Zimmertür", breiteM: 0.82, hoeheM: 1.98 },
+      ],
+    });
+  });
+
+  it("versteht Vielecke, 'mal', Punkt-Dezimale, 'keine' und mehrere Zeilen", () => {
+    const rs = parseRaeumeText(
+      "Raum: Küche; Höhe: 2.49; Wände: 10,38, 3,20 und 5,10; Decke: nein; Öffnungen: keine\n" +
+        "Raum: Flur; Höhe: 2,50; Wände: 4,50 mal 2,00; Decke: ja; Öffnungen: Tür 0,86 × 2,00",
+    );
+    expect(rs).toHaveLength(2);
+    expect(rs[0]).toMatchObject({ name: "Küche", hoeheM: 2.49, wandlaengenM: [10.38, 3.2, 5.1], deckeStreichen: false, oeffnungen: [] });
+    expect(rs[1]).toMatchObject({ name: "Flur", wandlaengenM: [4.5, 2.0], oeffnungen: [{ art: "Tür", breiteM: 0.86, hoeheM: 2.0 }] });
+  });
+
+  it("wirft Unbrauchbares weg statt zu raten", () => {
+    expect(parseRaeumeText(null)).toEqual([]);
+    expect(parseRaeumeText("   ")).toEqual([]);
+    expect(parseRaeumeText("Höhe: 2,5; Wände: 3 x 4")).toEqual([]); // kein Raumname
+    const [r] = parseRaeumeText("Raum: Bad; Höhe: ; Wände: ; Decke: ja; Öffnungen: Fenster ohne Maß");
+    expect(r).toMatchObject({ name: "Bad", hoeheM: null, wandlaengenM: [], oeffnungen: [] });
+    expect("grund" in berechneRaum(r!)).toBe(true);
   });
 });

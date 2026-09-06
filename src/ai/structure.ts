@@ -68,44 +68,8 @@ export const PositionSchema = z.object({
   flaechenArt: z
     .enum(["WAND", "DECKE"])
     .nullable()
-    .describe(
-      "Nur für Flächenleistungen an Wänden oder Decke eines Raums, dessen Maße unter 'raeume' stehen " +
-        "(streichen, tapezieren, spachteln, schleifen, grundieren, Vlies): WAND oder DECKE. Sonst null. " +
-        "Das Programm berechnet dann die Fläche VOB-gerecht und trägt die Menge ein.",
-    ),
-  raumBezug: z
-    .string()
-    .nullable()
-    .describe(
-      "Name des Raums aus 'raeume', auf den sich diese Position bezieht (gleiche Schreibweise). " +
-        "null, wenn kein Raum genannt ist oder die Position raumübergreifend gilt.",
-    ),
-  mengeQuelle: z
-    .enum(["DIKTAT", "AUFMASS"])
-    .nullable()
-    .describe("DIKTAT, wenn die Menge ausdrücklich diktiert wurde, sonst null. AUFMASS setzt nur das Programm."),
-});
-
-export const RaumSchema = z.object({
-  name: z.string().describe("Raumname, wie diktiert, z.B. 'Wohnzimmer', 'Kinderzimmer 1'."),
-  hoeheM: z.number().nullable().describe("Raumhöhe in Metern, z.B. 2.52. null, wenn nicht genannt."),
-  wandlaengenM: z
-    .array(z.number())
-    .describe(
-      "Wandlängen in Metern. Bei 'a mal b' (Rechteckraum) genau zwei Zahlen. Sonst alle diktierten Wandlängen " +
-        "einzeln in der genannten Reihenfolge. Leer, wenn keine genannt.",
-    ),
-  waendeStreichen: z.boolean().describe("true, wenn in diesem Raum Wandflächen bearbeitet werden sollen."),
-  deckeStreichen: z.boolean().describe("true, wenn in diesem Raum die Decke bearbeitet werden soll."),
-  oeffnungen: z
-    .array(
-      z.object({
-        art: z.string().describe("Fenster, Tür, Fenstertür, Durchgang, Haustür …"),
-        breiteM: z.number().describe("Breite in Metern."),
-        hoeheM: z.number().describe("Höhe in Metern."),
-      }),
-    )
-    .describe("Nur Öffnungen, deren Breite UND Höhe diktiert wurden. Nichts schätzen."),
+    .describe("Nur bei Flächenleistungen an Wänden/Decke eines Raums aus raeumeText. Sonst null."),
+  raumBezug: z.string().nullable().describe("Raumname aus raeumeText, sonst null."),
 });
 
 export const DokumentSchema = z.object({
@@ -183,11 +147,19 @@ export const DokumentSchema = z.object({
       "Angaben, die im Diktat fehlen. Sei sparsam: höchstens 3 Einträge, und nur was wirklich zählt. " +
         "Fehlende PREISE gehören NIE hierher — die trägt der Handwerker ohnehin selbst ein.",
     ),
-  raeume: z
-    .array(RaumSchema)
+  // Bewusst ein flacher Text statt eines Objekt-Arrays: Das Schema ist an der
+  // Größengrenze der Structured-Output-Grammatik (ein weiteres verschachteltes
+  // Array löst „compiled grammar is too large" aus). Geparst wird deterministisch
+  // in maler/aufmass.ts (parseRaeumeText).
+  raeumeText: z
+    .string()
+    .nullable()
     .describe(
-      "Räume mit diktierten Maßen (Höhe, Wandlängen, ggf. Öffnungsmaße). Nur Zahlen übernehmen, nichts " +
-        "rechnen, nichts schätzen. Leeres Array, wenn keine Raummaße genannt wurden.",
+      "Räume mit diktierten Maßen, EINE Zeile je Raum, exakt in diesem Format: " +
+        "'Raum: Wohnzimmer; Höhe: 2,52; Wände: 4,49 x 4,36; Decke: ja; Öffnungen: Fenstertür 1,70 x 2,20, Fenster 1,10 x 1,20'. " +
+        "Wände: bei 'a mal b' genau zwei Zahlen mit x, sonst alle Wandlängen mit Komma getrennt. " +
+        "Decke: ja nur, wenn die Decke bearbeitet wird. Öffnungen: nur mit diktierter Breite UND Höhe, sonst 'keine'. " +
+        "Nur Zahlen übernehmen, nichts rechnen oder schätzen. null, wenn keine Raummaße genannt wurden.",
     ),
   aufmassNotizen: z
     .string()
@@ -238,14 +210,14 @@ export const DokumentSchema = z.object({
 // die Aufmaß-Felder optional: ältere Dokumente, Editor-Eingaben und Tests
 // kennen sie nicht, und sie sind nur für Flächenpositionen relevant.
 type RohPosition = z.infer<typeof PositionSchema>;
-type AufmassFelder = "flaechenArt" | "raumBezug" | "mengeQuelle";
-export type Position = Omit<RohPosition, AufmassFelder> & Partial<Pick<RohPosition, AufmassFelder>>;
+type AufmassFelder = "flaechenArt" | "raumBezug";
+export type Position = Omit<RohPosition, AufmassFelder> &
+  Partial<Pick<RohPosition, AufmassFelder>> & { mengeQuelle?: "DIKTAT" | "AUFMASS" | null };
 type RohDokument = z.infer<typeof DokumentSchema>;
-export type DokumentDaten = Omit<RohDokument, "positionen" | "raeume"> & {
+export type DokumentDaten = Omit<RohDokument, "positionen" | "raeumeText"> & {
   positionen: Position[];
-  raeume?: RohDokument["raeume"];
+  raeumeText?: string | null;
 };
-export type RaumMasse = z.infer<typeof RaumSchema>;
 /** Herkunft eines Einzelpreises. DIKTAT/PREISLISTE/UNBEKANNT setzt die KI,
  *  PREISGEDAECHTNIS/MANUELL setzt die Anwendung (Editor bzw. Preisgedächtnis). */
 export type Preisquelle = Position["preisquelle"];
@@ -312,7 +284,7 @@ Du erhältst das Roh-Transkript einer WhatsApp-Sprachnachricht, die ein Handwerk
 
 5. **Arbeitsleistungen sind standardmäßig eine Pauschale.** Jede Position mit kategorie LEISTUNG bekommt einheit "pauschal" und menge 1 — ES SEI DENN, für genau diese Leistung wurde ausdrücklich eine Menge samt Einheit diktiert (z.B. "45 Quadratmeter Decke streichen", "6 Stunden", "12 laufende Meter Sockelleiste"). Nur dann übernimm die genannte Menge und Einheit. Leite für Arbeitsleistungen NIEMALS Quadratmeter, Stück o.ä. aus Raummaßen ab — der Handwerker kalkuliert die Leistung als Ganzes und trägt einen Pauschalpreis ein. Alle Maße aus dem Diktat gehören nach "aufmassNotizen", nicht in die Positionsmenge. Bei pauschalen Leistungen bleibt "mengeUnsicher" false.
 
-   **Ausnahme Raummaße (Aufmaß):** Nennt der Handwerker zu einem Raum die Höhe und Wandlängen (z.B. "Wohnzimmer, Höhe 2,52, 4,49 mal 4,36" oder "Flur, Höhe 2,50, Wände 4,50, 4,40, 4,50, 2,00 und 2,50"), trage sie unter "raeume" ein: nur die Zahlen, wie gesagt, nichts rechnen. Flächenleistungen für diesen Raum (Wände oder Decke streichen, tapezieren, spachteln, schleifen, grundieren, Vlies) bekommen dann einheit "m2", menge null, flaechenArt WAND bzw. DECKE und raumBezug mit dem Raumnamen. Das Programm berechnet die Fläche nach VOB (Öffnungen bis 2,5 m² übermessen, größere abgezogen) und trägt die Menge ein. Diktierte Fenster- und Türmaße (Breite und Höhe) gehören zu "oeffnungen" des Raums. Werden Wände UND Decke genannt, sind das zwei Positionen (eine WAND, eine DECKE). Fehlt zu einem Raum mit Flächenleistungen die Höhe oder fehlen die Wandlängen, ist das eine PFLICHT-Rückfrage ("Wie hoch ist das Wohnzimmer und wie lang sind die Wände?"). Der Handwerker darf statt Maßen auch direkt eine Fläche nennen ("45 Quadratmeter Wände"), dann gilt die Grundregel oben und "raeume" bleibt leer.
+   **Ausnahme Raummaße (Aufmaß):** Nennt der Handwerker zu einem Raum die Höhe und Wandlängen (z.B. "Wohnzimmer, Höhe 2,52, 4,49 mal 4,36" oder "Flur, Höhe 2,50, Wände 4,50, 4,40, 4,50, 2,00 und 2,50"), trage sie in "raeumeText" ein (eine Zeile je Raum im vorgegebenen Format): nur die Zahlen, wie gesagt, nichts rechnen. Flächenleistungen für diesen Raum (Wände oder Decke streichen, tapezieren, spachteln, schleifen, grundieren, Vlies) bekommen dann einheit "m2", menge null, flaechenArt WAND bzw. DECKE und raumBezug mit dem Raumnamen. Das Programm berechnet die Fläche nach VOB (Öffnungen bis 2,5 m² übermessen, größere abgezogen) und trägt die Menge ein. Diktierte Fenster- und Türmaße (Breite und Höhe) gehören in die Öffnungen der Raumzeile. Werden Wände UND Decke genannt, sind das zwei Positionen (eine WAND, eine DECKE). Fehlt zu einem Raum mit Flächenleistungen die Höhe oder fehlen die Wandlängen, ist das eine PFLICHT-Rückfrage ("Wie hoch ist das Wohnzimmer und wie lang sind die Wände?"). Der Handwerker darf statt Maßen auch direkt eine Fläche nennen ("45 Quadratmeter Wände"), dann gilt die Grundregel oben und "raeumeText" bleibt null.
 
 5. **Material ergänzen — als sichtbaren Vorschlag.** Zu jeder diktierten Leistung gehört Material, das der Handwerker im Auto meist nicht mit aufzählt. Ergänze es als Positionen mit kategorie "MATERIAL" und vorschlag true. Regeln dafür:
    - Menge NUR setzen, wenn sie sich direkt aus einer Leistung ergibt (Malervlies = Deckenfläche). Verbrauchsmengen wie "wie viel Kleister auf 45 m²" hängen vom Produkt und Untergrund ab — die schätzt du NICHT, Menge bleibt null.

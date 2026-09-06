@@ -137,6 +137,41 @@ describe("berechneRaum", () => {
     expect(a.erklaerung).not.toContain("nicht enthalten");
   });
 
+  it("Dachschrägen: Kniestock-Wände mit eigener Höhe, Schrägen als Wandfläche dazu", () => {
+    // Dachzimmer: 4,20 × 3,50, Firsthöhe 2,50, an den Längsseiten Kniestock 1,20, darüber je eine Schräge 4,20 × 2,10
+    const a = berechneRaum({
+      name: "Dachzimmer",
+      hoeheM: 2.5,
+      wandlaengenM: [4.2, 3.5, 4.2, 3.5],
+      wandHoehenM: [1.2, null, 1.2, null],
+      schraegen: [{ laengeM: 4.2, schraegeM: 2.1 }, { laengeM: 4.2, schraegeM: 2.1 }],
+      waendeStreichen: true,
+      deckeStreichen: true,
+      deckeM2Genannt: 5.9,
+      oeffnungen: [{ art: "Dachfenster", breiteM: 0.78, hoeheM: 1.18 }],
+    });
+    if ("grund" in a) throw new Error(a.grund);
+    expect(a.rechteck).toBe(false);
+    expect(a.schraegenM2).toBe(17.64);
+    // Wände: 2 × 4,2 × 1,2 = 10,08 + 2 × 3,5 × 2,5 = 17,5 → 27,58 + Schrägen 17,64 = 45,22
+    expect(a.wandBruttoM2).toBe(45.22);
+    expect(a.abzugM2).toBe(0); // Dachfenster 0,92 m² übermessen
+    expect(a.wandNettoM2).toBe(45.22);
+    expect(a.deckeM2).toBe(5.9);
+    expect(a.erklaerung).toContain("Wände 4,2 (Höhe 1,2) + 3,5 + 4,2 (Höhe 1,2) + 3,5 m");
+    expect(a.erklaerung).toContain("davon Dachschrägen 17,64 m²: 4,2 × 2,1 m, 4,2 × 2,1 m");
+    expect(aufmassKurz({ raeume: [a], uebersprungen: [], rueckfragen: [] })[0]).toContain("(davon 17,64 m² Dachschrägen)");
+  });
+
+  it("Dachschrägen: Paneele wirken je Wand, unplausible Höhen werden abgewiesen", () => {
+    const a = berechneRaum({ ...schlafzimmer, wandlaengenM: [4, 3, 4, 3], wandHoehenM: [1.5, null, 1.5, null], paneelHoeheM: 1.0, oeffnungen: [] });
+    if ("grund" in a) throw new Error(a.grund);
+    // 2 × 4 × 0,5 + 2 × 3 × 1,55 = 4 + 9,3
+    expect(a.wandBruttoM2).toBe(13.3);
+    expect(berechneRaum({ ...schlafzimmer, wandlaengenM: [4, 3], wandHoehenM: [3.0, null] })).toEqual({ grund: "Wandhöhe unplausibel (über Raumhöhe oder unter 0,3 m)" });
+    expect(berechneRaum({ ...schlafzimmer, schraegen: [{ laengeM: 4, schraegeM: 40 }] })).toEqual({ grund: "unplausible Dachschräge" });
+  });
+
   it("Decke: direkt genannte Fläche gilt auch für Vielecke", () => {
     const a = berechneRaum({ name: "Flur", hoeheM: 2.5, wandlaengenM: [4.5, 2.0, 1.5, 1.0, 3.0], waendeStreichen: true, deckeStreichen: true, oeffnungen: [], deckeM2Genannt: 7.4 });
     if ("grund" in a) throw new Error(a.grund);
@@ -220,6 +255,20 @@ describe("parseRaeumeText", () => {
       deckeM2Genannt: null,
       laibungTiefeM: null,
     });
+  });
+
+  it("liest Wandhöhen in Klammern und Dachschrägen", () => {
+    const [r] = parseRaeumeText("Raum: Dachzimmer; Höhe: 2,50; Wände: 4,20 (1,20), 3,50, 4,20 (Höhe 1,20), 3,50; Schrägen: 4,20 x 2,10, 4,20 x 2,10; Decke: 5,9; Öffnungen: Dachfenster 0,78 x 1,18");
+    expect(r).toMatchObject({
+      wandlaengenM: [4.2, 3.5, 4.2, 3.5],
+      wandHoehenM: [1.2, null, 1.2, null],
+      schraegen: [{ laengeM: 4.2, schraegeM: 2.1 }, { laengeM: 4.2, schraegeM: 2.1 }],
+      deckeM2Genannt: 5.9,
+      oeffnungen: [{ art: "Dachfenster", breiteM: 0.78, hoeheM: 1.18 }],
+    });
+    const [s] = parseRaeumeText("Raum: Küche; Höhe: 2,5; Wände: 3 x 4; Decke: ja; Öffnungen: keine");
+    expect(s).not.toHaveProperty("wandHoehenM");
+    expect(s).not.toHaveProperty("schraegen");
   });
 
   it("liest Paneelhöhe, Laibungstiefe (auch in cm) und direkt genannte Deckenfläche", () => {

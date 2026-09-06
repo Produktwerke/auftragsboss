@@ -37,6 +37,11 @@ export interface RaumMasse {
   deckeM2Genannt?: number | null;
   /** Laibungstiefe der abgezogenen Öffnungen in Metern; nur, wenn genannt. */
   laibungTiefeM?: number | null;
+  /** Dachschrägen (Teiletappe 3): je Wand eine eigene Höhe (Kniestock, Giebel als
+   *  mittlere Höhe), parallel zu wandlaengenM; null = Raumhöhe. */
+  wandHoehenM?: (number | null)[];
+  /** Dachschrägen selbst: Länge × Schrägenlänge (entlang der Schräge gemessen), zählen wie Wandfläche. */
+  schraegen?: { laengeM: number; schraegeM: number }[];
 }
 
 export interface OeffnungBewertet extends Oeffnung {
@@ -59,7 +64,10 @@ export interface RaumAufmass {
   umfangM: number;
   /** true, wenn genau zwei Wandlängen genannt wurden (a × b). */
   rechteck: boolean;
+  /** Wandfläche inklusive Dachschrägen (vor Abzug). */
   wandBruttoM2: number;
+  /** Anteil der Dachschrägen an brutto (0 ohne Schrägen). */
+  schraegenM2: number;
   abzugM2: number;
   /** Laibungen der abgezogenen Öffnungen (VOB: gesondert zu rechnen), fließen in netto ein. */
   laibungM2: number;
@@ -104,9 +112,22 @@ export function berechneRaum(raum: RaumMasse): RaumAufmass | { grund: string } {
   const streichHoeheM = rund2(raum.hoeheM - (paneelHoeheM ?? 0));
   const laibungTiefeM = istMass(raum.laibungTiefeM, 0.03, 1.0) ? raum.laibungTiefeM : null;
 
-  const rechteck = laengen.length === 2;
+  // Eigene Wandhöhen (Kniestock unter der Dachschräge, Giebel als mittlere Höhe).
+  const hoehen = (raum.wandHoehenM ?? []).slice(0, laengen.length);
+  while (hoehen.length < laengen.length) hoehen.push(null);
+  for (const h of hoehen) if (h !== null && !istMass(h, 0.3, raum.hoeheM)) return { grund: "Wandhöhe unplausibel (über Raumhöhe oder unter 0,3 m)" };
+  const eigeneHoehen = hoehen.some((h) => h !== null);
+  const schraegen = (raum.schraegen ?? []).filter((s) => istMass(s.laengeM, 0.1, 60) && istMass(s.schraegeM, 0.1, 15));
+  if (schraegen.length !== (raum.schraegen ?? []).length) return { grund: "unplausible Dachschräge" };
+
+  const rechteck = laengen.length === 2 && !eigeneHoehen;
   const umfangM = rechteck ? 2 * (laengen[0]! + laengen[1]!) : laengen.reduce((s, l) => s + l, 0);
-  const wandBruttoM2 = rund2(umfangM * streichHoeheM);
+  const streichHoeheJeWand = (i: number) => rund2(Math.max(0, (hoehen[i] ?? raum.hoeheM!) - (paneelHoeheM ?? 0)));
+  const wandFlaecheM2 = rechteck
+    ? umfangM * streichHoeheM
+    : laengen.reduce((s, l, i) => s + l * streichHoeheJeWand(i), 0);
+  const schraegenM2 = rund2(schraegen.reduce((s, x) => s + x.laengeM * x.schraegeM, 0));
+  const wandBruttoM2 = rund2(wandFlaecheM2 + schraegenM2);
 
   const oeffnungen: OeffnungBewertet[] = (raum.oeffnungen ?? [])
     .filter((o) => istMass(o.breiteM, 0.1, 10) && istMass(o.hoeheM, 0.1, 10))
@@ -150,16 +171,17 @@ export function berechneRaum(raum: RaumMasse): RaumAufmass | { grund: string } {
   const uebermessen = oeffnungen.filter((o) => !o.abgezogen);
   const beschreibe = (o: OeffnungBewertet) => `${o.art} ${masz(o.breiteM)} × ${masz(o.hoeheM)} m`;
   const teile: string[] = [];
-  const masse = rechteck ? `${masz(laengen[0]!)} × ${masz(laengen[1]!)} m` : `Wände ${laengen.map(masz).join(" + ")} m`;
+  const wandText = (l: number, i: number) => (hoehen[i] !== null ? `${masz(l)} (Höhe ${masz(hoehen[i]!)})` : masz(l));
+  const masse = rechteck ? `${masz(laengen[0]!)} × ${masz(laengen[1]!)} m` : `Wände ${laengen.map(wandText).join(" + ")} m`;
   teile.push(
     `${name} (Höhe ${masz(raum.hoeheM)} m, ${masse}${paneelHoeheM ? `, gestrichen wird nur oberhalb der Paneele ab ${masz(paneelHoeheM)} m` : ""})`,
   );
   if (raum.waendeStreichen) {
-    teile.push(
-      paneelHoeheM
-        ? `Wandfläche brutto ${zahl(wandBruttoM2)} m² (Umfang ${masz(umfangM)} m × ${masz(streichHoeheM)} m über den Paneelen)`
-        : `Wandfläche brutto ${zahl(wandBruttoM2)} m²`,
-    );
+    const bruttoTeile: string[] = [];
+    if (paneelHoeheM && rechteck) bruttoTeile.push(`Umfang ${masz(umfangM)} m × ${masz(streichHoeheM)} m über den Paneelen`);
+    else if (paneelHoeheM) bruttoTeile.push(`nur oberhalb der Paneele`);
+    if (schraegenM2 > 0) bruttoTeile.push(`davon Dachschrägen ${zahl(schraegenM2)} m²: ${schraegen.map((s) => `${masz(s.laengeM)} × ${masz(s.schraegeM)} m`).join(", ")}`);
+    teile.push(`Wandfläche brutto ${zahl(wandBruttoM2)} m²${bruttoTeile.length ? ` (${bruttoTeile.join("; ")})` : ""}`);
     if (abgezogen.length) {
       teile.push(
         `${abgezogen.length} Öffnung${abgezogen.length > 1 ? "en" : ""} über 2,5 m² abgezogen (${abgezogen
@@ -195,6 +217,7 @@ export function berechneRaum(raum: RaumMasse): RaumAufmass | { grund: string } {
     umfangM: rund2(umfangM),
     rechteck,
     wandBruttoM2,
+    schraegenM2,
     abzugM2,
     laibungM2,
     wandNettoM2,
@@ -289,6 +312,7 @@ export function aufmassKurz(aufmass: AufmassErgebnis): string[] {
   return aufmass.raeume.map((r) => {
     const teile: string[] = [];
     teile.push(`Wände ${zahl(r.wandNettoM2)} m²${r.paneelHoeheM ? ` (nur oberhalb der Paneele ab ${masz(r.paneelHoeheM)} m)` : ""}`);
+    if (r.schraegenM2 > 0) teile.push(`(davon ${zahl(r.schraegenM2)} m² Dachschrägen)`);
     if (r.abzugM2 > 0) teile.push(`(${zahl(r.abzugM2)} m² Öffnungen abgezogen)`);
     if (r.laibungM2 > 0) teile.push(`(${zahl(r.laibungM2)} m² Laibungen dazu)`);
     if (r.deckeM2 !== null) teile.push(`Decke ${zahl(r.deckeM2)} m²`);
@@ -313,6 +337,36 @@ const dezimal = (s: string): number | null => {
 function zahlenAus(text: string): number[] {
   const treffer = text.match(/\d+(?:[.,]\d+)?/g) ?? [];
   return treffer.map((z) => dezimal(z)).filter((n): n is number => n !== null);
+}
+
+/**
+ * Wandlängen mit optionaler eigener Höhe in Klammern: "4,20 (1,20), 3,50, 4,20 (Höhe 1,20), 3,50".
+ * Rechteckform "4,49 x 4,36" liefert zwei Längen ohne Höhen.
+ */
+function waendeAus(text: string): { laengen: number[]; hoehen: (number | null)[] } {
+  const laengen: number[] = [];
+  const hoehen: (number | null)[] = [];
+  const muster = /(\d+(?:[.,]\d+)?)(?:\s*\(\s*(?:h[öo]he\s*)?(\d+(?:[.,]\d+)?)\s*\))?/gi;
+  let m: RegExpExecArray | null;
+  while ((m = muster.exec(text)) !== null) {
+    const l = dezimal(m[1]!);
+    if (l === null) continue;
+    laengen.push(l);
+    hoehen.push(m[2] ? dezimal(m[2]) : null);
+  }
+  return { laengen, hoehen };
+}
+
+/** Dachschrägen "4,20 x 2,10, 3,50 x 1,80": Länge × Schrägenlänge je Schräge. */
+function schraegenAus(text: string): { laengeM: number; schraegeM: number }[] {
+  const ergebnis: { laengeM: number; schraegeM: number }[] = [];
+  const muster = /(\d+(?:[.,]\d+)?)\s*(?:x|×|\*|mal)\s*(\d+(?:[.,]\d+)?)/gi;
+  let m: RegExpExecArray | null;
+  while ((m = muster.exec(text)) !== null) {
+    const laengeM = dezimal(m[1]!), schraegeM = dezimal(m[2]!);
+    if (laengeM !== null && schraegeM !== null) ergebnis.push({ laengeM, schraegeM });
+  }
+  return ergebnis;
 }
 
 function oeffnungenAus(text: string): Oeffnung[] {
@@ -347,7 +401,8 @@ export function parseRaeumeText(text: string | null | undefined): RaumMasse[] {
     if (!name) continue;
     const hoeheRoh = felder.get("höhe") ?? felder.get("hoehe") ?? "";
     const hoehe = zahlenAus(hoeheRoh)[0] ?? null;
-    const wandlaengen = zahlenAus(felder.get("wände") ?? felder.get("waende") ?? "");
+    const { laengen: wandlaengen, hoehen: wandhoehen } = waendeAus(felder.get("wände") ?? felder.get("waende") ?? "");
+    const schraegen = schraegenAus(felder.get("schrägen") ?? felder.get("schraegen") ?? felder.get("schräge") ?? felder.get("schraege") ?? felder.get("dachschrägen") ?? "");
     // Decke: "ja"/"nein" oder direkt die Fläche ("Decke: 14,2"), z.B. bei Vielecken.
     const deckeRoh = felder.get("decke") ?? "";
     const deckeZahl = zahlenAus(deckeRoh)[0] ?? null;
@@ -367,6 +422,8 @@ export function parseRaeumeText(text: string | null | undefined): RaumMasse[] {
       paneelHoeheM: paneel,
       deckeM2Genannt: decke && deckeZahl !== null ? deckeZahl : null,
       laibungTiefeM: laibung,
+      ...(wandhoehen.some((h) => h !== null) ? { wandHoehenM: wandhoehen } : {}),
+      ...(schraegen.length ? { schraegen } : {}),
     });
   }
   return raeume;

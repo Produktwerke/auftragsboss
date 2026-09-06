@@ -29,6 +29,7 @@ import { starteTestFuerNeueNummer, testNachrichtBlockiert } from "./direkttest.j
 import { verarbeiteOnboardingKnopf, markiereLeadAktiv } from "./lead/onboarding.js";
 import { direkttestConfig, featureConfig } from "./config.js";
 import { validierePositionen } from "./validierung/validator.js";
+import { aufmassText, berechneAufmass, wendeAufmassAn } from "./maler/aufmass.js";
 import { schlagePreiseVor } from "./betrieb/preisgedaechtnis.js";
 import { spurEvent } from "./analytics/event.js";
 import { schaetzeAudioSekunden, kostenAudioCent, kostenClaudeCent } from "./analytics/kikosten.js";
@@ -418,6 +419,17 @@ export async function verarbeiteNachricht(args: {
         data: { dienst: "struktur", tokensEin: ein, tokensAus: aus, kostenCent: kostenClaudeCent(ein, aus) },
       });
     });
+
+    // 4b. Aufmaß aus Raummaßen: Die KI hat nur Zahlen ausgelesen, gerechnet wird
+    //     hier (VOB: Öffnungen bis 2,5 m² übermessen, größere abgezogen). Vor der
+    //     Zusammenfassung, damit der Handwerker die Flächen schon dort sieht.
+    const aufmass = berechneAufmass(daten.raeume ?? []);
+    if (aufmass.raeume.length > 0 || aufmass.uebersprungen.length > 0) {
+      daten.positionen = wendeAufmassAn(daten.positionen, aufmass);
+      daten.aufmassNotizen = [aufmassText(aufmass), daten.aufmassNotizen?.trim()].filter(Boolean).join("\n");
+      daten.rueckfragen = [...daten.rueckfragen, ...aufmass.rueckfragen];
+      console.log(`📐 Aufmaß: ${aufmass.raeume.length} Raum/Räume berechnet, ${aufmass.uebersprungen.length} übersprungen (${handwerker.firma}).`);
+    }
 
     // 5. Nachfragen oder abschließen? Das entscheidet die KI aus dem Verlauf —
     //    kein Stichwort, das der Handwerker kennen müsste. Das Rundenlimit ist

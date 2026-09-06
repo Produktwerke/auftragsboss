@@ -110,9 +110,12 @@ function positionsTabelle(summe: Angebotssumme): string {
         p.menge !== null || p.einheit === "pauschal"
           ? mengeMitEinheit(p.menge, p.einheit)
           : `<span style="color:#aab0b6;">____ ${p.einheit ?? ""}</span>`;
-      const hinweis = p.mengeUnsicher
-        ? `<br><span style="color:#b7791f;font-size:12px;">≈ Menge abgeleitet, bitte prüfen</span>`
-        : "";
+      const hinweis =
+        p.mengeQuelle === "AUFMASS"
+          ? `<br><span style="color:#2f855a;font-size:12px;">Fläche VOB-gerecht aus deinen Raummaßen berechnet (Details unter Aufmaß)</span>`
+          : p.mengeUnsicher
+            ? `<br><span style="color:#b7791f;font-size:12px;">≈ Menge abgeleitet, bitte prüfen</span>`
+            : "";
 
       return `<tr>
         <td style="${zellStil}text-align:right;color:#888;">${p.nummer}</td>

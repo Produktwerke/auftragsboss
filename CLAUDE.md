@@ -120,7 +120,7 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
-> **Update 06.09.2026 (2) — WANDFOTOS TEILETAPPE 2 ✅ DEPLOYT inkl. db push (Commits 9ca7910 + a6b7f7d; 208 Tests grün; Prüfstand 3 Läufe; ⏳ Live-Test durch Dirk offen):**
+> **Update 06.09.2026 (2) — WANDFOTOS TEILETAPPE 2 ✅ DEPLOYT + LIVE-BESTÄTIGT (Commits 9ca7910…15b02d8; 208 Tests grün; Prüfstand 3 Läufe; Live-Test Raum 5 komplett: 4 Fotos, Fenstertür 3,91 m² abgezogen, ❓-Randtür per Text geklärt, Fassung 4 = 38,42 m²):**
 > - **Ablauf live:** Maler spricht Maße (Teiletappe 1) und schickt ein Foto je Wand. Jedes Foto → EIN Vision-Aufruf
 >   (`src/ai/wandfoto.ts`, eigenes kleines Structured-Output-Schema `WandfotoSchema`, Modell claude-fable-5):
 >   Wandfoto oder Notizzettel (`istWandfoto`/`notizText`), Öffnungen mit Schätzmaß (Raumhöhe als Maßstab),
@@ -148,8 +148,13 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 > - **Live-Test (Dirk):** Sprachnachricht mit Maßen → Zusammenfassung → 4 Fotos schicken (je Wand, Tür zu) → je Foto
 >   ✅/⚠️-Antwort → nach 90 s Ruhe „📐 Ich rechne …" → Angebot mit Öffnungen aus den Fotos im Aufmaßtext. Im Log:
 >   `WANDFOTO`-Events, `uploads/fotos/` füllt sich, Tabelle `Foto`.
-> - **⏳ NÄCHSTES: Teiletappe 3** (Aufmaßblatt im Word mit Belegfotos, Lambris/halbhoch, Decke, Laibungen) und
->   Feinschliff aus dem Live-Test (Wortlaut der Antworten, Timer-Länge, Foto-Zähler je Raum statt je Vorgang).
+> - **Nachbesserungen aus dem Live-Test (deployt):** als Datei gesendete Bilder = Foto, unlesbare Typen bekommen Hinweis,
+>   Nachrichtentyp PII-frei geloggt (`WhatsApp-Nachricht`); Randöffnungen (`inNachbarwand`) werden als „❓ Am Bildrand
+>   noch: …"-Nachfrage gemeldet statt still gefiltert (KI übernimmt sie nur nach Bestätigung); Nachtrag-Vorgang wird vor
+>   der Raumzuordnung geöffnet. Zwei von vier Fotos kamen beim ersten Versuch nie an (Ursache unklar, jetzt sichtbar im Log).
+> - **⏳ NÄCHSTES: Teiletappe 3:** halbhohe Flächen (Lambris/Fliesenspiegel: Paneelhöhe diktieren oder schätzen,
+>   Aufmaß = Umfang × (H − Paneelhöhe) minus Öffnungsanteile darüber; im Test hieß die Position „oberhalb der Paneele",
+>   Menge war aber die volle Wand), Aufmaßblatt im Word mit Belegfotos, Decke, Laibungen; Feinschliff (Foto-Zähler je Raum).
 
 > **Update 06.09.2026 — VIDEO-TEST (NO-GO) + AUFMASSRECHNER TEILETAPPE 1 ✅ DEPLOYT (Commits 615b0c5 + Folgecommit „Raummaße als flache Textzeile"; 199 Tests grün; echte KI-Probe bestanden; ⏳ Live-Test per Sprachnachricht durch Dirk offen):**
 > - **Messbank-Ergebnis (04.09., Commit ae608a9):** 42 Wände annotiert und gemessen → Ein-Foto-Verfahren NO-GO

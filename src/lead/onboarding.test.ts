@@ -136,7 +136,15 @@ describe("Webhook: Knopf-Klicks erkennen", () => {
         interactive: { type: "button_reply", button_reply: { id: KNOPF_AUSPROBIEREN, title: "Angebot ausprobieren" } },
       }),
     ).toEqual({ vonNummer: "49176", knopfPayload: KNOPF_AUSPROBIEREN });
-    expect(extrahiereEingabe({ from: "49176", id: "m3", type: "sticker" })).toBeNull();
+    // Unlesbare Typen werden nicht mehr still verschluckt, sondern beantwortet.
+    expect(extrahiereEingabe({ from: "49176", id: "m3", type: "sticker" })).toEqual({ vonNummer: "49176", unbekannterTyp: "sticker" });
+    // Ein als Datei gesendetes Foto zählt als Foto (mit Bildunterschrift).
+    expect(
+      extrahiereEingabe({ from: "49176", id: "m4", type: "document", document: { id: "d1", mime_type: "image/jpeg", caption: "Wand 3" } }),
+    ).toEqual({ vonNummer: "49176", bildMediaId: "d1", bildText: "Wand 3" });
+    expect(extrahiereEingabe({ from: "49176", id: "m5", type: "document", document: { id: "d2", mime_type: "application/pdf" } })).toEqual({
+      vonNummer: "49176", unbekannterTyp: "document",
+    });
   });
 });
 

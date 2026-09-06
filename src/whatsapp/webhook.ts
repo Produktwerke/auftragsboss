@@ -22,6 +22,8 @@ interface WhatsAppMessage {
   type: string;
   audio?: { id: string; mime_type: string };
   image?: { id: string; mime_type: string; caption?: string };
+  // Als Datei gesendetes Bild ("unkomprimiert senden", Teilen aus Dateien-App)
+  document?: { id: string; mime_type?: string; caption?: string; filename?: string };
   text?: { body: string };
   // Klick auf einen Schnellantwort-Knopf einer VORLAGE
   button?: { payload?: string; text?: string };
@@ -33,13 +35,18 @@ interface WhatsAppMessage {
  *  Sprache, Foto und Text sind gleichwertige Auftrags-Eingaben; Knopf-Klicks
  *  (Vorlagen-Schnellantworten und interaktive Knöpfe) tragen ihre Kennung. */
 export function extrahiereEingabe(msg: WhatsAppMessage):
-  | { vonNummer: string; mediaId?: string; bildMediaId?: string; bildText?: string; text?: string; knopfPayload?: string }
+  | { vonNummer: string; mediaId?: string; bildMediaId?: string; bildText?: string; text?: string; knopfPayload?: string; unbekannterTyp?: string }
   | null {
   if (msg.type === "audio" && msg.audio) return { vonNummer: msg.from, mediaId: msg.audio.id };
   if (msg.type === "image" && msg.image) {
     // Bildunterschrift mitnehmen: „Wohnzimmer Wand 2" ordnet ein Wandfoto zu.
     const bildText = msg.image.caption?.trim();
     return { vonNummer: msg.from, bildMediaId: msg.image.id, ...(bildText ? { bildText } : {}) };
+  }
+  // Ein Bild, das als Datei kam (image/jpeg, image/png …): wie ein Foto behandeln.
+  if (msg.type === "document" && msg.document?.id && (msg.document.mime_type ?? "").toLowerCase().startsWith("image/")) {
+    const bildText = msg.document.caption?.trim();
+    return { vonNummer: msg.from, bildMediaId: msg.document.id, ...(bildText ? { bildText } : {}) };
   }
   if (msg.type === "text" && msg.text) return { vonNummer: msg.from, text: msg.text.body };
   if (msg.type === "button" && msg.button?.payload) {
@@ -48,6 +55,9 @@ export function extrahiereEingabe(msg: WhatsAppMessage):
   if (msg.type === "interactive" && msg.interactive?.button_reply?.id) {
     return { vonNummer: msg.from, knopfPayload: msg.interactive.button_reply.id };
   }
+  // Alles andere (Video, PDF, Sticker, Kontakt, Standort, "unsupported"): nicht
+  // still verschlucken, sondern dem Absender kurz sagen, was wir lesen können.
+  if (msg.from && msg.type && msg.type !== "reaction") return { vonNummer: msg.from, unbekannterTyp: msg.type };
   return null;
 }
 
@@ -151,6 +161,8 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
         continue;
       }
       const eingabe = extrahiereEingabe(msg);
+      // PII-frei: nur Typ und Kanal, kein Inhalt, keine Nummer.
+      app.log.info({ typ: msg.type, kanal: eingabe?.mediaId ? "sprache" : eingabe?.bildMediaId ? "foto" : eingabe?.text ? "text" : eingabe?.knopfPayload ? "knopf" : eingabe?.unbekannterTyp ?? "ignoriert" }, "WhatsApp-Nachricht");
       if (!eingabe) continue;
 
       // Fire-and-forget mit eigenem Error-Handling — ein Fehler in einer

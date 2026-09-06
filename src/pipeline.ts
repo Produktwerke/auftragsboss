@@ -114,8 +114,9 @@ export async function verarbeiteNachricht(args: {
   bildText?: string; // Bildunterschrift (z.B. "Wohnzimmer Wand 2")
   text?: string; // Textnachricht
   knopfPayload?: string; // Klick auf einen Antwort-Knopf (Lead-Onboarding)
+  unbekannterTyp?: string; // Nachrichtentyp, den wir nicht lesen (Video, PDF, Sticker …)
 }): Promise<void> {
-  const { vonNummer, mediaId, bildMediaId, bildText, text, knopfPayload } = args;
+  const { vonNummer, mediaId, bildMediaId, bildText, text, knopfPayload, unbekannterTyp } = args;
   const kanal = mediaId ? "sprache" : bildMediaId ? "foto" : knopfPayload ? "knopf" : "text";
 
   // Wartet eine verzögerte Foto-Auswertung? Die neue Nachricht übernimmt.
@@ -148,6 +149,15 @@ export async function verarbeiteNachricht(args: {
     await sendeWhatsAppText(
       vonNummer,
       "⏸️ Dein AuftragsBoss-Konto ist gerade pausiert. Melde dich bitte kurz bei uns, dann klären wir das: kontakt@auftragsboss.de",
+    );
+    return;
+  }
+
+  // Unlesbarer Nachrichtentyp: kurz sagen, was geht — statt stiller Leitung.
+  if (unbekannterTyp) {
+    await sendeWhatsAppText(
+      vonNummer,
+      "🤔 Das Format kann ich nicht lesen. Schick mir bitte eine Sprachnachricht, einen Text oder ein Foto (als Bild, nicht als Video).",
     );
     return;
   }

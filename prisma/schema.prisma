@@ -108,6 +108,7 @@ model Handwerker {
   empfehlungen     Empfehlung[] // von diesem Betrieb geworbene Kollegen (Leads)
   preisGedaechtnis Preisgedaechtnis[]
   importDokumente  ImportDokument[]
+  fotos            Foto[]
   abo              Abo?
 }
 
@@ -217,6 +218,10 @@ model Vorgang {
   nachrichtenJson String @default("[]")
 
   dokumentId String? // gesetzt, sobald das Dokument erzeugt wurde
+
+  // Raumzeilen der letzten KI-Auswertung (Format siehe ai/structure.ts raeumeText):
+  // damit ein nachgereichtes Wandfoto dem zuletzt genannten Raum zugeordnet werden kann.
+  raeumeText String?
 
   begonnenAm       DateTime @default(now())
   letzteAktivitaet DateTime @default(now())
@@ -459,4 +464,29 @@ model Gewaehrleistung {
 
   @@index([vorwarnung, vorwarnungGesendet])
   @@index([ablauf, ablaufGesendet])
+}
+
+// Wandfoto zu einem Vorgang (Teiletappe 2 „Drei Zahlen und vier Fotos").
+// Die Datei liegt unter uploads/fotos/<Betrieb>/<Vorgang>/, das Erkennungs-
+// ergebnis (Öffnungen, Mängel) als JSON. Kundendaten: wird beim DSGVO-Löschen
+// des Betriebs mitgelöscht (Datei + Zeile).
+model Foto {
+  id           String     @id @default(cuid())
+  handwerkerId String
+  handwerker   Handwerker @relation(fields: [handwerkerId], references: [id])
+  vorgangId    String?
+  dokumentId   String? // gesetzt, sobald das Angebot erzeugt wurde (Belegfoto)
+
+  raum   String? // Raumname laut Zuordnung (Bildunterschrift oder zuletzt genannter Raum)
+  wandNr Int
+
+  datei    String // relativer Pfad unter uploads/
+  mimeType String
+  groesse  Int
+
+  erkennungJson String // WandfotoAnalyse als JSON
+  erstelltAm    DateTime @default(now())
+
+  @@index([handwerkerId])
+  @@index([vorgangId])
 }

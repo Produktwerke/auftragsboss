@@ -66,7 +66,8 @@ const ABSCHLUSS_WOERTER = [
 ];
 
 export interface GespeicherteNachricht extends DialogNachricht {
-  art: "sprache" | "text";
+  /** foto = automatische Wandfoto-Auswertung (Text ist die Erkennungszeile). */
+  art: "sprache" | "text" | "foto";
   zeit: string;
 }
 

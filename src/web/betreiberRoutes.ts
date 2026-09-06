@@ -10,6 +10,7 @@
 //
 // Schutz: /stasi-Login-Cookie (adminAuth.ts), sonst 404. Jede schreibende
 // Aktion landet im AdminLog (Nachvollziehbarkeit).
+import { loescheFotosVonBetrieb } from "../betrieb/fotoAblage.js";
 import type { FastifyInstance } from "fastify";
 import { unlink } from "node:fs/promises";
 import { prisma } from "../pipeline.js";
@@ -536,10 +537,12 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
         prisma.empfehlung.deleteMany({ where: { werberId: h.id } }),
         prisma.preisgedaechtnis.deleteMany({ where: { handwerkerId: h.id } }),
         prisma.importDokument.deleteMany({ where: { handwerkerId: h.id } }), // Positionen kaskadieren
+        prisma.foto.deleteMany({ where: { handwerkerId: h.id } }),
         prisma.handwerker.delete({ where: { id: h.id } }),
       ]);
 
-      // Logo-Datei aufräumen (best effort — DB-Löschung ist da schon durch).
+      // Foto-Ordner und Logo-Datei aufräumen (best effort — DB-Löschung ist da schon durch).
+      loescheFotosVonBetrieb(h.id);
       if (h.logoDatei) {
         try {
           await unlink(h.logoDatei);

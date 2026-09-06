@@ -33,10 +33,14 @@ interface WhatsAppMessage {
  *  Sprache, Foto und Text sind gleichwertige Auftrags-Eingaben; Knopf-Klicks
  *  (Vorlagen-Schnellantworten und interaktive Knöpfe) tragen ihre Kennung. */
 export function extrahiereEingabe(msg: WhatsAppMessage):
-  | { vonNummer: string; mediaId?: string; bildMediaId?: string; text?: string; knopfPayload?: string }
+  | { vonNummer: string; mediaId?: string; bildMediaId?: string; bildText?: string; text?: string; knopfPayload?: string }
   | null {
   if (msg.type === "audio" && msg.audio) return { vonNummer: msg.from, mediaId: msg.audio.id };
-  if (msg.type === "image" && msg.image) return { vonNummer: msg.from, bildMediaId: msg.image.id };
+  if (msg.type === "image" && msg.image) {
+    // Bildunterschrift mitnehmen: „Wohnzimmer Wand 2" ordnet ein Wandfoto zu.
+    const bildText = msg.image.caption?.trim();
+    return { vonNummer: msg.from, bildMediaId: msg.image.id, ...(bildText ? { bildText } : {}) };
+  }
   if (msg.type === "text" && msg.text) return { vonNummer: msg.from, text: msg.text.body };
   if (msg.type === "button" && msg.button?.payload) {
     return { vonNummer: msg.from, knopfPayload: msg.button.payload };

@@ -10,11 +10,13 @@
 //
 // Abgeschlossen wird außerdem bei Stichwort ("weiter", "später"),
 // nach MAX_RUNDEN Rückfragen oder bei Zeitablauf (siehe jobs/vorgangTimeout.ts).
-import { PrismaClient, type Vorgang } from "@prisma/client";
+import { PrismaClient, type Handwerker, type Vorgang } from "@prisma/client";
 import { ladeAudio, ladeBild } from "./whatsapp/media.js";
 import { sendeWhatsAppText } from "./whatsapp/send.js";
 import { transkribiereAudio } from "./ai/transcribe.js";
 import { liesBildNotiz } from "./ai/bildLesen.js";
+import { analysiereWandfoto, fotoAlsDialogText, fotoFeedback, type WandfotoAnalyse } from "./ai/wandfoto.js";
+import { speichereFoto } from "./betrieb/fotoAblage.js";
 import { strukturiereDialog } from "./ai/structure.js";
 import { berechneAngebot, euro } from "./angebot/berechnung.js";
 import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
@@ -29,7 +31,7 @@ import { starteTestFuerNeueNummer, testNachrichtBlockiert } from "./direkttest.j
 import { verarbeiteOnboardingKnopf, markiereLeadAktiv } from "./lead/onboarding.js";
 import { direkttestConfig, featureConfig } from "./config.js";
 import { validierePositionen } from "./validierung/validator.js";
-import { aufmassText, berechneAufmass, parseRaeumeText, wendeAufmassAn } from "./maler/aufmass.js";
+import { aufmassText, berechneAufmass, parseRaeumeText, wendeAufmassAn, type RaumMasse } from "./maler/aufmass.js";
 import { schlagePreiseVor } from "./betrieb/preisgedaechtnis.js";
 import { spurEvent } from "./analytics/event.js";
 import { schaetzeAudioSekunden, kostenAudioCent, kostenClaudeCent } from "./analytics/kikosten.js";
@@ -40,6 +42,7 @@ import {
   ergaenzeNachricht,
   holeNachtragsVorgang,
   holeOffenenVorgang,
+  nachrichtenLesen,
 } from "./dialog.js";
 
 /** Erkennt, ob eine Nachricht nach den Betriebseinstellungen fragt. Bewusst
@@ -106,12 +109,16 @@ async function naechsteNummer(handwerkerId: string, art: string, datum: Date): P
 export async function verarbeiteNachricht(args: {
   vonNummer: string;
   mediaId?: string; // Sprachnachricht
-  bildMediaId?: string; // Foto/Screenshot (Aufmaß-Zettel, Handy-Notiz)
+  bildMediaId?: string; // Foto/Screenshot (Wandfoto, Aufmaß-Zettel, Handy-Notiz)
+  bildText?: string; // Bildunterschrift (z.B. "Wohnzimmer Wand 2")
   text?: string; // Textnachricht
   knopfPayload?: string; // Klick auf einen Antwort-Knopf (Lead-Onboarding)
 }): Promise<void> {
-  const { vonNummer, mediaId, bildMediaId, text, knopfPayload } = args;
+  const { vonNummer, mediaId, bildMediaId, bildText, text, knopfPayload } = args;
   const kanal = mediaId ? "sprache" : bildMediaId ? "foto" : knopfPayload ? "knopf" : "text";
+
+  // Wartet eine verzögerte Foto-Auswertung? Die neue Nachricht übernimmt.
+  brichFotoAuswertungAb(vonNummer);
 
   // 1. Absender kennen wir? (Kein Login — die Nummer IST die Identität)
   let handwerker = await prisma.handwerker.findUnique({ where: { whatsappNummer: vonNummer } });
@@ -312,22 +319,36 @@ export async function verarbeiteNachricht(args: {
         data: { dienst: "transkription", sekunden, kostenCent: kostenAudioCent(sekunden) },
       });
     } else if (bildMediaId) {
-      // Foto/Screenshot: der Handwerker fotografiert seinen Aufmaß-Zettel oder
-      // schickt einen Notiz-Screenshot. Claude Vision liest den Inhalt als Text,
-      // der Rest der Pipeline behandelt ihn wie ein Diktat.
-      await sendeWhatsAppText(
-        vonNummer,
-        imDialog
-          ? "📷 Foto hab ich! Ich schau es mir an, einen kurzen Moment …"
-          // Auch hier neutral — ob aus dem Foto ein Angebot wird, entscheidet die KI.
-          : "📷 Foto hab ich! Ich lese deine Notizen, einen kurzen Moment …",
+      // Foto: entweder ein WANDFOTO fürs Aufmaß (Teiletappe 2) oder wie bisher
+      // ein Notizzettel/Screenshot. EIN Vision-Aufruf entscheidet und liefert
+      // bei Notizen gleich den Text mit.
+      await sendeWhatsAppText(vonNummer, "📷 Foto hab ich! Ich schau es mir an, einen kurzen Moment …");
+      const bild = await ladeBild(bildMediaId);
+      const zuordnung = ordneFotoZu(vorgang, bildText);
+      const analyse = await analysiereWandfoto(
+        bild,
+        { raumhoeheM: zuordnung.raumhoeheM, raumName: zuordnung.raumName },
+        (ein, aus) => {
+          void spurEvent(prisma, "KI_AUFRUF", {
+            handwerkerId: handwerker.id,
+            data: { dienst: "wandfoto", tokensEin: ein, tokensAus: aus, kostenCent: kostenClaudeCent(ein, aus) },
+          });
+        },
       );
-      inhalt = await liesBildNotiz(await ladeBild(bildMediaId), (ein, aus) => {
-        void spurEvent(prisma, "KI_AUFRUF", {
-          handwerkerId: handwerker.id,
-          data: { dienst: "bild", tokensEin: ein, tokensAus: aus, kostenCent: kostenClaudeCent(ein, aus) },
+      if (analyse.istWandfoto) {
+        await verarbeiteWandfoto({ handwerker, vorgang, vonNummer, bild, analyse, bildText, zuordnung });
+        return;
+      }
+      inhalt = analyse.notizText?.trim() ?? "";
+      if (!inhalt) {
+        // Rückfall: klassisches Notiz-Lesen (zweiter Aufruf, selten)
+        inhalt = await liesBildNotiz(bild, (ein, aus) => {
+          void spurEvent(prisma, "KI_AUFRUF", {
+            handwerkerId: handwerker.id,
+            data: { dienst: "bild", tokensEin: ein, tokensAus: aus, kostenCent: kostenClaudeCent(ein, aus) },
+          });
         });
-      });
+      }
       art = "text";
     } else {
       inhalt = (text ?? "").trim();
@@ -393,6 +414,32 @@ export async function verarbeiteNachricht(args: {
       ...(zweitfassung ? { zweitfassung } : {}),
     });
 
+    await werteVorgangAus({ handwerker, vorgang, vonNummer, inhalt, stumm: !!mediaId || !!bildMediaId });
+  } catch (err) {
+    console.error("Pipeline-Fehler:", err);
+    await sendeWhatsAppText(
+      vonNummer,
+      "⚠️ Da ist etwas schiefgelaufen, deine Nachricht konnte nicht verarbeitet werden. Bitte versuche es in ein paar Minuten noch einmal.",
+    );
+    throw err;
+  }
+}
+
+
+/**
+ * Schritte 4–6: gesamten Verlauf auswerten, nachfragen, zusammenfassen oder
+ * das Dokument erstellen. Wird von der Nachrichtenverarbeitung UND von der
+ * verzögerten Foto-Auswertung genutzt (Teiletappe 2).
+ * stumm = Eingangsbestätigung wurde schon gesendet (Sprache/Foto).
+ */
+async function werteVorgangAus(args: {
+  handwerker: Handwerker;
+  vorgang: Vorgang;
+  vonNummer: string;
+  inhalt: string;
+  stumm: boolean;
+}): Promise<void> {
+  const { handwerker, vorgang, vonNummer, inhalt, stumm } = args;
     // 4. Gesamten Verlauf auswerten
     const preisliste = ladePreisliste();
     const dialog = alsDialog(vorgang);
@@ -405,7 +452,7 @@ export async function verarbeiteNachricht(args: {
     // "ja" bestätigen) lief bisher stumm in die mehrsekündige KI-Auswertung, das
     // wirkt schnell wie eingefroren. Nach der Zusammenfassung folgt meist das
     // Angebot, deshalb dort eine passendere Formulierung.
-    if (!mediaId && !bildMediaId) {
+    if (!stumm) {
       await sendeWhatsAppText(
         vonNummer,
         vorgang.zusammenfassungGezeigt
@@ -423,6 +470,7 @@ export async function verarbeiteNachricht(args: {
     // 4b. Aufmaß aus Raummaßen: Die KI hat nur Zahlen ausgelesen, gerechnet wird
     //     hier (VOB: Öffnungen bis 2,5 m² übermessen, größere abgezogen). Vor der
     //     Zusammenfassung, damit der Handwerker die Flächen schon dort sieht.
+    await prisma.vorgang.updateMany({ where: { id: vorgang.id }, data: { raeumeText: daten.raeumeText ?? null } });
     const aufmass = berechneAufmass(parseRaeumeText(daten.raeumeText));
     if (aufmass.raeume.length > 0 || aufmass.uebersprungen.length > 0) {
       daten.positionen = wendeAufmassAn(daten.positionen, aufmass);
@@ -507,14 +555,134 @@ export async function verarbeiteNachricht(args: {
       await sendeWhatsAppText(vonNummer, daten.dialog.nachricht.trim());
     }
     await erstelleDokument({ vorgang, handwerkerId: handwerker.id, vonNummer, daten, preisliste });
-  } catch (err) {
-    console.error("Pipeline-Fehler:", err);
-    await sendeWhatsAppText(
-      vonNummer,
-      "⚠️ Da ist etwas schiefgelaufen, deine Nachricht konnte nicht verarbeitet werden. Bitte versuche es in ein paar Minuten noch einmal.",
-    );
-    throw err;
+}
+
+// ── Wandfotos (Teiletappe 2) ─────────────────────────────────────────
+
+/** Nach dem letzten Foto so lange warten, bevor das Angebot gerechnet wird. */
+const FOTO_PAUSE_MS = 90_000;
+const fotoTimer = new Map<string, NodeJS.Timeout>();
+
+function brichFotoAuswertungAb(vonNummer: string): void {
+  const t = fotoTimer.get(vonNummer);
+  if (t) {
+    clearTimeout(t);
+    fotoTimer.delete(vonNummer);
   }
+}
+
+/**
+ * Raumzuordnung eines Fotos: Bildunterschrift (wenn sie einen bekannten Raum
+ * nennt oder selbst wie ein Raumname aussieht), sonst der zuletzt genannte
+ * Raum aus der letzten KI-Auswertung. Liefert dazu die Raumhöhe als Maßstab.
+ */
+export function ordneFotoZu(
+  vorgang: Vorgang | null,
+  bildText: string | undefined,
+): { raumName: string | null; raumhoeheM: number | null; wandNrAusText: number | null } {
+  const raeume: RaumMasse[] = parseRaeumeText(vorgang?.raeumeText);
+  const text = (bildText ?? "").trim();
+  const wandTreffer = /wand\s*(\d{1,2})/i.exec(text);
+  const wandNrAusText = wandTreffer ? parseInt(wandTreffer[1]!, 10) : null;
+  let raum: RaumMasse | undefined;
+  if (text) {
+    const t = text.toLowerCase();
+    raum = raeume.find((r) => t.includes(r.name.toLowerCase()));
+  }
+  let raumName: string | null = raum?.name ?? null;
+  if (!raumName && text) {
+    // Unterschrift ohne bekannten Raum: alles außer "Wand N" als Raumname nehmen
+    const rest = text.replace(/wand\s*\d{1,2}/i, "").replace(/[,;:.]/g, " ").trim();
+    if (rest && rest.length <= 40 && /[A-Za-zÄÖÜäöüß]/.test(rest)) raumName = rest;
+  }
+  if (!raumName && raeume.length) {
+    raum = raeume[raeume.length - 1];
+    raumName = raum!.name;
+  }
+  return { raumName, raumhoeheM: raum?.hoeheM ?? null, wandNrAusText };
+}
+
+/** Speichert das Wandfoto, hängt die Erkennung an den Vorgang, antwortet sofort und plant die Auswertung. */
+async function verarbeiteWandfoto(args: {
+  handwerker: Handwerker;
+  vorgang: Vorgang | null;
+  vonNummer: string;
+  bild: { daten: Buffer; mimeType: string };
+  analyse: WandfotoAnalyse;
+  bildText: string | undefined;
+  zuordnung: ReturnType<typeof ordneFotoZu>;
+}): Promise<void> {
+  const { handwerker, vonNummer, bild, analyse, bildText, zuordnung } = args;
+  let vorgang = args.vorgang;
+  if (!vorgang) vorgang = await holeNachtragsVorgang(prisma, handwerker.id);
+  if (!vorgang) vorgang = await prisma.vorgang.create({ data: { handwerkerId: handwerker.id } });
+
+  const bisher = nachrichtenLesen(vorgang).filter((n) => n.art === "foto").length;
+  const wandNr = zuordnung.wandNrAusText ?? bisher + 1;
+  const raumName = zuordnung.raumName;
+
+  let datei = "";
+  try {
+    datei = speichereFoto({ handwerkerId: handwerker.id, vorgangId: vorgang.id, wandNr, daten: bild.daten, mimeType: bild.mimeType });
+  } catch (err) {
+    console.warn("Wandfoto nicht gespeichert:", err instanceof Error ? err.message : err);
+  }
+  await prisma.foto.create({
+    data: {
+      handwerkerId: handwerker.id,
+      vorgangId: vorgang.id,
+      raum: raumName,
+      wandNr,
+      datei,
+      mimeType: bild.mimeType,
+      groesse: bild.daten.length,
+      erkennungJson: JSON.stringify(analyse),
+    },
+  });
+  vorgang = await ergaenzeNachricht(prisma, vorgang, {
+    rolle: "handwerker",
+    art: "foto",
+    text: fotoAlsDialogText(analyse, wandNr, raumName, bildText),
+  });
+  await sendeWhatsAppText(vonNummer, fotoFeedback(analyse, wandNr, raumName));
+  await spurEvent(prisma, "WANDFOTO", {
+    handwerkerId: handwerker.id,
+    data: { wandNr, oeffnungen: analyse.oeffnungen.length, komplett: analyse.wandKomplett, offen: analyse.oeffnungen.some((o) => o.offen) },
+  });
+  planeFotoAuswertung(vonNummer, handwerker.id, vorgang.id);
+}
+
+/**
+ * Fotos kommen meist im Schwung (vier Wände). Statt nach jedem Foto die KI
+ * zu bemühen, warten wir eine Pause ab und werten dann einmal aus. Eine neue
+ * Nachricht (Sprache/Text/Foto) bricht den Timer ab und übernimmt.
+ */
+function planeFotoAuswertung(vonNummer: string, handwerkerId: string, vorgangId: string): void {
+  brichFotoAuswertungAb(vonNummer);
+  const timer = setTimeout(() => {
+    fotoTimer.delete(vonNummer);
+    inReiheProNummer(vonNummer, async () => {
+      const frisch = await prisma.vorgang.findUnique({ where: { id: vorgangId } });
+      if (!frisch || frisch.status !== "OFFEN") return;
+      const nachrichten = nachrichtenLesen(frisch);
+      // Nur Fotos, noch keine Maße/Leistungen: nichts rechnen, einmal erinnern.
+      if (!nachrichten.some((n) => n.rolle === "handwerker" && n.art !== "foto")) {
+        if (!nachrichten.some((n) => n.rolle === "assistent")) {
+          await sendeWhatsAppText(
+            vonNummer,
+            "📐 Die Fotos sind drin. Sprich mir jetzt noch Kunde, Raum und Maße ein (z.B. „Wohnzimmer, Höhe 2,52, 4,49 mal 4,36, Wände und Decke streichen“), dann rechne ich das Angebot.",
+          );
+          await ergaenzeNachricht(prisma, frisch, { rolle: "assistent", art: "text", text: "(Bitte um Raummaße)" });
+        }
+        return;
+      }
+      const handwerker = await prisma.handwerker.findUnique({ where: { id: handwerkerId } });
+      if (!handwerker) return;
+      await sendeWhatsAppText(vonNummer, "📐 Ich rechne das Angebot jetzt mit deinen Fotos durch, einen Moment …");
+      await werteVorgangAus({ handwerker, vorgang: frisch, vonNummer, inhalt: "", stumm: true });
+    }).catch((err) => console.error("Verzögerte Foto-Auswertung fehlgeschlagen:", err));
+  }, FOTO_PAUSE_MS);
+  fotoTimer.set(vonNummer, timer);
 }
 
 // ── Serielle Verarbeitung pro Nummer ──────────────────────────────────
@@ -691,6 +859,9 @@ export async function erstelleDokument(args: {
       }),
     },
   });
+
+  // Wandfotos dieses Vorgangs als Belegfotos ans Dokument hängen.
+  await prisma.foto.updateMany({ where: { vorgangId: vorgang.id, dokumentId: null }, data: { dokumentId: dokument.id } });
 
   // Word-Datei + E-Mail
   const word = await erzeugeAngebotWord({ daten, summe, preisliste: eff, nummer, datum });

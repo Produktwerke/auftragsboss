@@ -1,0 +1,13 @@
+## Materialregel (Malerangebote)
+
+Materialien NICHT unnötig in einzelne Kleinpositionen aufteilen. Ziel ist ein professionelles, für den Kunden leicht verständliches Angebot: wesentliche Hauptmaterialien separat, Klein-, Hilfs- und Verbrauchsmaterial gebündelt.
+
+1. HAUPTMATERIALIEN SEPARAT AUSWEISEN, wenn sie wesentlicher Bestandteil der fertigen Leistung sind, vom Kunden ausgewählt werden können oder typischerweise in erheblicher Menge gebraucht werden: Wand- und Deckenfarbe, Fassadenfarbe, Lack, Lasur, Holzöl, Putz und Dekorputz, Tapete, Raufaser, Malervlies/Glasvlies/Glasgewebe als Wandbelag, Bodenbeschichtungen, Spezialbeschichtungen, großflächige Sperr- und Isolierbeschichtungen, größere Mengen Spachtel- oder Ausgleichsmasse bei vollflächigen Spachtelarbeiten, größere Mengen Grundierung bei vollflächigen Grundierungsarbeiten.
+
+2. KLEIN- UND VERBRAUCHSMATERIAL NICHT EINZELN AUSWEISEN: Abdeckfolie, Abdeckpapier, Kreppband, Malerklebeband, kleinere Mengen Abdeckvlies, Schleifpapier, Schleifscheiben, Schleifgitter, kleinere Mengen Tapetenlöser, Reinigungstücher, Reinigungs- und Lösemittel in kleinen Mengen, Müllsäcke, kleinere Mengen Acryl/Dichtstoff, kleinere Mengen Spachtelmasse für Ausbesserungen, kleinere Mengen Reparaturmörtel, kleine Mengen Grundierung für punktuelle Ausbesserungen, sonstige Hilfs- und Verbrauchsmaterialien. Solche Materialien entweder in der zugehörigen Leistung berücksichtigen oder zu GENAU EINER Materialposition zusammenfassen: „Klein-, Hilfs- und Verbrauchsmaterialien (inkl. Abdeck-, Klebe-, Schleif- und sonstigem Verbrauchsmaterial)", Einheit pauschal, Menge 1, Preis unbekannt. NIEMALS mehrere Einzelpositionen wie „1 × Abdeckfolie, 2 × Kreppband, 5 × Schleifpapier".
+
+3. MATERIALIEN MIT ABHÄNGIGKEIT VOM UMFANG (Spachtelmasse, Grundierung/Tiefengrund, Sperrgrund, Armierungsmasse, Kleister/Kleber, Abdeckvlies, Acryl/Dichtstoffe, Reparaturmörtel): punktuell oder kleine Menge → bündeln; großflächig oder wesentliche Menge → separat. „Einzelne Dübellöcher verspachteln" → Spachtelmasse nicht separat. „120 m² vollflächig Q3 spachteln" → Spachtelmasse separat. „Kleine Schadstellen grundieren" → nicht separat. „180 m² mit Tiefengrund grundieren" → separat möglich.
+
+4. ARBEITSLEISTUNG UND MATERIAL NICHT VERWECHSELN: „Bodenflächen und Möbel abdecken und schützen" oder „Wandflächen schleifen" dürfen eigene Arbeitspositionen sein, auch wenn Folie, Klebeband, Abdeckpapier oder Schleifpapier gebündelt bleiben.
+
+5. ENTSCHEIDUNGSPRINZIP: kundenrelevant, wesentlicher Anteil an der fertigen Leistung oder erhebliche projektbezogene Menge → separat; bloßes Hilfs-, Neben- oder Verbrauchsmittel → bündeln. Im Zweifel bündeln statt aufteilen. Preise dürfen aus dieser Einordnung niemals abgeleitet oder erfunden werden.

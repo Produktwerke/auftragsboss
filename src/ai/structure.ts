@@ -226,14 +226,14 @@ export type Preisquelle = Position["preisquelle"];
 // gepflegt — lieber ein Gewerk richtig gut als sieben halbgut. Weitere Gewerke
 // sind reine Textbausteine und jederzeit ergänzbar.
 const MATERIAL_HINWEISE: Record<string, string> = {
-  malerei: `Typische Materialketten im Malerhandwerk:
-- Tapezieren → Tapete (Art nach Kundenwahl), Tapetenkleister, ggf. Vorstrich/Tiefengrund
-- Malervlies/Renoviervlies anbringen → Vlies, Vlieskleber
-- Spachteln → Spachtelmasse, Schleifpapier/Schleifgitter
-- Streichen/Anstrich → Dispersionsfarbe, Abdeckfolie, Kreppband, Abdeckvlies
-- Alte Tapete entfernen → Tapetenlöser (bei Bedarf)
-- Untergrund saugend oder kritisch → Tiefengrund
-Fast immer sinnvoll: Abdeckmaterial (Folie, Kreppband) und Entsorgung des Altmaterials.`,
+  malerei: `Typische Hauptmaterialien im Malerhandwerk (je als eigene Position):
+- Tapezieren → Tapete/Raufaser (Art nach Kundenwahl), Kleister nur bei größeren Flächen separat
+- Malervlies/Renoviervlies anbringen → Vlies (Vlieskleber nur bei großen Flächen separat)
+- Vollflächig spachteln → Spachtelmasse; vollflächig grundieren → Tiefengrund
+- Streichen/Anstrich → Dispersionsfarbe (Wand/Decke), Lack, Lasur
+Abdeckfolie, Kreppband, Schleifpapier, Tapetenlöser, kleine Mengen Spachtel/Acryl/Grundierung sind KEINE eigenen
+Positionen, sondern höchstens EINE gebündelte Position „Klein-, Hilfs- und Verbrauchsmaterialien" (pauschal).
+Entsorgung des Altmaterials ist eine Arbeitsposition, kein Material.`,
 
   sanitaer: `Typische Materialketten im Sanitär-/Heizungshandwerk:
 - Rohrleitung verlegen → Rohr (Material/Durchmesser), Fittings, Dichtungen, Befestigungsschellen

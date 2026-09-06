@@ -7,9 +7,20 @@
 // Maler ist (siehe structure.ts). Der Block ist bewusst knapp: er gibt der KI
 // die Fach-Benennungen, die fachliche Reihenfolge, die wichtigsten
 // Pflicht-Rückfragen und die Scope-Grenzen — er ersetzt nicht den Systemprompt.
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { ladeWissen } from "./wissen.js";
 
 let cache: string | undefined;
+
+/** Materialregel aus knowledge/maler/materialregel.md (Dirks Vorgabe, 06.09.2026): Hauptmaterial separat, Kleinmaterial gebündelt. */
+function materialregel(): string {
+  try {
+    return readFileSync(resolve("knowledge", "maler", "materialregel.md"), "utf8").trim();
+  } catch {
+    return "";
+  }
+}
 
 /** Kompakter Maler-Fachwissen-Block für den Systemprompt (gecacht). */
 export function malerFachwissen(): string {
@@ -57,6 +68,8 @@ Ohne die Wandfläche lassen sich mehrere Positionen (Streichen, Tapezieren, Spac
 
 **Umfang (v0 = Innenraum-Renovierung):**
 - Drinnen: ${w.scope.inside_v0.slice(0, 12).join(", ")}.
-- NICHT in diesem Umfang: ${w.scope.outside_v0.slice(0, 10).join(", ")}. Kommt so etwas im Diktat vor, weise in "rueckfragen" freundlich darauf hin (nicht raten, nicht einfach weglassen).`;
+- NICHT in diesem Umfang: ${w.scope.outside_v0.slice(0, 10).join(", ")}. Kommt so etwas im Diktat vor, weise in "rueckfragen" freundlich darauf hin (nicht raten, nicht einfach weglassen).
+
+${materialregel()}`;
   return cache;
 }

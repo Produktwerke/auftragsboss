@@ -120,6 +120,37 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 06.09.2026 — VIDEO-TEST (NO-GO) + AUFMASSRECHNER TEILETAPPE 1 ✅ DEPLOYT (Commits 615b0c5 + Folgecommit „Raummaße als flache Textzeile"; 199 Tests grün; echte KI-Probe bestanden; ⏳ Live-Test per Sprachnachricht durch Dirk offen):**
+> - **Messbank-Ergebnis (04.09., Commit ae608a9):** 42 Wände annotiert und gemessen → Ein-Foto-Verfahren NO-GO
+>   (Median 6,4 %, P90 17 %), Ursache Sichtbarkeit (Möbel vor Ecken/Boden, Wände > 5,5 m, unebene Wände);
+>   VOB-Klassifikation aber 96 % → Fotos taugen für Öffnungen/VOB, nicht für Wandmaße. `Messbank/auswertung/`.
+> - **Video-Test (06.09.):** 5 Rundum-Videos (`Messbank/Videos/`, gitignored). WhatsApp drückt Video auf 478×850;
+>   Hochformat-Sichtfeld ≈ 44° (keine Wand komplett im Frame); alle Videos Schwenks vom Stand (keine Parallaxe);
+>   Wände merkmalsarm. Fazit `VIDEO-ERKENNTNISSE.md`: Video über WhatsApp ist ein Rückschritt. Idee abgehakt.
+> - **PRODUKTENTSCHEIDUNG (Dirk):** Maler-MVP = „Miss wie immer, sprich die Maße, schick ein Foto pro Wand, den
+>   Rest mache ich." Etappenplan `Konzepte/Etappe-Aufmass-und-Wandfotos.md` (3 Teiletappen, freigegeben).
+>   Endkunden-Variante (WhatsApp-Link + geführte Foto-Website) = später, nicht MVP.
+> - **TEILETAPPE 1 GEBAUT + DEPLOYT:** `src/maler/aufmass.ts` (reines Modul, 15 Tests): je Raum Höhe +
+>   Wandlängen (2 Zahlen = Rechteck, sonst Summe) → Brutto, VOB-Abzug (Öffnungen > 2,5 m² abziehen, ≤ 2,5
+>   übermessen), Netto, Decke (nur Rechteck), Erklärtext; Grauzone 2,2–2,8 m² → Rückfrage-Text.
+>   Positionsfelder im KI-Schema: `flaechenArt` (WAND|DECKE) + `raumBezug`; `mengeQuelle` (AUFMASS) setzt nur das
+>   Programm (App-Typ). Pipeline Schritt 4b nach `strukturiereDialog`: `wendeAufmassAn` (Menge/m2/mengeQuelle),
+>   Aufmaßtext vorn in `aufmassNotizen`, Grauzonen-Rückfragen in `rueckfragen`. Zusammenfassung zeigt „*Flächen
+>   (VOB-gerecht gerechnet):*", E-Mail-Zeile grün „Fläche VOB-gerecht aus deinen Raummaßen berechnet".
+>   Kein Prisma-Schema-Change (kein db push nötig).
+> - **⚠️ WICHTIGE LEHRE (kostete einen Rollback):** Das Structured-Output-Schema (`DokumentSchema`) ist an der
+>   Größengrenze der Anthropic-Grammatik. Ein neues verschachteltes Objekt-Array (`raeume`) → 400 „compiled grammar
+>   is too large" bei JEDER Sprachnachricht (war ~10 Min live, per `git archive` des Vorgängercommits zurückgerollt).
+>   Einfache Felder (String/Enum/Boolean) passen noch. Deshalb liefert die KI die Räume als **`raeumeText`**, EINE
+>   Zeile je Raum im festen Format (`Raum: …; Höhe: …; Wände: a x b; Decke: ja; Öffnungen: Fenster 1,10 x 1,20, …`),
+>   geparst durch `parseRaeumeText()` (deterministisch, Unbrauchbares wird verworfen). **Künftige Schema-Erweiterungen:
+>   nur flache Felder oder zweiter KI-Aufruf mit eigenem kleinen Schema; vor dem Deploy immer die echte KI-Probe
+>   `scratch/aufmass-probe.ts` (bzw. ein Äquivalent) laufen lassen.**
+> - **⏳ NÄCHSTE SCHRITTE:** Dirk testet per Sprachnachricht („Wohnzimmer, Höhe 2,52, 4,49 mal 4,36, Wände und
+>   Decke streichen, Fenstertür 1,70 mal 2,20 …"). Dann Teiletappe 2: Foto-Weiche (Wandfoto vs. Notizzettel),
+>   Vision-Analyse je Foto (Öffnungen, offen/zu, Wand komplett, Helligkeit), Sofort-Feedback als Text, Foto-Ablage
+>   (neues Prisma-Modell `Foto` + `uploads/fotos/`), Messbank als Prüfstand. Teiletappe 3: Aufmaßblatt im Word.
+
 > **Update 04.09.2026 — 📷 MESSBANK KOMPLETT (Commit 2d61285) — bereit fürs Auswertungsskript (Go/No-Go Foto-Aufmaß):**
 > - Dirk hat 11 Räume erfasst: **42 Wand-Fotos** (Original in `Messbank/RaumXX/original/` +
 >   **WhatsApp-Fassungen** in `RaumXX/whatsapp/`, wandweise benannt `wandN_<zeit>...`), Laser-Wahrheit in den

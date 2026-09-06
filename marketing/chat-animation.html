@@ -78,32 +78,37 @@
         </div>
 
         <div class="photo out" data-s>
-          <img src="Zettel.jpg" alt="Handschriftliche Notiz">
-          <div class="cap">📷 Foto · gerade eben</div>
+          <img src="wand-fenster-tuer.jpg" alt="Wandfoto mit Fenster und Tür">
+          <div class="cap">📷 Wand 1</div>
         </div>
 
-        <div class="msg in" data-s>Ich habe deine Sprachnachricht und die Notiz zusammengeführt.</div>
+        <div class="msg in" data-s>✅ Wand 1: Fenster und Tür erkannt, beide unter 2,5 m², werden übermessen.</div>
+
+        <div class="photo out" data-s>
+          <img src="wand-durchgang.jpg" alt="Wandfoto mit Durchgang">
+          <div class="cap">📷 Wand 2</div>
+        </div>
+
+        <div class="msg in" data-s>✅ Wand 2: Durchgang ca. 1,3 × 2,1 m = 2,73 m², wird abgezogen.</div>
 
         <div class="msg in sum" data-s>
-          Ich habe Folgendes verstanden:
+          Das habe ich verstanden:
           <ul>
-            <li>Kunde: Herr Schmidt</li>
-            <li>Wohnzimmer und Flur streichen</li>
-            <li>ca. 85 m² Wandfläche</li>
-            <li>Decken ebenfalls streichen</li>
-            <li>alte Tapete im Wohnzimmer entfernen</li>
-            <li>kleinere Risse ausbessern</li>
+            <li>Kunde: Herr Schmidt, Ahornweg 12</li>
+            <li>Wohnzimmer 4,20 × 3,80 m, Höhe 2,50 m</li>
+            <li>Wände 37,3 m² (Durchgang abgezogen)</li>
+            <li>Decke 16,0 m²</li>
+            <li>alte Tapete entfernen, Risse ausbessern</li>
             <li>Möbel und Boden abdecken</li>
-            <li>4 Türzargen zusätzlich lackieren</li>
           </ul>
-          <div class="q">Stimmt das so?</div>
+          <div class="q">Passt das?</div>
         </div>
 
         <div class="voice out" data-s>
           <button class="play">▶</button><div class="wave"></div><span class="time">0:05</span>
         </div>
 
-        <div class="msg in" data-s>Alles klar. Die Sockelleisten nehme ich noch dazu. Ich erstelle jetzt dein Angebot.</div>
+        <div class="msg in" data-s>Alles klar, ich erstelle jetzt dein Angebot.</div>
 
         <div class="msg in typing" data-s><i></i><i></i><i></i></div>
 
@@ -113,7 +118,7 @@
         </div>
       </div>
     </div>
-    <div class="caption">Sprache + Foto rein, fertiges Angebot zurück.</div>
+    <div class="caption">Maße + Fotos rein, fertiges Angebot zurück.</div>
   </div>
 <script>
   // Wellenform-Balken mit unterschiedlichen Höhen (wie eine echte Sprachaufnahme)
@@ -138,20 +143,21 @@
   const hide=el=>{ el.classList.remove('show'); el.classList.remove('stop'); };
 
   // Reveal-Zeitpunkte (ms) je Schritt
-  const takt=[500, 2800, 5200, 6600, 7900, 10800, 12000, 13300, 14800];
-  // Schritte: 0 in, 1 voice0:24, 2 foto, 3 merged, 4 summary, 5 voice0:05, 6 sockelleisten, 7 typing, 8 done
+  const takt=[500, 2800, 5200, 6400, 7600, 8800, 10200, 13100, 14300, 15600, 17100];
+  // Schritte: 0 in, 1 voice0:24, 2 foto1, 3 wand1, 4 foto2, 5 wand2, 6 summary, 7 voice0:05, 8 alles klar, 9 typing, 10 done
+  const TIPPEN=9, FERTIG=10;
 
   function lauf(){
     steps.forEach(hide);
     body.scrollTop=0;
     takt.forEach((t,i)=>{
-      if(i===8){ // vor "fertig" die Tipp-Punkte wieder ausblenden
-        setTimeout(()=>{ hide(steps[7]); show(steps[8]); }, t);
+      if(i===FERTIG){ // vor "fertig" die Tipp-Punkte wieder ausblenden
+        setTimeout(()=>{ hide(steps[TIPPEN]); show(steps[FERTIG]); }, t);
       } else {
         setTimeout(()=>show(steps[i]), t);
       }
     });
-    setTimeout(lauf, 18000);
+    setTimeout(lauf, 20500);
   }
   lauf();
 </script>

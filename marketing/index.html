@@ -227,6 +227,14 @@
     line-height:1.6;color:var(--ink);position:relative;}
   .bubble .mic{font-size:20px;margin-right:6px;}
   .arrow{color:var(--signal);font-size:30px;font-weight:900;}
+  .fotos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+  .fotos img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:8px;border:1px solid var(--steel);display:block;}
+  .fotos-cap{display:block;margin-top:8px;font-family:var(--mono);font-size:11.5px;color:var(--dim);letter-spacing:.03em;}
+  .antwort{margin-top:14px;padding:12px 14px;background:var(--bg3);border:1px solid var(--hair);border-left:3px solid var(--signal);border-radius:var(--r);font-size:13.5px;line-height:1.55;color:var(--muted);display:flex;flex-direction:column;gap:3px;}
+  .antwort b{color:var(--ink);}
+  .antwort .ergebnis{font-family:var(--mono);color:var(--ink);font-size:13px;margin-top:3px;}
+  .antwort .ergebnis b{color:var(--signal);}
+  .a4 td small{display:block;color:#7a8089;font-size:.85em;line-height:1.25;margin-top:.15em;}
   .poslist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;}
   .poslist li{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;font-size:13px;padding:8px 11px;background:var(--bg3);
     border:1px solid var(--hair);border-left:2px solid var(--signal);border-radius:5px;}
@@ -505,8 +513,8 @@
     <div class="hero-copy">
       <span class="eyebrow lbl">Speziell für Malerbetriebe</span>
       <h1>Du bist der Boss.<br><span class="u">Nicht der Papierkram.</span></h1>
-      <p class="lead">Sprich dein Angebot per <b class="mlr">WhatsApp</b> ein oder schick deine Notizen als Foto. AuftragsBoss versteht typische Malerarbeiten und macht daraus ein professionelles Angebot als PDF oder Word. Es lernt aus deinen bisherigen Angeboten sogar deinen Stil.</p>
-      <div class="stat">Angebot in <b>2&nbsp;Minuten</b> statt in 30.</div>
+      <p class="lead">Sprich dein Angebot per <b class="mlr">WhatsApp</b> ein. Miss nur Wandlängen und Raumhöhe und schick ein Foto pro Wand: AuftragsBoss erkennt Fenster und Türen, rechnet die Flächen VOB-gerecht und macht daraus ein professionelles Angebot als PDF oder Word. Es lernt aus deinen bisherigen Angeboten sogar deinen Stil.</p>
+      <div class="stat"><b>Du misst.</b> AuftragsBoss rechnet.</div>
       <div class="hero-cta">
         <a class="rec" href="https://api.auftragsboss.de/testen" target="_blank" rel="noopener">
           <span class="mic" aria-hidden="true">🎙️</span><span class="t">Jetzt live<br>testen</span>
@@ -528,7 +536,7 @@
     </div>
 
     <div class="hero-visual">
-      <iframe class="hero-chat" src="chat-animation.html" title="AuftragsBoss: Sprache und Foto rein, Angebot zurück" loading="lazy" scrolling="no"></iframe>
+      <iframe class="hero-chat" src="chat-animation.html" title="AuftragsBoss: Maße und Fotos rein, Angebot zurück" loading="lazy" scrolling="no"></iframe>
     </div>
   </div>
 </section>
@@ -540,9 +548,9 @@
   <section class="sec" id="staerken" style="padding-top:58px;">
     <div class="diff">
       <div class="diff-i"><span class="diff-n">01</span><h3>Für Maler gebaut</h3><p>Versteht typische Malerarbeiten und stellt die passenden Rückfragen.</p></div>
-      <div class="diff-i"><span class="diff-n">02</span><h3>Lernt deine alten Angebote</h3><p>Lade bestehende Angebote hoch, AuftragsBoss lernt daraus. <b>Optional</b>, du kannst sofort starten.</p></div>
-      <div class="diff-i"><span class="diff-n">03</span><h3>Merkt sich deinen Betrieb</h3><p>Deine Preise und Positionen werden nach und nach zu deinem privaten Betriebswissen.</p></div>
-      <div class="diff-i"><span class="diff-n">04</span><h3>Nichts Neues lernen</h3><p>Keine App. Kein Login. Einfach WhatsApp.</p></div>
+      <div class="diff-i"><span class="diff-n">02</span><h3>Miss nur das Nötigste</h3><p>Wandlängen und Raumhöhe mit dem Laser. Die Flächen rechnet AuftragsBoss, VOB-gerecht.</p></div>
+      <div class="diff-i"><span class="diff-n">03</span><h3>Fotos machen den Rest</h3><p>Ein Foto pro Wand, <b>optional</b>. AuftragsBoss erkennt Fenster und Türen und zieht ab, was abzuziehen ist.</p></div>
+      <div class="diff-i"><span class="diff-n">04</span><h3>Nichts Neues lernen</h3><p>Keine App. Kein Login. Sprache, Maße und Fotos einfach per WhatsApp.</p></div>
     </div>
   </section>
 
@@ -551,22 +559,34 @@
     <div class="sec-h">
       <span class="eyebrow lbl">Speziell für Malerbetriebe</span>
       <h2>AuftragsBoss versteht Maler.<br>Nicht nur Sprache.</h2>
-      <p>AuftragsBoss erkennt typische Malerarbeiten, ordnet sie in passende Angebotspositionen ein und fragt gezielt nach, wenn wichtige Angaben fehlen.</p>
+      <p>AuftragsBoss versteht nicht nur, was du sagst, sondern auch, was auf der Baustelle zu sehen ist. Du nennst Wandlängen und Raumhöhe, schickst pro Wand ein Foto, und AuftragsBoss rechnet daraus die Flächen für dein Angebot.</p>
     </div>
     <div class="grid3">
-      <div class="tile"><div class="ic">🎯</div><h3>Versteht den Auftrag</h3><p>Erkennt typische Malerarbeiten und deren Zusammenhang.</p></div>
-      <div class="tile"><div class="ic">🧱</div><h3>Strukturiert automatisch</h3><p>Aus deinen Angaben werden sinnvolle Angebotspositionen.</p></div>
-      <div class="tile"><div class="ic">❓</div><h3>Fragt nach, statt zu raten</h3><p>Fehlt etwas Entscheidendes, fragt AuftragsBoss gezielt nach.</p></div>
+      <div class="tile"><div class="ic">📐</div><h3>Versteht das Aufmaß</h3><p>Ordnet Wandlängen, Raumhöhe und Fotos den richtigen Flächen zu und rechnet nach VOB: Öffnungen bis 2,5 m² werden übermessen, größere abgezogen.</p></div>
+      <div class="tile"><div class="ic">👁️</div><h3>Sieht, was abzuziehen ist</h3><p>Erkennt auf deinen Fotos Fenster, Türen und Durchgänge und ordnet sie der richtigen Wand zu.</p></div>
+      <div class="tile"><div class="ic">❓</div><h3>Fragt nach, statt zu raten</h3><p>Ist eine Öffnung nicht eindeutig oder ein Maß knapp an der Grenze, fragt AuftragsBoss gezielt nach.</p></div>
     </div>
   </section>
 
   <!-- SO GEHT'S / echtes Beispiel (3-Schritte-Block entfernt: doppelte sich mit Hero + Demo) -->
   <section class="sec" id="so">
-    <div class="sec-h"><span class="eyebrow lbl">So geht's</span><h2>Das macht AuftragsBoss daraus.</h2></div>
+    <div class="sec-h"><span class="eyebrow lbl">So geht's</span><h2>Du misst. AuftragsBoss rechnet.</h2>
+      <p>Wandlängen und Raumhöhe messen, ein Foto pro Wand, den Auftrag einsprechen. Das macht AuftragsBoss daraus.</p></div>
     <div class="demo">
       <div class="box box-diktat">
-        <span class="lbl">Das diktiert der Handwerker</span>
-        <div class="bubble"><span class="mic">🎙️</span>„Mach mal ein Angebot für Herrn Schmidt, Ahornweg 12. Im Wohnzimmer und Flur streichen wir die Wände, rund 85 Quadratmeter, dazu die Decken. Im Wohnzimmer die alte Tapete runter und ein paar Risse ausbessern. Möbel und Boden abdecken, vier Türzargen lackieren und die Sockelleisten ergänzen."</div>
+        <span class="lbl">Das schickt der Maler</span>
+        <div class="bubble"><span class="mic">🎙️</span>„Angebot für Herrn Schmidt, Ahornweg 12. Wohnzimmer, Höhe 2,50, 4,20 mal 3,80, Wände und Decke streichen. Vorher die alte Tapete runter und ein paar Risse ausbessern, Möbel und Boden abdecken. Fotos schick ich dazu."</div>
+        <div class="fotos">
+          <img src="wand-fenster-tuer.jpg" alt="Wandfoto mit Fenster und Tür" loading="lazy">
+          <img src="wand-durchgang.jpg" alt="Wandfoto mit Durchgang" loading="lazy">
+          <img src="wand-sofa.jpg" alt="Wandfoto ohne Öffnungen" loading="lazy">
+        </div>
+        <span class="fotos-cap">📷 Optional: ein Foto pro Wand, Türen und Fenster geschlossen</span>
+        <div class="antwort">
+          <b>AuftragsBoss rechnet:</b>
+          <span>Wandfläche brutto 40,0 m² · Fenster und Tür übermessen · Durchgang 1,30 × 2,10 m abgezogen</span>
+          <span class="ergebnis">Wände <b>37,3 m²</b> · Decke <b>16,0 m²</b></span>
+        </div>
       </div>
       <div class="arrow">→</div>
       <div class="box box-angebot">
@@ -576,30 +596,27 @@
             <span class="a4-flag">✏️ Einfach anzupassen</span>
             <div class="a4-hd">
               <div class="a4-firma">Mein Malerbetrieb<small>Musterstraße 5 · 12345 Musterstadt</small></div>
-              <div class="a4-typ"><b>ANGEBOT</b><small>Nr. ANG-2026-0007<br>11.08.2026</small></div>
+              <div class="a4-typ"><b>ANGEBOT</b><small>Nr. ANG-2026-0007<br>06.09.2026</small></div>
             </div>
             <div class="a4-kunde"><b>Herr Schmidt</b><br>Ahornweg 12 · 12345 Musterstadt</div>
             <table>
               <thead><tr><th>Pos</th><th>Beschreibung</th><th class="r">Menge</th><th class="r">Einzel</th><th class="r">Gesamt</th></tr></thead>
               <tbody>
                 <tr class="grp"><td colspan="5">Material</td></tr>
-                <tr><td>1</td><td>Dispersionsfarbe (weiß, matt)</td><td class="r">30 l</td><td class="r">6,50</td><td class="r">195,00</td></tr>
+                <tr><td>1</td><td>Dispersionsfarbe (weiß, matt)</td><td class="r">15 l</td><td class="r">6,50</td><td class="r">97,50</td></tr>
                 <tr><td>2</td><td>Tiefengrund &amp; Spachtelmasse</td><td class="r">pauschal</td><td class="r"></td><td class="r">65,00</td></tr>
-                <tr><td>3</td><td>Abdeckfolie &amp; Malervlies</td><td class="r">pauschal</td><td class="r"></td><td class="r">45,00</td></tr>
-                <tr><td>4</td><td>Weißlack für Türzargen</td><td class="r">1 Geb.</td><td class="r">38,00</td><td class="r">38,00</td></tr>
-                <tr><td>5</td><td>Sockelleisten inkl. Montage</td><td class="r">24 lfm</td><td class="r">9,50</td><td class="r">228,00</td></tr>
+                <tr><td>3</td><td>Klein-, Hilfs- und Verbrauchsmaterial</td><td class="r">pauschal</td><td class="r"></td><td class="r">45,00</td></tr>
                 <tr class="grp"><td colspan="5">Arbeit</td></tr>
-                <tr><td>6</td><td>Möbel und Boden abdecken</td><td class="r">pauschal</td><td class="r"></td><td class="r">120,00</td></tr>
-                <tr><td>7</td><td>Tapete entfernen &amp; Risse ausbessern</td><td class="r">pauschal</td><td class="r"></td><td class="r">280,00</td></tr>
-                <tr><td>8</td><td>Wände grundieren &amp; streichen</td><td class="r">85 m²</td><td class="r">10,50</td><td class="r">892,50</td></tr>
-                <tr><td>9</td><td>Decken streichen</td><td class="r">35 m²</td><td class="r">11,00</td><td class="r">385,00</td></tr>
-                <tr><td>10</td><td>Türzargen lackieren</td><td class="r">4 Stk</td><td class="r">45,00</td><td class="r">180,00</td></tr>
+                <tr><td>4</td><td>Möbel und Boden abdecken</td><td class="r">pauschal</td><td class="r"></td><td class="r">120,00</td></tr>
+                <tr><td>5</td><td>Tapete entfernen &amp; Risse ausbessern</td><td class="r">pauschal</td><td class="r"></td><td class="r">280,00</td></tr>
+                <tr><td>6</td><td>Wände grundieren &amp; streichen<br><small>VOB-Aufmaß: 40,0 m² brutto, Durchgang abgezogen</small></td><td class="r">37,3 m²</td><td class="r">10,50</td><td class="r">391,65</td></tr>
+                <tr><td>7</td><td>Decke streichen</td><td class="r">16,0 m²</td><td class="r">11,00</td><td class="r">176,00</td></tr>
               </tbody>
             </table>
             <div class="a4-sum">
-              <div><span>Netto</span><span>2.428,50 €</span></div>
-              <div><span>MwSt. 19 %</span><span>461,42 €</span></div>
-              <div class="tot"><span>Gesamt</span><span>2.889,92 €</span></div>
+              <div><span>Netto</span><span>1.175,15 €</span></div>
+              <div><span>MwSt. 19 %</span><span>223,28 €</span></div>
+              <div class="tot"><span>Gesamt</span><span>1.398,43 €</span></div>
             </div>
             <div class="a4-foot"><span>Mein Malerbetrieb · Musterstraße 5<br>Ansprechpartner: M. Mustermann</span><span>USt-IdNr. DE123456789<br>Musterbank · DE00 0000 0000 0000</span></div>
           </div>
@@ -766,13 +783,14 @@
     <div class="faq">
       <details open><summary>Muss ich etwas installieren?</summary><p>Nein. AuftragsBoss läuft komplett über WhatsApp, die App hast du schon. Kein Download, kein Login, kein neues Programm.</p></details>
       <details><summary>Was, wenn die KI etwas falsch versteht?</summary><p>Du bekommst einen Entwurf, den du in Ruhe prüfst und anpasst, direkt am Handy oder Rechner. Nichts geht ungeprüft an den Kunden.</p></details>
-      <details><summary>Muss ich Preise diktieren?</summary><p>Kannst du, musst du aber nicht. Nennst du einen Preis, übernimmt AuftragsBoss ihn. Sonst bleibt die Position offen und du trägst den Preis später mit einem Tipp ein. Die KI erfindet nie Preise.</p></details>
+      <details><summary>Muss ich Preise diktieren?</summary><p>Kannst du, musst du aber nicht. Nennst du einen Preis, übernimmt AuftragsBoss ihn. Sonst bleibt die Position offen und du trägst den Preis später mit einem Klick ein. Die KI erfindet nie Preise.</p></details>
       <details><summary>Kostet der Test etwas?</summary><p>Nein. Du kannst AuftragsBoss 14 Tage kostenlos testen, ohne Kreditkarte, ohne Anmeldung. Erst wenn es dir gefällt, wählst du eine Stufe.</p></details>
       <details><summary>Sind meine Kundendaten sicher?</summary><p>Ja. Verarbeitung DSGVO-konform, Server in der EU. Deine Daten gehören dir und lassen sich jederzeit exportieren.</p></details>
       <details><summary>Funktioniert das auch mit Dialekt?</summary><p>Ja. Die Spracherkennung ist auf gesprochene Aufträge aus dem Arbeitsalltag ausgelegt und korrigiert typische Hörfehler bei Fachbegriffen.</p></details>
-      <details><summary>Ist AuftragsBoss wirklich auf Maler zugeschnitten?</summary><p>Ja. AuftragsBoss ist speziell für Malerbetriebe entwickelt, kennt typische Malerarbeiten, die fachliche Reihenfolge und passende Einheiten und fragt gezielt nach, wenn etwas fehlt. Kein generischer KI-Assistent.</p></details>
+      <details><summary>Ist AuftragsBoss wirklich auf Maler zugeschnitten?</summary><p>Ja. AuftragsBoss ist speziell für Malerbetriebe entwickelt, kennt typische Malerarbeiten, die fachliche Reihenfolge und passende Einheiten und fragt gezielt nach, wenn etwas fehlt. Sogar das Aufmaß macht es mit: Du nennst Wandlängen und Raumhöhe, AuftragsBoss erkennt auf deinen Wandfotos Fenster, Türen und Durchgänge und rechnet die Flächen VOB-gerecht. Kein generischer KI-Assistent.</p></details>
+      <details><summary>Muss ich Wandfotos schicken?</summary><p>Nein, optional. Ohne Fotos rechnet AuftragsBoss die Wandfläche aus deinen Maßen. Mit einem Foto pro Wand erkennt es Fenster, Türen und Durchgänge, zieht nach VOB ab, was abzuziehen ist, und fragt nach, wenn etwas unklar ist. Türen und Fenster dabei bitte schließen.</p></details>
       <details><summary>Muss ich meine alten Angebote hochladen?</summary><p>Nein, das ist optional. Ohne Upload legst du sofort los. Lädst du ein paar bisherige Angebote hoch, liest AuftragsBoss deine Positionen und Preise aus und lernt so deinen Betrieb kennen.</p></details>
-      <details><summary>Übernimmt AuftragsBoss meine Preise automatisch?</summary><p>Es schlägt dir deine Preise aus früheren Angeboten als Vorschlag vor, übernehmen tust du sie mit einem Tipp. Die KI erfindet nie Preise, du entscheidest bei jedem Angebot.</p></details>
+      <details><summary>Übernimmt AuftragsBoss meine Preise automatisch?</summary><p>Es schlägt dir deine Preise aus früheren Angeboten als Vorschlag vor, übernehmen tust du sie mit einem Klick. Die KI erfindet nie Preise, du entscheidest bei jedem Angebot.</p></details>
     </div>
   </section>
 </div>

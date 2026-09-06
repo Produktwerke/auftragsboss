@@ -231,6 +231,9 @@ export function editorSeite(args: {
          cursor:pointer; text-decoration:underline; padding:0; }
   .mail-status { font-size:13px; margin-top:6px; }
   .mail-tipp { font-size:13px; color:#66707a; margin-top:6px; line-height:1.5; }
+  /* „Am PC weitermachen" ergibt nur am Handy Sinn; am Rechner heißt derselbe Knopf „Link sichern". */
+  .nur-handy { display:none; }
+  @media (max-width:640px){ .nur-handy { display:flex; } .nur-handy.mail-tipp { display:block; } .nur-pc { display:none; } }
   .mail-link-btn { width:100%; background:none; border:1px solid #cbd2da; border-radius:8px;
                    padding:11px 12px; font-size:13.5px; font-weight:600; color:#333; cursor:pointer; }
   .mail-link-btn:hover { background:#f2f4f6; }
@@ -622,9 +625,11 @@ export function editorSeite(args: {
       </div>
       <div class="akt-trenner"></div>
       <div class="akt-gruppe">
-        <div class="akt-titel">💻 Am PC weitermachen</div>
+        <div class="akt-titel nur-handy">💻 Am PC weitermachen</div>
+        <div class="akt-titel nur-pc">🔗 Link sichern</div>
         <button class="mail-link-btn" id="mailLinkBtn" type="button" onclick="linkMailSenden()">📧 Bearbeitungslink an meine E-Mail senden</button>
-        <div class="mail-tipp">Die E-Mail enthält deinen <b>Bearbeitungslink</b> — so machst du das Angebot später am Rechner in Ruhe fertig.</div>
+        <div class="mail-tipp nur-handy">Die E-Mail enthält deinen <b>Bearbeitungslink</b>, so machst du das Angebot später am Rechner in Ruhe fertig.</div>
+        <div class="mail-tipp nur-pc">Die E-Mail enthält deinen <b>Bearbeitungslink</b>, damit du das Angebot jederzeit wiederfindest.</div>
       </div>
     </div>
     <div class="mail-status" id="mailStatus"></div>

@@ -120,6 +120,37 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 06.09.2026 (2) — WANDFOTOS TEILETAPPE 2 ✅ DEPLOYT inkl. db push (Commits 9ca7910 + a6b7f7d; 208 Tests grün; Prüfstand 3 Läufe; ⏳ Live-Test durch Dirk offen):**
+> - **Ablauf live:** Maler spricht Maße (Teiletappe 1) und schickt ein Foto je Wand. Jedes Foto → EIN Vision-Aufruf
+>   (`src/ai/wandfoto.ts`, eigenes kleines Structured-Output-Schema `WandfotoSchema`, Modell claude-fable-5):
+>   Wandfoto oder Notizzettel (`istWandfoto`/`notizText`), Öffnungen mit Schätzmaß (Raumhöhe als Maßstab),
+>   `inNachbarwand` (wird gefiltert), offen/zu, `wandKomplett`, `hellGenug`, Besonderheiten. **Sofortantwort** per
+>   WhatsApp (`fotoFeedback`: ✅ mit VOB-Einordnung je Öffnung / ⚠️ Tür offen, zu dunkel / ℹ️ Wand nicht ganz im Bild).
+>   Erkennung wird als Dialogzeile `FOTO Wand N (Raum: …): Öffnungen: …` an den Vorgang gehängt (`art: "foto"`); die
+>   Auswertungs-KI ordnet die Öffnungen der Raumzeile zu (Prompt-Regel „Wandfotos": diktierte Maße gewinnen, Dubletten
+>   nur einmal). **Verzögerte Auswertung:** 90 s nach dem letzten Foto (`planeFotoAuswertung`, Timer je Nummer, jede
+>   neue Nachricht bricht ab) läuft `werteVorgangAus` (Schritte 4–6 der Pipeline, jetzt eigene Funktion); nur Fotos
+>   ohne Maße → einmalige Erinnerung „sprich mir Raum und Maße ein".
+> - **Zuordnung** (`src/maler/fotoZuordnung.ts`, rein, 4 Tests): Bildunterschrift (bekannter Raumname, „Wand N") sonst
+>   zuletzt genannter Raum aus `Vorgang.raeumeText` (neue Spalte, wird bei jeder KI-Auswertung gesetzt). Webhook reicht
+>   die Caption jetzt als `bildText` durch. Wandnummer = Zähler je Vorgang oder „Wand N" aus der Unterschrift.
+> - **Ablage:** neues Prisma-Modell **`Foto`** (handwerkerId, vorgangId, dokumentId nach Angebotserstellung, raum,
+>   wandNr, datei, mimeType, groesse, erkennungJson) + Datei unter `uploads/fotos/<Betrieb>/<Vorgang>/wandN_<zeit>.jpg`
+>   (`src/betrieb/fotoAblage.ts`, max 12 MB; im Nacht-Backup enthalten). DSGVO-Kaskade in betreiberRoutes löscht
+>   Zeilen + Betriebsordner. Kosten je Foto als `KI_AUFRUF` dienst `wandfoto` (~1 ct) im Cockpit.
+> - **Prüfstand** `Messbank/auswertung/pruefstand-vision.ts` (42 WhatsApp-Fotos gegen Laser-Wahrheit, schreibt
+>   `PRUEFSTAND-VISION.md`): Lauf 1: 37/39 gefunden, VOB 97,3 %, 9 erfunden → Nachbarwand-Feld + Haustür-Regel →
+>   Lauf 2: 36/39, VOB 97,2 %, 4 erfunden → Spiegel- und Bildrand-Regel → Lauf 3: 36/39, VOB 97,2 %, **3 erfunden**
+>   (Randfälle wechseln lauf-zu-lauf: angeschnittene Nachbarwand-Türen, Standspiegel als „Durchgang"). Flächenfehler
+>   Median ~14 % (für VOB-Klasse unerheblich, Grauzone 2,2–2,8 m² fragt nach). Verpasst: Tür hinter offenem Türblatt
+>   (R08 W1), drittes Element außerhalb des Bildes (R03 W3). Ziel VOB ≥ 95 % erfüllt; „0 erfunden" nicht ganz, aber jede
+>   Erkennung steht im Sofort-Feedback und ist per Wort korrigierbar. ~40 Cent je Vollauf.
+> - **Live-Test (Dirk):** Sprachnachricht mit Maßen → Zusammenfassung → 4 Fotos schicken (je Wand, Tür zu) → je Foto
+>   ✅/⚠️-Antwort → nach 90 s Ruhe „📐 Ich rechne …" → Angebot mit Öffnungen aus den Fotos im Aufmaßtext. Im Log:
+>   `WANDFOTO`-Events, `uploads/fotos/` füllt sich, Tabelle `Foto`.
+> - **⏳ NÄCHSTES: Teiletappe 3** (Aufmaßblatt im Word mit Belegfotos, Lambris/halbhoch, Decke, Laibungen) und
+>   Feinschliff aus dem Live-Test (Wortlaut der Antworten, Timer-Länge, Foto-Zähler je Raum statt je Vorgang).
+
 > **Update 06.09.2026 — VIDEO-TEST (NO-GO) + AUFMASSRECHNER TEILETAPPE 1 ✅ DEPLOYT (Commits 615b0c5 + Folgecommit „Raummaße als flache Textzeile"; 199 Tests grün; echte KI-Probe bestanden; ⏳ Live-Test per Sprachnachricht durch Dirk offen):**
 > - **Messbank-Ergebnis (04.09., Commit ae608a9):** 42 Wände annotiert und gemessen → Ein-Foto-Verfahren NO-GO
 >   (Median 6,4 %, P90 17 %), Ursache Sichtbarkeit (Möbel vor Ecken/Boden, Wände > 5,5 m, unebene Wände);

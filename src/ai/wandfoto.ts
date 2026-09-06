@@ -65,7 +65,7 @@ Beantworte das Formular. Regeln:
 - Bewertet wird die Wand, die das Bild frontal oder nahezu frontal zeigt. Wände, die am linken oder rechten Bildrand schräg ins Bild laufen (Decken- und Bodenlinie verlaufen dort diagonal, Türen wirken schmal und verzerrt), sind NACHBARWÄNDE: ihre Öffnungen mit inNachbarwand=true markieren, auch wenn sie groß oder gut sichtbar sind. wandKomplett bezieht sich nur auf die frontale Wand.
 - Eine Haustür mit festem Seitenteil (Glas) ist EINE Öffnung der Art Haustuer mit der Gesamtbreite von Tür plus Seitenteil.
 - Bilder, Spiegel, Schränke, Heizkörper, Regale sind KEINE Öffnungen. Achtung Spiegel: Ein großer Wand- oder Standspiegel zeigt einen Raum oder Flur und sieht wie ein Durchgang aus, ist aber keiner (Rahmen, gespiegelte Möbel, gespiegeltes Licht).
-- Öffnungen, die am äußersten linken oder rechten Bildrand angeschnitten sind (weniger als etwa zwei Drittel sichtbar), gehören fast immer zur Nachbarwand oder zur Raumecke: inNachbarwand=true.
+- Öffnungen, die am äußersten linken oder rechten Bildrand ANGESCHNITTEN sind (weniger als etwa zwei Drittel sichtbar), gehören fast immer zur Nachbarwand: inNachbarwand=true. Eine VOLLSTÄNDIG sichtbare Tür oder ein vollständig sichtbares Fenster mit senkrechter Zarge, parallel zu den übrigen Kanten der frontalen Wand, gehört dagegen zur frontalen Wand, auch wenn es nah am Bildrand liegt: inNachbarwand=false.
 - Lichte Maße schätzen (Innenkante des Lochs bzw. der Zarge), nicht die Rahmen-Außenkante. Typische Werte: Zimmertür 0,7 bis 0,9 × 2,0 m; Fenster 0,6 bis 2,0 m breit; Fenstertür 0,8 bis 2,0 × 2,1 bis 2,3 m.
 - Ist eine Öffnung nur teilweise sichtbar (angeschnitten, hinter Vorhang), schätze trotzdem und setze Sicherheit 'niedrig'.
 - Eine geöffnete Tür oder ein geöffneter Fensterflügel: offen = true.
@@ -120,6 +120,11 @@ export function relevanteOeffnungen(a: WandfotoAnalyse): WandfotoAnalyse["oeffnu
   return a.oeffnungen.filter((o) => !o.inNachbarwand);
 }
 
+/** Öffnungen, die das Modell einer Nachbarwand zuordnet: unsicher, werden nachgefragt statt verworfen. */
+export function unsichereOeffnungen(a: WandfotoAnalyse): WandfotoAnalyse["oeffnungen"] {
+  return a.oeffnungen.filter((o) => o.inNachbarwand);
+}
+
 export interface FotoProblem {
   schwere: "nachfassen" | "hinweis";
   text: string;
@@ -165,6 +170,11 @@ export function fotoFeedback(a: WandfotoAnalyse, wandNr: number, raumName: strin
     zeilen.push(oeff.length ? `✅ ${wo}: ${oeff.join("; ")}.` : `✅ ${wo}: keine Öffnungen, notiert.`);
   }
   for (const p of probleme.filter((p) => p.schwere === "hinweis")) zeilen.push(`ℹ️ ${p.text}`);
+  const unsicher = unsichereOeffnungen(a);
+  if (unsicher.length) {
+    const namen = unsicher.map((o) => ART_NAME[o.art]).join(", ");
+    zeilen.push(`❓ Am Bildrand noch: ${namen}. Sieht nach Nachbarwand aus, deshalb nicht mitgezählt. Gehört das doch zu dieser Wand? Dann sag kurz Bescheid.`);
+  }
   return zeilen.join("\n");
 }
 
@@ -178,6 +188,14 @@ export function fotoAlsDialogText(a: WandfotoAnalyse, wandNr: number, raumName: 
     return `${name}${mass}${o.offen ? " (offen)" : ""}${o.sicherheit === "niedrig" ? " (unsicher)" : ""}`;
   });
   teile.push(oeff.length ? `Öffnungen: ${oeff.join(", ")}.` : "Keine Öffnungen.");
+  const unsicher = unsichereOeffnungen(a);
+  if (unsicher.length) {
+    teile.push(
+      `Am Bildrand, vermutlich Nachbarwand (nur übernehmen, wenn der Handwerker es bestätigt): ${unsicher
+        .map((o) => `${ART_NAME[o.art]}${o.breiteM !== null && o.hoeheM !== null ? ` ca. ${m(o.breiteM)} x ${m(o.hoeheM)} m` : ""}`)
+        .join(", ")}.`,
+    );
+  }
   if (!a.wandKomplett) teile.push("Wand nicht vollständig im Bild.");
   if (a.besonderheiten.length) teile.push(`Besonderheiten: ${a.besonderheiten.join(", ")}.`);
   return teile.join(" ");

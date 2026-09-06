@@ -42,7 +42,9 @@ describe("Wandfoto-Helfer", () => {
     const mitNachbar = { ...basis, oeffnungen: [...basis.oeffnungen, { art: "Tuer" as const, offen: true, breiteM: 0.85, hoeheM: 2, sicherheit: "hoch" as const, inNachbarwand: true }] };
     expect(oeffnungenBeschreibung(mitNachbar)).toHaveLength(2);
     expect(fotoProbleme(mitNachbar)).toEqual([]); // die offene Nachbartür zählt nicht
-    expect(fotoAlsDialogText(mitNachbar, 1, null)).not.toContain("offen");
+    expect(fotoAlsDialogText(mitNachbar, 1, null)).not.toContain("(offen)");
+    expect(fotoAlsDialogText(mitNachbar, 1, null)).toContain("vermutlich Nachbarwand (nur übernehmen, wenn der Handwerker es bestätigt): Tür ca. 0,85 x 2 m.");
+    expect(fotoFeedback(mitNachbar, 1, "Bad")).toContain("❓ Am Bildrand noch: Tür.");
   });
 
   it("unvollständige Wand ist nur ein Hinweis, kein Nachfassen", () => {

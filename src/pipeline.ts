@@ -335,6 +335,9 @@ export async function verarbeiteNachricht(args: {
       // bei Notizen gleich den Text mit.
       await sendeWhatsAppText(vonNummer, "📷 Foto hab ich! Ich schau es mir an, einen kurzen Moment …");
       const bild = await ladeBild(bildMediaId);
+      // Für die Raumzuordnung zählt auch ein eben abgeschlossener Vorgang (Nachtrag):
+      // sonst fehlen Raumname und Raumhöhe beim ersten nachgereichten Foto.
+      if (!vorgang) vorgang = await holeNachtragsVorgang(prisma, handwerker.id);
       const zuordnung = ordneFotoZu(vorgang, bildText);
       const analyse = await analysiereWandfoto(
         bild,

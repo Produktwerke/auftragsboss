@@ -154,7 +154,7 @@ export function aufmassAnlage(anlage: AufmassAnlage, akzent: string): (Paragraph
       spacing: { after: 240 },
       children: [
         new TextRun({
-          text: "Flächen nach VOB/C DIN 18363: Öffnungen bis 2,5 m² werden übermessen, größere abgezogen. Fotomaße sind Schätzungen zur Einordnung.",
+          text: "Alle Flächen sind nach VOB* aufgemessen. Fotomaße dienen der Einordnung der Öffnungen.",
           size: 16,
           color: GRAU,
         }),
@@ -200,5 +200,26 @@ export function aufmassAnlage(anlage: AufmassAnlage, akzent: string): (Paragraph
       }),
     );
   }
+
+  // Fußnote zur VOB: Die meisten Kunden kennen den Begriff nicht. Der Text soll
+  // Vertrauen schaffen (anerkanntes Regelwerk, einheitlich und nachprüfbar), nicht
+  // wie eine ungewöhnliche Abrechnungsmethode wirken.
+  kinder.push(
+    new Paragraph({
+      spacing: { before: 320, after: 0 },
+      border: { top: { style: BorderStyle.SINGLE, size: 4, color: "DDDDDD" } },
+      children: [
+        new TextRun({
+          text:
+            "* VOB ist die Vergabe- und Vertragsordnung für Bauleistungen, das anerkannte Regelwerk des deutschen Bauhandwerks. " +
+            "Sie legt verbindlich fest, wie Malerflächen aufgemessen werden (DIN 18363): einheitlich, nachvollziehbar und für beide Seiten fair. " +
+            "Öffnungen wie Fenster und Türen bis 2,5 m² werden dabei mitgerechnet, weil die Arbeit an Rändern und Laibungen den Flächenabzug ausgleicht; " +
+            "größere Öffnungen werden abgezogen. So können Sie jede Fläche in diesem Angebot selbst nachprüfen.",
+          size: 14,
+          color: GRAU,
+        }),
+      ],
+    }),
+  );
   return kinder;
 }

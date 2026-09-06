@@ -30,3 +30,10 @@ Ergebnis (Raum05, Raum06, Kontrolle Raum01):
 - **Raum05:** W2 und W4 „Lambris bis ca. 1,05/1,10 m" mit Begründung (vertikale Fugen, Abschlussleiste); W1 und W3 jetzt „zweifarbiger Anstrich" (Hochbett/Gegenlicht verdecken die Kante). Zwei Treffer verloren, dafür keine Fehlmeldung.
 - **Raum01:** unverändert korrekt (raumhohe Holzverkleidung, keine Oberkante).
 - **Folgerung:** Regel „im Zweifel Anstrich" bleibt. Ein übersehenes Paneel kostet nichts (volle Wand, Maler nennt es ohnehin), ein erfundenes hätte die Fläche falsch gekürzt. Die Auswertungs-KI fragt bei reinem Foto-Hinweis ausdrücklich „feste Paneele oder nur anders gestrichen?". Offen: Wahrheitsdatei Raum05 prüfen (echte Lambris?), Lauf-1-Tabelle liegt in Lauf 1 oben.
+
+## Wahrheit (Dirk, 06.09.2026): Sockelhöhe Raum05 = 0,97 m (Lambris), Raum06 = 0,86 m (nur zweifarbiger Anstrich, keine Paneele)
+
+- Raum05: Schätzungen 1,00–1,10 m → Fehler +3 bis +13 cm (beide Läufe).
+- Raum06: Schätzungen 1,00–1,15 m → Fehler +14 bis +29 cm; Ausreißer 0,50/0,65 m (−36/−21 cm) bei Rollladen und Gegenlicht.
+- Das Modell schätzt die Oberkante systematisch zu HOCH (≈ +10 cm bei Paneelen, ≈ +20 cm bei Farbwechsel). Auf 4 m Wand = 0,4–0,8 m² zu wenig Fläche je Wand, zu Lasten des Malers.
+- Entscheidung: keine pauschale Korrektur (nur zwei Räume), Fotoschätzung bleibt Vorschlag + Rückfrage, Maß kommt vom Maler.

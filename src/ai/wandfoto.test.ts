@@ -8,8 +8,8 @@ const basis: WandfotoAnalyse = {
   bodenSichtbar: true,
   hellGenug: true,
   oeffnungen: [
-    { art: "Fenstertuer", offen: false, breiteM: 1.7, hoeheM: 2.2, sicherheit: "hoch" },
-    { art: "Tuer", offen: false, breiteM: 0.82, hoeheM: 1.98, sicherheit: "hoch" },
+    { art: "Fenstertuer", offen: false, breiteM: 1.7, hoeheM: 2.2, sicherheit: "hoch", inNachbarwand: false },
+    { art: "Tuer", offen: false, breiteM: 0.82, hoeheM: 1.98, sicherheit: "hoch", inNachbarwand: false },
   ],
   besonderheiten: [],
 };
@@ -18,7 +18,7 @@ describe("Wandfoto-Helfer", () => {
   it("beschreibt Öffnungen mit VOB-Einordnung und Grauzonen-Hinweis", () => {
     const z = oeffnungenBeschreibung({
       ...basis,
-      oeffnungen: [...basis.oeffnungen, { art: "Fenster", offen: false, breiteM: 1.4, hoeheM: 1.7, sicherheit: "mittel" }],
+      oeffnungen: [...basis.oeffnungen, { art: "Fenster", offen: false, breiteM: 1.4, hoeheM: 1.7, sicherheit: "mittel", inNachbarwand: false }],
     });
     expect(z[0]).toBe("Fenstertür ca. 1,7 × 2,2 m = 3,74 m² (wird abgezogen)");
     expect(z[1]).toBe("Tür ca. 0,82 × 1,98 m = 1,62 m² (wird übermessen)");
@@ -36,6 +36,13 @@ describe("Wandfoto-Helfer", () => {
     expect(f).toContain("⚠️ Küche, Wand 3: Das Foto ist zu dunkel");
     expect(f).toContain("ℹ️ Die Wand ist nicht ganz im Bild");
     expect(fotoFeedback({ ...basis, oeffnungen: [] }, 4, "Bad")).toBe("✅ Bad, Wand 4: keine Öffnungen, notiert.");
+  });
+
+  it("Öffnungen in Nachbarwänden werden überall aussortiert", () => {
+    const mitNachbar = { ...basis, oeffnungen: [...basis.oeffnungen, { art: "Tuer" as const, offen: true, breiteM: 0.85, hoeheM: 2, sicherheit: "hoch" as const, inNachbarwand: true }] };
+    expect(oeffnungenBeschreibung(mitNachbar)).toHaveLength(2);
+    expect(fotoProbleme(mitNachbar)).toEqual([]); // die offene Nachbartür zählt nicht
+    expect(fotoAlsDialogText(mitNachbar, 1, null)).not.toContain("offen");
   });
 
   it("unvollständige Wand ist nur ein Hinweis, kein Nachfassen", () => {

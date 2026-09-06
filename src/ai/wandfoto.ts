@@ -32,14 +32,21 @@ export const WandfotoSchema = z.object({
   oeffnungen: z
     .array(
       z.object({
-        art: z.enum(["Tuer", "Fenster", "Fenstertuer", "Durchgang", "Sonstige"]),
+        art: z.enum(["Tuer", "Fenster", "Fenstertuer", "Haustuer", "Durchgang", "Sonstige"]),
+        inNachbarwand: z
+          .boolean()
+          .describe(
+            "true, wenn die Öffnung NICHT in der frontal gezeigten Wand liegt, sondern in einer am linken oder rechten " +
+              "Bildrand schräg ins Bild laufenden Nachbarwand (perspektivisch verkürzt, Decken-/Bodenlinie läuft diagonal). " +
+              "Solche Öffnungen bitte hier eintragen, damit sie sauber aussortiert werden können.",
+          ),
         offen: z.boolean().describe("true, wenn Türblatt/Fensterflügel sichtbar geöffnet ist."),
         breiteM: z.number().nullable().describe("Geschätzte lichte Breite in Metern (Innenkante Rahmen/Loch), null wenn nicht schätzbar."),
         hoeheM: z.number().nullable().describe("Geschätzte lichte Höhe in Metern, null wenn nicht schätzbar."),
         sicherheit: z.enum(["hoch", "mittel", "niedrig"]),
       }),
     )
-    .describe("Alle Öffnungen IN DIESER WAND (nicht in Nachbarwänden, nicht Bilder/Spiegel/Schränke). Leer, wenn keine."),
+    .describe("Alle sichtbaren Öffnungen (Nachbarwände mit inNachbarwand=true markieren; keine Bilder/Spiegel/Schränke). Leer, wenn keine."),
   besonderheiten: z
     .array(z.string())
     .describe("Kurz: z.B. 'Lambris halbhoch', 'Fliesenspiegel', 'Heizkörper', 'Dachschräge', 'Tapete', 'Spachtelstellen'. Leer, wenn nichts."),
@@ -55,8 +62,10 @@ function prompt(kontext: { raumhoeheM?: number | null; raumName?: string | null 
   return `Du bist die Bildauswertung eines Angebots-Assistenten für Malerbetriebe. Ein Maler hat eine Raumwand fotografiert, um Öffnungen (Türen, Fenster) für das Aufmaß zu erfassen. ${raum} ${hoehe}
 
 Beantworte das Formular. Regeln:
-- Nur die Wand bewerten, die das Bild frontal oder nahezu frontal zeigt. Öffnungen in angeschnittenen Nachbarwänden gehören NICHT dazu.
-- Bilder, Spiegel, Schränke, Heizkörper, Regale sind KEINE Öffnungen.
+- Bewertet wird die Wand, die das Bild frontal oder nahezu frontal zeigt. Wände, die am linken oder rechten Bildrand schräg ins Bild laufen (Decken- und Bodenlinie verlaufen dort diagonal, Türen wirken schmal und verzerrt), sind NACHBARWÄNDE: ihre Öffnungen mit inNachbarwand=true markieren, auch wenn sie groß oder gut sichtbar sind. wandKomplett bezieht sich nur auf die frontale Wand.
+- Eine Haustür mit festem Seitenteil (Glas) ist EINE Öffnung der Art Haustuer mit der Gesamtbreite von Tür plus Seitenteil.
+- Bilder, Spiegel, Schränke, Heizkörper, Regale sind KEINE Öffnungen. Achtung Spiegel: Ein großer Wand- oder Standspiegel zeigt einen Raum oder Flur und sieht wie ein Durchgang aus, ist aber keiner (Rahmen, gespiegelte Möbel, gespiegeltes Licht).
+- Öffnungen, die am äußersten linken oder rechten Bildrand angeschnitten sind (weniger als etwa zwei Drittel sichtbar), gehören fast immer zur Nachbarwand oder zur Raumecke: inNachbarwand=true.
 - Lichte Maße schätzen (Innenkante des Lochs bzw. der Zarge), nicht die Rahmen-Außenkante. Typische Werte: Zimmertür 0,7 bis 0,9 × 2,0 m; Fenster 0,6 bis 2,0 m breit; Fenstertür 0,8 bis 2,0 × 2,1 bis 2,3 m.
 - Ist eine Öffnung nur teilweise sichtbar (angeschnitten, hinter Vorhang), schätze trotzdem und setze Sicherheit 'niedrig'.
 - Eine geöffnete Tür oder ein geöffneter Fensterflügel: offen = true.
@@ -99,11 +108,17 @@ const ART_NAME: Record<WandfotoAnalyse["oeffnungen"][number]["art"], string> = {
   Tuer: "Tür",
   Fenster: "Fenster",
   Fenstertuer: "Fenstertür",
+  Haustuer: "Haustür",
   Durchgang: "Durchgang",
   Sonstige: "Öffnung",
 };
 const m = (x: number) => (Math.round(x * 100) / 100).toString().replace(".", ",");
 const m2 = (x: number) => x.toFixed(2).replace(".", ",");
+
+/** Nur die Öffnungen der frontal gezeigten Wand (Nachbarwände aussortiert). */
+export function relevanteOeffnungen(a: WandfotoAnalyse): WandfotoAnalyse["oeffnungen"] {
+  return a.oeffnungen.filter((o) => !o.inNachbarwand);
+}
 
 export interface FotoProblem {
   schwere: "nachfassen" | "hinweis";
@@ -115,7 +130,7 @@ export function fotoProbleme(a: WandfotoAnalyse): FotoProblem[] {
   const p: FotoProblem[] = [];
   if (!a.hellGenug) p.push({ schwere: "nachfassen", text: "Das Foto ist zu dunkel oder überstrahlt." });
   if (!a.wandKomplett) p.push({ schwere: "hinweis", text: "Die Wand ist nicht ganz im Bild (Ecken oder Boden fehlen)." });
-  const offen = a.oeffnungen.filter((o) => o.offen);
+  const offen = relevanteOeffnungen(a).filter((o) => o.offen);
   if (offen.length) {
     p.push({
       schwere: "nachfassen",
@@ -127,7 +142,7 @@ export function fotoProbleme(a: WandfotoAnalyse): FotoProblem[] {
 
 /** Eine Zeile je Öffnung für Feedback und Dialog, mit VOB-Einordnung. */
 export function oeffnungenBeschreibung(a: WandfotoAnalyse): string[] {
-  return a.oeffnungen.map((o) => {
+  return relevanteOeffnungen(a).map((o) => {
     const name = ART_NAME[o.art];
     if (o.breiteM === null || o.hoeheM === null) return `${name} (Maß nicht schätzbar)`;
     const fl = o.breiteM * o.hoeheM;
@@ -157,7 +172,7 @@ export function fotoFeedback(a: WandfotoAnalyse, wandNr: number, raumName: strin
 export function fotoAlsDialogText(a: WandfotoAnalyse, wandNr: number, raumName: string | null, unterschrift?: string | null): string {
   const teile: string[] = [];
   teile.push(`FOTO Wand ${wandNr}${raumName ? ` (Raum: ${raumName})` : ""}${unterschrift?.trim() ? ` [Bildunterschrift: ${unterschrift.trim()}]` : ""}:`);
-  const oeff = a.oeffnungen.map((o) => {
+  const oeff = relevanteOeffnungen(a).map((o) => {
     const name = ART_NAME[o.art];
     const mass = o.breiteM !== null && o.hoeheM !== null ? ` ca. ${m(o.breiteM)} x ${m(o.hoeheM)} m` : " (Maß unklar)";
     return `${name}${mass}${o.offen ? " (offen)" : ""}${o.sicherheit === "niedrig" ? " (unsicher)" : ""}`;

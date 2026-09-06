@@ -17,6 +17,7 @@ import { transkribiereAudio } from "./ai/transcribe.js";
 import { liesBildNotiz } from "./ai/bildLesen.js";
 import { analysiereWandfoto, fotoAlsDialogText, fotoFeedback, type WandfotoAnalyse } from "./ai/wandfoto.js";
 import { speichereFoto } from "./betrieb/fotoAblage.js";
+import { ordneFotoZu } from "./maler/fotoZuordnung.js";
 import { strukturiereDialog } from "./ai/structure.js";
 import { berechneAngebot, euro } from "./angebot/berechnung.js";
 import { erzeugeAngebotWord, wordDateiname } from "./angebot/word.js";
@@ -31,7 +32,7 @@ import { starteTestFuerNeueNummer, testNachrichtBlockiert } from "./direkttest.j
 import { verarbeiteOnboardingKnopf, markiereLeadAktiv } from "./lead/onboarding.js";
 import { direkttestConfig, featureConfig } from "./config.js";
 import { validierePositionen } from "./validierung/validator.js";
-import { aufmassText, berechneAufmass, parseRaeumeText, wendeAufmassAn, type RaumMasse } from "./maler/aufmass.js";
+import { aufmassText, berechneAufmass, parseRaeumeText, wendeAufmassAn } from "./maler/aufmass.js";
 import { schlagePreiseVor } from "./betrieb/preisgedaechtnis.js";
 import { spurEvent } from "./analytics/event.js";
 import { schaetzeAudioSekunden, kostenAudioCent, kostenClaudeCent } from "./analytics/kikosten.js";
@@ -569,37 +570,6 @@ function brichFotoAuswertungAb(vonNummer: string): void {
     clearTimeout(t);
     fotoTimer.delete(vonNummer);
   }
-}
-
-/**
- * Raumzuordnung eines Fotos: Bildunterschrift (wenn sie einen bekannten Raum
- * nennt oder selbst wie ein Raumname aussieht), sonst der zuletzt genannte
- * Raum aus der letzten KI-Auswertung. Liefert dazu die Raumhöhe als Maßstab.
- */
-export function ordneFotoZu(
-  vorgang: Vorgang | null,
-  bildText: string | undefined,
-): { raumName: string | null; raumhoeheM: number | null; wandNrAusText: number | null } {
-  const raeume: RaumMasse[] = parseRaeumeText(vorgang?.raeumeText);
-  const text = (bildText ?? "").trim();
-  const wandTreffer = /wand\s*(\d{1,2})/i.exec(text);
-  const wandNrAusText = wandTreffer ? parseInt(wandTreffer[1]!, 10) : null;
-  let raum: RaumMasse | undefined;
-  if (text) {
-    const t = text.toLowerCase();
-    raum = raeume.find((r) => t.includes(r.name.toLowerCase()));
-  }
-  let raumName: string | null = raum?.name ?? null;
-  if (!raumName && text) {
-    // Unterschrift ohne bekannten Raum: alles außer "Wand N" als Raumname nehmen
-    const rest = text.replace(/wand\s*\d{1,2}/i, "").replace(/[,;:.]/g, " ").trim();
-    if (rest && rest.length <= 40 && /[A-Za-zÄÖÜäöüß]/.test(rest)) raumName = rest;
-  }
-  if (!raumName && raeume.length) {
-    raum = raeume[raeume.length - 1];
-    raumName = raum!.name;
-  }
-  return { raumName, raumhoeheM: raum?.hoeheM ?? null, wandNrAusText };
 }
 
 /** Speichert das Wandfoto, hängt die Erkennung an den Vorgang, antwortet sofort und plant die Auswertung. */

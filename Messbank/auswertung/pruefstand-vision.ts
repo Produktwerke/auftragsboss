@@ -11,7 +11,7 @@ import "../../src/env.js";
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { analysiereWandfoto, type WandfotoAnalyse } from "../../src/ai/wandfoto.js";
+import { analysiereWandfoto, relevanteOeffnungen, type WandfotoAnalyse } from "../../src/ai/wandfoto.js";
 
 const HIER = dirname(fileURLToPath(import.meta.url));
 const MB = join(HIER, "..");
@@ -47,7 +47,7 @@ async function pruefeWand(w: { raum: string; wand: number }): Promise<void> {
   }
   const soll = wahr.filter((x) => x.raum === w.raum && x.wand === w.wand);
   // Zuordnung: je Wahrheits-Öffnung die ähnlichste noch freie Vorhersage (Fläche)
-  const frei = [...a.oeffnungen];
+  const frei = [...relevanteOeffnungen(a)];
   let gefunden = 0, vobRichtig = 0, vobGesamt = 0;
   const fehler: number[] = [];
   for (const s of soll) {
@@ -70,8 +70,8 @@ async function pruefeWand(w: { raum: string; wand: number }): Promise<void> {
   }
   zeilen.push({
     raum: w.raum, wand: w.wand, wahrN: soll.length, gefunden, erfunden: frei.length,
-    vobRichtig, vobGesamt, flaechenFehler: fehler, wandKomplett: a.wandKomplett, offen: a.oeffnungen.filter((o) => o.offen).length,
-    arten: a.oeffnungen.map((o) => `${o.art}${o.breiteM !== null && o.hoeheM !== null ? ` ${o.breiteM}x${o.hoeheM}` : ""}`).join(", ") || "-",
+    vobRichtig, vobGesamt, flaechenFehler: fehler, wandKomplett: a.wandKomplett, offen: relevanteOeffnungen(a).filter((o) => o.offen).length,
+    arten: relevanteOeffnungen(a).map((o) => `${o.art}${o.breiteM !== null && o.hoeheM !== null ? ` ${o.breiteM}x${o.hoeheM}` : ""}`).join(", ") || "-",
   });
   console.log(`${w.raum} W${w.wand}: wahr ${soll.length} | gefunden ${gefunden} | erfunden ${frei.length} | VOB ${vobRichtig}/${vobGesamt} | komplett ${a.wandKomplett ? "ja" : "nein"} | ${zeilen.at(-1)!.arten}`);
 }

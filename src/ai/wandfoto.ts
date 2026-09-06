@@ -51,7 +51,8 @@ export const WandfotoSchema = z.object({
     .array(z.string())
     .describe(
       "Kurz: z.B. 'Heizkörper', 'Dachschräge', 'Tapete', 'Spachtelstellen'. Bei halbhohen Verkleidungen (Lambris, Holzpaneele, Fliesenspiegel) " +
-        "die Oberkante in Metern schätzen und so notieren: 'Lambris bis ca. 1,10 m'. Leer, wenn nichts.",
+        "die Oberkante in Metern schätzen und so notieren: 'Lambris bis ca. 1,10 m'. Ein bloßer Farbwechsel (unten weiß, oben farbig, ohne Material-, Profil- oder Fugenwechsel) " +
+        "ist KEINE Verkleidung und heißt 'zweifarbiger Anstrich, Sockelzone bis ca. 1,10 m'. Leer, wenn nichts.",
     ),
 });
 
@@ -73,6 +74,7 @@ Beantworte das Formular. Regeln:
 - Ist eine Öffnung nur teilweise sichtbar (angeschnitten, hinter Vorhang), schätze trotzdem und setze Sicherheit 'niedrig'.
 - Eine geöffnete Tür oder ein geöffneter Fensterflügel: offen = true.
 - Ist es KEIN Wandfoto (z.B. handschriftlicher Zettel, Handy-Notiz, Screenshot): istWandfoto false, den lesbaren Inhalt wörtlich in notizText, alles andere leer/false.
+- Halbhohe Verkleidung (Lambris, Holzpaneele, Fliesenspiegel) nur melden, wenn ein echter Materialwechsel sichtbar ist: Holzmaserung, Nut-und-Feder-Fugen, Fliesenfugen, eine Abschlussleiste oder ein Profil an der Oberkante. Ist die Wand unten nur in einer anderen Farbe gestrichen (glatte Fläche, gleiche Struktur, nur ein Farbwechsel), ist das ein zweifarbiger Anstrich und KEINE Verkleidung. Im Zweifel: zweifarbiger Anstrich.
 - Nichts erfinden. Keine Rechnungen.`;
 }
 

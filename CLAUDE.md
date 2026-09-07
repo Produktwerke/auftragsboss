@@ -120,6 +120,19 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **⚠️ VORFALL 07.09.2026 — LIVE-DATENBANK DURCH DEPLOY KORRUMPIERT (behoben, kein Kundendatenverlust):**
+> - **Was passiert ist:** Das Deploy-Paket schloss nur `prisma/*.db` aus, NICHT `dev.db-wal`/`dev.db-shm`. Lokal lagen beide
+>   (vom Seed-Skript/Tests), also wanderten sie mit JEDEM Deploy am 06.09. nachmittags auf den Server und überschrieben die
+>   Write-Ahead-Log-Dateien der Live-DB (md5 identisch). Folge: „database disk image is malformed" bei jedem Zugriff ab ~14:50,
+>   /health blieb grün (fasst die DB nicht an). Entdeckt erst um 05:20 durch den Wachhund (Backup fehlte, sqlite3 .backup scheiterte)
+>   + healthchecks.io „DOWN".
+> - **Behebung:** App gestoppt, fremde -wal/-shm nach `/root/db-korrupt-20260907/` verschoben, Hauptdatei `integrity_check ok`
+>   (Stand 06.09. 13:23 lokal), WAL-Modus neu gesetzt, App gestartet, Prisma-Probe ok, Backup nachgeholt (Heartbeat gemeldet).
+>   **Verloren:** nur Dirks Testdaten ab 13:23 (ANG-2026-0015 mit 4 Fassungen, 6 Foto-Zeilen, Events). Keine fremde Nachricht im Fenster.
+> - **REGEL AB SOFORT:** Packen mit `--exclude='prisma/dev.db*'` UND entpacken mit `tar xzf … --exclude='prisma/dev.db*'`
+>   (doppelter Schutz). `.gitignore` kennt jetzt auch `*.db-wal`/`*.db-shm`. Vor JEDEM Deploy: `tar -tzf deploy.tar.gz | grep dev.db`
+>   muss leer sein. Wachhund prüft zusätzlich stündlich `PRAGMA quick_check` der Live-DB (hätte den Schaden nach 30 Min gemeldet).
+
 > **Update 06.09.2026 (3) — TEILETAPPE 3 ✅ GEBAUT + DEPLOYT (Commit e3ca128; 213 Tests grün; KI-Probe `scratch/paneel-probe.ts` bestanden; ⏳ Live-Test durch Dirk offen):**
 > - **Halbhohe Flächen:** Raumzeile kennt `Paneel: 1,10` (Oberkante Lambris/Paneele/Fliesenspiegel). Rechner:
 >   brutto = Umfang × (H − Paneelhöhe); Türen/Durchgänge zählen nur mit ihrem Teil über den Paneelen, Fenster voll
@@ -317,7 +330,8 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   als root — root darf die Nutzer-Dateien lesen).
 > - **⚠️ NEUES DEPLOY-RITUAL (ersetzt die /root/app-Befehle in älteren Blöcken!):** tar packen wie gehabt,
 >   `scp … root@87.106.165.151:/root/`, dann:
->   `ssh root@87.106.165.151 "tar xzf /root/deploy.tar.gz -C /home/auftragsboss/app && chown -R auftragsboss:auftragsboss /home/auftragsboss/app && su - auftragsboss -c 'pm2 restart auftragsboss'"`
+>   `ssh root@87.106.165.151 "tar xzf /root/deploy.tar.gz --exclude='prisma/dev.db*' -C /home/auftragsboss/app && chown -R auftragsboss:auftragsboss /home/auftragsboss/app && su - auftragsboss -c 'pm2 restart auftragsboss'"`
+>   **Packen IMMER mit `--exclude='prisma/dev.db*'`** (nicht `*.db`: -wal/-shm müssen mit raus, siehe Vorfall 07.09.).
 >   Bei npm install/db push: `su - auftragsboss -c 'cd ~/app && npm install && npx prisma db push && pm2 restart auftragsboss'`.
 >   Das `chown` nach dem Entpacken ist PFLICHT (tar als root erzeugt root-Dateien). Server-`.env` liegt
 >   jetzt unter `/home/auftragsboss/app/.env`; `pm2 logs/status` immer über `su - auftragsboss -c '…'`.
@@ -1052,7 +1066,7 @@ deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
       `ssh root@87.106.165.151 "tar xzf /root/deploy.tar.gz -C /root/app && pm2 restart auftragsboss"`.
       Merkregel: `PS C:\…>` = PC (scp/ssh), `root@ubuntu:~#` = Server (Linux-Befehle) — nicht vertauschen!
       **Achtung PowerShell-`tar`:** kennt **kein** `--force-local` (Fehler „Option not supported") →
-      weglassen. Packen: `tar --exclude='prisma/*.db' -czf deploy.tar.gz src prisma knowledge package.json
+      weglassen. Packen: `tar --exclude='prisma/dev.db*' -czf deploy.tar.gz src prisma knowledge package.json
       package-lock.json tsconfig.json preisliste.json`. Vorm Hochladen prüfen, dass neue Dateien drin sind:
       `tar -tzf deploy.tar.gz | findstr <dateiname>`. `SCHILY.fflags`-Warnungen beim Entpacken sind harmlos.
       Neue `.env`-Werte (z. B. `SESSION_SECRET`) NUR am Server setzen (`printf … >> /root/app/.env`), nicht

@@ -10,6 +10,8 @@ dist/
 # Datenbank (lokale Entwicklung)
 prisma/*.db
 prisma/*.db-journal
+prisma/*.db-wal
+prisma/*.db-shm
 
 # Demo-Ausgabe (generierte E-Mail-Vorschauen)
 demo-ausgabe/

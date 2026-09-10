@@ -11,9 +11,17 @@
 # https://api.auftragsboss.de/health, siehe RESTORE-RUNBOOK.md).
 #
 # Cron (stündlich):  20 * * * * /root/wachhund.sh >> /root/wachhund.log 2>&1
+#
+# Herzschlag (Nach-Audit 10.09.2026, S-05): Steht in /root/wachhund-heartbeat-url.txt
+# eine healthchecks.io-Ping-URL, meldet sich der Wachhund am Ende jedes Laufs —
+# ohne Befund an die URL, mit Befund an URL/fail. Bleibt der Ping aus, weil Cron
+# oder der ganze Server steht, schlägt healthchecks.io von außen Alarm. Das
+# ersetzt den blinden Fleck „der Wächter selbst läuft nicht mehr".
 set -u
+alarm=0
 
 melde() { # $1=schluessel  $2=betreff  $3=text
+  alarm=1
   local sperre="/root/wachhund-zuletzt-$1"
   local jetzt; jetzt=$(date +%s)
   if [ -f "$sperre" ] && [ $((jetzt - $(cat "$sperre" 2>/dev/null || echo 0))) -lt 43200 ]; then
@@ -53,4 +61,12 @@ db_ergebnis=$(sqlite3 -readonly /home/auftragsboss/daten/dev.db 'PRAGMA quick_ch
 if [ "$db_ergebnis" != "ok" ]; then
   melde db "ALARM AuftragsBoss: Datenbank-Prüfung fehlgeschlagen"     "PRAGMA quick_check auf /home/auftragsboss/daten/dev.db liefert: $db_ergebnis
 Prüfen: su - auftragsboss -c 'pm2 logs auftragsboss --err --lines 50'. Ursache 07.09.2026 waren fremde dev.db-wal/-shm aus einem Deploy-Paket (siehe CLAUDE.md, Vorfall 07.09.). Nicht blind weiter deployen; erst Backup-Stand prüfen (/root/backups)."
+fi
+
+# 5) Herzschlag an healthchecks.io (nur wenn eine URL hinterlegt ist)
+HEARTBEAT=/root/wachhund-heartbeat-url.txt
+if [ -s "$HEARTBEAT" ]; then
+  url=$(head -1 "$HEARTBEAT")
+  [ "$alarm" = 0 ] || url="$url/fail"
+  curl -fsS --max-time 10 -o /dev/null "$url" || echo "$(date '+%F %T')  WARNUNG: Herzschlag-Ping fehlgeschlagen."
 fi

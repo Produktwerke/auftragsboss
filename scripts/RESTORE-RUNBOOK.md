@@ -100,11 +100,25 @@ falls Datenabfluss möglich war (DSGVO Art. 33: 72-Stunden-Frist prüfen).
   `https://api.auftragsboss.de/health`, Alarm an Dirks E-Mail —
   meldet den Fall „Server komplett tot", den der interne Wachhund
   naturgemäß nicht melden kann.
-- **healthchecks.io** (kostenlos): Check „AuftragsBoss Backup", Periode
-  1 Tag, Kulanz 2 h; die Ping-URL in `/root/heartbeat-url.txt` eintragen —
-  meldet ausbleibende Backups, auch wenn sonst alles läuft.
+- **healthchecks.io** (kostenlos), drei Checks mit je eigener Ping-URL in einer
+  Datei unter /root (eine Zeile, nur die URL):
+  - „AuftragsBoss Backup", Periode 1 Tag, Kulanz 2 h → `/root/heartbeat-url.txt`
+    (meldet ausbleibende Backups, auch wenn sonst alles läuft).
+  - „AuftragsBoss Herzschlag", Periode 1 h, Kulanz 30 Min → `/root/wachhund-heartbeat-url.txt`
+    (der Wachhund pingt nach jedem Lauf, bei Befund mit /fail; bleibt der Ping aus,
+    steht Cron oder der Server).
+  - „AuftragsBoss Restore-Probe", Periode 31 Tage, Kulanz 2 Tage → `/root/restore-probe-heartbeat-url.txt`
+    (die monatliche Probe meldet Erfolg oder /fail).
+- **Bucket-Versionierung** (seit 10.09.2026 EIN, `rclone backend versioning offsite:auftragsboss-backup`):
+  Überschreiben oder Löschen im Bucket legt nur eine neue Version an; ein
+  kompromittierter Server kann die Offsite-Kopien nicht mehr vernichten. Ältere
+  Versionen bleiben liegen (Speicher wächst um ca. 1 MB pro Tag; bei Bedarf in
+  der IONOS-Konsole eine Lebenszyklus-Regel für alte Versionen setzen).
 
 ## Proben-Kalender
 
-- **Vierteljährlich:** `/root/restore-probe.sh` (letzte Probe: 03.09.2026 ✅).
+- **Monatlich automatisch:** `/root/restore-probe.sh` am 1. um 04:45 (Cron),
+  Protokoll in `/root/restore-probe.log`, Heartbeat s. o. (letzte Probe von Hand: 10.09.2026 ✅).
+- **Monatlich von Hand (Dirk):** Patch-Tag `apt update && apt full-upgrade -y && reboot`,
+  danach prüfen: `curl -s https://api.auftragsboss.de/health` muss `"db":"ok"` liefern.
 - **Jährlich:** einmal Fall B gedanklich durchgehen und Runbook aktualisieren.

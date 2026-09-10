@@ -3,17 +3,10 @@
   "configurations": [
     {
       "name": "dev-editor",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev:editor"
-      ],
+      "runtimeExecutable": "C:/Program Files/nodejs/npm.cmd",
+      "runtimeArgs": ["--prefix", "voiceprotokoll-guard", "run", "dev:editor"],
       "port": 3020,
-      "env": {
-        "PORT": "3020",
-        "PATH": "C:\\Program Files\\nodejs;${env:PATH}",
-        "DATABASE_URL": "file:./dev.db"
-      }
+      "env": { "PORT": "3020", "DATABASE_URL": "file:./dev.db", "PATH": "C:/Program Files/nodejs;${env:PATH}" }
     }
   ]
 }

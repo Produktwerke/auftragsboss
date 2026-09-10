@@ -119,6 +119,6 @@ falls Datenabfluss möglich war (DSGVO Art. 33: 72-Stunden-Frist prüfen).
 
 - **Monatlich automatisch:** `/root/restore-probe.sh` am 1. um 04:45 (Cron),
   Protokoll in `/root/restore-probe.log`, Heartbeat s. o. (letzte Probe von Hand: 10.09.2026 ✅).
-- **Monatlich von Hand (Dirk):** Patch-Tag `apt update && apt full-upgrade -y && reboot`,
+- **Monatlich von Hand (Dirk), Erinnerung per Mail am 1. um 09:00 (`/root/patchtag-erinnerung.sh`, Cron):** Patch-Tag `apt update && apt full-upgrade -y && reboot`,
   danach prüfen: `curl -s https://api.auftragsboss.de/health` muss `"db":"ok"` liefern.
 - **Jährlich:** einmal Fall B gedanklich durchgehen und Runbook aktualisieren.

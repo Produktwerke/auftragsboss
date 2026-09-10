@@ -1001,20 +1001,28 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Zugangsdaten
 
-`.env` (nicht in Git). **Suchreihenfolge seit 01.09.2026 (`src/env.ts`):** zuerst
-`.env` im Projektordner (so läuft der Server: `/root/app/.env`), dann
-`~/Dropbox/AuftragsBoss/.env`, zuletzt `~/.auftragsboss/.env`. **Auf Dirks
-Rechnern liegt die Datei unter `C:\Users\dbeer\Dropbox\AuftragsBoss\.env`**
-(private Dropbox, synchronisiert zwischen seinen zwei Rechnern) — bewusst
-AUSSERHALB des Firmen-OneDrive. Im Projektordner darf lokal KEINE `.env`
-liegen (sie hätte Vorrang). Vorlage: `.env.example` (aus der echten Datei
-erzeugt, alle Werte geleert). Für die KI-Tests reichen `ANTHROPIC_API_KEY` (Claude,
-`sk-ant-…`) und `OPENAI_API_KEY` (Whisper, `sk-proj-…`). WhatsApp + SMTP erst
-für den Echtbetrieb. Optional: `ADMIN_TOKEN` (langer Zufallswert) schaltet die
-Lern-Auswertung `/admin/<TOKEN>` frei; ohne ihn ist sie aus (404). `HOST`
-(Standard localhost) und `GRAPH_API_VERSION` (Standard v23.0) sind konfigurierbar.
-Hinweis: Dirks ursprüngliche Claude-Organisation war nur wegen fehlendem Guthaben
-deaktiviert (nicht gelöscht) — er bleibt aber bei der neuen Organisation.
+**Seit 10.09.2026: KEINE Schlüssel auf Dirks Rechnern** (Entscheidung „ganz wie Tyra", weil
+AuftragsBoss künftig viele Kundendaten hält). Die einzige `.env` liegt auf dem Server unter
+`/home/auftragsboss/app/.env` (chmod 600, im Nacht-Backup enthalten). `src/env.ts` liest nur
+noch `.env` im Projektordner; die früheren Suchpfade (Dropbox, `~/.auftragsboss`) sind entfernt,
+die Dropbox-Kopie ist gelöscht. Vorlage ohne Werte: `.env.example`.
+
+**Folgen für die Arbeit:**
+- Lokal laufen nur `npm test` (vitest) und `npm run dev:editor` (braucht `DATABASE_URL=file:./dev.db`,
+  steht in `.claude/launch.json`). Beides ohne Schlüssel.
+- **KI-Proben, Prüfstände, Skripte mit echten Aufrufen laufen auf dem Server:** Skript nach
+  `/home/auftragsboss/app/scratch/` kopieren (`scp` per Windows-OpenSSH), dann
+  `su - auftragsboss -c 'cd ~/app && npx tsx scratch/<name>.ts'`. Messbank-Fotos für Prüfstände bei
+  Bedarf nach `/home/auftragsboss/messbank/` laden (nicht ins Repo, nicht ins Backup nötig).
+- Neue `.env`-Werte NUR auf dem Server setzen, danach `pm2 restart auftragsboss`. Werte nie in
+  Chat oder Notizen; Präfix-Checks wie `grep -o '^NAME=.{6}'` reichen.
+- Optional (Dirk): in den Konsolen von Anthropic/OpenAI prüfen, ob es neben `auftragsboss-server`
+  noch einen zweiten Schlüssel gab, der nur lokal genutzt wurde, und den sperren.
+- Lokale Prisma-CLI-Befehle brauchen weiterhin `$env:DATABASE_URL="file:./dev.db"`.
+
+Weiter gültig: Optional `ADMIN_EMAIL`/`ADMIN_PASSWORT_HASH` für /stasi, `HOST` (Standard localhost)
+und `GRAPH_API_VERSION` (Standard v23.0). Dirks ursprüngliche Claude-Organisation war nur wegen
+fehlendem Guthaben deaktiviert; er bleibt bei der neuen Organisation.
 
 ## Nächste Ideen (Roadmap)
 

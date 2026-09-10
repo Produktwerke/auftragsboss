@@ -60,18 +60,45 @@ describe("berechneRaum", () => {
     expect(berechneRaum({ ...schlafzimmer, wandlaengenM: [3.84, Number.NaN] })).toEqual({ grund: "unplausible Wandlänge" });
   });
 
-  it("ignoriert unbrauchbare Öffnungsmaße und lässt die Fläche nie negativ werden", () => {
+  it("verwirft unbrauchbare oder zu große Öffnungen NICHT still, sondern mit Grund (Nach-Audit E-02/E-13)", () => {
     const a = berechneRaum({
       ...schlafzimmer,
       wandlaengenM: [1, 1],
       oeffnungen: [
-        { art: "Fenster", breiteM: 0, hoeheM: 1 },
-        { art: "Tor", breiteM: 4, hoeheM: 3 },
+        { art: "Fenster", breiteM: 0, hoeheM: 1 }, // Maß unplausibel
+        { art: "Tor", breiteM: 4, hoeheM: 3 }, // breiter als die Wand UND höher als der Raum
+        { art: "Fenstertür", breiteM: 17, hoeheM: 2.2 }, // Hörfehler 1,70 → 17,0
       ],
     });
     if ("grund" in a) throw new Error(a.grund);
-    expect(a.oeffnungen).toHaveLength(1);
-    expect(a.wandNettoM2).toBe(0);
+    expect(a.oeffnungen).toHaveLength(0);
+    expect(a.wandNettoM2).toBe(10.2); // 4 × 2,55: nichts abgezogen, aber ausgewiesen
+    expect(a.verworfen).toEqual([
+      "Fenster 0 × 1 m: Maß unplausibel",
+      "Tor 4 × 3 m: höher als der Raum (2,55 m)",
+      "Fenstertür 17 × 2,2 m: Maß unplausibel",
+    ]);
+    expect(a.erklaerung).toContain("NICHT berücksichtigt: Fenster 0 × 1 m: Maß unplausibel; Tor 4 × 3 m");
+    expect(a.erklaerung).not.toContain("keine Öffnungen erfasst");
+    const e = berechneAufmass([{ ...schlafzimmer, oeffnungen: [{ art: "Fenstertür", breiteM: 17, hoeheM: 2.2 }] }]);
+    expect(e.rueckfragen[0]).toBe("Schlafzimmer: Fenstertür 17 × 2,2 m: Maß unplausibel. Diese Öffnung wurde NICHT abgezogen, bitte das Maß prüfen.");
+    expect(aufmassKurz(e)).toEqual([
+      "Schlafzimmer (3,84 × 3,99 m, Höhe 2,55 m): Wände 39,93 m², Decke 15,32 m²",
+      "⚠️ Schlafzimmer: Fenstertür 17 × 2,2 m: Maß unplausibel, nicht abgezogen",
+    ]);
+  });
+
+  it("warnt bei Hörfehler-verdächtigen Maßen (4,49 → 44,9) statt still zu rechnen (Nach-Audit E-03)", () => {
+    const e = berechneAufmass([{ ...schlafzimmer, wandlaengenM: [44.9, 4.36], hoeheM: 2.52, oeffnungen: [] }]);
+    const [r] = e.raeume;
+    expect(r!.wandBruttoM2).toBe(248.27);
+    expect(r!.warnungen).toEqual([
+      "Wandlänge 44,9 m ist ungewöhnlich groß, bitte prüfen (Hörfehler?)",
+      "Wandfläche 248,27 m² ist ungewöhnlich groß für einen Raum, bitte Maße prüfen",
+    ]);
+    expect(e.rueckfragen).toHaveLength(2);
+    expect(aufmassKurz(e)[0]).toBe("Schlafzimmer (44,9 × 4,36 m, Höhe 2,52 m): Wände 248,27 m², Decke 195,76 m²");
+    expect(aufmassKurz(e)[1]).toContain("⚠️ Schlafzimmer: Wandlänge 44,9 m");
   });
 
   it("Erklärtext ist lesbar, deutsch formatiert und ohne Gedankenstriche", () => {
@@ -194,7 +221,7 @@ describe("berechneAufmass", () => {
     expect(e.rueckfragen[0]).toContain("Schlafzimmer: Sollen die Laibungen der abgezogenen Öffnungen mitgestrichen werden?");
     expect(e.rueckfragen[1]).toContain("Küche: Fenster 1,4 × 1,7 m hat 2,38 m²");
     expect(aufmassText(e)).toContain("Bad: nicht berechnet (Raumhöhe fehlt oder unplausibel).");
-    expect(aufmassKurz(e)[0]).toBe("Schlafzimmer: Wände 36,18 m², (3,75 m² Öffnungen abgezogen), Decke 15,32 m²");
+    expect(aufmassKurz(e)[0]).toBe("Schlafzimmer (3,84 × 3,99 m, Höhe 2,55 m): Wände 36,18 m², (3,75 m² Öffnungen abgezogen), Decke 15,32 m²");
   });
 });
 
@@ -286,6 +313,15 @@ describe("parseRaeumeText", () => {
     expect(rs).toHaveLength(2);
     expect(rs[0]).toMatchObject({ name: "Küche", hoeheM: 2.49, wandlaengenM: [10.38, 3.2, 5.1], deckeStreichen: false, oeffnungen: [] });
     expect(rs[1]).toMatchObject({ name: "Flur", wandlaengenM: [4.5, 2.0], oeffnungen: [{ art: "Tür", breiteM: 0.86, hoeheM: 2.0 }] });
+  });
+
+  it("frisst sich nicht an langen Leerzeichenläufen fest (Nach-Audit E-01, vorher 7 s bei 3.000 Leerzeichen)", () => {
+    const start = performance.now();
+    const rs = parseRaeumeText(`Raum: X; Höhe: 2,5; Wände: 3 x 4; Öffnungen: Fenster${" ".repeat(5000)}1, Tür 0,8 x 2`);
+    expect(performance.now() - start).toBeLessThan(200);
+    expect(rs[0]!.oeffnungen).toEqual([{ art: "Tür", breiteM: 0.8, hoeheM: 2 }]);
+    // Länge wird gekappt: 32.000 Zeichen Raumtext → höchstens 20.000 werden gelesen, nichts explodiert.
+    expect(parseRaeumeText("Raum: A; Höhe: 2,5; Wände: 3 x 4\n".repeat(1000)).length).toBeLessThan(1000);
   });
 
   it("wirft Unbrauchbares weg statt zu raten", () => {

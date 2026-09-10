@@ -6,6 +6,7 @@
 // der Briefkopf mit jedem hochgeladenen Logo ordentlich aus.
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { istUploadPfad, uploadPfad } from "./ablage.js";
 
 /** Maximale Ausmaße im Briefkopf, in Pixeln bei 96 dpi (Word-Maßstab). */
 const MAX_BREITE = 190; // ca. 50 mm
@@ -74,7 +75,9 @@ function passeEin(breite: number, hoehe: number): { breite: number; hoehe: numbe
 export function ladeLogo(dateiname: string): Logo | null {
   if (!dateiname.trim()) return null;
 
-  const pfad = resolve(dateiname);
+  // Hochgeladene Logos liegen in der Upload-Ablage (kann außerhalb des Projektordners
+  // liegen), das Demo-Logo aus preisliste.json im Projektordner.
+  const pfad = istUploadPfad(dateiname) ? uploadPfad(dateiname) : resolve(dateiname);
   if (!existsSync(pfad)) {
     console.warn(`⚠️  Logo nicht gefunden: ${pfad} — Briefkopf wird ohne Logo erzeugt.`);
     return null;

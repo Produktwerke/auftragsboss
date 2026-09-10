@@ -1,13 +1,17 @@
 // Ablage der Wandfotos je Betrieb und Vorgang.
 //
-// Fotos sind Kundendaten (Innenräume) und liegen wie das Logo unter uploads/
-// (im Nacht-Backup enthalten, nicht in Git). Struktur:
-//   uploads/fotos/<handwerkerId>/<vorgangId>/wand<N>_<zeit>.<endung>
-// Beim DSGVO-Löschen eines Betriebs wird der ganze Betriebsordner entfernt.
-import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from "node:fs";
-import { resolve, join } from "node:path";
+// Fotos sind Kundendaten (Innenräume) und liegen wie das Logo in der
+// Upload-Ablage (UPLOADS_DIR, siehe ablage.ts; im Nacht-Backup enthalten,
+// nicht in Git). Struktur:
+//   <UPLOADS_DIR>/fotos/<handwerkerId>/<vorgangId>/wand<N>_<zeit>.<endung>
+// In der Datenbank steht der Pfad als "uploads/fotos/…".
+// Beim DSGVO-Löschen eines Betriebs wird der ganze Betriebsordner entfernt,
+// beim Löschen eines Angebots die zugehörigen Dateien (loescheFotoDatei).
+import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, unlinkSync } from "node:fs";
+import { join } from "node:path";
+import { UPLOADS_DIR, uploadPfad, liegtUnter } from "./ablage.js";
 
-const FOTO_DIR = resolve("uploads", "fotos");
+const FOTO_DIR = join(UPLOADS_DIR, "fotos");
 export const FOTO_MAX_BYTES = 12 * 1024 * 1024; // WhatsApp-Bilder sind ≤ ~0,5 MB, Reserve für Originale
 
 const ENDUNG_JE_MIME: Record<string, string> = {
@@ -41,7 +45,7 @@ export function speichereFoto(args: {
   const zeit = new Date().toISOString().replace(/[-:]/g, "").replace(/\..+$/, "").replace("T", "_");
   const name = `wand${Math.max(1, Math.floor(args.wandNr))}_${zeit}.${endung}`;
   writeFileSync(join(ordner, name), args.daten);
-  return join("uploads", "fotos", sicher(args.handwerkerId), sicher(args.vorgangId), name).replace(/\\/g, "/");
+  return ["uploads", "fotos", sicher(args.handwerkerId), sicher(args.vorgangId), name].join("/");
 }
 
 /** Entfernt alle Fotos eines Betriebs (DSGVO-Löschkaskade). Best effort. */
@@ -55,17 +59,35 @@ export function loescheFotosVonBetrieb(handwerkerId: string): void {
   }
 }
 
+/** Absoluter Pfad zu einem DB-Fotopfad, oder null, wenn er nicht in die Fotoablage zeigt. */
+function fotoPfad(relPfad: string): string | null {
+  if (!relPfad) return null;
+  const pfad = uploadPfad(relPfad);
+  return liegtUnter(pfad, FOTO_DIR) ? pfad : null;
+}
+
 /**
  * Liest ein gespeichertes Foto anhand des relativen Pfads aus der Datenbank.
- * Nur Pfade unterhalb von uploads/fotos werden bedient (kein Ausbruch per "..").
+ * Nur Pfade unterhalb der Fotoablage werden bedient (kein Ausbruch per "..").
  */
 export function liesFoto(relPfad: string): Buffer | null {
-  const pfad = resolve(relPfad);
-  if (!pfad.startsWith(FOTO_DIR)) return null;
-  if (!existsSync(pfad)) return null;
+  const pfad = fotoPfad(relPfad);
+  if (!pfad || !existsSync(pfad)) return null;
   try {
     return readFileSync(pfad);
   } catch {
     return null;
+  }
+}
+
+/** Löscht die Datei eines Fotos (beim Löschen eines Angebots). Liefert true, wenn etwas gelöscht wurde. */
+export function loescheFotoDatei(relPfad: string): boolean {
+  const pfad = fotoPfad(relPfad);
+  if (!pfad || !existsSync(pfad)) return false;
+  try {
+    unlinkSync(pfad);
+    return true;
+  } catch {
+    return false;
   }
 }

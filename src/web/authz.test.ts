@@ -11,14 +11,22 @@
 // dynamische Importe im beforeAll.
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execSync } from "node:child_process";
-import { rmSync } from "node:fs";
-import { createHmac } from "node:crypto";
+import { rmSync, existsSync } from "node:fs";
+import { createHmac, randomBytes } from "node:crypto";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import Fastify, { type FastifyInstance } from "fastify";
 
-// Datenbankname je Testprozess eindeutig — ein hängender Vorläufer-Prozess
-// (Windows-Dateisperre) kann so nie in einen frischen Lauf hineinfunken.
-const DB_DATEI = `prisma/test-authz-${process.pid}.db`;
-process.env.DATABASE_URL = `file:./${DB_DATEI}`;
+// Datenbankname je Lauf eindeutig (Zufall statt Prozess-ID: Windows vergibt PIDs
+// schnell neu, dann traf db push auf eine gefüllte Alt-Datei und die ganze Suite
+// wurde still übersprungen — Nach-Audit D-01). Prisma löst "file:./…" relativ zum
+// Schema-Ordner prisma/ auf, deshalb zeigt DB_DATEI genau dorthin.
+const LAUF_ID = randomBytes(4).toString("hex");
+const DB_DATEI = `prisma/test-authz-${LAUF_ID}.db`;
+process.env.DATABASE_URL = `file:./test-authz-${LAUF_ID}.db`;
+// Eigene Upload-Ablage je Lauf, damit die Foto-Tests nichts im Projekt hinterlassen.
+const UPLOADS_TEST = join(tmpdir(), `authz-uploads-${LAUF_ID}`);
+process.env.UPLOADS_DIR = UPLOADS_TEST;
 process.env.SESSION_SECRET = "test-session-geheimnis-mindestens-16-zeichen";
 process.env.ADMIN_EMAIL = "admin@test.de";
 process.env.FEATURE_SELBSTREGISTRIERUNG = "true";
@@ -118,6 +126,7 @@ afterAll(async () => {
   for (const endung of ["", "-wal", "-shm"]) {
     rmSync(`${DB_DATEI}${endung}`, { force: true });
   }
+  rmSync(UPLOADS_TEST, { recursive: true, force: true });
 });
 
 describe("Zugangs-Schleuse am Editor", () => {
@@ -193,6 +202,58 @@ describe("Zugangs-Schleuse am Editor", () => {
     expect(mail.statusCode).toBe(403);
     const mailEinst = await app.inject({ method: "PUT", url: `/api/a/${TOK_TEST}/mail-einstellung`, payload: { email: "boese@evil.tld" } });
     expect(mailEinst.statusCode).toBe(403);
+  });
+});
+
+describe("Belegfotos und Löschen (Nach-Audit F-01/F-13)", () => {
+  const TOK_L = "tok-dok-loeschen-000000001";
+  let fotoA = "";
+  let fotoB = "";
+  let dateiL = "";
+  let dokLId = "";
+
+  beforeAll(async () => {
+    const { speichereFoto } = await import("../betrieb/fotoAblage.js");
+    const a = await prisma.handwerker.findUniqueOrThrow({ where: { whatsappNummer: NUMMER_A } });
+    const b = await prisma.handwerker.findUniqueOrThrow({ where: { whatsappNummer: NUMMER_B } });
+    const dokA = await prisma.dokument.findUniqueOrThrow({ where: { bearbeitenToken: TOK_A } });
+    const dokB = await prisma.dokument.findUniqueOrThrow({ where: { bearbeitenToken: TOK_B } });
+    const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(200, 1)]);
+    const foto = async (hwId: string, dokId: string, vorgangId: string) => {
+      const datei = speichereFoto({ handwerkerId: hwId, vorgangId, wandNr: 1, daten: jpeg, mimeType: "image/jpeg" });
+      const zeile = await prisma.foto.create({
+        data: { handwerkerId: hwId, dokumentId: dokId, wandNr: 1, datei, mimeType: "image/jpeg", groesse: jpeg.length, erkennungJson: "{}" },
+      });
+      return { id: zeile.id as string, datei };
+    };
+    fotoA = (await foto(a.id, dokA.id, "vg-a")).id;
+    fotoB = (await foto(b.id, dokB.id, "vg-b")).id;
+    const dokL = await dokument(a.id, TOK_L);
+    dokLId = dokL.id;
+    dateiL = (await foto(a.id, dokL.id, "vg-l")).datei;
+  });
+
+  it("Foto-Route: ohne vertrautes Gerät gesperrt, eigenes Foto 200, fremdes Foto 404 (auch mit gültigem Token)", async () => {
+    const zu = await app.inject({ method: "GET", url: `/api/a/${TOK_A}/foto/${fotoA}` });
+    expect(zu.statusCode).toBe(403);
+    const eigen = await app.inject({ method: "GET", url: `/api/a/${TOK_A}/foto/${fotoA}`, headers: { cookie: cookieA } });
+    expect(eigen.statusCode).toBe(200);
+    expect(eigen.headers["content-type"]).toContain("image/jpeg");
+    // MANDANTENTRENNUNG: Token A + Cookie A + Foto-ID von B → nichts
+    const fremd = await app.inject({ method: "GET", url: `/api/a/${TOK_A}/foto/${fotoB}`, headers: { cookie: cookieA } });
+    expect(fremd.statusCode).toBe(404);
+  });
+
+  it("Angebot löschen entfernt Foto-Zeilen UND Dateien (keine Kundenfotos als Waisen)", async () => {
+    const { uploadPfad } = await import("../betrieb/ablage.js");
+    expect(existsSync(uploadPfad(dateiL))).toBe(true);
+    const res = await app.inject({ method: "POST", url: `/api/a/${TOK_L}/loeschen`, headers: { cookie: cookieA } });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ ok: true, fotosGeloescht: 1 });
+    expect(await prisma.foto.count({ where: { dokumentId: dokLId } })).toBe(0);
+    expect(existsSync(uploadPfad(dateiL))).toBe(false);
+    // Das Foto des anderen Dokuments von A ist unberührt.
+    expect(await prisma.foto.count({ where: { id: fotoA } })).toBe(1);
   });
 });
 

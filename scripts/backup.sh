@@ -22,6 +22,7 @@
 set -euo pipefail
 
 APP=/home/auftragsboss/app
+DATEN=/home/auftragsboss/daten     # seit 10.09.2026: Datenbank + uploads AUSSERHALB des App-Ordners (Nach-Audit S-01)
 DEST=/root/backups
 STAMP=$(date +%Y-%m-%d_%H%M)
 
@@ -33,13 +34,18 @@ OFFSITE_TAGE=30
 PASSDATEI=/root/backup-passphrase.txt
 HEARTBEAT=/root/heartbeat-url.txt    # optional: eine Zeile mit der Ping-URL
 
-mkdir -p "$DEST" "$APP/uploads"
+mkdir -p "$DEST" "$DATEN/uploads"
 chmod 700 "$DEST"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-# 1) Konsistente Momentaufnahme der Datenbank (kein Stopp der App nötig).
-sqlite3 "$APP/prisma/dev.db" ".backup '$TMP/dev.db'"
+# 1) Konsistente Momentaufnahme der Datenbank (kein Stopp der App nötig) —
+#    und die Kopie muss integer sein, sonst ist das Backup wertlos (Nach-Audit S-04).
+sqlite3 "$DATEN/dev.db" ".backup '$TMP/dev.db'"
+if [ "$(sqlite3 "$TMP/dev.db" 'PRAGMA integrity_check;' 2>&1 | head -1)" != "ok" ]; then
+  echo "$(date '+%F %T')  FEHLER: Datenbank-Kopie nicht integer — kein Backup geschrieben."
+  exit 1
+fi
 
 # 1b) Konfiguration einsammeln — alles, was ein Wiederaufbau braucht.
 mkdir -p "$TMP/konfig"
@@ -52,7 +58,7 @@ chmod -R go-rwx "$TMP/konfig"
 
 # 2) Alles in EIN Archiv (lokal; enthält Geheimnisse → nur root lesbar).
 ARCHIV="$DEST/auftragsboss_$STAMP.tar.gz"
-tar -czf "$ARCHIV" -C "$TMP" dev.db konfig -C "$APP" uploads
+tar -czf "$ARCHIV" -C "$TMP" dev.db konfig -C "$DATEN" uploads
 chmod 600 "$ARCHIV"
 
 # Lokale Backups älter als 14 Tage entfernen.

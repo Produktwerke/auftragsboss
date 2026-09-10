@@ -12,7 +12,7 @@ import { berechneAngebot } from "../angebot/berechnung.js";
 import { erzeugeAngebotWord, wordDateiname } from "../angebot/word.js";
 import { erzeugeAngebotPdf } from "../angebot/pdf.js";
 import { fotoBeschreibung, ladeAufmassAnlage } from "../angebot/aufmassblatt.js";
-import { liesFoto } from "../betrieb/fotoAblage.js";
+import { liesFoto, loescheFotoDatei } from "../betrieb/fotoAblage.js";
 import { editorSeite } from "./editorSeite.js";
 import { einstellungenSeite, type DokUebersicht } from "./einstellungenSeite.js";
 import { cockpitSeite } from "./cockpitSeite.js";
@@ -394,10 +394,20 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     if (!hatGeraetevertrauen(req, dokument.handwerkerId)) {
       return reply.code(401).send({ fehler: "Bitte zuerst den Zugang bestätigen." });
     }
+    // Belegfotos (Kundeninnenräume!) mit löschen: Zeilen UND Dateien, auch die
+    // Fotos des zugehörigen Vorgangs, die (noch) an keinem Dokument hängen.
+    // Nach-Audit 10.09. (F-01): vorher blieben sie als Waisen auf der Platte und im Backup.
+    const vorgaenge = await prisma.vorgang.findMany({ where: { dokumentId: dokument.id }, select: { id: true } });
+    const fotos = await prisma.foto.findMany({
+      where: { handwerkerId: dokument.handwerkerId, OR: [{ dokumentId: dokument.id }, { vorgangId: { in: vorgaenge.map((v) => v.id) } }] },
+      select: { id: true, datei: true },
+    });
+    for (const f of fotos) loescheFotoDatei(f.datei);
+    await prisma.foto.deleteMany({ where: { id: { in: fotos.map((f) => f.id) } } });
     // Abhängige Datensätze zuerst entfernen (FK), dann das Dokument.
     await prisma.gewaehrleistung.deleteMany({ where: { dokumentId: dokument.id } });
     await prisma.dokument.delete({ where: { id: dokument.id } });
-    return reply.send({ ok: true });
+    return reply.send({ ok: true, fotosGeloescht: fotos.length });
   });
 
   // ── PLZ-Nachschlag (OpenPLZ, EU/DE) ───────────────────

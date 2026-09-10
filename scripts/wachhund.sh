@@ -49,8 +49,8 @@ fi
 # 4) Datenbank-Integrität (seit 07.09.2026: fremde WAL-Dateien aus einem Deploy hatten die
 #    Live-DB korrumpiert; /health blieb grün, entdeckt erst 14 h später über das fehlende Backup).
 #    quick_check liest nur; im WAL-Modus gefahrlos parallel zur laufenden App.
-db_ergebnis=$(sqlite3 -readonly /home/auftragsboss/app/prisma/dev.db 'PRAGMA quick_check;' 2>&1 | head -1)
+db_ergebnis=$(sqlite3 -readonly /home/auftragsboss/daten/dev.db 'PRAGMA quick_check;' 2>&1 | head -1)
 if [ "$db_ergebnis" != "ok" ]; then
-  melde db "ALARM AuftragsBoss: Datenbank-Prüfung fehlgeschlagen"     "PRAGMA quick_check auf /home/auftragsboss/app/prisma/dev.db liefert: $db_ergebnis
+  melde db "ALARM AuftragsBoss: Datenbank-Prüfung fehlgeschlagen"     "PRAGMA quick_check auf /home/auftragsboss/daten/dev.db liefert: $db_ergebnis
 Prüfen: su - auftragsboss -c 'pm2 logs auftragsboss --err --lines 50'. Ursache 07.09.2026 waren fremde dev.db-wal/-shm aus einem Deploy-Paket (siehe CLAUDE.md, Vorfall 07.09.). Nicht blind weiter deployen; erst Backup-Stand prüfen (/root/backups)."
 fi

@@ -6,9 +6,10 @@
 // und legen die Datei unter uploads/ ab. Zurück kommt der Pfad, der in
 // Handwerker.logoDatei gespeichert wird (ladeLogo() findet ihn dort wieder).
 import { mkdirSync, writeFileSync, existsSync, readdirSync, unlinkSync } from "node:fs";
-import { resolve, join } from "node:path";
+import { join } from "node:path";
+import { UPLOADS_DIR } from "./ablage.js";
 
-const UPLOAD_DIR = resolve("uploads");
+const UPLOAD_DIR = UPLOADS_DIR;
 const MAX_BYTES = 3 * 1024 * 1024; // 3 MB — reicht für ein Logo mit Reserve
 
 const ENDUNG_JE_MIME: Record<string, string> = {

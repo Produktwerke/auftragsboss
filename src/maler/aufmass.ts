@@ -76,6 +76,12 @@ export interface RaumAufmass {
    *  kein Rechteck ist (dann fehlt die Grundfläche). */
   deckeM2: number | null;
   oeffnungen: OeffnungBewertet[];
+  /** Eingangsmaße als Text ("3,84 × 3,99 m" oder "Wände 4,5 + 2 + … m"), damit der Handwerker Hörfehler sieht. */
+  masseText: string;
+  /** Öffnungen, die NICHT berücksichtigt wurden (unplausibel, größer als die Wand), je mit Grund. */
+  verworfen: string[];
+  /** Warnungen bei ungewöhnlichen Maßen (Hörfehler-Verdacht), z.B. Wand über 15 m. */
+  warnungen: string[];
   /** Ein Satz je Raum für Aufmaßnotizen und Zusammenfassung. */
   erklaerung: string;
 }
@@ -111,6 +117,12 @@ export function berechneRaum(raum: RaumMasse): RaumAufmass | { grund: string } {
   if (raum.paneelHoeheM != null && paneelHoeheM === null) return { grund: "Paneelhöhe unplausibel" };
   const streichHoeheM = rund2(raum.hoeheM - (paneelHoeheM ?? 0));
   const laibungTiefeM = istMass(raum.laibungTiefeM, 0.03, 1.0) ? raum.laibungTiefeM : null;
+  // Warnungen bei Maßen, die fast immer ein Hörfehler sind (Nach-Audit E-03):
+  // „4,49" → „44,9" ergäbe still das Fünffache der Fläche.
+  const warnungen: string[] = [];
+  const maxWandM = Math.max(...laengen);
+  if (maxWandM > 15) warnungen.push(`Wandlänge ${masz(maxWandM)} m ist ungewöhnlich groß, bitte prüfen (Hörfehler?)`);
+  if (raum.hoeheM > 4) warnungen.push(`Raumhöhe ${masz(raum.hoeheM)} m ist ungewöhnlich groß, bitte prüfen`);
 
   // Eigene Wandhöhen (Kniestock unter der Dachschräge, Giebel als mittlere Höhe).
   const hoehen = (raum.wandHoehenM ?? []).slice(0, laengen.length);
@@ -128,33 +140,52 @@ export function berechneRaum(raum: RaumMasse): RaumAufmass | { grund: string } {
     : laengen.reduce((s, l, i) => s + l * streichHoeheJeWand(i), 0);
   const schraegenM2 = rund2(schraegen.reduce((s, x) => s + x.laengeM * x.schraegeM, 0));
   const wandBruttoM2 = rund2(wandFlaecheM2 + schraegenM2);
+  if (wandBruttoM2 > 150) warnungen.push(`Wandfläche ${zahl(wandBruttoM2)} m² ist ungewöhnlich groß für einen Raum, bitte Maße prüfen`);
 
-  const oeffnungen: OeffnungBewertet[] = (raum.oeffnungen ?? [])
-    .filter((o) => istMass(o.breiteM, 0.1, 10) && istMass(o.hoeheM, 0.1, 10))
-    .map((o) => {
-      const flaecheM2 = rund2(o.breiteM * o.hoeheM);
-      // Anteil in der gestrichenen Zone: Türen ragen von unten in die Paneele,
-      // Fenster sitzen erfahrungsgemäß darüber (höchstens so hoch wie die Zone).
-      const wirksameHoehe = paneelHoeheM
-        ? stehtAufBoden(o.art)
-          ? Math.max(0, o.hoeheM - paneelHoeheM)
-          : Math.min(o.hoeheM, streichHoeheM)
-        : o.hoeheM;
-      const wirksamM2 = rund2(o.breiteM * wirksameHoehe);
-      const abgezogen = wirksamM2 > VOB_ABZUGSGRENZE_M2;
-      const laibungM2 =
-        abgezogen && laibungTiefeM
-          ? rund2((2 * wirksameHoehe + (stehtAufBoden(o.art) ? 0 : o.breiteM)) * laibungTiefeM)
-          : 0;
-      return {
-        ...o,
-        flaecheM2,
-        wirksamM2,
-        abgezogen,
-        grauzone: wirksamM2 >= GRAUZONE_M2[0] && wirksamM2 <= GRAUZONE_M2[1],
-        laibungM2,
-      };
+  // Öffnungen prüfen. Unplausible werden NICHT still verworfen (Nach-Audit E-02):
+  // ein Hörfehler „17,0 x 2,20" statt „1,70 x 2,20" ließe sonst den Abzug wegfallen,
+  // die Fläche wäre zu groß und der Handwerker sähe nichts davon.
+  const verworfen: string[] = [];
+  const roh = (x: unknown) => (typeof x === "number" && Number.isFinite(x) ? masz(x) : "?");
+  const oeffnungen: OeffnungBewertet[] = [];
+  for (const o of raum.oeffnungen ?? []) {
+    const name = `${(o.art ?? "Öffnung").toString().trim() || "Öffnung"} ${roh(o.breiteM)} × ${roh(o.hoeheM)} m`;
+    if (!istMass(o.breiteM, 0.1, 10) || !istMass(o.hoeheM, 0.1, 10)) {
+      verworfen.push(`${name}: Maß unplausibel`);
+      continue;
+    }
+    if (o.hoeheM > raum.hoeheM + 0.005) {
+      verworfen.push(`${name}: höher als der Raum (${masz(raum.hoeheM)} m)`);
+      continue;
+    }
+    if (o.breiteM > maxWandM + 0.005) {
+      verworfen.push(`${name}: breiter als die längste Wand (${masz(maxWandM)} m)`);
+      continue;
+    }
+    const flaecheM2 = rund2(o.breiteM * o.hoeheM);
+    // Anteil in der gestrichenen Zone: Türen ragen von unten in die Paneele,
+    // Fenster sitzen erfahrungsgemäß darüber (höchstens so hoch wie die Zone).
+    const wirksameHoehe = paneelHoeheM
+      ? stehtAufBoden(o.art)
+        ? Math.max(0, o.hoeheM - paneelHoeheM)
+        : Math.min(o.hoeheM, streichHoeheM)
+      : o.hoeheM;
+    const wirksamM2 = rund2(o.breiteM * wirksameHoehe);
+    const abgezogen = wirksamM2 > VOB_ABZUGSGRENZE_M2;
+    const laibungM2 =
+      abgezogen && laibungTiefeM
+        ? rund2((2 * wirksameHoehe + (stehtAufBoden(o.art) ? 0 : o.breiteM)) * laibungTiefeM)
+        : 0;
+    oeffnungen.push({
+      ...o,
+      flaecheM2,
+      wirksamM2,
+      abgezogen,
+      grauzone: wirksamM2 >= GRAUZONE_M2[0] && wirksamM2 <= GRAUZONE_M2[1],
+      laibungM2,
     });
+  }
+
 
   const abzugM2 = rund2(oeffnungen.filter((o) => o.abgezogen).reduce((s, o) => s + o.wirksamM2, 0));
   const laibungM2 = rund2(oeffnungen.reduce((s, o) => s + o.laibungM2, 0));
@@ -196,7 +227,8 @@ export function berechneRaum(raum: RaumMasse): RaumAufmass | { grund: string } {
           .join("; ")})`,
       );
     }
-    if (oeffnungen.length === 0) teile.push("keine Öffnungen erfasst");
+    if (oeffnungen.length === 0 && verworfen.length === 0) teile.push("keine Öffnungen erfasst");
+    if (verworfen.length) teile.push(`NICHT berücksichtigt: ${verworfen.join("; ")}`);
     if (laibungM2 > 0) teile.push(`Laibungen ${zahl(laibungM2)} m² (Tiefe ${masz(laibungTiefeM!)} m) hinzugerechnet`);
     else if (abgezogen.length && !laibungTiefeM) teile.push("Laibungen der abgezogenen Öffnungen nicht enthalten (Tiefe nicht genannt)");
     teile.push(`Wandfläche netto ${zahl(wandNettoM2)} m²`);
@@ -223,6 +255,9 @@ export function berechneRaum(raum: RaumMasse): RaumAufmass | { grund: string } {
     wandNettoM2,
     deckeM2,
     oeffnungen,
+    masseText: masse,
+    verworfen,
+    warnungen,
     erklaerung: `${teile[0]}: ${teile.slice(1).join("; ")}.`,
   };
 }
@@ -246,6 +281,10 @@ export function berechneAufmass(raeume: RaumMasse[]): AufmassErgebnis {
         );
       }
     }
+    for (const v of a.verworfen) {
+      ergebnis.rueckfragen.push(`${a.name}: ${v}. Diese Öffnung wurde NICHT abgezogen, bitte das Maß prüfen.`);
+    }
+    for (const w of a.warnungen) ergebnis.rueckfragen.push(`${a.name}: ${w}.`);
     if (a.oeffnungen.some((o) => o.abgezogen) && a.laibungM2 === 0) {
       ergebnis.rueckfragen.push(
         `${a.name}: Sollen die Laibungen der abgezogenen Öffnungen mitgestrichen werden? Dann nenne die Laibungstiefe (z.B. „Laibungen 25 cm“).`,
@@ -309,15 +348,20 @@ export function aufmassText(aufmass: AufmassErgebnis): string {
 
 /** Kurzfassung für die WhatsApp-Zusammenfassung, eine Zeile je Raum. */
 export function aufmassKurz(aufmass: AufmassErgebnis): string[] {
-  return aufmass.raeume.map((r) => {
+  const zeilen: string[] = [];
+  for (const r of aufmass.raeume) {
     const teile: string[] = [];
     teile.push(`Wände ${zahl(r.wandNettoM2)} m²${r.paneelHoeheM ? ` (nur oberhalb der Paneele ab ${masz(r.paneelHoeheM)} m)` : ""}`);
     if (r.schraegenM2 > 0) teile.push(`(davon ${zahl(r.schraegenM2)} m² Dachschrägen)`);
     if (r.abzugM2 > 0) teile.push(`(${zahl(r.abzugM2)} m² Öffnungen abgezogen)`);
     if (r.laibungM2 > 0) teile.push(`(${zahl(r.laibungM2)} m² Laibungen dazu)`);
     if (r.deckeM2 !== null) teile.push(`Decke ${zahl(r.deckeM2)} m²`);
-    return `${r.name}: ${teile.join(", ")}`;
-  });
+    // Eingangsmaße stehen mit dabei, damit ein Hörfehler (4,49 → 44,9) sofort auffällt.
+    zeilen.push(`${r.name} (${r.masseText}, Höhe ${masz(r.hoeheM)} m): ${teile.join(", ")}`);
+    for (const v of r.verworfen) zeilen.push(`⚠️ ${r.name}: ${v}, nicht abgezogen`);
+    for (const w of r.warnungen) zeilen.push(`⚠️ ${r.name}: ${w}`);
+  }
+  return zeilen;
 }
 
 // ── Parser für die Raumzeilen der KI ───────────────────────────────────
@@ -373,8 +417,10 @@ function oeffnungenAus(text: string): Oeffnung[] {
   const t = text.trim();
   if (!t || /^(keine|none|-|null)$/i.test(t)) return [];
   const ergebnis: Oeffnung[] = [];
-  // Ein Eintrag = beliebiger Name + Breite (x|×|mal|*) Höhe; Trenner zwischen Einträgen: Komma oder Semikolon
-  const muster = /([^\d,;]+?)\s*(\d+(?:[.,]\d+)?)\s*(?:x|×|\*|mal)\s*(\d+(?:[.,]\d+)?)/gi;
+  // Ein Eintrag = beliebiger Name + Breite (x|×|mal|*) Höhe; Trenner zwischen Einträgen: Komma oder Semikolon.
+  // Der Name beginnt mit einem Nicht-Leerzeichen (sonst frisst der Name-Teil lange Leerzeichenläufe
+  // und die Suche wird kubisch, Nach-Audit E-01); Whitespace ist vorher auf ein Zeichen verdichtet.
+  const muster = /([^\d,;\s][^\d,;]*?)\s*(\d+(?:[.,]\d+)?)\s*(?:x|×|\*|mal)\s*(\d+(?:[.,]\d+)?)/gi;
   let m: RegExpExecArray | null;
   while ((m = muster.exec(t)) !== null) {
     const breiteM = dezimal(m[2]!), hoeheM = dezimal(m[3]!);
@@ -389,13 +435,16 @@ function oeffnungenAus(text: string): Oeffnung[] {
 export function parseRaeumeText(text: string | null | undefined): RaumMasse[] {
   if (!text?.trim()) return [];
   const raeume: RaumMasse[] = [];
-  for (const zeile of text.split(/\r?\n/)) {
-    if (!zeile.trim()) continue;
+  // Längen kappen und Whitespace verdichten: Die Zeile stammt von der KI und ist nicht
+  // begrenzt; der Öffnungs-Parser darf sich an ihr nicht festfressen (Nach-Audit E-01).
+  for (const roh of text.slice(0, 20_000).split(/\r?\n/)) {
+    const zeile = roh.replace(/\s+/g, " ").trim().slice(0, 3000);
+    if (!zeile) continue;
     const felder = new Map<string, string>();
     for (const teil of zeile.split(";")) {
       const i = teil.indexOf(":");
       if (i < 0) continue;
-      felder.set(teil.slice(0, i).trim().toLowerCase(), teil.slice(i + 1).trim());
+      felder.set(teil.slice(0, i).trim().toLowerCase(), teil.slice(i + 1).trim().slice(0, 500));
     }
     const name = felder.get("raum") ?? "";
     if (!name) continue;

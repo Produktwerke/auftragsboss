@@ -12,6 +12,7 @@ import { stripeWebhookRoutes } from "./web/stripeWebhook.js";
 import { aboRoutes } from "./web/aboRoutes.js";
 import { starteGewaehrleistungsJob } from "./jobs/warrantyReminders.js";
 import { starteVorgangTimeoutJob } from "./jobs/vorgangTimeout.js";
+import { prisma } from "./pipeline.js";
 
 // Tokens sind bei AuftragsBoss die Authentifizierung ("kein Passwort") —
 // sie dürfen deshalb NICHT im Klartext in den Logs stehen (Audit AB-H05).
@@ -53,8 +54,28 @@ await app.register(rateLimit, {
   }),
 });
 
-// Health-Check (für Hosting/Uptime-Monitoring)
-app.get("/health", async () => ({ status: "ok", service: "voiceprotokoll-guard" }));
+// Health-Check (für Hosting/Uptime-Monitoring) MIT Datenbankprobe.
+// Nach-Audit 10.09. (S-02): Am 07.09. war die Datenbank 14 Stunden kaputt,
+// während dieser Endpunkt „ok" meldete — UptimeRobot und Wachhund waren blind.
+// Jetzt: jede Anfrage macht eine echte Abfrage; alle 10 Minuten zusätzlich ein
+// gecachter PRAGMA quick_check (liest die ganze Datei, deshalb nicht pro Aufruf).
+let letzterQuickCheck = { zeit: 0, ok: true, text: "" };
+app.get("/health", async (_req, reply) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    if (Date.now() - letzterQuickCheck.zeit > 10 * 60 * 1000) {
+      const zeilen = await prisma.$queryRawUnsafe<{ quick_check: string }[]>("PRAGMA quick_check");
+      const text = zeilen[0]?.quick_check ?? "keine Antwort";
+      letzterQuickCheck = { zeit: Date.now(), ok: text === "ok", text };
+    }
+  } catch (err) {
+    letzterQuickCheck = { zeit: Date.now(), ok: false, text: err instanceof Error ? err.message.slice(0, 120) : String(err) };
+  }
+  if (!letzterQuickCheck.ok) {
+    return reply.code(503).send({ status: "db-fehler", service: "voiceprotokoll-guard", db: letzterQuickCheck.text });
+  }
+  return { status: "ok", service: "voiceprotokoll-guard", db: "ok" };
+});
 
 await app.register(whatsappRoutes);
 await app.register(editorRoutes);

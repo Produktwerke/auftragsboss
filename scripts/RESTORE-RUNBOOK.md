@@ -35,9 +35,9 @@ ssh root@87.106.165.151
 ls -t /root/backups/          # neuestes Archiv wählen
 cd $(mktemp -d) && tar xzf /root/backups/auftragsboss_JJJJ-MM-TT_HHMM.tar.gz
 su - auftragsboss -c 'pm2 stop auftragsboss'
-cp dev.db /home/auftragsboss/app/prisma/dev.db
-cp -r uploads/* /home/auftragsboss/app/uploads/ 2>/dev/null || true
-chown -R auftragsboss:auftragsboss /home/auftragsboss/app
+cp dev.db /home/auftragsboss/daten/dev.db
+cp -r uploads/* /home/auftragsboss/daten/uploads/ 2>/dev/null || true
+chown -R auftragsboss:auftragsboss /home/auftragsboss/app /home/auftragsboss/daten
 su - auftragsboss -c 'pm2 start auftragsboss'
 curl -s http://127.0.0.1:3000/health   # muss {"status":"ok"} liefern
 ```
@@ -69,9 +69,9 @@ curl -s http://127.0.0.1:3000/health   # muss {"status":"ok"} liefern
 6. **Konfiguration zurückspielen:**
    ```bash
    cp /root/wieder/konfig/app.env /home/auftragsboss/app/.env && chmod 600 /home/auftragsboss/app/.env
-   cp /root/wieder/dev.db /home/auftragsboss/app/prisma/dev.db
-   cp -r /root/wieder/uploads /home/auftragsboss/app/
-   chown -R auftragsboss:auftragsboss /home/auftragsboss/app
+   cp /root/wieder/dev.db /home/auftragsboss/daten/dev.db
+   cp -r /root/wieder/uploads /home/auftragsboss/daten/
+   chown -R auftragsboss:auftragsboss /home/auftragsboss/app /home/auftragsboss/daten
    cp /root/wieder/konfig/Caddyfile /etc/caddy/Caddyfile && systemctl reload caddy
    cp /root/wieder/konfig/00-hardening.conf /etc/ssh/sshd_config.d/ && systemctl restart ssh
    # Cron-Einträge aus konfig/crontab-root.txt per crontab -e nachtragen,

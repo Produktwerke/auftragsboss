@@ -2,28 +2,15 @@
 // Aufruf (auf dem Server):  npx tsx src/env-check.ts   (liest ./.env)
 //                     oder:  npx tsx src/env-check.ts /pfad/zur/.env
 import { readFileSync } from "node:fs";
+import { bekannteSchluessel } from "./config.js";
 
-// Alle gültigen Schlüssel (Stand config.ts) — alles andere ist vermutlich Tippfehler.
-const BEKANNT = new Set([
-  "PORT", "HOST", "BASE_URL", "ADMIN_TOKEN", "DATABASE_URL",
-  "ANTHROPIC_API_KEY", "OPENAI_API_KEY",
-  "WHATSAPP_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID", "WHATSAPP_VERIFY_TOKEN",
-  "GRAPH_API_VERSION", "WHATSAPP_APP_SECRET",
-  "DIREKTTEST_AKTIV", "DIREKTTEST_GRATIS_ANGEBOTE", "DIREKTTEST_MAX_NACHRICHTEN",
-  "DIREKTTEST_MAX_PRO_TAG", "DIREKTTEST_MIN_ABSTAND_SEKUNDEN",
-  "FEATURE_VALIDATOR", "FEATURE_PREISGEDAECHTNIS", "FEATURE_MALER_SCOPE",
-  "FEATURE_ZUSAMMENFASSUNG", "FEATURE_IMPORT", "FEATURE_BETRIEBSPROFIL", "FEATURE_LERNEN",
-  "HISTORICAL_PRICE_BEHAVIOR",
-  "WEBTEST_AKTIV", "WEBTEST_MAX_PRO_IP", "WEBTEST_MAX_PRO_TAG", "WEBTEST_MAX_PRO_MONAT",
-  "WEBTEST_MIN_ABSTAND_SEKUNDEN", "WEBTEST_MAX_AUDIO_MB",
-  "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "SMTP_FROM",
-  "SESSION_SECRET", "ADMIN_EMAIL", "ADMIN_PASSWORT_HASH", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET",
-  "BETREIBER_HANDY", "BETREIBER_VORLAGE_NEUER_KUNDE", "FEATURE_SELBSTREGISTRIERUNG", "FEATURE_PLZ_LOOKUP",
-  "DIREKTTEST_TAGE", "LEAD_VORLAGE", "TEAM_MAIL", "UPLOADS_DIR",
-]);
+// Gültige Schlüssel kommen aus den Schemata in config.ts (D-05): neue Werte
+// dort anlegen, hier nichts mehr nachpflegen. Alles andere ist vermutlich Tippfehler.
+const BEKANNT = bekannteSchluessel();
 const PFLICHT = [
   "DATABASE_URL", "ANTHROPIC_API_KEY", "OPENAI_API_KEY",
   "WHATSAPP_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID", "WHATSAPP_VERIFY_TOKEN", "WHATSAPP_APP_SECRET",
+  "SESSION_SECRET",
 ];
 const SMTP = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "SMTP_FROM"];
 
@@ -60,6 +47,8 @@ if (wert.WHATSAPP_PHONE_NUMBER_ID && !/^\d{5,}$/.test(wert.WHATSAPP_PHONE_NUMBER
   probleme.push("WHATSAPP_PHONE_NUMBER_ID sollte die lange Zahl (Phone-Number-ID) sein, nicht die Telefonnummer.");
 if (wert.WHATSAPP_VERIFY_TOKEN && wert.WHATSAPP_VERIFY_TOKEN.length < 8)
   probleme.push("WHATSAPP_VERIFY_TOKEN ist recht kurz (min. 8 Zeichen empfohlen).");
+for (const k of ["WHATSAPP_APP_SECRET", "SESSION_SECRET"])
+  if (wert[k] && wert[k].length < 16) probleme.push(`${k} ist kürzer als 16 Zeichen — der Server startet damit nicht (Boot-Gate).`);
 if (wert.GRAPH_API_VERSION && !/^v\d+\.\d+$/.test(wert.GRAPH_API_VERSION))
   probleme.push("GRAPH_API_VERSION sollte im Format vXX.0 sein (z.B. v23.0).");
 const smtpGesetzt = SMTP.filter((k) => wert[k]);

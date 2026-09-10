@@ -6,22 +6,77 @@
 import "./env.js";
 import { z } from "zod";
 
-function lade<T extends z.ZodType>(name: string, schema: T): () => z.infer<T> {
+/** Fehlende oder ungültige Zugangsdaten. Wird GEWORFEN, nicht mit process.exit
+ *  beantwortet (Nach-Audit 10.09., D-04): Ein fehlender SMTP-Wert soll eine
+ *  einzelne Anfrage scheitern lassen, nicht den laufenden Server mitreißen.
+ *  Nur der Startpfad (pruefeStartKonfiguration in server.ts) beendet den Prozess. */
+export class KonfigFehler extends Error {
+  constructor(
+    readonly bereich: string,
+    readonly punkte: string[],
+  ) {
+    super(`Fehlende oder ungültige Zugangsdaten für: ${bereich}\n${punkte.map((p) => `   • ${p}`).join("\n")}\n→ Trage die Werte in die Datei .env ein (Vorlage: .env.example).`);
+    this.name = "KonfigFehler";
+  }
+}
+
+// Alle Bereiche merken, damit env-check.ts die gültigen Schlüssel aus den
+// Schemata ableiten kann statt aus einer handgepflegten Liste (D-05).
+const BEREICHE: Array<{ name: string; schema: z.ZodObject<z.ZodRawShape> }> = [];
+
+function lade<T extends z.ZodObject<z.ZodRawShape>>(name: string, schema: T): () => z.infer<T> {
+  BEREICHE.push({ name, schema });
   let cache: z.infer<T> | undefined;
   return () => {
     if (cache) return cache;
     const parsed = schema.safeParse(process.env);
     if (!parsed.success) {
-      console.error(`\n❌ Fehlende oder ungültige Zugangsdaten für: ${name}\n`);
-      for (const issue of parsed.error.issues) {
-        console.error(`   • ${issue.path.join(".")}: ${issue.message}`);
-      }
-      console.error(`\n→ Trage die Werte in die Datei .env ein (Vorlage: .env.example).\n`);
-      process.exit(1);
+      throw new KonfigFehler(
+        name,
+        parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`),
+      );
     }
     cache = parsed.data;
     return cache;
   };
+}
+
+// Schlüssel, die nicht über ein Schema laufen, sondern direkt gelesen werden
+// (Signaturen, Cookies, Admin-Zugang, Pfade). Mit aufgeführt, damit env-check
+// sie nicht als Tippfehler meldet.
+export const DIREKT_GELESENE_SCHLUESSEL = [
+  "DATABASE_URL", "BASE_URL", "ADMIN_TOKEN", "ADMIN_EMAIL", "ADMIN_PASSWORT_HASH",
+  "SESSION_SECRET", "WHATSAPP_APP_SECRET", "LEAD_VORLAGE", "TEAM_MAIL", "UPLOADS_DIR",
+] as const;
+
+/** Alle gültigen .env-Schlüssel: aus den Schemata abgeleitet plus die direkt gelesenen. */
+export function bekannteSchluessel(): Set<string> {
+  const menge = new Set<string>(DIREKT_GELESENE_SCHLUESSEL);
+  for (const b of BEREICHE) for (const k of Object.keys(b.schema.shape)) menge.add(k);
+  return menge;
+}
+
+/**
+ * Boot-Gate (D-04): prüft beim Serverstart ALLE Bereiche, ohne die der Betrieb
+ * nicht laufen kann, plus die direkt gelesenen Geheimnisse. Liefert die Liste
+ * der Probleme; leer = start frei. Optionale Bereiche (SMTP, Stripe, Betreiber)
+ * bleiben lazy, damit ein Testsystem ohne sie läuft.
+ */
+export function pruefeStartKonfiguration(): string[] {
+  const probleme: string[] = [];
+  for (const bereich of [serverConfig, openaiConfig, anthropicConfig, whatsappConfig, featureConfig, direkttestConfig, webtestConfig]) {
+    try {
+      bereich();
+    } catch (err) {
+      probleme.push(err instanceof KonfigFehler ? `${err.bereich}: ${err.punkte.join("; ")}` : String(err));
+    }
+  }
+  const appSecret = process.env.WHATSAPP_APP_SECRET?.trim() ?? "";
+  if (appSecret.length < 16) probleme.push("WHATSAPP_APP_SECRET fehlt oder ist kürzer als 16 Zeichen (Webhook-Signaturprüfung).");
+  const session = process.env.SESSION_SECRET?.trim() ?? "";
+  if (session.length < 16) probleme.push("SESSION_SECRET fehlt oder ist kürzer als 16 Zeichen (Cookies überleben sonst keinen Neustart).");
+  if (!process.env.DATABASE_URL?.trim()) probleme.push("DATABASE_URL fehlt.");
+  return probleme;
 }
 
 export const serverConfig = lade(

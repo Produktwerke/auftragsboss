@@ -9,6 +9,13 @@
 // vermutlich ein Scan: wir markieren es als prüfbedürftig, statt es still als
 // sicher zu behandeln (Dokumentqualität nie überschätzen).
 import mammoth from "mammoth";
+import { pruefeDocxArchiv } from "./zipPruefung.js";
+
+// Grenzen (Nach-Audit 10.09., D-06): Ein Angebot hat selten mehr als ein paar
+// Seiten; alles darüber ist eher ein Katalog oder ein Angriff auf Speicher und
+// KI-Kosten. Der Text wird vor Parser und KI hart gekappt.
+export const PDF_MAX_SEITEN = 40;
+export const TEXT_MAX_ZEICHEN = 60_000;
 
 // Polyfill: das in unpdf gebündelte pdf.js nutzt Math.sumPrecise (sehr neuer
 // JS-Vorschlag), das Node 24 noch nicht kennt. Ohne Polyfill flutet es die Logs
@@ -61,6 +68,8 @@ export function erkenneFormat(dateiname: string, mimetype?: string): "docx" | "p
 
 /** Extrahiert reinen Text aus einer DOCX-Datei (mammoth, reines JS). */
 async function ausDocx(buffer: Buffer): Promise<ExtraktionsErgebnis> {
+  const archiv = pruefeDocxArchiv(buffer);
+  if (!archiv.ok) throw new ImportFormatFehler(archiv.grund);
   const { value } = await mammoth.extractRawText({ buffer });
   const text = value.trim();
   const leer = text.replace(/\s/g, "").length < 10;
@@ -79,6 +88,9 @@ async function ausPdf(buffer: Buffer): Promise<ExtraktionsErgebnis> {
   // Dynamischer Import: unpdf lädt seine WASM-Ressourcen erst bei Bedarf.
   const { extractText, getDocumentProxy } = await import("unpdf");
   const pdf = await getDocumentProxy(new Uint8Array(buffer));
+  if (pdf.numPages > PDF_MAX_SEITEN) {
+    throw new ImportFormatFehler(`Das PDF hat ${pdf.numPages} Seiten (max. ${PDF_MAX_SEITEN}). Bitte nur das Angebot hochladen.`);
+  }
   const { text, totalPages } = await extractText(pdf, { mergePages: true });
   const sauber = text.trim();
 
@@ -109,5 +121,17 @@ export async function extrahiereText(
   mimetype?: string,
 ): Promise<ExtraktionsErgebnis> {
   const format = erkenneFormat(dateiname, mimetype);
-  return format === "docx" ? ausDocx(buffer) : ausPdf(buffer);
+  return kappeText(await (format === "docx" ? ausDocx(buffer) : ausPdf(buffer)));
+}
+
+/** Kürzt überlangen Text vor Parser und KI und vermerkt das als Hinweis. */
+export function kappeText(ergebnis: ExtraktionsErgebnis): ExtraktionsErgebnis {
+  if (ergebnis.text.length <= TEXT_MAX_ZEICHEN) return ergebnis;
+  const hinweis = `Text nach ${TEXT_MAX_ZEICHEN.toLocaleString("de-DE")} Zeichen abgeschnitten — bitte prüfen, ob alle Positionen erfasst sind.`;
+  return {
+    ...ergebnis,
+    text: ergebnis.text.slice(0, TEXT_MAX_ZEICHEN),
+    manuellePruefungNoetig: true,
+    hinweis: ergebnis.hinweis ? `${ergebnis.hinweis} ${hinweis}` : hinweis,
+  };
 }

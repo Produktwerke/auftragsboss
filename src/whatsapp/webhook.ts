@@ -14,6 +14,7 @@ import crypto from "node:crypto";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { whatsappConfig } from "../config.js";
 import { verarbeiteNachrichtSeriell } from "../pipeline.js";
+import { maskiereNummer } from "./maskierung.js";
 
 // Minimale Typen für den Ausschnitt des Meta-Payloads, den wir brauchen
 interface WhatsAppMessage {
@@ -169,8 +170,10 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       // Nachricht darf die anderen nicht blockieren. Serielle Verarbeitung pro
       // Nummer verhindert, dass schnell aufeinanderfolgende Sprachnachrichten
       // je ein eigenes Angebot erzeugen (siehe pipeline.ts).
+      // Nummer nur maskiert ins Log (S-10): Logs liegen 7 Tage auf der Platte,
+      // die volle Nummer ist eine Kundendate und steht in der Datenbank.
       verarbeiteNachrichtSeriell(eingabe).catch((err) => {
-        app.log.error({ err, von: msg.from }, "Pipeline-Fehler");
+        app.log.error({ err, von: maskiereNummer(msg.from) }, "Pipeline-Fehler");
       });
     }
   });

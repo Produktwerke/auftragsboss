@@ -11,7 +11,8 @@
 // Abgeschlossen wird außerdem bei Stichwort ("weiter", "später"),
 // nach MAX_RUNDEN Rückfragen oder bei Zeitablauf (siehe jobs/vorgangTimeout.ts).
 import { PrismaClient, type Handwerker, type Vorgang } from "@prisma/client";
-import { ladeAudio, ladeBild } from "./whatsapp/media.js";
+import { ladeAudio, ladeBild, MediumZuGross, BILD_MAX_BYTES, AUDIO_MAX_BYTES } from "./whatsapp/media.js";
+import { erkenneBildTyp } from "./betrieb/bildpruefung.js";
 import { sendeWhatsAppText } from "./whatsapp/send.js";
 import { transkribiereAudio } from "./ai/transcribe.js";
 import { liesBildNotiz } from "./ai/bildLesen.js";
@@ -319,7 +320,14 @@ export async function verarbeiteNachricht(args: {
           // Nachricht kann auch eine Frage sein — was sie ist, weiß erst die KI.
           : "🎙️ Hab ich! Ich verarbeite deine Sprachnachricht, einen kurzen Moment …",
       );
-      const audio = await ladeAudio(mediaId);
+      let audio: Buffer;
+      try {
+        audio = await ladeAudio(mediaId);
+      } catch (err) {
+        if (!(err instanceof MediumZuGross)) throw err;
+        await sendeWhatsAppText(vonNummer, `⚠️ Die Sprachnachricht ist zu groß (mehr als ${Math.round(AUDIO_MAX_BYTES / 1024 / 1024)} MB). Bitte in zwei kürzeren Nachrichten schicken.`);
+        return;
+      }
       const t = await transkribiereAudio(audio);
       inhalt = t.haupttext;
       zweitfassung = t.varianten[1];
@@ -335,7 +343,23 @@ export async function verarbeiteNachricht(args: {
       // ein Notizzettel/Screenshot. EIN Vision-Aufruf entscheidet und liefert
       // bei Notizen gleich den Text mit.
       await sendeWhatsAppText(vonNummer, "📷 Foto hab ich! Ich schau es mir an, einen kurzen Moment …");
-      const bild = await ladeBild(bildMediaId);
+      // Größe und Format werden VOR dem KI-Aufruf geprüft (F-03/F-04): der
+      // Download ist gekappt, und nur was laut Magic Bytes wirklich ein
+      // JPEG/PNG/WebP/GIF ist, geht an die Vision und in die Ablage.
+      let bild: { daten: Buffer; mimeType: string };
+      try {
+        const geladen = await ladeBild(bildMediaId);
+        const typ = erkenneBildTyp(geladen.daten);
+        if (!typ) {
+          await sendeWhatsAppText(vonNummer, "⚠️ Das Bild konnte ich nicht lesen. Bitte als normales Foto (JPG oder PNG) schicken.");
+          return;
+        }
+        bild = { daten: geladen.daten, mimeType: typ };
+      } catch (err) {
+        if (!(err instanceof MediumZuGross)) throw err;
+        await sendeWhatsAppText(vonNummer, `⚠️ Das Bild ist zu groß (mehr als ${Math.round(BILD_MAX_BYTES / 1024 / 1024)} MB). Bitte als normales Foto schicken, nicht als Datei in Originalgröße.`);
+        return;
+      }
       // Für die Raumzuordnung zählt auch ein eben abgeschlossener Vorgang (Nachtrag):
       // sonst fehlen Raumname und Raumhöhe beim ersten nachgereichten Foto.
       if (!vorgang) vorgang = await holeNachtragsVorgang(prisma, handwerker.id);
@@ -606,24 +630,26 @@ async function verarbeiteWandfoto(args: {
   const bisher = await prisma.foto.count({ where: { vorgangId: vorgang.id, raum: raumName } });
   const wandNr = zuordnung.wandNrAusText ?? bisher + 1;
 
-  let datei = "";
+  // Keine Datenbankzeile ohne Datei (F-10): scheitert die Ablage, bleibt das
+  // Foto ein reiner Dialogbeitrag (die Erkennung fließt trotzdem ins Aufmaß ein),
+  // taucht aber nicht als Belegfoto auf.
   try {
-    datei = speichereFoto({ handwerkerId: handwerker.id, vorgangId: vorgang.id, wandNr, daten: bild.daten, mimeType: bild.mimeType });
+    const gespeichert = speichereFoto({ handwerkerId: handwerker.id, vorgangId: vorgang.id, wandNr, daten: bild.daten });
+    await prisma.foto.create({
+      data: {
+        handwerkerId: handwerker.id,
+        vorgangId: vorgang.id,
+        raum: raumName,
+        wandNr,
+        datei: gespeichert.datei,
+        mimeType: gespeichert.mimeType,
+        groesse: bild.daten.length,
+        erkennungJson: JSON.stringify(analyse),
+      },
+    });
   } catch (err) {
-    console.warn("Wandfoto nicht gespeichert:", err instanceof Error ? err.message : err);
+    console.warn("Wandfoto nicht gespeichert (kein Belegfoto):", err instanceof Error ? err.message : err);
   }
-  await prisma.foto.create({
-    data: {
-      handwerkerId: handwerker.id,
-      vorgangId: vorgang.id,
-      raum: raumName,
-      wandNr,
-      datei,
-      mimeType: bild.mimeType,
-      groesse: bild.daten.length,
-      erkennungJson: JSON.stringify(analyse),
-    },
-  });
   vorgang = await ergaenzeNachricht(prisma, vorgang, {
     rolle: "handwerker",
     art: "foto",

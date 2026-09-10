@@ -1,7 +1,7 @@
 // Einstiegspunkt: Fastify-Server + Webhook-Routen + Cron-Jobs.
 import Fastify from "fastify";
 import rateLimit from "@fastify/rate-limit";
-import { serverConfig } from "./config.js";
+import { serverConfig, pruefeStartKonfiguration } from "./config.js";
 import { whatsappRoutes } from "./whatsapp/webhook.js";
 import { editorRoutes } from "./web/routes.js";
 import { importRoutes } from "./web/importRoutes.js";
@@ -12,7 +12,21 @@ import { stripeWebhookRoutes } from "./web/stripeWebhook.js";
 import { aboRoutes } from "./web/aboRoutes.js";
 import { starteGewaehrleistungsJob } from "./jobs/warrantyReminders.js";
 import { starteVorgangTimeoutJob } from "./jobs/vorgangTimeout.js";
+import { starteFotoWaisenJob } from "./jobs/fotoWaisen.js";
 import { prisma } from "./pipeline.js";
+
+// Boot-Gate (Nach-Audit 10.09., D-04): Ohne vollständige Zugangsdaten startet
+// der Server gar nicht erst, statt beim ersten Kunden mitten in der Pipeline
+// zu sterben. Optionales (SMTP, Stripe, Betreiber-Handy) bleibt lazy.
+{
+  const probleme = pruefeStartKonfiguration();
+  if (probleme.length > 0) {
+    console.error("\n❌ Server startet nicht, die .env ist unvollständig:\n");
+    for (const p of probleme) console.error(`   • ${p}`);
+    console.error("\n→ Werte in der .env ergänzen (Vorlage: .env.example), Prüfung: npx tsx src/env-check.ts\n");
+    process.exit(1);
+  }
+}
 
 // Tokens sind bei AuftragsBoss die Authentifizierung ("kein Passwort") —
 // sie dürfen deshalb NICHT im Klartext in den Logs stehen (Audit AB-H05).
@@ -54,6 +68,12 @@ await app.register(rateLimit, {
   }),
 });
 
+// Browser dürfen den Inhaltstyp nie „erraten" (F-04): ein als Bild gespeichertes
+// HTML-Fragment würde sonst als Seite ausgeführt. Gilt für alle Antworten.
+app.addHook("onSend", async (_req, reply) => {
+  reply.header("X-Content-Type-Options", "nosniff");
+});
+
 // Health-Check (für Hosting/Uptime-Monitoring) MIT Datenbankprobe.
 // Nach-Audit 10.09. (S-02): Am 07.09. war die Datenbank 14 Stunden kaputt,
 // während dieser Endpunkt „ok" meldete — UptimeRobot und Wachhund waren blind.
@@ -88,6 +108,7 @@ await app.register(aboRoutes);
 
 starteGewaehrleistungsJob();
 starteVorgangTimeoutJob();
+starteFotoWaisenJob();
 
 const { PORT, HOST } = serverConfig();
 

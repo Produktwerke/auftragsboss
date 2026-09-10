@@ -220,9 +220,9 @@ describe("Belegfotos und Löschen (Nach-Audit F-01/F-13)", () => {
     const dokB = await prisma.dokument.findUniqueOrThrow({ where: { bearbeitenToken: TOK_B } });
     const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(200, 1)]);
     const foto = async (hwId: string, dokId: string, vorgangId: string) => {
-      const datei = speichereFoto({ handwerkerId: hwId, vorgangId, wandNr: 1, daten: jpeg, mimeType: "image/jpeg" });
+      const { datei, mimeType } = speichereFoto({ handwerkerId: hwId, vorgangId, wandNr: 1, daten: jpeg });
       const zeile = await prisma.foto.create({
-        data: { handwerkerId: hwId, dokumentId: dokId, wandNr: 1, datei, mimeType: "image/jpeg", groesse: jpeg.length, erkennungJson: "{}" },
+        data: { handwerkerId: hwId, dokumentId: dokId, wandNr: 1, datei, mimeType, groesse: jpeg.length, erkennungJson: "{}" },
       });
       return { id: zeile.id as string, datei };
     };

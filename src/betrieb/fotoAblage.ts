@@ -10,42 +10,43 @@
 import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { UPLOADS_DIR, uploadPfad, liegtUnter } from "./ablage.js";
+import { erkenneBildTyp, ENDUNG_JE_BILDTYP, type BildTyp } from "./bildpruefung.js";
 
-const FOTO_DIR = join(UPLOADS_DIR, "fotos");
-export const FOTO_MAX_BYTES = 12 * 1024 * 1024; // WhatsApp-Bilder sind ≤ ~0,5 MB, Reserve für Originale
-
-const ENDUNG_JE_MIME: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/jpg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif",
-};
+export const FOTO_DIR = join(UPLOADS_DIR, "fotos");
+// Gleiche Grenze wie beim Download (BILD_MAX_BYTES in whatsapp/media.ts):
+// Anthropic nimmt max. 5 MB je Bild, WhatsApp komprimiert Fotos auf < 1 MB.
+export const FOTO_MAX_BYTES = 5 * 1024 * 1024;
 
 // Nur sichere Bezeichner in Pfaden (cuid: Buchstaben/Ziffern) — nie Nutzertext.
 const sicher = (s: string) => s.replace(/[^A-Za-z0-9_-]/g, "");
 
 export class FotoFehler extends Error {}
 
-/** Speichert ein Wandfoto und liefert den relativen Pfad für die Datenbank. */
+/**
+ * Speichert ein Wandfoto und liefert den relativen Pfad für die Datenbank samt
+ * dem BELEGTEN Bildtyp. Der mitgeschickte MIME-Typ zählt nicht (F-04): Endung
+ * und gespeicherter Typ kommen aus den Magic Bytes.
+ */
 export function speichereFoto(args: {
   handwerkerId: string;
   vorgangId: string;
   wandNr: number;
   daten: Buffer;
-  mimeType: string;
-}): string {
-  const endung = ENDUNG_JE_MIME[args.mimeType.toLowerCase()];
-  if (!endung) throw new FotoFehler("Bildformat wird nicht unterstützt.");
+}): { datei: string; mimeType: BildTyp } {
   if (args.daten.length < 100) throw new FotoFehler("Das Bild ist leer.");
   if (args.daten.length > FOTO_MAX_BYTES) throw new FotoFehler("Das Bild ist zu groß.");
+  const typ = erkenneBildTyp(args.daten);
+  if (!typ) throw new FotoFehler("Bildformat wird nicht unterstützt.");
 
   const ordner = join(FOTO_DIR, sicher(args.handwerkerId), sicher(args.vorgangId));
   mkdirSync(ordner, { recursive: true });
   const zeit = new Date().toISOString().replace(/[-:]/g, "").replace(/\..+$/, "").replace("T", "_");
-  const name = `wand${Math.max(1, Math.floor(args.wandNr))}_${zeit}.${endung}`;
+  const name = `wand${Math.max(1, Math.floor(args.wandNr))}_${zeit}.${ENDUNG_JE_BILDTYP[typ]}`;
   writeFileSync(join(ordner, name), args.daten);
-  return ["uploads", "fotos", sicher(args.handwerkerId), sicher(args.vorgangId), name].join("/");
+  return {
+    datei: ["uploads", "fotos", sicher(args.handwerkerId), sicher(args.vorgangId), name].join("/"),
+    mimeType: typ,
+  };
 }
 
 /** Entfernt alle Fotos eines Betriebs (DSGVO-Löschkaskade). Best effort. */

@@ -179,7 +179,12 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     if (!foto) return reply.code(404).send("nicht gefunden");
     const daten = liesFoto(foto.datei);
     if (!daten) return reply.code(404).send("Datei fehlt");
-    return reply.type(foto.mimeType).header("Cache-Control", "private, max-age=3600").send(daten);
+    // inline + nosniff (globaler Hook): der Browser zeigt es als Bild oder gar nicht.
+    return reply
+      .type(foto.mimeType)
+      .header("Cache-Control", "private, max-age=3600")
+      .header("Content-Disposition", "inline")
+      .send(daten);
   });
 
   // ── Zugang bestätigen (Schleuse) ──────────────────────

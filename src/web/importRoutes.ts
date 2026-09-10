@@ -20,6 +20,17 @@ import { appShell } from "./navigation.js";
 
 const MAX_BYTES = 15 * 1024 * 1024; // 15 MB — großzügig für gescannte Angebote
 const MAX_DATEIEN = 20; // pro Upload
+// Tagesdeckel je Betrieb (D-06): begrenzt KI-Kosten und Speicher, falls ein
+// Import-Link in falsche Hände gerät. Ein Betrieb liest realistisch seine
+// letzten 10 bis 30 Angebote ein, nicht hunderte pro Tag.
+export const IMPORT_MAX_PRO_TAG = 40;
+
+/** Zählt die heute (lokale Zeit) angelegten Importe eines Betriebs. */
+export async function importeHeute(db: { importDokument: { count(args: unknown): Promise<number> } }, handwerkerId: string): Promise<number> {
+  const tagesbeginn = new Date();
+  tagesbeginn.setHours(0, 0, 0, 0);
+  return db.importDokument.count({ where: { handwerkerId, erstelltAm: { gte: tagesbeginn } } });
+}
 
 export async function importRoutes(app: FastifyInstance): Promise<void> {
   // Baustein komplett aus: keine Routen registrieren.
@@ -58,6 +69,11 @@ export async function importRoutes(app: FastifyInstance): Promise<void> {
     });
     if (!handwerker) return reply.code(404).send({ fehler: "nicht gefunden" });
 
+    let heute = await importeHeute(prisma, handwerker.id);
+    if (heute >= IMPORT_MAX_PRO_TAG) {
+      return reply.code(429).send({ fehler: `Tageslimit erreicht (${IMPORT_MAX_PRO_TAG} Importe pro Tag). Morgen geht es weiter.` });
+    }
+
     // Jede Datei einzeln verarbeiten; ein Fehler bei einer Datei stoppt die
     // übrigen nicht (er wird pro Datei zurückgemeldet).
     const ergebnisse: Array<Record<string, unknown>> = [];
@@ -69,7 +85,12 @@ export async function importRoutes(app: FastifyInstance): Promise<void> {
           ergebnisse.push({ dateiname, fehler: `Datei zu groß (max. ${MAX_BYTES / 1024 / 1024} MB).` });
           continue;
         }
+        if (heute >= IMPORT_MAX_PRO_TAG) {
+          ergebnisse.push({ dateiname, fehler: `Tageslimit erreicht (${IMPORT_MAX_PRO_TAG} Importe pro Tag).` });
+          continue;
+        }
         const ergebnis = await importiereAltangebot(prisma, handwerker.id, buffer, dateiname, teil.mimetype);
+        heute++;
         ergebnisse.push({ dateiname, ...ergebnis });
       } catch (err) {
         if (err instanceof ImportFormatFehler) {

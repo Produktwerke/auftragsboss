@@ -140,9 +140,31 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   Zusammenfassung zeigt Eingangsmaße je Raum; Warnungen (`warnungen`) bei Wand > 15 m, Höhe > 4 m, Fläche > 150 m².
 > - **Authz-Suite (D-01):** Zufalls-DB-Name im Ordner prisma/ (vorher PID-Kollision → still übersprungen), eigene Upload-Ablage je Lauf;
 >   neue Tests: Foto-Route (Schleuse, Mandantentrennung) und Löschkaskade mit Dateien.
-> - **Nach-Audit-Restliste (30 Tage, siehe Bericht):** Boot-Gate (D-04), nodemailer/js-yaml-Patches (D-02), Bucket-Versionierung +
->   Restore-Probe mit Fotos (S-04), Wachhund-Herzschlag (S-05), Fotowaisen-Job (F-02), Bildgröße vor Vision + Magic Bytes (F-03/F-04),
->   Reboot + Patch-Tag (S-06, Dirk), Import-Limits (D-06), Telefonnummern in Logs (S-10), /root aufräumen (S-12, Dirk).
+> - **30-TAGE-PUNKTE ✅ UMGESETZT + DEPLOYT (10.09. abends, Commits f56608c + 2d5b817; 239 Tests grün):**
+>   - **Boot-Gate (D-04/D-05):** `config.ts` wirft `KonfigFehler` statt `process.exit`; `pruefeStartKonfiguration()` in server.ts
+>     prüft VOR dem Start Server/OpenAI/Anthropic/WhatsApp/Feature/Direkttest/Webtest + `WHATSAPP_APP_SECRET` und `SESSION_SECRET`
+>     (je ≥ 16 Zeichen) + DATABASE_URL; fehlt etwas, startet der Server nicht (Liste im Log). `env-check.ts` leitet die gültigen
+>     Schlüssel per `bekannteSchluessel()` aus den Schemata ab — neue .env-Werte NUR in config.ts (Schema) oder
+>     `DIREKT_GELESENE_SCHLUESSEL` eintragen. `.env.example`: beide Geheimnisse sind Pflicht.
+>   - **Medien (F-03/F-04/F-10):** `whatsapp/media.ts` kappt Downloads (Bild 5 MB, Audio 16 MB; Content-Length + Strom, `MediumZuGross`
+>     → freundlicher WhatsApp-Hinweis). `betrieb/bildpruefung.ts`: Bildtyp NUR aus Magic Bytes (JPEG/PNG/WebP/GIF), geprüft vor
+>     Vision und Ablage; `speichereFoto` liefert `{datei, mimeType}` (Endung/Typ aus den Bytes). Keine Foto-Zeile ohne gespeicherte
+>     Datei. Global `X-Content-Type-Options: nosniff` (onSend-Hook), Belegfoto-Route zusätzlich `Content-Disposition: inline`.
+>   - **Fotowaisen-Job (F-02):** `jobs/fotoWaisen.ts` täglich 04:10: Zeilen ohne Datei, Fotos gelöschter Angebote, Fotos ohne Angebot
+>     nach 30 Tagen (`WAISEN_AUFBEWAHRUNG_TAGE`), Dateien ohne Zeile nach 24 h Karenz, leere Ordner. Sofort: `npx tsx src/fotowaisen-jetzt.ts`.
+>     Die 5 Test-Waisen vom 06.09. sind damit weg.
+>   - **Import-Limits (D-06):** `maler/import/zipPruefung.ts` liest das Zip-Inhaltsverzeichnis VOR mammoth (≤ 50 MB entpackt,
+>     ≤ 2.000 Einträge, kein Zip64); PDF ≤ 40 Seiten; Text ≤ 60.000 Zeichen (`kappeText`, markiert prüfbedürftig);
+>     Tagesdeckel 40 Importe je Betrieb (`IMPORT_MAX_PRO_TAG`, 429).
+>   - **Logs (S-10):** Telefonnummer im Pipeline-Fehlerlog maskiert (`whatsapp/maskierung.ts`, `4917******23`); pm2-logrotate retain 7 + compress.
+>   - **Pakete (D-02/D-12):** nodemailer 9.1.1, js-yaml 4.3.2, vitest 4.1.11, fastify 5.12.3, @fastify/multipart, mammoth, unpdf, @types/node 24.
+>   - **Server (S-04/S-05/S-12):** Bucket-Versionierung EIN (`rclone backend versioning offsite:auftragsboss-backup` → Enabled);
+>     Restore-Probe monatlich (Cron `45 4 1 * *`, Log `/root/restore-probe.log`, prüft jetzt auch die Offsite-DB per integrity_check,
+>     Heartbeat aus `/root/restore-probe-heartbeat-url.txt`), Probe 10.09. bestanden; Wachhund pingt am Ende jedes Laufs
+>     `/root/wachhund-heartbeat-url.txt` (bei Befund `/fail`); /root aufgeräumt: Vorfallsreste als
+>     `/root/vorfall-20260907_loeschen-ab-20261007.tar.gz.enc` (Backup-Passphrase), Klartext + rollback-src-vor-audit + alte tar.gz gelöscht.
+>   - **⏳ BEI DIRK:** zwei healthchecks.io-Checks anlegen („AuftragsBoss Herzschlag" 1 h/30 Min, „AuftragsBoss Restore-Probe" 31 Tage/2 Tage)
+>     und die Ping-URLs in die beiden Dateien unter /root schreiben (lassen); Reboot/Patch-Tag (S-06); Vorfallsarchiv am 07.10. löschen.
 
 > **⚠️ VORFALL 07.09.2026 — LIVE-DATENBANK DURCH DEPLOY KORRUMPIERT (behoben, kein Kundendatenverlust):**
 > - **Was passiert ist:** Das Deploy-Paket schloss nur `prisma/*.db` aus, NICHT `dev.db-wal`/`dev.db-shm`. Lokal lagen beide

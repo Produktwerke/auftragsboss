@@ -120,6 +120,30 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 10.09.2026 — NACH-AUDIT + 6 PFLICHTPUNKTE ✅ DEPLOYT (Commits 7327025, Folgecommit deploy.sh; 220 Tests grün; Bericht https://claude.ai/code/artifact/11d0c0f7-c951-4322-9478-69d2c2ffa959):**
+> - **NEUES DEPLOY-RITUAL (ersetzt alle älteren Blöcke!):** `bash scripts/deploy-lokal.sh` im Git-Bash. Packt (ohne dev.db*/.env),
+>   prüft, lädt nach `/home/auftragsboss/eingang/`, ruft `su - auftragsboss -c '~/deploy.sh'` (Repo-Kopie `scripts/deploy.sh`).
+>   Das Skript: Archivprüfung (DB/.env verboten, src/server.ts Pflicht) → DB-Sicherung `~/daten/vor-deploy.db` + integrity_check →
+>   Rollback-Stand `~/rollback/app-<stamp>.tar.gz` (letzte 3) → Entpacken als auftragsboss (kein chown mehr) → `npm ci` nur bei
+>   geändertem Lockfile → `prisma generate` → `db push` nur bei geändertem Schema (ohne Datenverlust-Flags) → pm2 restart →
+>   `/health` 200 + `quick_check ok`, sonst AUTOMATISCHER ROLLBACK. Negativprobe mit vergiftetem Paket bestanden (Abbruch, App unberührt).
+>   Nach einer Skriptänderung: `scp scripts/deploy.sh → /root/neu-skripte/`, dann `sed -i 's/$//'` + `install -m 700 -o auftragsboss`.
+> - **Datenverzeichnis (S-01):** Datenbank liegt in `/home/auftragsboss/daten/dev.db` (`DATABASE_URL="file:/home/auftragsboss/daten/dev.db?connection_limit=1"`),
+>   Fotos/Logos in `/home/auftragsboss/daten/uploads` (`UPLOADS_DIR`, Code: `src/betrieb/ablage.ts`, DB-Pfade bleiben `uploads/…`).
+>   Der App-Ordner enthält KEINE Kundendaten mehr; ein Deploy-Paket kann sie strukturell nicht treffen. backup.sh, wachhund.sh,
+>   Runbook auf `daten/` umgestellt (Backup prüft die Kopie per integrity_check). Server-Skripte in /root sind Kopien von `scripts/`.
+> - **/health mit Datenbankprobe (S-02):** SELECT 1 je Aufruf + gecachter quick_check (10 Min); 503 bei Fehler → UptimeRobot und
+>   Wachhund-Check 1 sind jetzt datenbanksensitiv. Antwort: `{"status":"ok","service":…,"db":"ok"}`.
+> - **Foto-Löschung (F-01):** `POST /api/a/:token/loeschen` entfernt Foto-Zeilen UND Dateien (auch Vorgangs-Fotos), `loescheFotoDatei`.
+> - **Aufmaß (E-01/E-02/E-03/E-13):** Parser verdichtet Whitespace + kappt (20.000/3.000/500 Zeichen), Regex verankert (5.000 Leerzeichen
+>   < 200 ms); unplausible/zu große Öffnungen werden in Erklärtext, Rückfragen und WhatsApp-Zusammenfassung AUSGEWIESEN (`verworfen`);
+>   Zusammenfassung zeigt Eingangsmaße je Raum; Warnungen (`warnungen`) bei Wand > 15 m, Höhe > 4 m, Fläche > 150 m².
+> - **Authz-Suite (D-01):** Zufalls-DB-Name im Ordner prisma/ (vorher PID-Kollision → still übersprungen), eigene Upload-Ablage je Lauf;
+>   neue Tests: Foto-Route (Schleuse, Mandantentrennung) und Löschkaskade mit Dateien.
+> - **Nach-Audit-Restliste (30 Tage, siehe Bericht):** Boot-Gate (D-04), nodemailer/js-yaml-Patches (D-02), Bucket-Versionierung +
+>   Restore-Probe mit Fotos (S-04), Wachhund-Herzschlag (S-05), Fotowaisen-Job (F-02), Bildgröße vor Vision + Magic Bytes (F-03/F-04),
+>   Reboot + Patch-Tag (S-06, Dirk), Import-Limits (D-06), Telefonnummern in Logs (S-10), /root aufräumen (S-12, Dirk).
+
 > **⚠️ VORFALL 07.09.2026 — LIVE-DATENBANK DURCH DEPLOY KORRUMPIERT (behoben, kein Kundendatenverlust):**
 > - **Was passiert ist:** Das Deploy-Paket schloss nur `prisma/*.db` aus, NICHT `dev.db-wal`/`dev.db-shm`. Lokal lagen beide
 >   (vom Seed-Skript/Tests), also wanderten sie mit JEDEM Deploy am 06.09. nachmittags auf den Server und überschrieben die

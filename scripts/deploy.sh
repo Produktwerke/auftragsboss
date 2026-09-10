@@ -28,12 +28,17 @@ log() { echo "$(date '+%F %T')  $*"; }
 [ -s "$ARCHIV" ] || { log "ABBRUCH: Archiv $ARCHIV fehlt oder ist leer."; exit 1; }
 [ -s "$DATEN/dev.db" ] || { log "ABBRUCH: $DATEN/dev.db fehlt — Datenverzeichnis noch nicht eingerichtet?"; exit 1; }
 
-# 1) Archiv prüfen
-if tar -tzf "$ARCHIV" | grep -qE '(^|/)(dev\.db|\.env)'; then
+# 1) Archiv prüfen. Die Liste zuerst in eine Datei: "tar | grep -q" bricht die Pipe beim
+#    ersten Treffer ab, und mit pipefail wäre der Treffer dann als Fehler unsichtbar.
+LISTE=$(mktemp)
+tar -tzf "$ARCHIV" > "$LISTE"
+if grep -qE '(^|/)(dev\.db|\.env)' "$LISTE"; then
   log "ABBRUCH: Archiv enthält Datenbank- oder .env-Dateien (genau das hat am 07.09. die Live-DB zerstört)."
-  exit 1
+  rm -f "$LISTE"; exit 1
 fi
-tar -tzf "$ARCHIV" | grep -qx 'src/server.ts' || { log "ABBRUCH: kein src/server.ts im Archiv — falsches Paket?"; exit 1; }
+grep -qx 'src/server.ts' "$LISTE" || { log "ABBRUCH: kein src/server.ts im Archiv — falsches Paket?"; rm -f "$LISTE"; exit 1; }
+log "Archiv geprüft: $(wc -l < "$LISTE") Einträge, ohne Datenbank/.env."
+rm -f "$LISTE"
 
 # 2) Datenbank sichern
 sqlite3 "$DATEN/dev.db" ".backup '$DATEN/vor-deploy.db'"

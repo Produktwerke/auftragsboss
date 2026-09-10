@@ -17,10 +17,13 @@ SERVER=root@87.106.165.151
 PAKET=deploy.tar.gz
 
 tar --exclude='prisma/dev.db*' -czf "$PAKET" src prisma knowledge package.json package-lock.json tsconfig.json preisliste.json
-if tar -tzf "$PAKET" | grep -qE '(^|/)(dev\.db|\.env)'; then
+# Liste erst in eine Variable: "tar | grep -q" würde die Pipe beim Treffer abbrechen,
+# und mit pipefail wäre genau der Treffer dann als Fehler getarnt.
+LISTE=$(tar -tzf "$PAKET")
+if grep -qE '(^|/)(dev\.db|\.env)' <<<"$LISTE"; then
   echo "ABBRUCH: Paket enthält Datenbank- oder .env-Dateien."; rm -f "$PAKET"; exit 1
 fi
-echo "Paket: $(du -h "$PAKET" | cut -f1), $(tar -tzf "$PAKET" | wc -l) Einträge, ohne dev.db/.env."
+echo "Paket: $(du -h "$PAKET" | cut -f1), $(wc -l <<<"$LISTE") Einträge, ohne dev.db/.env."
 
 "$SCP" -q "$PAKET" "$SERVER:/home/auftragsboss/eingang/deploy.tar.gz"
 rm -f "$PAKET"

@@ -51,7 +51,9 @@ export function effektivePreisliste(handwerker: Handwerker, basis: Preisliste): 
       ...(handwerker.angebotGueltigTage && handwerker.angebotGueltigTage > 0
         ? { angebotGueltigTage: handwerker.angebotGueltigTage }
         : {}),
-      zahlungsziel: oder(handwerker.zahlungsziel, basis.konditionen.zahlungsziel),
+      // Ohne Schlusspunkt speichern/anzeigen: die Dokumente setzen den Punkt selbst
+      // („Zahlungsziel: 14 Tage netto." statt „…Rechnungserhalt..").
+      zahlungsziel: oder(handwerker.zahlungsziel, basis.konditionen.zahlungsziel).replace(/[.\s]+$/, ""),
       // Angebotsdarstellung: Schalter des Betriebs gelten immer (haben Vorgaben im Schema).
       materialGetrennt: handwerker.materialGetrennt,
       zeige35a: handwerker.zeige35a,

@@ -69,7 +69,7 @@ export function einstellungenSeite(args: {
     h.angebotGueltigTage && h.angebotGueltigTage > 0
       ? h.angebotGueltigTage
       : vorgabe.konditionen.angebotGueltigTage;
-  const zahlungszielStart = h.zahlungsziel?.trim() ? h.zahlungsziel : vorgabe.konditionen.zahlungsziel;
+  const zahlungszielStart = (h.zahlungsziel?.trim() ? h.zahlungsziel : vorgabe.konditionen.zahlungsziel).replace(/[.\s]+$/, "");
 
   const inp = (id: string, x: { wert: string; ph: string }, extra = "") =>
     `<input id="${id}" value="${escapeHtml(x.wert)}" placeholder="${escapeHtml(x.ph)}" ${extra}>`;

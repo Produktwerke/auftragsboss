@@ -37,7 +37,9 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
   const istAngebot = daten.art === "ANGEBOT";
   const titel = annahme ? "Auftragsbestätigung" : istAngebot ? "Angebot" : "Arbeitsprotokoll";
 
-  const doc = new PDFDocument({ size: "A4", margin: 50 });
+  // bufferPages: die Fußzeile wird am Ende auf JEDE Seite gezeichnet (mit Seitenzahl);
+  // unterer Rand 72 pt hält den Platz dafür frei.
+  const doc = new PDFDocument({ size: "A4", margins: { top: 50, left: 50, right: 50, bottom: 72 }, bufferPages: true });
   const chunks: Buffer[] = [];
   doc.on("data", (c: Buffer) => chunks.push(c));
   const fertig = new Promise<Buffer>((res) => doc.on("end", () => res(Buffer.concat(chunks))));
@@ -217,7 +219,7 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
   y += 10;
   doc.font("Helvetica").fontSize(10);
   const schlussHoehe = doc.heightOfString(daten.schlusstext, { width: breite });
-  if (y + schlussHoehe > 760) {
+  if (y + schlussHoehe > 765) {
     doc.addPage();
     y = 50;
   }
@@ -234,28 +236,6 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
       );
   }
 
-  // Fußzeile in zwei Zeilen (wie im Word), damit beide Formate gleich aussehen:
-  //   1) Firma, Anschrift, Ansprechpartner   2) USt-IdNr., Bank
-  const fussZeile1 = [
-    [b.firma, b.strasse, `${b.plz} ${b.ort}`.trim()].filter(Boolean).join(", "),
-    b.inhaber ? `Ansprechpartner: ${b.inhaber}` : "",
-  ]
-    .filter(Boolean)
-    .join("   ·   ");
-  const fussZeile2 = [
-    b.ustIdNr ? `USt-IdNr.: ${b.ustIdNr}` : "",
-    b.bank ? `Bank: ${b.bank}` : "",
-    b.iban ? `IBAN: ${b.iban}` : "",
-  ]
-    .filter(Boolean)
-    .join("   ·   ");
-  if (fussZeile1 || fussZeile2) {
-    doc.moveDown(0.8);
-    doc.fillColor(grau).fontSize(8);
-    if (fussZeile1) doc.text(fussZeile1, { width: breite });
-    if (fussZeile2) doc.text(fussZeile2, { width: breite });
-  }
-
   // ── Anlage: Aufmaß (Notizen je Raum + Belegfotos), eigene Seite ──
   if (anlageVorhanden(aufmass)) {
     doc.addPage();
@@ -270,7 +250,7 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
       const i = t.indexOf("): ");
       const kopf = i > 0 ? t.slice(0, i + 1) + ": " : "";
       const rest = i > 0 ? t.slice(i + 3) : t;
-      if (ya > 740) {
+      if (ya > 720) {
         doc.addPage();
         ya = 50;
       }
@@ -281,7 +261,7 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
     }
     if (aufmass.fotos.length) {
       ya += 6;
-      if (ya > 700) {
+      if (ya > 690) {
         doc.addPage();
         ya = 50;
       }
@@ -295,7 +275,7 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
         const texte = paar.map((f) => `${f.raum ? f.raum + ", " : ""}Wand ${f.wandNr}${f.beschreibung ? ": " + f.beschreibung : ""}`);
         doc.font("Helvetica").fontSize(7.5);
         const textHoehe = Math.max(...texte.map((t) => doc.heightOfString(t, { width: spalte })));
-        if (ya + bildHoehe + textHoehe + 14 > 790) {
+        if (ya + bildHoehe + textHoehe + 14 > 760) {
           doc.addPage();
           ya = 50;
         }
@@ -311,7 +291,7 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
         ya += bildHoehe + textHoehe + 14;
       }
     }
-    if (ya > 720) {
+    if (ya > 700) {
       doc.addPage();
       ya = 50;
     }
@@ -326,6 +306,37 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
       ya + 6,
       { width: breite },
     );
+  }
+
+  // ── Fußzeile auf JEDER Seite (11.09.2026, Dirk: vorher nur inline auf Seite 1) ──
+  //   Linie, darunter 1) Firma, Anschrift, Ansprechpartner  2) USt-IdNr., Bank, IBAN,
+  //   rechts „Seite x von y". Gleiche Inhalte wie in der Word-Fußzeile.
+  const fussZeile1 = [
+    [b.firma, b.strasse, `${b.plz} ${b.ort}`.trim()].filter(Boolean).join(", "),
+    b.inhaber ? `Ansprechpartner: ${b.inhaber}` : "",
+  ]
+    .filter(Boolean)
+    .join("   ·   ");
+  const fussZeile2 = [
+    b.ustIdNr ? `USt-IdNr.: ${b.ustIdNr}` : "",
+    b.bank ? `Bank: ${b.bank}` : "",
+    b.iban ? `IBAN: ${b.iban}` : "",
+  ]
+    .filter(Boolean)
+    .join("   ·   ");
+  const seiten = doc.bufferedPageRange();
+  for (let i = 0; i < seiten.count; i++) {
+    doc.switchToPage(seiten.start + i);
+    const unten = doc.page.margins.bottom;
+    doc.page.margins.bottom = 0; // sonst löst Text im Fußbereich einen Seitenumbruch aus
+    const yf = doc.page.height - 58;
+    doc.moveTo(L, yf).lineTo(R, yf).strokeColor("#d9dde2").lineWidth(0.5).stroke();
+    doc.fillColor(grau).font("Helvetica").fontSize(7.5);
+    const textBreite = breite - 80;
+    if (fussZeile1) doc.text(fussZeile1, L, yf + 7, { width: textBreite, lineBreak: false, ellipsis: true });
+    if (fussZeile2) doc.text(fussZeile2, L, yf + 18, { width: textBreite, lineBreak: false, ellipsis: true });
+    doc.text(`Seite ${i + 1} von ${seiten.count}`, R - 80, yf + 7, { width: 80, align: "right", lineBreak: false });
+    doc.page.margins.bottom = unten;
   }
 
   doc.end();

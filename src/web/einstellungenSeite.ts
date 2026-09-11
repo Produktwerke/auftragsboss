@@ -189,7 +189,7 @@ export function einstellungenSeite(args: {
               <div class="grid2">
                 <div class="field"><label>Lohnanteil in Leistungspreisen <span style="font-weight:400;color:var(--faint);">(%)</span></label>
                   <input id="lohnanteilProzent" type="number" min="0" max="100" inputmode="numeric" value="${h.lohnanteilProzent}">
-                  ${hint("Branchenrichtwert 70 bis 80 %. Anfahrt und Abdecken zählen voll, Materialzeilen gar nicht.")}
+                  ${hint("So viel deiner Preise für Zeilen der Art 'Arbeit inkl. Material' gilt als Arbeitslohn. Branchenrichtwert 70 bis 80 %. Anfahrt und Abdecken zählen voll, Zeilen 'Nur Material' gar nicht.")}
                 </div>
               </div>
             </div>

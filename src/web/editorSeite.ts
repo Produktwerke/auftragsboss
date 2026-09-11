@@ -916,9 +916,11 @@ function gruppeVon(p){ return gruppen().find(g=>g.ist(p)) || null; }
  *  (eigene Kategorie wie Gerüst oder Entsorgung, gleiche Bedienung wie bei der Einheit). */
 function artZelle(i, kat){
   const eigene = kat!=='LEISTUNG' && kat!=='MATERIAL';
-  return '<select class="pos-art" title="Art der Position" onchange="artWahl('+i+',this)">'+
-    '<option value="LEISTUNG"'+(kat==='LEISTUNG'?' selected':'')+'>Arbeit</option>'+
-    '<option value="MATERIAL"'+(kat==='MATERIAL'?' selected':'')+'>Material</option>'+
+  // Bezeichnungen bewusst so, dass klar ist: eine Leistung DARF Material enthalten
+  // (Maler-Einheitspreis). „Nur Material" ist die reine Lieferung ohne Arbeit.
+  return '<select class="pos-art" title="Arbeit inkl. Material: normale Malerleistung, Farbe und Grundierung stecken im Preis (zählt mit dem Lohnanteil aus den Einstellungen zum Arbeitskostenanteil nach § 35a). Nur Material: reine Lieferung ohne Arbeit, zählt nicht als Arbeitskosten." onchange="artWahl('+i+',this)">'+
+    '<option value="LEISTUNG"'+(kat==='LEISTUNG'?' selected':'')+'>Arbeit inkl. Material</option>'+
+    '<option value="MATERIAL"'+(kat==='MATERIAL'?' selected':'')+'>Nur Material (Lieferung)</option>'+
     '<option value="__custom__"'+(eigene?' selected':'')+'>Andere…</option>'+
     '</select>'+
     '<input class="pos-art-custom" placeholder="z. B. Gerüst" value="'+(eigene?esc(kat):'')+'" style="'+(eigene?'':'display:none;')+'" oninput="setArtCustom('+i+',this.value)">';

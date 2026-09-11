@@ -13,6 +13,7 @@ import { strukturiereDialog } from "../ai/structure.js";
 import { berechneAngebot } from "../angebot/berechnung.js";
 import { effektivePreisliste } from "../betrieb/betriebsdaten.js";
 import { validierePositionen } from "../validierung/validator.js";
+import { aufmassText, berechneAufmass, parseRaeumeText, wendeAufmassAn } from "../maler/aufmass.js";
 import { erzeugeToken, bearbeitenLink } from "./tokens.js";
 import { featureConfig, webtestConfig } from "../config.js";
 import { spurEvent } from "../analytics/event.js";
@@ -137,6 +138,15 @@ async function erzeugeAusText(haupttext: string, zweitfassung?: string): Promise
 
   const handwerker = await holeTestBetrieb();
   const eff = effektivePreisliste(handwerker, preisliste);
+
+  // Aufmaß wie in der WhatsApp-Pipeline (11.09.2026): diktierte Raummaße werden
+  // VOB-gerecht in Flächen umgerechnet, sonst blieben die m²-Mengen im Web-Test leer.
+  const aufmass = berechneAufmass(parseRaeumeText(daten.raeumeText));
+  if (aufmass.raeume.length > 0 || aufmass.uebersprungen.length > 0) {
+    daten.positionen = wendeAufmassAn(daten.positionen, aufmass);
+    daten.aufmassNotizen = [aufmassText(aufmass), daten.aufmassNotizen?.trim()].filter(Boolean).join("\n");
+    daten.rueckfragen = [...daten.rueckfragen, ...aufmass.rueckfragen];
+  }
 
   if (featureConfig().FEATURE_VALIDATOR) {
     const pruef = validierePositionen(daten.positionen, { transkript: haupttext, preisliste: eff });

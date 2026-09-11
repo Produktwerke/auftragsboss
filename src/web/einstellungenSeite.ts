@@ -389,6 +389,13 @@ farbeHexInput.addEventListener("input",()=>{
 farbeHexInput.addEventListener("blur",()=>{ farbeHexInput.value=farbeInput.value.toUpperCase(); });
 document.getElementById("preisGedaechtnisAktiv").addEventListener("change",markiere);
 document.getElementById("zusammenfassungAktiv").addEventListener("change",markiere);
+// Direktsprung aus dem Editor (#angebotsaufbau): zum Abschnitt scrollen und kurz hervorheben.
+if(location.hash){
+  const ziel=document.querySelector(location.hash);
+  if(ziel){
+    setTimeout(()=>{ ziel.scrollIntoView({behavior:"smooth",block:"start"}); ziel.style.transition="box-shadow .4s"; ziel.style.boxShadow="0 0 0 3px var(--primary, #f5b800)"; setTimeout(()=>{ ziel.style.boxShadow=""; },2500); },150);
+  }
+}
 document.getElementById("materialGetrennt").addEventListener("change",markiere);
 document.getElementById("zeige35a").addEventListener("change",markiere);
 document.getElementById("lohnanteilProzent").addEventListener("input",markiere);

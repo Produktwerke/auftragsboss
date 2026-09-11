@@ -92,6 +92,8 @@ export function editorSeite(args: {
   preisliste: Preisliste;
   /** Link zurück zu den Betriebseinstellungen inkl. Angebotsübersicht. */
   einstellungenUrl?: string;
+  /** Direktsprung zum Abschnitt „Angebotsaufbau" der Einstellungen (Lohnanteil, § 35a). */
+  angebotsaufbauUrl?: string;
   /** PLZ-Nachschlag-Knopf anzeigen (Feature-Flag FEATURE_PLZ_LOOKUP). */
   plzLookup?: boolean;
   /** Preisgedächtnis-Stand für die Merken/Vergessen-Knöpfe je Position:
@@ -101,7 +103,7 @@ export function editorSeite(args: {
   /** Aufmaß (Teiletappe 3): Notizen je Raum und Belegfotos, nur zum Ansehen. */
   aufmass?: { notizen: string | null; fotos: { id: string; raum: string | null; wandNr: number; beschreibung: string }[] } | null;
 }): string {
-  const { dokument, preisliste, einstellungenUrl, handwerker, plzLookup, gedaechtnis, aufmass } = args;
+  const { dokument, preisliste, einstellungenUrl, angebotsaufbauUrl, handwerker, plzLookup, gedaechtnis, aufmass } = args;
   const b = preisliste.betrieb;
   const akzent = `#${/^[0-9a-fA-F]{6}$/.test(b.farbe) ? b.farbe : "0B5CAD"}`;
   const logo = ladeLogo(b.logo);
@@ -145,7 +147,7 @@ export function editorSeite(args: {
     // § 35a-Zeile (Betriebseinstellung): Lohnanteil in Leistungspreisen, Anzeige an/aus.
     lohnanteilProzent: preisliste.konditionen.lohnanteilProzent,
     zeige35a: preisliste.konditionen.zeige35a && istAngebot,
-    einstellungenUrl: einstellungenUrl ?? "",
+    einstellungenUrl: angebotsaufbauUrl ?? "",
   };
 
   return `<!doctype html>
@@ -1267,7 +1269,7 @@ function summen(){
   if(ak!=null) html += '<div class="z" style="font-size:12px;color:var(--muted);"><span>davon Arbeitskosten nach § 35a EStG (voraussichtlich, brutto)</span><span>'+euro(ak)+'</span></div>';
   // Wo der Maler den Lohnanteil und die Zeile selbst ändert: in den Betriebseinstellungen.
   if(START.zeige35a && START.einstellungenUrl){
-    html += '<div class="z" style="font-size:11px;color:var(--faint);"><span>Lohnanteil '+START.lohnanteilProzent+' % laut <a href="'+esc(START.einstellungenUrl)+'#angebotsaufbau" style="color:inherit;text-decoration:underline;">Einstellungen › Angebotsaufbau</a> (dort auch abschaltbar)</span><span></span></div>';
+    html += '<div class="z" style="font-size:11px;color:var(--faint);"><span>Lohnanteil '+START.lohnanteilProzent+' % laut <a href="'+esc(START.einstellungenUrl)+'" style="color:inherit;text-decoration:underline;">Einstellungen › Angebotsaufbau</a> (dort auch abschaltbar)</span><span></span></div>';
   }
   document.getElementById('summenBlock').innerHTML = html;
 }

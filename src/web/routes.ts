@@ -122,9 +122,10 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     // Rückweg zu den Einstellungen (dort liegt auch die Angebotsübersicht).
     // Test-Konten haben KEINE Einstellungsseite und keine Angebotsübersicht —
     // für sie entfällt der Zurück-Link ganz.
-    const einstellungenUrl = handwerker.istTest
-      ? undefined
-      : cockpitLink(await einstellungenTokenBereit(prisma, handwerker));
+    const einstellungenToken = handwerker.istTest ? null : await einstellungenTokenBereit(prisma, handwerker);
+    const einstellungenUrl = einstellungenToken ? cockpitLink(einstellungenToken) : undefined;
+    // Direktsprung zum Abschnitt „Angebotsaufbau" (Lohnanteil, § 35a-Zeile) aus dem Editor.
+    const angebotsaufbauUrl = einstellungenToken ? `${einstellungenLink(einstellungenToken)}#angebotsaufbau` : undefined;
 
     // Preisgedächtnis-Stand für die Merken/Vergessen-Knöpfe im Editor:
     // welche Leistungen dieser Betrieb schon gemerkt hat (Schlüssel → Preis).
@@ -158,6 +159,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
         handwerker,
         preisliste,
         einstellungenUrl,
+        angebotsaufbauUrl,
         plzLookup: featureConfig().FEATURE_PLZ_LOOKUP,
         gedaechtnis,
         aufmass: {

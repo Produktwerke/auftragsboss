@@ -145,8 +145,29 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   `raumBezug`, Kleinmaterial einmal ohne. `raumBezug` wird jetzt im Editor mitgeführt (dokumentDaten/editorSeite). Der Editor
 >   selbst gruppiert weiter nach Kategorie → Positionsnummern können vom Kundendokument abweichen (Dirk weiß es; später ggf.
 >   Editor nach Räumen). Wechselnde Eingangsbestätigungen: `src/whatsapp/floskeln.ts` (nie zweimal dieselbe je Nummer).
-> - ⏳ **Nächster Schritt:** Dirks zweiter Live-Test (Fotos aus der WhatsApp-Kamera, ein Foto je Öffnung, am Ende „fertig"); erste
->   echte KI-Probe für Objektzeile ohne Maße und Material je Raum.
+> - ✅ **Zweiter Live-Test (11.09. 15:13) bestanden:** Ablauf mit Raumbilanz + „fertig" funktioniert, Fotos aus der WhatsApp-Kamera.
+>
+> **Update 11.09.2026 nachm. — ANGEBOTSAUFBAU NACH RECHERCHE (Commit 7175f9e, deployt, 252 Tests):** Dirk ließ ChatGPT und Grok
+> recherchieren (Prompt von mir); beide + ich einig: Räume als Hauptgruppen, Material im Einheitspreis, § 35a-Zeile. Umgesetzt:
+> - **Raumblöcke ÜBERALL** (Editor, Vorschau, Word, PDF, E-Mail): ab zwei Räumen Raum = Hauptgruppe mit Nummer
+>   („1  Kinderzimmer links", Positionen 1.1, 1.2 …, Zwischensumme je Raum), Rest als „Allgemeine Leistungen"/„Klein- und
+>   Hilfsmaterial"/„Allgemein" zuletzt (`allgemeinName`). `BerechnetePosition.nummerText`, `Kategorieblock.nummer`,
+>   `Angebotssumme.nachRaum`. Editor: `gruppen()/gruppenPositionen()`, Knopf „+ Position unter <Raum>" setzt `raumBezug`
+>   automatisch, Art-Auswahl Arbeit/Material je Zeile (`.pos-art`, nur im Raummodus), Drag & Drop und ▲/▼ wechseln den Raum;
+>   `raumBezug` im Speicher-Schema (`positionSchema`, Zod hatte es gestrichen → Gruppierung ging nach dem ersten Speichern verloren).
+>   Ein Raum oder keiner: wie bisher Material/Arbeitsaufwand.
+> - **Material im Preis (Standard):** `Handwerker.materialGetrennt` (false). Prompt (`materialRegel`): keine Materialvorschläge,
+>   Leistungen „…, inkl. Material", statt Kleinmaterial EINE Leistung „Schutz- und Abdeckarbeiten" (vorschlag, ohne Raum);
+>   diktiertes Material bleibt Position. Schalter an = alte Vorschlagslogik je Raum. Einstellungsseite Abschnitt „Angebotsaufbau".
+> - **§ 35a EStG:** `Handwerker.zeige35a` (true), `lohnanteilProzent` (75). `lohnanteilFuer`: Material 0 %, Anfahrt/Abdecken/
+>   Entsorgung/Gerüst/Reinigung/Montage 100 %, sonst Betriebswert. `Angebotssumme.arbeitskostenBrutto` (nur bei vollständigen
+>   Preisen) → Zeile „Voraussichtlicher Arbeitskostenanteil nach § 35a EStG: X € brutto (maßgeblich ist die Schlussrechnung)"
+>   nach dem Gesamtbetrag in Word/PDF/E-Mail/Editor/Vorschau. Werte laufen über `Preisliste.konditionen` (effektivePreisliste).
+> - Landingpage-A4-Demo auf die neue Struktur umgestellt (Räume, inkl. Material, § 35a) → **IONOS-Upload durch Dirk offen**.
+> - Vorschau-Server (`npm run dev:editor`) legt Demo `ANG-2026-DEMO2` mit zwei Räumen an. Im Browser geprüft: Gruppen, Nummern,
+>   Hinzufügen je Raum, Speichern + Neuladen, Einstellungen speichern.
+> - ⏳ Nächster Schritt: Dirks dritter Live-Test (erste KI-Probe für „inkl. Material" ohne Materialzeilen, Abdeckarbeiten,
+>   Raumblöcke im Word).
 
 > **Update 10.09.2026 — NACH-AUDIT + 6 PFLICHTPUNKTE ✅ DEPLOYT (Commits 7327025, Folgecommit deploy.sh; 220 Tests grün; Bericht https://claude.ai/code/artifact/11d0c0f7-c951-4322-9478-69d2c2ffa959):**
 > - **NEUES DEPLOY-RITUAL (ersetzt alle älteren Blöcke!):** `bash scripts/deploy-lokal.sh` im Git-Bash. Packt (ohne dev.db*/.env),

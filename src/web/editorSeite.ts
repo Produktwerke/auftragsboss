@@ -918,9 +918,9 @@ function artZelle(i, kat){
   const eigene = kat!=='LEISTUNG' && kat!=='MATERIAL';
   // Bezeichnungen bewusst so, dass klar ist: eine Leistung DARF Material enthalten
   // (Maler-Einheitspreis). „Nur Material" ist die reine Lieferung ohne Arbeit.
-  return '<select class="pos-art" title="Arbeit inkl. Material: normale Malerleistung, Farbe und Grundierung stecken im Preis (zählt mit dem Lohnanteil aus den Einstellungen zum Arbeitskostenanteil nach § 35a). Nur Material: reine Lieferung ohne Arbeit, zählt nicht als Arbeitskosten." onchange="artWahl('+i+',this)">'+
+  return '<select class="pos-art" title="Arbeit inkl. Material: normale Malerleistung, Farbe und Grundierung stecken im Preis (zählt mit dem Lohnanteil aus den Einstellungen zum Arbeitskostenanteil nach § 35a). Nur Material (ohne Arbeit): reine Materialzeile, zählt nicht als Arbeitskosten." onchange="artWahl('+i+',this)">'+
     '<option value="LEISTUNG"'+(kat==='LEISTUNG'?' selected':'')+'>Arbeit inkl. Material</option>'+
-    '<option value="MATERIAL"'+(kat==='MATERIAL'?' selected':'')+'>Nur Material (Lieferung)</option>'+
+    '<option value="MATERIAL"'+(kat==='MATERIAL'?' selected':'')+'>Nur Material (ohne Arbeit)</option>'+
     '<option value="__custom__"'+(eigene?' selected':'')+'>Andere…</option>'+
     '</select>'+
     '<input class="pos-art-custom" placeholder="z. B. Gerüst" value="'+(eigene?esc(kat):'')+'" style="'+(eigene?'':'display:none;')+'" oninput="setArtCustom('+i+',this.value)">';

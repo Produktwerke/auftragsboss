@@ -37,7 +37,8 @@ function aufmassKarte(
   const bilder = fotos
     .map(
       (f) =>
-        `<figure><a href="/api/a/${encodeURIComponent(token)}/foto/${encodeURIComponent(f.id)}" target="_blank" rel="noopener"><img src="/api/a/${encodeURIComponent(token)}/foto/${encodeURIComponent(f.id)}" alt="Wandfoto" loading="lazy"></a>` +
+        `<figure data-foto="${escapeHtml(f.id)}"><a href="/api/a/${encodeURIComponent(token)}/foto/${encodeURIComponent(f.id)}" target="_blank" rel="noopener"><img src="/api/a/${encodeURIComponent(token)}/foto/${encodeURIComponent(f.id)}" alt="Wandfoto" loading="lazy"></a>` +
+        `<button type="button" class="foto-weg" title="Foto samt Bildunterschrift aus dem Angebot entfernen" onclick="fotoLoeschen('${escapeHtml(f.id)}')">×</button>` +
         `<figcaption><b>${escapeHtml(f.raum ? f.raum + ", " : "")}Wand ${f.wandNr}</b>${f.beschreibung ? ": " + escapeHtml(f.beschreibung) : ""}</figcaption></figure>`,
     )
     .join("");
@@ -68,7 +69,7 @@ function vorschauAnlage(
   const bilder = fotos
     .map(
       (f) =>
-        `<figure><img src="/api/a/${encodeURIComponent(token)}/foto/${encodeURIComponent(f.id)}" alt="Wandfoto" loading="lazy">` +
+        `<figure data-foto="${escapeHtml(f.id)}"><img src="/api/a/${encodeURIComponent(token)}/foto/${encodeURIComponent(f.id)}" alt="Wandfoto" loading="lazy">` +
         `<figcaption><b>${escapeHtml(f.raum ? f.raum + ", " : "")}Wand ${f.wandNr}</b>${f.beschreibung ? ": " + escapeHtml(f.beschreibung) : ""}</figcaption></figure>`,
     )
     .join("");
@@ -77,7 +78,7 @@ function vorschauAnlage(
       <div class="d-titel" style="margin-top:6px;">Anlage: Aufmaß</div>
       <div class="d-objekt">Alle Flächen sind nach VOB* aufgemessen. Fotomaße dienen der Einordnung der Öffnungen.</div>
       <div id="pvAufmassNotizen">${zeilen}</div>
-      ${bilder ? `<div class="d-text" style="font-weight:700;margin-top:10px;">Belegfotos</div><div class="d-fotos">${bilder}</div>` : ""}
+      ${bilder ? `<div class="d-fotos-block"><div class="d-text" style="font-weight:700;margin-top:10px;">Belegfotos</div><div class="d-fotos">${bilder}</div></div>` : ""}
       <div class="d-vob">* VOB ist die Vergabe- und Vertragsordnung für Bauleistungen, das anerkannte Regelwerk des deutschen Bauhandwerks. Sie legt verbindlich fest, wie Malerflächen aufgemessen werden (DIN 18363): einheitlich, nachvollziehbar und für beide Seiten fair. Öffnungen bis 2,5 m² werden mitgerechnet, größere abgezogen.</div>
     </div>`;
 }
@@ -228,7 +229,10 @@ export function editorSeite(args: {
   .aufmass-zeile b { color:#111827; }
   .aufmass-hinweis { font-size:12px; color:#6b7280; margin:6px 0 10px; }
   .fotos-raster { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:12px; margin-top:12px; }
-  .fotos-raster figure { margin:0; }
+  .fotos-raster figure { margin:0; position:relative; }
+  .fotos-raster .foto-weg { position:absolute; top:6px; right:6px; width:26px; height:26px; border-radius:50%; border:none;
+    background:rgba(17,24,39,.72); color:#fff; font-size:17px; line-height:26px; text-align:center; cursor:pointer; padding:0; }
+  .fotos-raster .foto-weg:hover { background:#c0261a; }
   .fotos-raster img { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb; display:block; background:#f3f4f6; }
   .fotos-raster figcaption { font-size:12px; color:#4b5563; margin-top:4px; line-height:1.35; }
   .fotos-raster figcaption b { color:#111827; }
@@ -1512,6 +1516,22 @@ let aenderungsTimer=null;
 ['kundeName','kundenNummer','kundeStrasse','kundePlzOrt','nummer','datum','objekt','einleitung','schlusstext'].forEach(id=>{
   document.getElementById(id).addEventListener('input',markiereGeaendert);
 });
+// Belegfoto samt Bildunterschrift aus dem Angebot entfernen (Datei + Datenbankzeile,
+// nicht rückgängig zu machen, deshalb eine kurze Rückfrage).
+async function fotoLoeschen(id){
+  if(!confirm('Dieses Foto samt Bildunterschrift aus dem Angebot entfernen? Das lässt sich nicht rückgängig machen.')) return;
+  try{
+    const r = await fetch('/api/a/'+encodeURIComponent(START.token)+'/foto/'+encodeURIComponent(id), {method:'DELETE'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    document.querySelectorAll('figure[data-foto="'+id+'"]').forEach(f=>f.remove());
+    // Leere Foto-Bereiche wegräumen (Karte und Vorschau-Seite 2)
+    document.querySelectorAll('.fotos-raster, .d-fotos-block').forEach(r=>{ if(!r.querySelector('figure')) r.remove(); });
+    const s2 = document.querySelector('.d-seite2');
+    const notizen = document.getElementById('pvAufmassNotizen');
+    if(s2 && !s2.querySelector('figure') && notizen && !notizen.innerText.trim()) s2.remove();
+  }catch(e){ alert('Foto konnte nicht gelöscht werden: '+e.message); }
+}
+window.fotoLoeschen = fotoLoeschen;
 // Seite 2 (Anlage Aufmaß): Text frei editierbar, Vorschau folgt beim Tippen.
 const aufmassFeld = document.getElementById('aufmassNotizen');
 if(aufmassFeld){
@@ -1527,6 +1547,16 @@ if(aufmassFeld){
   };
   aufmassFeld.addEventListener('input', ()=>{ zeichne(); markiereGeaendert(); });
 }
+// Textfelder (Anschreiben, Schlusstext, Anlage) beim Laden so hoch, dass der ganze
+// vorhandene Text sichtbar ist (11.09.2026, Dirk). Beim Tippen wachsen sie mit;
+// von Hand größer ziehen geht weiterhin.
+['einleitung','schlusstext','aufmassNotizen'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(!el || el.tagName!=='TEXTAREA') return;
+  autoWachs(el);
+  el.addEventListener('input', ()=>autoWachs(el));
+});
+window.addEventListener('load', ()=>{ ['einleitung','schlusstext','aufmassNotizen'].forEach(id=>{ const el=document.getElementById(id); if(el && el.tagName==='TEXTAREA') autoWachs(el); }); });
 // PLZ-Nachschlag (nur wenn der Knopf da ist, Feature-Flag FEATURE_PLZ_LOOKUP).
 const plzBtn=document.getElementById('plzBtn');
 if(plzBtn){

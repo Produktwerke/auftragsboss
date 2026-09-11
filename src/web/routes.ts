@@ -193,6 +193,21 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       .send(daten);
   });
 
+  // ── Belegfoto löschen (Bild + Bildunterschrift), seit 11.09.2026 ──
+  // Gleiche Prüfkette wie beim Anzeigen: Bearbeiten-Link, vertrautes Gerät,
+  // Foto muss zu GENAU diesem Dokument gehören. Datei und Zeile werden entfernt.
+  app.delete<{ Params: { token: string; fotoId: string } }>("/api/a/:token/foto/:fotoId", async (req, reply) => {
+    const dokument = await prisma.dokument.findUnique({ where: { bearbeitenToken: req.params.token } });
+    if (!dokument) return reply.code(404).send({ fehler: "nicht gefunden" });
+    const handwerker = await prisma.handwerker.findUniqueOrThrow({ where: { id: dokument.handwerkerId } });
+    if (!darfZugreifen(req, handwerker.id, handwerker.istTest)) return reply.code(403).send({ fehler: "kein Zugriff" });
+    const foto = await prisma.foto.findFirst({ where: { id: req.params.fotoId, dokumentId: dokument.id } });
+    if (!foto) return reply.code(404).send({ fehler: "nicht gefunden" });
+    loescheFotoDatei(foto.datei);
+    await prisma.foto.delete({ where: { id: foto.id } });
+    return reply.send({ ok: true });
+  });
+
   // ── Zugang bestätigen (Schleuse) ──────────────────────
   // Nimmt die eingegebene Handynummer, vergleicht sie mit der WhatsApp-Nummer
   // des Betriebs. Passt sie, wird das Gerät dauerhaft vertraut (Cookie).

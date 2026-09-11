@@ -244,6 +244,30 @@ describe("Belegfotos und Löschen (Nach-Audit F-01/F-13)", () => {
     expect(fremd.statusCode).toBe(404);
   });
 
+  it("Einzelnes Foto löschen: Schleuse, Mandantentrennung, Datei + Zeile weg", async () => {
+    const { uploadPfad } = await import("../betrieb/ablage.js");
+    const a = await prisma.handwerker.findUniqueOrThrow({ where: { whatsappNummer: NUMMER_A } });
+    const dokA = await prisma.dokument.findUniqueOrThrow({ where: { bearbeitenToken: TOK_A } });
+    const { speichereFoto } = await import("../betrieb/fotoAblage.js");
+    const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(200, 2)]);
+    const { datei, mimeType } = speichereFoto({ handwerkerId: a.id, vorgangId: "vg-del", wandNr: 2, daten: jpeg });
+    const extra = await prisma.foto.create({
+      data: { handwerkerId: a.id, dokumentId: dokA.id, wandNr: 2, datei, mimeType, groesse: jpeg.length, erkennungJson: "{}" },
+    });
+    // Ohne vertrautes Gerät: 403, nichts passiert
+    expect((await app.inject({ method: "DELETE", url: `/api/a/${TOK_A}/foto/${extra.id}` })).statusCode).toBe(403);
+    // Fremdes Foto (von B) über Token A: 404, B-Foto bleibt
+    expect((await app.inject({ method: "DELETE", url: `/api/a/${TOK_A}/foto/${fotoB}`, headers: { cookie: cookieA } })).statusCode).toBe(404);
+    expect(await prisma.foto.count({ where: { id: fotoB } })).toBe(1);
+    // Eigenes Foto: 200, Datei und Zeile weg, das andere Foto von A bleibt
+    expect(existsSync(uploadPfad(datei))).toBe(true);
+    const ok = await app.inject({ method: "DELETE", url: `/api/a/${TOK_A}/foto/${extra.id}`, headers: { cookie: cookieA } });
+    expect(ok.statusCode).toBe(200);
+    expect(await prisma.foto.count({ where: { id: extra.id } })).toBe(0);
+    expect(existsSync(uploadPfad(datei))).toBe(false);
+    expect(await prisma.foto.count({ where: { id: fotoA } })).toBe(1);
+  });
+
   it("Angebot löschen entfernt Foto-Zeilen UND Dateien (keine Kundenfotos als Waisen)", async () => {
     const { uploadPfad } = await import("../betrieb/ablage.js");
     expect(existsSync(uploadPfad(dateiL))).toBe(true);

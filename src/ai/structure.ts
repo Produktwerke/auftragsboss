@@ -69,7 +69,7 @@ export const PositionSchema = z.object({
     .enum(["WAND", "DECKE"])
     .nullable()
     .describe("Nur bei Flächenleistungen an Wänden/Decke eines Raums aus raeumeText. Sonst null."),
-  raumBezug: z.string().nullable().describe("Raumname aus raeumeText, sonst null."),
+  raumBezug: z.string().nullable().describe("Raumname exakt wie in raeumeText geschrieben, sonst null."),
 });
 
 export const DokumentSchema = z.object({
@@ -161,6 +161,7 @@ export const DokumentSchema = z.object({
         "Decke: ja nur, wenn die Decke bearbeitet wird (oder direkt die genannte Fläche, z.B. 'Decke: 14'). Öffnungen: nur mit diktierter Breite UND Höhe, sonst 'keine'. " +
         "Optional am Zeilenende: '; Paneel: 1,10' (Oberkante einer unten nicht zu streichenden Verkleidung) und '; Laibung: 0,25' (genannte Laibungstiefe in m). " +
         "Dachschrägen: Wände mit eigener Höhe in Klammern ('Wände: 4,20 (1,20), 3,50, 4,20 (1,20), 3,50' = Kniestock 1,20) und '; Schrägen: 4,20 x 2,10' (Länge x Schrägenlänge je Dachschräge). " +
+        "Gleichnamige Räume eindeutig benennen ('Kinderzimmer 1', 'Kinderzimmer 2' oder wie der Handwerker sie unterscheidet, z.B. 'Kinderzimmer groß') und in raumBezug der Positionen exakt denselben Namen verwenden. " +
         "Nur Zahlen übernehmen, nichts rechnen oder schätzen. null, wenn keine Raummaße genannt wurden.",
     ),
   aufmassNotizen: z

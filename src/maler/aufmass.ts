@@ -309,14 +309,23 @@ export interface FlaechenPosition {
 
 const normal = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
 
+/**
+ * Raum zu einem Positionsbezug finden. Erst exakt, dann unscharf (Teilstring).
+ * Ein unscharfer Treffer zählt nur, wenn er eindeutig ist: Bei „Kinderzimmer"
+ * und „Kinderzimmer 2" passte vorher jeder Bezug auf beide Räume, und jede
+ * Position bekam die Summe beider Räume (Live-Test-Vorbereitung 11.09.2026).
+ * Lieber keine Menge als eine falsche.
+ */
 function findeRaum(raeume: RaumAufmass[], bezug: string | null | undefined): RaumAufmass[] {
   if (!bezug?.trim()) return raeume.length === 1 ? raeume : [];
   const b = normal(bezug);
-  const treffer = raeume.filter((r) => {
+  const exakt = raeume.filter((r) => normal(r.name) === b);
+  if (exakt.length > 0) return exakt;
+  const unscharf = raeume.filter((r) => {
     const n = normal(r.name);
-    return n === b || n.includes(b) || b.includes(n);
+    return n.includes(b) || b.includes(n);
   });
-  return treffer;
+  return unscharf.length === 1 ? unscharf : [];
 }
 
 /**

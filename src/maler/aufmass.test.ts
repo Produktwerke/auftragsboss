@@ -245,6 +245,23 @@ describe("wendeAufmassAn", () => {
     expect(p.menge).toBe(15.32);
   });
 
+  it("hält zwei gleichnamige Räume auseinander (Kinderzimmer / Kinderzimmer 2)", () => {
+    const k1 = { ...schlafzimmer, name: "Kinderzimmer" };
+    const k2 = { ...schlafzimmer, name: "Kinderzimmer 2", oeffnungen: [], deckeStreichen: false };
+    const zwei = berechneAufmass([k1, k2]);
+    const [p1, p2, p3] = wendeAufmassAn(
+      [
+        pos({ flaechenArt: "WAND", raumBezug: "Kinderzimmer" }),
+        pos({ flaechenArt: "WAND", raumBezug: "Kinderzimmer 2" }),
+        pos({ flaechenArt: "WAND", raumBezug: "Kinderzim" }), // unscharf, aber zweideutig → offen lassen
+      ],
+      zwei,
+    );
+    expect(p1.menge).toBe(36.18);
+    expect(p2.menge).toBe(39.93);
+    expect(p3.menge).toBeNull();
+  });
+
   it("summiert raumübergreifende Positionen über alle Räume", () => {
     const [p] = wendeAufmassAn([pos({ flaechenArt: "WAND", raumBezug: null })], e);
     expect(p.menge).toBe(36.18 + 39.93); // Küche ohne Öffnungen: brutto = netto

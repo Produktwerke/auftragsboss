@@ -175,7 +175,7 @@ export function einstellungenSeite(args: {
             </div>
           </div>
 
-          <div class="section">
+          <div class="section" id="angebotsaufbau">
             <div class="section-h"><h2>Angebotsaufbau</h2><p>Bei mehreren Räumen gliedert AuftragsBoss das Angebot je Raum, mit Zwischensumme und Positionen 1.1, 1.2 und so weiter.</p></div>
             <div class="section-b">
               <label class="check" style="margin-bottom:14px;">

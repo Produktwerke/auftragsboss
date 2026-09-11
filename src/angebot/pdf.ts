@@ -10,6 +10,7 @@ import type { Angebotssumme, BerechnetePosition } from "./berechnung.js";
 import { euro, mengeMitEinheit } from "./berechnung.js";
 import type { Preisliste } from "../preisliste.js";
 import { ladeLogo } from "../betrieb/logo.js";
+import { anlageVorhanden, type AufmassAnlage } from "./aufmassblatt.js";
 
 const datumDE = (d: Date) =>
   d.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" });
@@ -23,10 +24,12 @@ export interface PdfOptionen {
   kundenNummer?: string | null;
   /** Optionaler Annahme-Vermerk für die Auftragsbestätigung. */
   annahme?: { am: Date; von: string };
+  /** Aufmaßblatt mit Belegfotos als Anlage (seit 11.09.2026 auch im PDF, wie in Word). */
+  aufmass?: AufmassAnlage | null;
 }
 
 export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
-  const { daten, summe, preisliste, nummer, datum, kundenNummer, annahme } = opts;
+  const { daten, summe, preisliste, nummer, datum, kundenNummer, annahme, aufmass } = opts;
   const b = preisliste.betrieb;
   const akzent = `#${/^[0-9a-fA-F]{6}$/.test(b.farbe) ? b.farbe : "0B5CAD"}`;
   const grau = "#666666";
@@ -251,6 +254,78 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
     doc.fillColor(grau).fontSize(8);
     if (fussZeile1) doc.text(fussZeile1, { width: breite });
     if (fussZeile2) doc.text(fussZeile2, { width: breite });
+  }
+
+  // ── Anlage: Aufmaß (Notizen je Raum + Belegfotos), eigene Seite ──
+  if (anlageVorhanden(aufmass)) {
+    doc.addPage();
+    let ya = 50;
+    doc.fillColor(akzent).font("Helvetica-Bold").fontSize(13).text("Anlage: Aufmaß", L, ya);
+    ya = doc.y + 4;
+    doc.fillColor(grau).font("Helvetica").fontSize(8).text("Alle Flächen sind nach VOB* aufgemessen. Fotomaße dienen der Einordnung der Öffnungen.", L, ya, { width: breite });
+    ya = doc.y + 12;
+    for (const zeile of (aufmass.notizen ?? "").split(/\r?\n/)) {
+      const t = zeile.trim();
+      if (!t) continue;
+      const i = t.indexOf("): ");
+      const kopf = i > 0 ? t.slice(0, i + 1) + ": " : "";
+      const rest = i > 0 ? t.slice(i + 3) : t;
+      if (ya > 740) {
+        doc.addPage();
+        ya = 50;
+      }
+      doc.fillColor("#1a1a1a").fontSize(9);
+      if (kopf) doc.font("Helvetica-Bold").text(kopf, L, ya, { width: breite, continued: true });
+      doc.font("Helvetica").text(rest, kopf ? undefined : L, kopf ? undefined : ya, { width: breite });
+      ya = doc.y + 6;
+    }
+    if (aufmass.fotos.length) {
+      ya += 6;
+      if (ya > 700) {
+        doc.addPage();
+        ya = 50;
+      }
+      doc.fillColor("#1a1a1a").font("Helvetica-Bold").fontSize(9).text("Belegfotos", L, ya);
+      ya = doc.y + 6;
+      const spalte = (breite - 16) / 2;
+      const bildHoehe = 150;
+      for (let i = 0; i < aufmass.fotos.length; i += 2) {
+        const paar = [aufmass.fotos[i], aufmass.fotos[i + 1]].filter((f): f is NonNullable<typeof f> => !!f);
+        // Bildunterschriften vorab messen, damit das Paar zusammen auf die Seite passt.
+        const texte = paar.map((f) => `${f.raum ? f.raum + ", " : ""}Wand ${f.wandNr}${f.beschreibung ? ": " + f.beschreibung : ""}`);
+        doc.font("Helvetica").fontSize(7.5);
+        const textHoehe = Math.max(...texte.map((t) => doc.heightOfString(t, { width: spalte })));
+        if (ya + bildHoehe + textHoehe + 14 > 790) {
+          doc.addPage();
+          ya = 50;
+        }
+        paar.forEach((f, k) => {
+          const x = L + k * (spalte + 16);
+          try {
+            doc.image(f.daten, x, ya, { fit: [spalte, bildHoehe], align: "center", valign: "center" });
+          } catch {
+            /* unlesbares Bild: Platz bleibt leer, Unterschrift steht trotzdem */
+          }
+          doc.fillColor("#444444").font("Helvetica").fontSize(7.5).text(texte[k]!, x, ya + bildHoehe + 4, { width: spalte });
+        });
+        ya += bildHoehe + textHoehe + 14;
+      }
+    }
+    if (ya > 720) {
+      doc.addPage();
+      ya = 50;
+    }
+    ya += 10;
+    doc.moveTo(L, ya).lineTo(R, ya).strokeColor("#dddddd").lineWidth(0.5).stroke();
+    doc.fillColor(grau).font("Helvetica").fontSize(7).text(
+      "* VOB ist die Vergabe- und Vertragsordnung für Bauleistungen, das anerkannte Regelwerk des deutschen Bauhandwerks. " +
+        "Sie legt verbindlich fest, wie Malerflächen aufgemessen werden (DIN 18363): einheitlich, nachvollziehbar und für beide Seiten fair. " +
+        "Öffnungen wie Fenster und Türen bis 2,5 m² werden dabei mitgerechnet, weil die Arbeit an Rändern und Laibungen den Flächenabzug ausgleicht; " +
+        "größere Öffnungen werden abgezogen. So können Sie jede Fläche in diesem Angebot selbst nachprüfen.",
+      L,
+      ya + 6,
+      { width: breite },
+    );
   }
 
   doc.end();

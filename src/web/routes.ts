@@ -519,6 +519,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
           nummer: dokument.nummer,
           datum: dokument.datum,
           kundenNummer: dokument.kundenNummer,
+          aufmass: await ladeAufmassAnlage(prisma, dokument),
         });
         return reply
           .type("application/pdf")
@@ -635,6 +636,7 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
           nummer: dokument.nummer,
           datum: dokument.datum,
           kundenNummer: dokument.kundenNummer,
+          aufmass: await ladeAufmassAnlage(prisma, dokument),
         });
         anhangName = dateiname(dokument.art, dokument.nummer, "pdf");
         mime = "application/pdf";

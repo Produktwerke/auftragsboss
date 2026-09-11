@@ -47,10 +47,43 @@ function aufmassKarte(
     .join("");
   return `<div class="karte">
     <label style="margin-top:0;">Aufmaß</label>
-    <div class="aufmass-hinweis">Flächen nach VOB (Öffnungen bis 2,5 m² übermessen, größere abgezogen). Wird als Anlage in die Word-Datei übernommen. Korrekturen einfach per WhatsApp nachsprechen, dann kommt eine neue Fassung.</div>
+    <div class="aufmass-hinweis">Flächen nach VOB (Öffnungen bis 2,5 m² übermessen, größere abgezogen). Steht als „Anlage: Aufmaß" auf der letzten Seite des Angebots, in Word und PDF. Korrekturen einfach per WhatsApp nachsprechen, dann kommt eine neue Fassung.</div>
     ${zeilen}
     ${bilder ? `<div class="fotos-raster">${bilder}</div>` : ""}
   </div>`;
+}
+
+/** Seite 2 der Live-Vorschau: „Anlage: Aufmaß" mit Notizen je Raum und Belegfotos, so wie Word und PDF sie anhängen. */
+function vorschauAnlage(
+  aufmass: { notizen: string | null; fotos: { id: string; raum: string | null; wandNr: number; beschreibung: string }[] } | null | undefined,
+  token: string,
+): string {
+  const notizen = (aufmass?.notizen ?? "").split(/\r?\n/).map((z) => z.trim()).filter(Boolean);
+  const fotos = aufmass?.fotos ?? [];
+  if (!notizen.length && !fotos.length) return "";
+  const zeilen = notizen
+    .map((z) => {
+      const i = z.indexOf("): ");
+      const kopf = i > 0 ? z.slice(0, i + 1) : "";
+      const rest = i > 0 ? z.slice(i + 3) : z;
+      return `<div class="d-text" style="margin:4px 0;">${kopf ? `<b>${escapeHtml(kopf)}:</b> ` : ""}${escapeHtml(rest)}</div>`;
+    })
+    .join("");
+  const bilder = fotos
+    .map(
+      (f) =>
+        `<figure><img src="/api/a/${encodeURIComponent(token)}/foto/${encodeURIComponent(f.id)}" alt="Wandfoto" loading="lazy">` +
+        `<figcaption><b>${escapeHtml(f.raum ? f.raum + ", " : "")}Wand ${f.wandNr}</b>${f.beschreibung ? ": " + escapeHtml(f.beschreibung) : ""}</figcaption></figure>`,
+    )
+    .join("");
+  return `<div class="d-seite2">
+      <div class="d-seitenmarke">Seite 2</div>
+      <div class="d-titel" style="margin-top:6px;">Anlage: Aufmaß</div>
+      <div class="d-objekt">Alle Flächen sind nach VOB* aufgemessen. Fotomaße dienen der Einordnung der Öffnungen.</div>
+      ${zeilen}
+      ${bilder ? `<div class="d-text" style="font-weight:700;margin-top:10px;">Belegfotos</div><div class="d-fotos">${bilder}</div>` : ""}
+      <div class="d-vob">* VOB ist die Vergabe- und Vertragsordnung für Bauleistungen, das anerkannte Regelwerk des deutschen Bauhandwerks. Sie legt verbindlich fest, wie Malerflächen aufgemessen werden (DIN 18363): einheitlich, nachvollziehbar und für beide Seiten fair. Öffnungen bis 2,5 m² werden mitgerechnet, größere abgezogen.</div>
+    </div>`;
 }
 
 export function editorSeite(args: {
@@ -112,6 +145,7 @@ export function editorSeite(args: {
     // § 35a-Zeile (Betriebseinstellung): Lohnanteil in Leistungspreisen, Anzeige an/aus.
     lohnanteilProzent: preisliste.konditionen.lohnanteilProzent,
     zeige35a: preisliste.konditionen.zeige35a && istAngebot,
+    einstellungenUrl: einstellungenUrl ?? "",
   };
 
   return `<!doctype html>
@@ -176,6 +210,14 @@ export function editorSeite(args: {
   .doc tr.sum.erste td { padding-top:9px; }
   .doc tr.ges td { font-weight:800; color:var(--akzent); border-top:2px solid var(--akzent);
                    border-bottom:none; padding-top:7px; }
+  /* Seite 2 der Vorschau: Anlage Aufmaß (Word und PDF hängen sie genauso an) */
+  .doc .d-seite2 { margin-top:22px; padding-top:14px; border-top:2px dashed #cfd4da; }
+  .doc .d-seitenmarke { font-size:10px; color:#8a9099; text-transform:uppercase; letter-spacing:.06em; }
+  .doc .d-fotos { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
+  .doc .d-fotos figure { margin:0; }
+  .doc .d-fotos img { width:100%; max-height:150px; object-fit:cover; border-radius:4px; display:block; }
+  .doc .d-fotos figcaption { font-size:10px; color:#444; margin-top:3px; line-height:1.4; }
+  .doc .d-vob { font-size:9.5px; color:#777; margin-top:14px; padding-top:6px; border-top:1px solid #ddd; line-height:1.45; }
   .doc .offen { font-size:11.5px; }
   .doc .d-gueltig { font-size:10.5px; color:#666; margin-top:11px; }
   .doc .d-fuss { font-size:9.5px; color:#8a8a8a; margin-top:15px; padding-top:9px;
@@ -670,6 +712,7 @@ export function editorSeite(args: {
     <div class="d-text" id="pvSchluss"></div>
     ${istAngebot ? `<div class="d-gueltig" id="pvGueltig"></div>` : ""}
     ${fussZ1 || fussZ2 ? `<div class="d-fuss">${[fussZ1, fussZ2].filter(Boolean).map(escapeHtml).join("<br>")}</div>` : ""}
+    ${vorschauAnlage(aufmass, dokument.bearbeitenToken)}
   </div>
   <p class="doc-note">Live-Vorschau deines Angebots — ändert sich sofort beim Tippen. PDF und Word sehen genauso aus.</p>
 </aside>
@@ -1222,6 +1265,10 @@ function summen(){
   html += '<div class="z gesamt"><span>Gesamt</span><span>'+(alleDa?euro(nettoGesamt+mwst):OFFEN)+'</span></div>';
   const ak = arbeitskosten35a(alleDa);
   if(ak!=null) html += '<div class="z" style="font-size:12px;color:var(--muted);"><span>davon Arbeitskosten nach § 35a EStG (voraussichtlich, brutto)</span><span>'+euro(ak)+'</span></div>';
+  // Wo der Maler den Lohnanteil und die Zeile selbst ändert: in den Betriebseinstellungen.
+  if(START.zeige35a && START.einstellungenUrl){
+    html += '<div class="z" style="font-size:11px;color:var(--faint);"><span>Lohnanteil '+START.lohnanteilProzent+' % laut <a href="'+esc(START.einstellungenUrl)+'#angebotsaufbau" style="color:inherit;text-decoration:underline;">Einstellungen › Angebotsaufbau</a> (dort auch abschaltbar)</span><span></span></div>';
+  }
   document.getElementById('summenBlock').innerHTML = html;
 }
 

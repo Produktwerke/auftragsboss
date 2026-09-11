@@ -257,6 +257,7 @@ export function editorSeite(args: {
   tr.abschnitt td.k-name { font-weight:700; font-size:15px; }
   /* Art-Auswahl (Arbeit/Material) je Zeile, nur bei Raumgliederung sichtbar. */
   .pos-art { font-size:11.5px; color:var(--muted); margin-top:4px; padding:2px 4px; border:1px solid var(--line); border-radius:6px; background:#fff; width:auto; }
+  .pos-art-custom { display:inline-block; width:auto; max-width:200px; margin:4px 0 0 6px; font-size:11.5px; padding:2px 6px; }
   tr.zwsumme td { color:#666; font-weight:600; font-size:13px; background:#fafbfc; }
   tr.hinzu td { border-bottom:none; padding:6px; }
   .neu { background:#f2f5f8; border:1px dashed #b8c0c8; color:#444; border-radius:7px;
@@ -578,7 +579,8 @@ export function editorSeite(args: {
     <table id="postab"></table>
     </div>
 
-    <div class="kat-neu">
+    <!-- Inhalt setzt render(): Raummodus → neuer Raum/Abschnitt, sonst eigene Kategorie -->
+    <div class="kat-neu" id="katNeu">
       <input id="katName" placeholder="Eigene Kategorie, z. B. Gerüst oder Entsorgung">
       <button class="neu" style="width:auto;" onclick="neueKategorie()">+ Kategorie hinzufügen</button>
     </div>
@@ -865,8 +867,60 @@ function gruppenPositionen(g){
   return eigene;
 }
 function gruppeVon(p){ return gruppen().find(g=>g.ist(p)) || null; }
-/** Art (Arbeit/Material) einer Zeile ändern — nur im Raummodus sichtbar. */
-function setArt(i, wert){ positionen[i].kategorie = wert; render(); markiereGeaendert(); }
+/** Art-Auswahl je Zeile (Raummodus): Arbeit, Material oder „Andere…" mit Freitext
+ *  (eigene Kategorie wie Gerüst oder Entsorgung, gleiche Bedienung wie bei der Einheit). */
+function artZelle(i, kat){
+  const eigene = kat!=='LEISTUNG' && kat!=='MATERIAL';
+  return '<select class="pos-art" title="Art der Position" onchange="artWahl('+i+',this)">'+
+    '<option value="LEISTUNG"'+(kat==='LEISTUNG'?' selected':'')+'>Arbeit</option>'+
+    '<option value="MATERIAL"'+(kat==='MATERIAL'?' selected':'')+'>Material</option>'+
+    '<option value="__custom__"'+(eigene?' selected':'')+'>Andere…</option>'+
+    '</select>'+
+    '<input class="pos-art-custom" placeholder="z. B. Gerüst" value="'+(eigene?esc(kat):'')+'" style="'+(eigene?'':'display:none;')+'" oninput="setArtCustom('+i+',this.value)">';
+}
+function artWahl(i, sel){
+  const inp = sel.closest('td').querySelector('.pos-art-custom');
+  if(sel.value==='__custom__'){
+    inp.style.display='';
+    if(inp.value.trim()) positionen[i].kategorie = inp.value.trim();
+    inp.focus();
+    return;
+  }
+  positionen[i].kategorie = sel.value; render(); markiereGeaendert();
+}
+function setArtCustom(i, wert){
+  // Nicht neu rendern (Fokus!), nur merken; leer = Arbeit.
+  positionen[i].kategorie = wert.trim() || 'LEISTUNG';
+  summen(); vorschauAktualisieren(); markiereGeaendert();
+}
+/** Neuer Raum oder Abschnitt als eigene Hauptgruppe (Raummodus): erste Zeile gleich mit anlegen. */
+function neueGruppe(){
+  const feld = document.getElementById('katName');
+  const name = feld.value.trim();
+  if(!name){ feld.focus(); return; }
+  if(raeume().some(r=>r.toLowerCase()===name.toLowerCase())){ feld.select(); return; } // gibt es schon
+  positionen.push({kategorie:'LEISTUNG', beschreibung:'', menge:1, einheit:'pauschal', einzelpreis:null,
+    preisquelle:'UNBEKANNT', vorschlag:false, mengeUnsicher:false, raumBezug:name});
+  feld.value='';
+  render(); markiereGeaendert();
+}
+/** Bedienzeile unter den Gruppen je nach Modus füllen. */
+function katNeuAktualisieren(){
+  const box = document.getElementById('katNeu');
+  if(!box) return;
+  const alt = box.querySelector('#katName');
+  const wert = alt ? alt.value : '';
+  if(raumModus()){
+    box.innerHTML = '<input id="katName" placeholder="Neuer Raum oder Abschnitt, z. B. Bad oder Außenarbeiten">'+
+      '<button class="neu" style="width:auto;" onclick="neueGruppe()">+ Raum / Abschnitt hinzufügen</button>';
+  } else {
+    box.innerHTML = '<input id="katName" placeholder="Eigene Kategorie, z. B. Gerüst oder Entsorgung">'+
+      '<button class="neu" style="width:auto;" onclick="neueKategorie()">+ Kategorie hinzufügen</button>';
+  }
+  const neu = box.querySelector('#katName');
+  neu.value = wert;
+  neu.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); (raumModus()?neueGruppe:neueKategorie)(); } });
+}
 /** Lohnanteil je Position für die § 35a-Zeile (gleiche Regel wie berechnung.ts). */
 function lohnanteil(p){
   if(p.kategorie==='MATERIAL') return 0;
@@ -922,11 +976,7 @@ function render(){
         '<td class="c-wahl"><input type="checkbox" class="wahl" '+(p._wahl?'checked ':'')+'title="Zum Zusammenfassen auswählen" onchange="wahlSetzen('+i+',this.checked)"></td>'+
         '<td class="c-griff"><span class="griff" title="Ziehen, um die Position zu verschieben">⠿</span></td>'+
         '<td class="c-beschr" data-label="Beschreibung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this); gedAktualisieren('+i+')">'+esc(p.beschreibung)+'</textarea>'+
-          (imRaum ? '<select class="pos-art" title="Art der Position" onchange="setArt('+i+',this.value)">'+
-            '<option value="LEISTUNG"'+(p.kategorie==='LEISTUNG'?' selected':'')+'>Arbeit</option>'+
-            '<option value="MATERIAL"'+(p.kategorie==='MATERIAL'?' selected':'')+'>Material</option>'+
-            (p.kategorie!=='LEISTUNG'&&p.kategorie!=='MATERIAL' ? '<option value="'+esc(p.kategorie)+'" selected>'+esc(p.kategorie)+'</option>' : '')+
-            '</select>' : '')+
+          (imRaum ? artZelle(i, p.kategorie) : '')+
           '<div class="hk-box">'+herkunftHtml(p)+'</div></td>'+
         '<td class="r c-menge" data-label="Menge"><input class="pos-menge r" inputmode="decimal" value="'+(p.menge??'')+'" oninput="setNum('+i+',\\'menge\\',this.value,this)"></td>'+
         '<td class="c-einheit" data-label="Einheit">'+einheitZelle(i,p.einheit)+'</td>'+
@@ -949,6 +999,7 @@ function render(){
   }
   // Beschreibungs-Textfelder an ihren Inhalt anpassen (mitwachsen).
   tabelle.querySelectorAll('textarea.pos-beschr').forEach(autoWachs);
+  katNeuAktualisieren();
   summen();
   stickyAktualisieren();
   wahlLeisteAktualisieren();

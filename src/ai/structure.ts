@@ -21,8 +21,8 @@ export const PositionSchema = z.object({
   kategorie: z
     .enum(["LEISTUNG", "MATERIAL"])
     .describe(
-      "LEISTUNG: eine Arbeit, die ausgeführt wird. MATERIAL: ein Werkstoff, der dafür gebraucht wird. " +
-        "Material erscheint im Angebot in einem eigenen Block.",
+      "LEISTUNG: eine Arbeit, die ausgeführt wird (im Regelfall inklusive Material). MATERIAL: ein Werkstoff als eigene Position, " +
+        "nur wenn er diktiert wurde oder der Betrieb Material getrennt ausweist (siehe Regeln).",
     ),
   vorschlag: z
     .boolean()
@@ -109,7 +109,7 @@ export const DokumentSchema = z.object({
   positionen: z
     .array(PositionSchema)
     .describe(
-      "Erst alle LEISTUNGEN in sinnvoller Ausführungsreihenfolge, danach das zugehörige MATERIAL.",
+      "Erst alle LEISTUNGEN in sinnvoller Ausführungsreihenfolge (bei mehreren Räumen Raum für Raum), danach etwaiges MATERIAL.",
     ),
   dialog: z
     .object({
@@ -271,6 +271,27 @@ function materialHinweis(gewerk: string): string {
     : "(Für dieses Gewerk sind keine Materialketten hinterlegt — ergänze Material nur, wenn du dir fachlich sicher bist.)";
 }
 
+/**
+ * Materialregel je Betriebseinstellung (Entscheidung 11.09.2026 nach Recherche:
+ * Maler kalkulieren Material im m²-Preis; getrennte Farbzeilen blähen das Angebot
+ * auf). Standard: kein Materialvorschlag, Leistungen "inkl. Material". Betriebe,
+ * die Material getrennt zeigen wollen, bekommen die alte Vorschlagslogik.
+ */
+function materialRegel(materialGetrennt: boolean): string {
+  if (materialGetrennt) {
+    return `**Material ergänzen — als sichtbaren Vorschlag.** Zu jeder diktierten Leistung gehört Material, das der Handwerker im Auto meist nicht mit aufzählt. Ergänze es als Positionen mit kategorie "MATERIAL" und vorschlag true. Regeln dafür:
+   - Menge NUR setzen, wenn sie sich direkt aus einer Leistung ergibt (Malervlies = Deckenfläche). Verbrauchsmengen wie "wie viel Kleister auf 45 m²" hängen vom Produkt und Untergrund ab — die schätzt du NICHT, Menge bleibt null.
+   - Keine Produktnamen oder Marken erfinden. "Tapetenkleister" ja, "Metylan Ovalit T" nein.
+   - Keine Dopplung: wurde ein Material bereits diktiert, ist es eine normale Position mit vorschlag false.
+   - Im Zweifel weglassen. Ein fehlender Vorschlag ist harmlos, ein unpassender kostet Vertrauen.
+   - Bei mehreren Räumen das Hauptmaterial (Farbe, Grundierung, Vlies, Spachtelmasse) JE RAUM als eigene Position mit raumBezug; Klein-, Hilfs- und Verbrauchsmaterial nur EINMAL ohne raumBezug.`;
+  }
+  return `**Material steckt im Preis der Leistung, KEINE Materialvorschläge.** Dieser Betrieb kalkuliert wie im Malerhandwerk üblich: Der Einheitspreis einer Leistung enthält das Material. Deshalb:
+   - Erfinde KEINE Positionen mit kategorie "MATERIAL". Hänge stattdessen an Beschichtungs-, Tapezier- und Lackierleistungen den Zusatz ", inkl. Material" an (z.B. "Wandflächen zweimal streichen, inkl. Material").
+   - Nur AUSDRÜCKLICH diktiertes Material ("12 Liter Farbe", "3 Rollen Vlies") wird eine MATERIAL-Position mit vorschlag false.
+   - Statt einer Position "Klein- und Verbrauchsmaterial" schlägst du bei Innenanstrichen EINE raumübergreifende Leistung "Schutz- und Abdeckarbeiten (Böden, Möbel, Einbauten)" vor (kategorie LEISTUNG, pauschal, vorschlag true, raumBezug null), sofern der Handwerker das Abdecken nicht selbst genannt hat.`;
+}
+
 function systemPrompt(preisliste: Preisliste): string {
   // Maler-Fachwissen nur einspeisen, wenn der Baustein an ist UND der Betrieb
   // ein Maler ist. Sonst bleibt der Prompt unverändert (Live-Verhalten).
@@ -305,12 +326,8 @@ Du erhältst das Roh-Transkript einer WhatsApp-Sprachnachricht, die ein Handwerk
 
    **Wandfotos:** Verlaufszeilen, die mit "FOTO Wand N" beginnen, sind automatische Bildauswertungen (keine Aussagen des Handwerkers). Ihre Öffnungen gehören in die Öffnungen der Raumzeile des in Klammern genannten Raums, sonst des zuletzt davor genannten Raums. Diktierte Maße gewinnen gegenüber Fotoschätzungen; dieselbe Öffnung (z.B. die Tür, die diktiert UND fotografiert wurde, oder ein Fenster, das auf zwei Fotos derselben Wand zu sehen ist) nur einmal aufnehmen. Ein Foto zeigt oft nur eine Öffnung, mehrere Fotos können dieselbe Wand zeigen; die Wandnummer ist nur eine Zählung der Fotos, keine Aussage über die Anzahl der Wände. Mit "(offen)" oder "(unsicher)" markierte Öffnungen trotzdem übernehmen. Öffnungen hinter "vermutlich Nachbarwand" NUR übernehmen, wenn der Handwerker sie danach ausdrücklich dieser Wand zuordnet. "Keine Öffnungen" heißt: diese Wand hat keine. Fotos ändern nichts an den Leistungen und erzeugen keine Rückfragen.
 
-5. **Material ergänzen — als sichtbaren Vorschlag.** Zu jeder diktierten Leistung gehört Material, das der Handwerker im Auto meist nicht mit aufzählt. Ergänze es als Positionen mit kategorie "MATERIAL" und vorschlag true. Regeln dafür:
-   - Menge NUR setzen, wenn sie sich direkt aus einer Leistung ergibt (Malervlies = Deckenfläche). Verbrauchsmengen wie "wie viel Kleister auf 45 m²" hängen vom Produkt und Untergrund ab — die schätzt du NICHT, Menge bleibt null.
-   - Keine Produktnamen oder Marken erfinden. "Tapetenkleister" ja, "Metylan Ovalit T" nein.
-   - Keine Dopplung: wurde ein Material bereits diktiert, ist es eine normale Position mit vorschlag false.
-   - Im Zweifel weglassen. Ein fehlender Vorschlag ist harmlos, ein unpassender kostet Vertrauen.
-   - MEHRERE RÄUME (mindestens zwei Raumzeilen in raeumeText): Das Angebot wird dem Kunden je Raum gegliedert. Deshalb bekommt JEDE Leistung ihren raumBezug, und das Hauptmaterial (Farbe, Grundierung, Vlies, Spachtelmasse) wird JE RAUM als eigene Position mit raumBezug vorgeschlagen, mit dem Namen des Raums in der Beschreibung („Dispersionsfarbe weiß, Kinderzimmer links"). Klein-, Hilfs- und Verbrauchsmaterial (Abdeckmaterial, Klebeband, Abdeckvlies) nur EINMAL, ohne raumBezug. Ebenso raumübergreifende Leistungen wie Anfahrt oder Baustelleneinrichtung ohne raumBezug.
+5. ${materialRegel(preisliste.konditionen.materialGetrennt)}
+   - MEHRERE RÄUME (mindestens zwei Raumzeilen in raeumeText): Das Angebot wird dem Kunden je Raum gegliedert (Raum als Überschrift, Positionen 1.1, 1.2 …). Deshalb bekommt JEDE Leistung ihren raumBezug; der Raumname steht NICHT zusätzlich in der Beschreibung. Raumübergreifendes (Abdecken, Anfahrt, Baustelleneinrichtung, Entsorgung) ohne raumBezug.
 
 6. **Fehlende Angaben melden.** Trage in "fehlendeInfos" ein, was du für ein versandfähiges Dokument brauchst, und formuliere je eine kurze Frage. Halte dich kurz: höchstens 3 Fragen, davon so wenige PFLICHT wie möglich.
 
@@ -352,7 +369,7 @@ Du erhältst das Roh-Transkript einer WhatsApp-Sprachnachricht, die ein Handwerk
 
 ## Materialwissen für dieses Gewerk (${preisliste.betrieb.gewerk || "unbekannt"})
 
-${materialHinweis(preisliste.betrieb.gewerk)}
+${preisliste.konditionen.materialGetrennt ? materialHinweis(preisliste.betrieb.gewerk) : "(Nur zum Verständnis der Leistungen; dieser Betrieb weist Material NICHT als eigene Positionen aus, siehe Regel 5.)\n" + materialHinweis(preisliste.betrieb.gewerk)}
 
 ## Hinterlegte Preisliste des Betriebs
 

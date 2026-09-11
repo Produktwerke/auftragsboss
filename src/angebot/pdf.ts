@@ -155,7 +155,7 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
     const preis = p.einzelpreis !== null ? euro(p.einzelpreis) : "";
     const gesamt = p.gesamt !== null ? euro(p.gesamt) : "";
     doc.fillColor("#1a1a1a").font("Helvetica").fontSize(9);
-    doc.text(String(p.nummer), spalten.pos + 2, yc + 5, { width: 22 });
+    doc.text(p.nummerText, spalten.pos + 2, yc + 5, { width: 24 });
     const hoehe = doc.heightOfString(p.beschreibung, { width: spalten.menge - spalten.leist - 8 });
     doc.text(p.beschreibung, spalten.leist, yc + 5, { width: spalten.menge - spalten.leist - 8 });
     doc.text(menge, spalten.menge, yc + 5, { width: 60, align: "right" });
@@ -170,7 +170,7 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
   // und Zwischensumme.
   const mehrereBloecke = summe.bloecke.length > 1;
   for (const block of summe.bloecke) {
-    if (mehrereBloecke) y = zeichneAbschnitt(block.name, y);
+    if (mehrereBloecke) y = zeichneAbschnitt(block.nummer !== null ? `${block.nummer}   ${block.name}` : block.name, y);
     for (const p of block.positionen) y = zeichneZeile(p, y);
     if (mehrereBloecke) y = zeichneZwischensumme(`Zwischensumme ${block.name}`, block, y);
   }
@@ -197,6 +197,16 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
   doc.moveTo(300, y).lineTo(R, y).strokeColor(akzent).lineWidth(1).stroke();
   y += 6;
   summenZeile("Gesamtbetrag", w(summe.brutto), true, akzent);
+  if (summe.arbeitskostenBrutto !== null && daten.art === "ANGEBOT") {
+    doc.font("Helvetica").fontSize(8).fillColor(grau);
+    doc.text(
+      `Voraussichtlicher Arbeitskostenanteil nach § 35a EStG: ${euro(summe.arbeitskostenBrutto)} brutto (maßgeblich ist die Schlussrechnung).`,
+      L,
+      y,
+      { width: breite, align: "right" },
+    );
+    y += 16;
+  }
 
   // ── Schlusstext ───────────────────────────────────────
   // Passt der Schlusstext nicht mehr komplett auf die Seite, lieber ganz auf

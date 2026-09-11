@@ -80,6 +80,9 @@ interface EinstellungenKoerper {
   standardEinleitung?: string;
   preisGedaechtnisAktiv?: boolean;
   zusammenfassungAktiv?: boolean;
+  materialGetrennt?: boolean;
+  zeige35a?: boolean;
+  lohnanteilProzent?: string | number;
   standardSchlusstext?: string;
   angebotGueltigTage?: string | number; // Eingabefeld liefert einen String
   zahlungsziel?: string;
@@ -908,6 +911,13 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
           ...(typeof k.zusammenfassungAktiv === "boolean"
             ? { zusammenfassungAktiv: k.zusammenfassungAktiv }
             : {}),
+          // Angebotsaufbau (11.09.2026): Material getrennt, § 35a-Zeile, Lohnanteil 0 bis 100.
+          ...(typeof k.materialGetrennt === "boolean" ? { materialGetrennt: k.materialGetrennt } : {}),
+          ...(typeof k.zeige35a === "boolean" ? { zeige35a: k.zeige35a } : {}),
+          ...(() => {
+            const n = Math.round(Number(String(k.lohnanteilProzent ?? "").trim()));
+            return Number.isFinite(n) && n >= 0 && n <= 100 ? { lohnanteilProzent: n } : {};
+          })(),
         },
       });
       return reply.send({ ok: true });

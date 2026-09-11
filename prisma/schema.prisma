@@ -38,6 +38,17 @@ model Handwerker {
   // abschalten (Einstellungen oder Stichwort), sobald er dem System vertraut.
   zusammenfassungAktiv Boolean @default(true)
 
+  // Angebotsdarstellung (Entscheidung 11.09.2026 nach Recherche: Räume als
+  // Hauptgruppen, Material im Einheitspreis, Lohnanteil nach § 35a EStG).
+  // materialGetrennt: true = Material als eigene Positionen je Raum (wie früher);
+  // false = die KI schlägt kein Material vor, Leistungen gelten "inkl. Material".
+  materialGetrennt Boolean @default(false)
+  // Zeile "Voraussichtlicher Arbeitskostenanteil nach § 35a EStG" im Angebot.
+  zeige35a Boolean @default(true)
+  // Lohnanteil in Leistungspreisen in Prozent (Branchenrichtwert 70 bis 80);
+  // Anfahrt/Abdecken zählen voll, Material gar nicht.
+  lohnanteilProzent Int @default(75)
+
   // Betriebsprofil — jeder Betrieb hinterlegt seine eigenen Stammdaten über
   // die Einstellungsseite. Solange ein Feld leer ist, greift der Eintrag aus
   // preisliste.json als Vorgabe (Einzelbetrieb im Test).

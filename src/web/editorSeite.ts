@@ -109,6 +109,9 @@ export function editorSeite(args: {
     positionen,
     angenommen: dokument.angenommenAm !== null,
     versendet: dokument.versendetAm !== null,
+    // § 35a-Zeile (Betriebseinstellung): Lohnanteil in Leistungspreisen, Anzeige an/aus.
+    lohnanteilProzent: preisliste.konditionen.lohnanteilProzent,
+    zeige35a: preisliste.konditionen.zeige35a && istAngebot,
   };
 
   return `<!doctype html>
@@ -252,6 +255,8 @@ export function editorSeite(args: {
      überschriften (Menge/Einheit/…) etwas kleiner, alles in EINER Zeile. */
   tr.abschnitt td { background:var(--akzent); color:#fff; font-weight:600; font-size:12px; padding:8px 8px; vertical-align:middle; }
   tr.abschnitt td.k-name { font-weight:700; font-size:15px; }
+  /* Art-Auswahl (Arbeit/Material) je Zeile, nur bei Raumgliederung sichtbar. */
+  .pos-art { font-size:11.5px; color:var(--muted); margin-top:4px; padding:2px 4px; border:1px solid var(--line); border-radius:6px; background:#fff; width:auto; }
   tr.zwsumme td { color:#666; font-weight:600; font-size:13px; background:#fafbfc; }
   tr.hinzu td { border-bottom:none; padding:6px; }
   .neu { background:#f2f5f8; border:1px dashed #b8c0c8; color:#444; border-radius:7px;
@@ -822,35 +827,82 @@ function kategorien(){
   return reihe.sort((a,b)=> rang(a)-rang(b) || orig.indexOf(a)-orig.indexOf(b));
 }
 
+// ── Gruppierung: Räume (ab zwei Räumen) oder Kategorien ─────
+// Entscheidung 11.09.2026: Bei mehreren Räumen ist der Raum die Hauptgruppe
+// (Nummern 1.1, 1.2 …, Zwischensumme je Raum, „Allgemein" zuletzt), innerhalb
+// eines Raums Material vor Arbeit. Gleiche Regeln wie im Backend (berechnung.ts),
+// damit Editor, Vorschau, PDF und Word übereinstimmen.
+function raumVon(p){ return (p.raumBezug||'').trim(); }
+function raeume(){
+  const r=[];
+  for(const p of positionen){ const n=raumVon(p); if(n && !r.includes(n)) r.push(n); }
+  return r;
+}
+function raumModus(){ return raeume().length >= 2; }
+function allgemeinName(ps){
+  if(ps.length && ps.every(p=>p.kategorie==='MATERIAL')) return 'Klein- und Hilfsmaterial';
+  if(ps.length && ps.every(p=>p.kategorie!=='MATERIAL')) return 'Allgemeine Leistungen';
+  return 'Allgemein';
+}
+const katRang = k => k==='MATERIAL' ? 0 : (k==='LEISTUNG' ? 1 : 2);
+/** Gruppen in Anzeige-Reihenfolge: {key, name, nummer, raum|kat, ist(p)} */
+function gruppen(){
+  if(raumModus()){
+    const rs = raeume();
+    const g = rs.map((r,i)=>({key:'RAUM:'+r, raum:r, name:r, nummer:i+1, ist:p=>raumVon(p)===r}));
+    if(positionen.some(p=>!raumVon(p))){
+      const rest = positionen.filter(p=>!raumVon(p) && !p._geloescht);
+      g.push({key:'RAUM:', raum:'', name:allgemeinName(rest), nummer:rs.length+1, ist:p=>!raumVon(p)});
+    }
+    return g;
+  }
+  return kategorien().map(k=>({key:k, kat:k, name:katName(k), nummer:null, ist:p=>p.kategorie===k}));
+}
+/** Positionen einer Gruppe als {p,i} in Anzeige-Reihenfolge (Raummodus: Material vor Arbeit). */
+function gruppenPositionen(g){
+  const eigene = positionen.map((p,i)=>({p,i})).filter(x=>g.ist(x.p));
+  if(raumModus()) eigene.sort((a,b)=>katRang(a.p.kategorie)-katRang(b.p.kategorie) || a.i-b.i);
+  return eigene;
+}
+function gruppeVon(p){ return gruppen().find(g=>g.ist(p)) || null; }
+/** Art (Arbeit/Material) einer Zeile ändern — nur im Raummodus sichtbar. */
+function setArt(i, wert){ positionen[i].kategorie = wert; render(); markiereGeaendert(); }
+/** Lohnanteil je Position für die § 35a-Zeile (gleiche Regel wie berechnung.ts). */
+function lohnanteil(p){
+  if(p.kategorie==='MATERIAL') return 0;
+  if(/anfahrt|abfahrt|fahrtkosten|abdeck|schutz|baustelleneinricht|entsorg|ger(ü|ue)st|reinigung|montage/i.test(p.beschreibung||'')) return 100;
+  return START.lohnanteilProzent;
+}
+
 function render(){
   const tabelle = document.getElementById('postab');
-  // Jede Kategorie bekommt ihren EIGENEN <tbody> — so ist jede Kategorie ihr
-  // eigener Klebe-Bereich: die Überschrift der nächsten Kategorie schiebt die
+  // Jede Gruppe bekommt ihren EIGENEN <tbody> — so ist jede Gruppe ihr
+  // eigener Klebe-Bereich: die Überschrift der nächsten Gruppe schiebt die
   // vorige beim Scrollen sauber hinaus (statt sich nur zu überlagern).
   tabelle.querySelectorAll('tbody').forEach(tb=>tb.remove());
-  const kats = kategorien();
-  const mehrere = kats.length > 1;
+  const grp = gruppen();
+  const mehrere = grp.length > 1;
+  const imRaum = raumModus();
 
-  for(const kat of kats){
+  for(const g of grp){
     const tbody = document.createElement('tbody');
     tbody.className = 'kat-gruppe';
-    // Kategorie-Kopfzeile: Name + Spaltenüberschriften in EINER blauen Zeile
+    // Gruppen-Kopfzeile: Name + Spaltenüberschriften in EINER blauen Zeile
     // (keine separate „Leistung"-Zeile mehr). Auf dem Handy werden die Spalten-
-    // labels ausgeblendet, dort bleibt nur der Kategoriename als Banner.
+    // labels ausgeblendet, dort bleibt nur der Gruppenname als Banner.
     const trK = document.createElement('tr');
     trK.className='abschnitt';
     trK.innerHTML =
       '<td class="k-sp k-wahlkopf"></td>'+
       '<td class="k-sp k-griffkopf"></td>'+
-      '<td class="k-name">'+esc(katName(kat))+'</td>'+
+      '<td class="k-name">'+(g.nummer!=null ? g.nummer+'&nbsp;&nbsp;' : '')+esc(g.name)+'</td>'+
       '<td class="r k-sp">Menge</td>'+
       '<td class="k-sp">Einheit</td>'+
       '<td class="r k-sp">Einzelpreis</td>'+
       '<td class="r k-sp">Gesamt</td>'+
       '<td class="k-sp"></td>';
     tbody.appendChild(trK);
-    positionen.forEach((p,i)=>{
-      if(p.kategorie!==kat) return;
+    gruppenPositionen(g).forEach(({p,i})=>{
       // Gerade gelöschte Zeile: graue Rückgängig-Zeile statt Eingabefeldern.
       if(p._geloescht){
         const trG = document.createElement('tr');
@@ -869,7 +921,13 @@ function render(){
       tr.innerHTML =
         '<td class="c-wahl"><input type="checkbox" class="wahl" '+(p._wahl?'checked ':'')+'title="Zum Zusammenfassen auswählen" onchange="wahlSetzen('+i+',this.checked)"></td>'+
         '<td class="c-griff"><span class="griff" title="Ziehen, um die Position zu verschieben">⠿</span></td>'+
-        '<td class="c-beschr" data-label="Beschreibung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this); gedAktualisieren('+i+')">'+esc(p.beschreibung)+'</textarea><div class="hk-box">'+herkunftHtml(p)+'</div></td>'+
+        '<td class="c-beschr" data-label="Beschreibung"><textarea class="pos-beschr" rows="1" oninput="setF('+i+',\\'beschreibung\\',this.value); autoWachs(this); gedAktualisieren('+i+')">'+esc(p.beschreibung)+'</textarea>'+
+          (imRaum ? '<select class="pos-art" title="Art der Position" onchange="setArt('+i+',this.value)">'+
+            '<option value="LEISTUNG"'+(p.kategorie==='LEISTUNG'?' selected':'')+'>Arbeit</option>'+
+            '<option value="MATERIAL"'+(p.kategorie==='MATERIAL'?' selected':'')+'>Material</option>'+
+            (p.kategorie!=='LEISTUNG'&&p.kategorie!=='MATERIAL' ? '<option value="'+esc(p.kategorie)+'" selected>'+esc(p.kategorie)+'</option>' : '')+
+            '</select>' : '')+
+          '<div class="hk-box">'+herkunftHtml(p)+'</div></td>'+
         '<td class="r c-menge" data-label="Menge"><input class="pos-menge r" inputmode="decimal" value="'+(p.menge??'')+'" oninput="setNum('+i+',\\'menge\\',this.value,this)"></td>'+
         '<td class="c-einheit" data-label="Einheit">'+einheitZelle(i,p.einheit)+'</td>'+
         '<td class="r c-preis" data-label="Einzelpreis"><input class="pos-preis r" inputmode="decimal" value="'+(p.einzelpreis??'')+'" placeholder="___" oninput="setNum('+i+',\\'einzelpreis\\',this.value,this)"><div class="ged-box ged-desk" data-i="'+i+'">'+gedHtml(p,i)+'</div></td>'+
@@ -880,11 +938,12 @@ function render(){
       tbody.appendChild(tr);
     });
     // "+ Position hinzufügen" direkt unter dem jeweiligen Abschnitt — auch
-    // Ablageziel beim Ziehen ("ans Ende dieser Kategorie").
+    // Ablageziel beim Ziehen ("ans Ende dieser Gruppe"). Im Raummodus bekommt
+    // die neue Zeile automatisch den Raum, kein Tippen und kein Verschieben nötig.
     const trNeu = document.createElement('tr');
     trNeu.className='hinzu';
-    trNeu.innerHTML = '<td colspan="8"><button class="neu" onclick="neuePosition(\\''+escJs(kat)+'\\')">+ Position'+(mehrere?' unter „'+esc(katName(kat))+'“':'')+' hinzufügen</button></td>';
-    dragZielKategorieEnde(trNeu, kat);
+    trNeu.innerHTML = '<td colspan="8"><button class="neu" onclick="neuePosition(\\''+escJs(g.key)+'\\')">+ Position'+(mehrere?' unter „'+esc(g.name)+'“':'')+' hinzufügen</button></td>';
+    dragZielGruppeEnde(trNeu, g);
     tbody.appendChild(trNeu);
     tabelle.appendChild(tbody);
   }
@@ -953,7 +1012,7 @@ function zusammenfassen(){
     menge: 1, einheit: 'pauschal',
     einzelpreis: voll ? Math.round(summe*100)/100 : null,
     preisquelle: voll ? 'MANUELL' : 'UNBEKANNT',
-    vorschlag: false, mengeUnsicher: false };
+    vorschlag: false, mengeUnsicher: false, raumBezug: erste.raumBezug||null };
   positionen.splice(positionen.indexOf(erste), 0, neue);
   for(const p of ausgewaehlt){
     const j = positionen.indexOf(p);
@@ -1070,26 +1129,39 @@ function zeileNeuRechnen(i,el){
   summen(); markiereGeaendert();
 }
 
+/** Voraussichtliche Arbeitskosten (§ 35a EStG) brutto aus den Zeilensummen; null wenn nicht zeigbar. */
+function arbeitskosten35a(alleDa){
+  if(!START.zeige35a || !alleDa) return null;
+  let lohn = 0;
+  for(const p of positionen){
+    if(p._geloescht) continue;
+    const g = zeilensumme(p);
+    if(g!=null) lohn += Math.round(g*lohnanteil(p))/100;
+  }
+  if(lohn<=0) return null;
+  return Math.round(lohn*(1+START.mwstSatz/100)*100)/100;
+}
+
 function summen(){
-  const kats = kategorien();
-  const mehrere = kats.length > 1;
+  const grp = gruppen();
+  const mehrere = grp.length > 1;
   let html = '';
   // Gerade gelöschte Zeilen (Rückgängig-Frist) zählen nicht mehr mit.
   let nettoGesamt = 0, alleDa = positionen.some(p=>!p._geloescht);
 
-  for(const kat of kats){
-    const eigene = positionen.filter(p=>p.kategorie===kat && !p._geloescht);
+  for(const g of grp){
+    const eigene = gruppenPositionen(g).map(x=>x.p).filter(p=>!p._geloescht);
     if(!eigene.length) continue;
     let netto = 0, voll = true;
     for(const p of eigene){
-      const g = zeilensumme(p);
-      if(g==null) voll=false; else netto+=g;
+      const z = zeilensumme(p);
+      if(z==null) voll=false; else netto+=z;
     }
     netto = Math.round(netto*100)/100;
     nettoGesamt += netto;
     if(!voll) alleDa = false;
     if(mehrere){
-      html += '<div class="z"><span>Zwischensumme '+esc(katName(kat))+'</span><span>'+(voll?euro(netto):OFFEN)+'</span></div>';
+      html += '<div class="z"><span>Zwischensumme '+esc(g.name)+'</span><span>'+(voll?euro(netto):OFFEN)+'</span></div>';
     }
   }
   nettoGesamt = Math.round(nettoGesamt*100)/100;
@@ -1097,6 +1169,8 @@ function summen(){
   html += '<div class="z"><span>Nettosumme</span><span>'+(alleDa?euro(nettoGesamt):OFFEN)+'</span></div>';
   html += '<div class="z"><span>zzgl. '+START.mwstSatz+' % MwSt.</span><span>'+(alleDa?euro(mwst):OFFEN)+'</span></div>';
   html += '<div class="z gesamt"><span>Gesamt</span><span>'+(alleDa?euro(nettoGesamt+mwst):OFFEN)+'</span></div>';
+  const ak = arbeitskosten35a(alleDa);
+  if(ak!=null) html += '<div class="z" style="font-size:12px;color:var(--muted);"><span>davon Arbeitskosten nach § 35a EStG (voraussichtlich, brutto)</span><span>'+euro(ak)+'</span></div>';
   document.getElementById('summenBlock').innerHTML = html;
 }
 
@@ -1155,7 +1229,7 @@ function dragVerdrahten(tr, p){
     const r = tr.getBoundingClientRect();
     const oben = e.clientY < r.top + r.height/2;
     positionen.splice(positionen.indexOf(dragP), 1);
-    dragP.kategorie = p.kategorie; // Ablage in anderer Kategorie wechselt sie
+    uebernimmGruppe(dragP, p); // Ablage in anderer Gruppe wechselt sie
     positionen.splice(positionen.indexOf(p) + (oben?0:1), 0, dragP);
     const bewegt = dragP;
     dragP = null;
@@ -1163,17 +1237,26 @@ function dragVerdrahten(tr, p){
     zeigeBewegung(bewegt, null); // kurz aufblinken lassen
   });
 }
-// "+ Position hinzufügen"-Zeile als Ablageziel: ans Ende dieser Kategorie.
-function dragZielKategorieEnde(trNeu, kat){
+/** Gruppenzugehörigkeit von „vorbild" übernehmen: Raummodus → Raum (Art bleibt), sonst Kategorie. */
+function uebernimmGruppe(p, vorbild){
+  if(raumModus()) p.raumBezug = vorbild.raumBezug || null;
+  else p.kategorie = vorbild.kategorie;
+}
+/** In dieselbe Gruppe wie „vorbild" gehören? */
+function gleicheGruppe(a, b){
+  return raumModus() ? raumVon(a)===raumVon(b) : a.kategorie===b.kategorie;
+}
+// "+ Position hinzufügen"-Zeile als Ablageziel: ans Ende dieser Gruppe.
+function dragZielGruppeEnde(trNeu, g){
   trNeu.addEventListener('dragover', e=>{ if(!dragP) return; e.preventDefault(); e.dataTransfer.dropEffect='move'; trNeu.classList.add('drag-ziel'); });
   trNeu.addEventListener('dragleave', ()=>trNeu.classList.remove('drag-ziel'));
   trNeu.addEventListener('drop', e=>{
     e.preventDefault();
     if(!dragP) return;
     positionen.splice(positionen.indexOf(dragP), 1);
-    dragP.kategorie = kat;
+    if(g.raum!==undefined) dragP.raumBezug = g.raum || null; else dragP.kategorie = g.kat;
     let letzte = -1;
-    positionen.forEach((q,qi)=>{ if(q.kategorie===kat && !q._geloescht) letzte=qi; });
+    positionen.forEach((q,qi)=>{ if(g.ist(q) && !q._geloescht) letzte=qi; });
     positionen.splice(letzte+1, 0, dragP);
     const bewegt = dragP;
     dragP = null;
@@ -1183,13 +1266,13 @@ function dragZielKategorieEnde(trNeu, kat){
 }
 
 // ── Positionen mit ▲/▼ verschieben (Handy — dort gibt es kein Ziehen) ─
-// Bewegt sich in der ANZEIGE-Reihenfolge (Material zuerst, dann Arbeit, dann
-// eigene Kategorien); über eine Kategoriegrenze hinweg wechselt die Position
-// die Kategorie — gleiches Verhalten wie Drag & Drop am PC.
+// Bewegt sich in der ANZEIGE-Reihenfolge; über eine Gruppengrenze hinweg
+// wechselt die Position die Gruppe (Raum bzw. Kategorie) — gleiches Verhalten
+// wie Drag & Drop am PC.
 function anzeigeListe(){
   const liste = [];
-  for(const kat of kategorien()){
-    positionen.forEach(p=>{ if(p.kategorie===kat && !p._geloescht) liste.push(p); });
+  for(const g of gruppen()){
+    gruppenPositionen(g).forEach(({p})=>{ if(!p._geloescht) liste.push(p); });
   }
   return liste;
 }
@@ -1204,10 +1287,14 @@ function verschiebePosition(i, richtung){
   const altTop = altTr ? altTr.getBoundingClientRect().top : null;
   positionen.splice(positionen.indexOf(p), 1);
   const ni = positionen.indexOf(nachbar);
-  if(nachbar.kategorie === p.kategorie){
+  if(gleicheGruppe(nachbar, p)){
+    // Im Raummodus steht Material vor Arbeit: ein Sprung über diese Grenze
+    // wechselt die Art, damit die Zeile wirklich dort landet, wo sie hinsoll.
+    if(raumModus() && nachbar.kategorie !== p.kategorie) p.kategorie = nachbar.kategorie;
     positionen.splice(richtung < 0 ? ni : ni+1, 0, p); // vor/hinter den Nachbarn
   } else {
-    p.kategorie = nachbar.kategorie; // Grenze überschritten → Kategorie wechseln
+    uebernimmGruppe(p, nachbar); // Grenze überschritten → Gruppe wechseln
+    if(raumModus()) p.kategorie = nachbar.kategorie;
     positionen.splice(richtung < 0 ? ni+1 : ni, 0, p);
   }
   render(); markiereGeaendert();
@@ -1285,7 +1372,20 @@ function endgueltigLoeschen(i){
   positionen.splice(i,1);
   render(); // gespeichert wurde schon beim Löschen — nur die Ansicht auffrischen
 }
-function neuePosition(kat){
+function neuePosition(key){
+  // Raummodus: key = "RAUM:<Name>" (leer = Allgemein). Die neue Zeile bekommt
+  // den Raum automatisch und startet als Arbeit (Pauschale, nur Preis eintragen).
+  if(key.startsWith('RAUM:')){
+    const raum = key.slice(5);
+    let letzte = -1;
+    positionen.forEach((p,i)=>{ if(raumVon(p)===raum) letzte=i; });
+    const neue = {kategorie:'LEISTUNG', beschreibung:'', menge:1, einheit:'pauschal', einzelpreis:null,
+      preisquelle:'UNBEKANNT', vorschlag:false, mengeUnsicher:false, raumBezug: raum||null};
+    if(letzte>=0) positionen.splice(letzte+1,0,neue); else positionen.push(neue);
+    render(); markiereGeaendert();
+    return;
+  }
+  const kat = key;
   // Hinter der letzten Position derselben Kategorie einfügen
   let letzte = -1;
   positionen.forEach((p,i)=>{ if(p.kategorie===kat) letzte=i; });
@@ -1294,7 +1394,7 @@ function neuePosition(kat){
   const istLeistung = kat==='LEISTUNG';
   const neue = {kategorie:kat,beschreibung:'',
     menge:istLeistung?1:null, einheit:istLeistung?'pauschal':'m2', einzelpreis:null,
-    preisquelle:'UNBEKANNT', vorschlag:false, mengeUnsicher:false};
+    preisquelle:'UNBEKANNT', vorschlag:false, mengeUnsicher:false, raumBezug:null};
   if(letzte>=0) positionen.splice(letzte+1,0,neue); else positionen.push(neue);
   render(); markiereGeaendert();
 }
@@ -1305,7 +1405,7 @@ function neueKategorie(){
   if(kategorien().some(k=>katName(k).toLowerCase()===name.toLowerCase())){
     feld.select(); return; // gibt es schon — nicht doppelt anlegen
   }
-  positionen.push({kategorie:name,beschreibung:'',menge:null,einheit:'m2',einzelpreis:null,preisquelle:'UNBEKANNT',vorschlag:false,mengeUnsicher:false});
+  positionen.push({kategorie:name,beschreibung:'',menge:null,einheit:'m2',einzelpreis:null,preisquelle:'UNBEKANNT',vorschlag:false,mengeUnsicher:false,raumBezug:null});
   feld.value='';
   render(); markiereGeaendert();
 }
@@ -1370,32 +1470,36 @@ function datumAusFeld(){
 }
 function pvDatum(d){ return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}); }
 function pvZeilen(){
-  const kats = kategorien();
-  const mehrere = kats.length > 1;
+  const grp = gruppen();
+  const mehrere = grp.length > 1;
+  const imRaum = raumModus();
   let html=''; let nr=0; let nettoGesamt=0; let alleDa=positionen.some(p=>!p._geloescht);
-  for(const kat of kats){
-    const eigene = positionen.filter(p=>p.kategorie===kat && !p._geloescht);
+  for(const g of grp){
+    const eigene = gruppenPositionen(g).map(x=>x.p).filter(p=>!p._geloescht);
     if(!eigene.length) continue;
-    if(mehrere) html += '<tr class="kat"><td colspan="5">'+esc(katName(kat))+'</td></tr>';
-    let netto=0, voll=true;
+    if(mehrere) html += '<tr class="kat"><td colspan="5">'+(g.nummer!=null ? g.nummer+'&nbsp;&nbsp;' : '')+esc(g.name)+'</td></tr>';
+    let netto=0, voll=true, lauf=0;
     for(const p of eigene){
-      nr++;
-      const g = zeilensumme(p);
-      if(g==null) voll=false; else netto+=g;
+      nr++; lauf++;
+      const nummer = imRaum ? g.nummer+'.'+lauf : String(nr);
+      const z = zeilensumme(p);
+      if(z==null) voll=false; else netto+=z;
       const menge = p.einheit==='pauschal' ? 'pauschal'
         : (p.menge==null ? '' : p.menge.toLocaleString('de-DE')+' '+einheitLabel(p.einheit||''));
-      html += '<tr><td>'+nr+'</td><td>'+esc(p.beschreibung).replace(/\\n/g,'<br>')+'</td><td class="r">'+esc(menge)+'</td>'+
+      html += '<tr><td>'+nummer+'</td><td>'+esc(p.beschreibung).replace(/\\n/g,'<br>')+'</td><td class="r">'+esc(menge)+'</td>'+
               '<td class="r">'+(p.einzelpreis==null?OFFEN:euro(p.einzelpreis))+'</td>'+
-              '<td class="r">'+(g==null?OFFEN:euro(g))+'</td></tr>';
+              '<td class="r">'+(z==null?OFFEN:euro(z))+'</td></tr>';
     }
     netto=Math.round(netto*100)/100; nettoGesamt+=netto; if(!voll) alleDa=false;
-    if(mehrere) html += '<tr class="sum zw"><td colspan="4" class="r">Zwischensumme '+esc(katName(kat))+'</td><td class="r">'+(voll?euro(netto):OFFEN)+'</td></tr>';
+    if(mehrere) html += '<tr class="sum zw"><td colspan="4" class="r">Zwischensumme '+esc(g.name)+'</td><td class="r">'+(voll?euro(netto):OFFEN)+'</td></tr>';
   }
   nettoGesamt=Math.round(nettoGesamt*100)/100;
   const mwst=Math.round(nettoGesamt*START.mwstSatz)/100;
   html += '<tr class="sum erste"><td colspan="4" class="r">Nettosumme</td><td class="r">'+(alleDa?euro(nettoGesamt):OFFEN)+'</td></tr>';
   html += '<tr class="sum"><td colspan="4" class="r">zzgl. '+START.mwstSatz+' % MwSt.</td><td class="r">'+(alleDa?euro(mwst):OFFEN)+'</td></tr>';
   html += '<tr class="ges"><td colspan="4" class="r">Gesamtbetrag</td><td class="r">'+(alleDa?euro(Math.round((nettoGesamt+mwst)*100)/100):OFFEN)+'</td></tr>';
+  const ak = arbeitskosten35a(alleDa);
+  if(ak!=null) html += '<tr class="sum"><td colspan="5" class="r" style="font-size:10px;color:#777;">Voraussichtlicher Arbeitskostenanteil nach § 35a EStG: '+euro(ak)+' brutto (maßgeblich ist die Schlussrechnung).</td></tr>';
   return html;
 }
 function vorschauAktualisieren(){

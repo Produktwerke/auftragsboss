@@ -38,23 +38,24 @@ async function stelleDemoDokumentBereit(): Promise<{
   const einstellungen = await einstellungenTokenBereit(prisma, handwerker);
   const werbe = await werbeCodeBereit(prisma, handwerker);
 
-  const vorhanden = await prisma.dokument.findFirst({ orderBy: { datum: "desc" } });
+  // Demo mit ZWEI Räumen (Raumblöcke, Nummern 1.1 …, § 35a-Zeile) — seit 11.09.2026.
+  const vorhanden = await prisma.dokument.findFirst({ where: { nummer: "ANG-2026-DEMO2" }, orderBy: { datum: "desc" } });
   if (vorhanden)
     return { bearbeiten: vorhanden.bearbeitenToken, kunde: vorhanden.kundenToken, einstellungen, werbe };
 
   const positionen = [
-    L("Alte Tapete entfernen", 45, "m2"),
-    L("Deckenflächen spachteln", 45, "m2"),
-    L("Wände tapezieren", null, "m2"),
-    M("Tapete (nach Kundenwahl)", null, "m2"),
-    M("Tapetenkleister", null, "Stk"),
+    { ...L("Alte Tapete entfernen", 45, "m2"), raumBezug: "Wohnzimmer" },
+    { ...L("Wände tapezieren, inkl. Material", 45, "m2"), raumBezug: "Wohnzimmer" },
+    { ...L("Wandflächen zweimal streichen, inkl. Material", 32, "m2"), raumBezug: "Schlafzimmer" },
+    { ...M("Tapete (nach Kundenwahl)", null, "m2"), raumBezug: "Wohnzimmer" },
+    { ...L("Schutz- und Abdeckarbeiten (Böden, Möbel)", 1, "pauschal"), vorschlag: true },
   ];
 
   const dok = await prisma.dokument.create({
     data: {
       handwerkerId: handwerker.id,
       art: "ANGEBOT",
-      nummer: "ANG-2026-DEMO",
+      nummer: "ANG-2026-DEMO2",
       bearbeitenToken: erzeugeToken(),
       kundenToken: erzeugeToken(),
       transkript: "Demo",
@@ -63,12 +64,12 @@ async function stelleDemoDokumentBereit(): Promise<{
       kundePlzOrt: "12345 Musterstadt",
       kundenNummer: "K-1042",
       gewerk: "Malerei",
-      objekt: "Wohnzimmer, ca. 45 m²",
+      objekt: "Wohnzimmer und Schlafzimmer",
       positionenJson: JSON.stringify(positionen),
       kiOriginalJson: JSON.stringify({
         positionen,
         kunde: { name: "Familie Bär", strasse: "Musterstraße 5", plzOrt: "12345 Musterstadt" },
-        objekt: "Wohnzimmer, ca. 45 m²",
+        objekt: "Wohnzimmer und Schlafzimmer",
         einleitung: "",
         schlusstext: "",
       }),

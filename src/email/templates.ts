@@ -118,7 +118,7 @@ function positionsTabelle(summe: Angebotssumme): string {
             : "";
 
       return `<tr>
-        <td style="${zellStil}text-align:right;color:#888;">${p.nummer}</td>
+        <td style="${zellStil}text-align:right;color:#888;">${p.nummerText}</td>
         <td style="${zellStil}">${escapeHtml(p.beschreibung).replace(/\n/g, "<br>")}${hinweis}</td>
         <td style="${zellStil}text-align:right;white-space:nowrap;">${mengeZelle}</td>
         <td style="${zellStil}text-align:right;white-space:nowrap;">${preisZelle}</td>
@@ -140,22 +140,25 @@ function positionsTabelle(summe: Angebotssumme): string {
       <td style="${summenZelle}color:#666;font-weight:600;">${teil.vollstaendig ? euro(teil.netto) : leer}</td>
     </tr>`;
 
-  const zeilen = [
-    ...(material.length > 0
-      ? [
-          abschnitt(
-            material.some((p) => p.vorschlag)
-              ? "Material  (Vorschlag: bitte prüfen und Mengen ergänzen)"
-              : "Material",
-          ),
-          ...material.map(zeile),
-          zwischensumme("Zwischensumme Material", summe.material),
-          abschnitt("Arbeitsaufwand"),
-        ]
-      : []),
-    ...leistungen.map(zeile),
-    ...(material.length > 0 ? [zwischensumme("Zwischensumme Arbeitsaufwand", summe.leistungen)] : []),
-  ].join("");
+  // Gleiche Blöcke wie Word/PDF: bei mehreren Räumen Raumblöcke mit Nummern,
+  // sonst Material vor Arbeitsaufwand. Materialvorschläge bleiben gekennzeichnet.
+  const mehrereBloecke = summe.bloecke.length > 1;
+  const zeilen = summe.bloecke
+    .flatMap((block) => {
+      const titel = block.nummer !== null ? `${block.nummer}   ${block.name}` : block.name;
+      const vorschlagHinweis =
+        block.kategorie === "MATERIAL" && block.positionen.some((p) => p.vorschlag)
+          ? "  (Vorschlag: bitte prüfen und Mengen ergänzen)"
+          : "";
+      return [
+        ...(mehrereBloecke ? [abschnitt(titel + vorschlagHinweis)] : []),
+        ...block.positionen.map(zeile),
+        ...(mehrereBloecke ? [zwischensumme(`Zwischensumme ${block.name}`, block)] : []),
+      ];
+    })
+    .join("");
+  void material;
+  void leistungen;
 
   // Solange nicht alle Preise stehen, ist eine ausgerechnete Summe irreführend;
   // dann zeigen wir durchgehend Platzhalter.
@@ -183,6 +186,11 @@ function positionsTabelle(summe: Angebotssumme): string {
           <td style="${summenZelle}color:#666;">${mwstWert}</td></tr>
       <tr><td colspan="4" style="${summenZelle}font-size:16px;font-weight:700;border-top:2px solid ${SIGNAL};">Gesamtbetrag</td>
           <td style="${summenZelle}font-size:16px;font-weight:700;border-top:2px solid ${SIGNAL};">${bruttoWert}</td></tr>
+      ${
+        summe.arbeitskostenBrutto !== null
+          ? `<tr><td colspan="5" style="${summenZelle}color:#888;font-size:12px;">Voraussichtlicher Arbeitskostenanteil nach § 35a EStG: ${euro(summe.arbeitskostenBrutto)} brutto (maßgeblich ist die Schlussrechnung).</td></tr>`
+          : ""
+      }
     </tfoot>
   </table>
   </div>`;

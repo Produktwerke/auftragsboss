@@ -31,6 +31,8 @@ export const positionSchema = z.object({
   vorschlag: z.boolean().optional(),
   mengeUnsicher: z.boolean().optional(),
   gedSperre: z.boolean().optional(),
+  // Raumzuordnung (Raumblöcke im Angebot) — Zod streift unbekannte Felder, deshalb hier deklarieren.
+  raumBezug: z.string().max(80).nullable().optional(),
 });
 
 export const speicherSchema = z.object({
@@ -66,6 +68,9 @@ export const einstellungenSchema = z.object({
   standardSchlusstext: text(4000).optional(),
   preisGedaechtnisAktiv: z.boolean().optional(),
   zusammenfassungAktiv: z.boolean().optional(),
+  materialGetrennt: z.boolean().optional(),
+  zeige35a: z.boolean().optional(),
+  lohnanteilProzent: z.union([z.string().max(5), z.number().min(0).max(100)]).optional(),
   angebotGueltigTage: z.union([z.string().max(5), z.number().int().min(0).max(365)]).optional(),
   zahlungsziel: text(160).optional(),
 });

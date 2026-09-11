@@ -100,7 +100,7 @@ function positionsZeile(p: BerechnetePosition): TableRow {
   // stehen in der E-Mail an den Handwerker, nicht im Angebot.
   return new TableRow({
     children: [
-      zelle({ text: String(p.nummer), rechts: true, farbe: GRAU }),
+      zelle({ text: p.nummerText, rechts: true, farbe: GRAU }),
       zelle({ text: p.beschreibung }),
       zelle({ text: menge, rechts: true }),
       zelle({ text: p.einzelpreis !== null ? euro(p.einzelpreis) : "", rechts: true }),
@@ -157,9 +157,11 @@ function positionsTabelle(summe: Angebotssumme, akzent: string): Table {
 
   // Jede Kategorie (Arbeitsaufwand, Material, eigene) als eigener Block mit
   // Überschrift und Zwischensumme — bei nur einem Block ohne beides.
+  // Raumblöcke tragen ihre Nummer in der Überschrift ("1  Kinderzimmer links"),
+  // die Positionen darunter 1.1, 1.2 … (Entscheidung 11.09.2026).
   const mehrereBloecke = summe.bloecke.length > 1;
   const inhaltsZeilen: TableRow[] = summe.bloecke.flatMap((block) => [
-    ...(mehrereBloecke ? [abschnittsZeile(block.name)] : []),
+    ...(mehrereBloecke ? [abschnittsZeile(block.nummer !== null ? `${block.nummer}   ${block.name}` : block.name)] : []),
     ...block.positionen.map(positionsZeile),
     ...(mehrereBloecke ? [zwischensumme(`Zwischensumme ${block.name}`, block)] : []),
   ]);
@@ -345,6 +347,23 @@ export async function erzeugeAngebotWord(args: {
 
     // ── Positionen ────────────────────────────────────────
     positionsTabelle(summe, akzent),
+    // § 35a EStG: Privatkunden können 20 % des Arbeitslohns absetzen; die Zeile
+    // zeigt den voraussichtlichen Anteil (Betriebseinstellung, prozentual).
+    ...(summe.arbeitskostenBrutto !== null && istAngebot
+      ? [
+          new Paragraph({
+            spacing: { before: 80, after: 0 },
+            alignment: AlignmentType.RIGHT,
+            children: [
+              new TextRun({
+                text: `Voraussichtlicher Arbeitskostenanteil nach § 35a EStG: ${euro(summe.arbeitskostenBrutto)} brutto (maßgeblich ist die Schlussrechnung).`,
+                size: 16,
+                color: GRAU,
+              }),
+            ],
+          }),
+        ]
+      : []),
     new Paragraph({ spacing: { after: 280 }, children: [] }),
 
     // ── Schlusstext ───────────────────────────────────────

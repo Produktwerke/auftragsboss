@@ -176,6 +176,26 @@ export function einstellungenSeite(args: {
           </div>
 
           <div class="section">
+            <div class="section-h"><h2>Angebotsaufbau</h2><p>Bei mehreren Räumen gliedert AuftragsBoss das Angebot je Raum, mit Zwischensumme und Positionen 1.1, 1.2 und so weiter.</p></div>
+            <div class="section-b">
+              <label class="check" style="margin-bottom:14px;">
+                <input type="checkbox" id="materialGetrennt" ${h.materialGetrennt ? "checked" : ""}>
+                <span><b>Material als eigene Positionen ausweisen.</b><br><span class="hint" style="margin:0;">Aus: Leistungen gelten „inkl. Material", wie im Malerhandwerk üblich, und AuftragsBoss schlägt keine Materialzeilen vor. An: Farbe, Grundierung und Vlies erscheinen je Raum als eigene Zeilen.</span></span>
+              </label>
+              <label class="check" style="margin-bottom:14px;">
+                <input type="checkbox" id="zeige35a" ${h.zeige35a ? "checked" : ""}>
+                <span><b>Arbeitskostenanteil nach § 35a EStG im Angebot zeigen.</b><br><span class="hint" style="margin:0;">Privatkunden können 20 % des Arbeitslohns von der Steuer absetzen. Die Zeile nennt den voraussichtlichen Anteil; maßgeblich bleibt die Rechnung.</span></span>
+              </label>
+              <div class="grid2">
+                <div class="field"><label>Lohnanteil in Leistungspreisen <span style="font-weight:400;color:var(--faint);">(%)</span></label>
+                  <input id="lohnanteilProzent" type="number" min="0" max="100" inputmode="numeric" value="${h.lohnanteilProzent}">
+                  ${hint("Branchenrichtwert 70 bis 80 %. Anfahrt und Abdecken zählen voll, Materialzeilen gar nicht.")}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
             <div class="section-h"><h2>Feedback ans AuftragsBoss-Team</h2><p>Was fehlt, was nervt, was gefällt? Wir lesen jede Rückmeldung.</p></div>
             <div class="section-b">
               <div class="field"><textarea id="feedbackText" placeholder="Deine Nachricht an uns …"></textarea></div>
@@ -347,6 +367,9 @@ async function speichern(){
   for(const id of FELDER) daten[id]=val(id);
   daten.preisGedaechtnisAktiv=document.getElementById("preisGedaechtnisAktiv").checked;
   daten.zusammenfassungAktiv=document.getElementById("zusammenfassungAktiv").checked;
+  daten.materialGetrennt=document.getElementById("materialGetrennt").checked;
+  daten.zeige35a=document.getElementById("zeige35a").checked;
+  daten.lohnanteilProzent=document.getElementById("lohnanteilProzent").value;
   try{
     const r=await fetch("/api/einstellungen/"+TOKEN,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(daten)});
     if(!r.ok) throw 0;
@@ -366,6 +389,9 @@ farbeHexInput.addEventListener("input",()=>{
 farbeHexInput.addEventListener("blur",()=>{ farbeHexInput.value=farbeInput.value.toUpperCase(); });
 document.getElementById("preisGedaechtnisAktiv").addEventListener("change",markiere);
 document.getElementById("zusammenfassungAktiv").addEventListener("change",markiere);
+document.getElementById("materialGetrennt").addEventListener("change",markiere);
+document.getElementById("zeige35a").addEventListener("change",markiere);
+document.getElementById("lohnanteilProzent").addEventListener("input",markiere);
 
 document.getElementById("logoDatei").addEventListener("change",function(){
   const datei=this.files&&this.files[0];

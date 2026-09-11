@@ -45,6 +45,11 @@ const PreislistenSchema = z.object({
     angebotGueltigTage: z.number().int().positive().default(30),
     anfahrtPauschale: z.number().min(0).default(0),
     zahlungsziel: z.string().default("14 Tage netto"),
+    // Angebotsdarstellung je Betrieb (werden aus dem Handwerker-Datensatz überlagert,
+    // siehe betriebsdaten.ts): Material getrennt ausweisen, § 35a-Zeile, Lohnanteil.
+    materialGetrennt: z.boolean().default(false),
+    zeige35a: z.boolean().default(true),
+    lohnanteilProzent: z.number().int().min(0).max(100).default(75),
   }),
   positionen: z
     .array(

@@ -52,6 +52,10 @@ export function effektivePreisliste(handwerker: Handwerker, basis: Preisliste): 
         ? { angebotGueltigTage: handwerker.angebotGueltigTage }
         : {}),
       zahlungsziel: oder(handwerker.zahlungsziel, basis.konditionen.zahlungsziel),
+      // Angebotsdarstellung: Schalter des Betriebs gelten immer (haben Vorgaben im Schema).
+      materialGetrennt: handwerker.materialGetrennt,
+      zeige35a: handwerker.zeige35a,
+      lohnanteilProzent: Math.min(100, Math.max(0, handwerker.lohnanteilProzent)),
     },
   };
 }

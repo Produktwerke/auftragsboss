@@ -45,6 +45,8 @@ export const speicherSchema = z.object({
   objekt: text(500).optional(),
   einleitung: text(4000).optional(),
   schlusstext: text(4000).optional(),
+  // Text der „Anlage: Aufmaß" (Seite 2), seit 11.09.2026 im Editor frei editierbar.
+  aufmassNotizen: text(20000).optional(),
   positionen: z.array(positionSchema).max(200, "höchstens 200 Positionen").optional(),
 });
 

@@ -30,14 +30,10 @@ function aufmassKarte(
   const notizen = (aufmass?.notizen ?? "").split(/\r?\n/).map((z) => z.trim()).filter(Boolean);
   const fotos = aufmass?.fotos ?? [];
   if (!notizen.length && !fotos.length) return "";
-  const zeilen = notizen
-    .map((z) => {
-      const i = z.indexOf("): ");
-      const kopf = i > 0 ? z.slice(0, i + 1) : "";
-      const rest = i > 0 ? z.slice(i + 3) : z;
-      return `<div class="aufmass-zeile">${kopf ? `<b>${escapeHtml(kopf)}:</b> ` : ""}${escapeHtml(rest)}</div>`;
-    })
-    .join("");
+  // Seit 11.09.2026 frei editierbar: eine Zeile je Absatz auf Seite 2; „Raum (…): Text"
+  // wird in Word/PDF/Vorschau mit fettem Raumkopf gesetzt.
+  const zeilen = `<label style="margin-top:8px;">Text der Anlage (Seite 2), eine Zeile je Absatz</label>
+    <textarea id="aufmassNotizen" rows="${Math.min(10, Math.max(3, notizen.length + 1))}" style="width:100%;font:inherit;line-height:1.5;">${escapeHtml(notizen.join("\n"))}</textarea>`;
   const bilder = fotos
     .map(
       (f) =>
@@ -47,7 +43,7 @@ function aufmassKarte(
     .join("");
   return `<div class="karte">
     <label style="margin-top:0;">Aufmaß</label>
-    <div class="aufmass-hinweis">Flächen nach VOB (Öffnungen bis 2,5 m² übermessen, größere abgezogen). Steht als „Anlage: Aufmaß" auf der letzten Seite des Angebots, in Word und PDF. Korrekturen einfach per WhatsApp nachsprechen, dann kommt eine neue Fassung.</div>
+    <div class="aufmass-hinweis">Flächen nach VOB (Öffnungen bis 2,5 m² übermessen, größere abgezogen). Steht als „Anlage: Aufmaß" auf der letzten Seite des Angebots, in Word und PDF. Den Text kannst du hier frei anpassen; Maße neu rechnen lassen geht per WhatsApp (neue Fassung).</div>
     ${zeilen}
     ${bilder ? `<div class="fotos-raster">${bilder}</div>` : ""}
   </div>`;
@@ -80,7 +76,7 @@ function vorschauAnlage(
       <div class="d-seitenmarke">Seite 2</div>
       <div class="d-titel" style="margin-top:6px;">Anlage: Aufmaß</div>
       <div class="d-objekt">Alle Flächen sind nach VOB* aufgemessen. Fotomaße dienen der Einordnung der Öffnungen.</div>
-      ${zeilen}
+      <div id="pvAufmassNotizen">${zeilen}</div>
       ${bilder ? `<div class="d-text" style="font-weight:700;margin-top:10px;">Belegfotos</div><div class="d-fotos">${bilder}</div>` : ""}
       <div class="d-vob">* VOB ist die Vergabe- und Vertragsordnung für Bauleistungen, das anerkannte Regelwerk des deutschen Bauhandwerks. Sie legt verbindlich fest, wie Malerflächen aufgemessen werden (DIN 18363): einheitlich, nachvollziehbar und für beide Seiten fair. Öffnungen bis 2,5 m² werden mitgerechnet, größere abgezogen.</div>
     </div>`;
@@ -1516,6 +1512,21 @@ let aenderungsTimer=null;
 ['kundeName','kundenNummer','kundeStrasse','kundePlzOrt','nummer','datum','objekt','einleitung','schlusstext'].forEach(id=>{
   document.getElementById(id).addEventListener('input',markiereGeaendert);
 });
+// Seite 2 (Anlage Aufmaß): Text frei editierbar, Vorschau folgt beim Tippen.
+const aufmassFeld = document.getElementById('aufmassNotizen');
+if(aufmassFeld){
+  const pvNotizen = document.getElementById('pvAufmassNotizen');
+  const zeichne = ()=>{
+    if(!pvNotizen) return;
+    pvNotizen.innerHTML = aufmassFeld.value.split(/\\r?\\n/).map(z=>z.trim()).filter(Boolean).map(z=>{
+      const i = z.indexOf('): ');
+      const kopf = i>0 ? z.slice(0,i+1) : '';
+      const rest = i>0 ? z.slice(i+3) : z;
+      return '<div class="d-text" style="margin:4px 0;">'+(kopf?'<b>'+esc(kopf)+':</b> ':'')+esc(rest)+'</div>';
+    }).join('');
+  };
+  aufmassFeld.addEventListener('input', ()=>{ zeichne(); markiereGeaendert(); });
+}
 // PLZ-Nachschlag (nur wenn der Knopf da ist, Feature-Flag FEATURE_PLZ_LOOKUP).
 const plzBtn=document.getElementById('plzBtn');
 if(plzBtn){
@@ -1632,6 +1643,7 @@ async function speichern(){
     kundeStrasse:val('kundeStrasse'), kundePlzOrt:val('kundePlzOrt'),
     nummer:val('nummer'), datum:val('datum'), objekt:val('objekt'),
     einleitung:val('einleitung'), schlusstext:val('schlusstext'),
+    ...(document.getElementById('aufmassNotizen') ? { aufmassNotizen: val('aufmassNotizen') } : {}),
     // Gerade gelöschte Zeilen (Rückgängig-Frist) und interne Felder bleiben
     // draußen — gespeichert wird der Zustand, wie er im Angebot landen soll.
     positionen: positionen.filter(p=>!p._geloescht).map(({_timer,_geloescht,_wahl,...rest})=>rest)

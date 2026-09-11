@@ -61,6 +61,7 @@ interface SpeicherKoerper {
   objekt?: string;
   einleitung?: string;
   schlusstext?: string;
+  aufmassNotizen?: string;
   positionen?: EditorPosition[];
 }
 
@@ -273,6 +274,8 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
         objekt: k.objekt ?? dokument.objekt,
         einleitung: k.einleitung ?? dokument.einleitung,
         schlusstext: k.schlusstext ?? dokument.schlusstext,
+        // Seite 2 (Anlage Aufmaß) frei editierbar; leer = keine Notizen mehr.
+        ...(typeof k.aufmassNotizen === "string" ? { aufmassNotizen: k.aufmassNotizen.trim() || null } : {}),
         ...(positionen && summe
           ? {
               positionenJson: JSON.stringify(summe.positionen),

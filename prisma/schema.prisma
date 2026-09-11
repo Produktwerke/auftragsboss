@@ -223,6 +223,10 @@ model Vorgang {
   // damit ein nachgereichtes Wandfoto dem zuletzt genannten Raum zugeordnet werden kann.
   raeumeText String?
 
+  // Sammelmodus (Räume + Fotos): Zeitpunkt der einmaligen Erinnerung „noch ein
+  // Raum, oder fertig?" nach ERINNERUNG_MINUTEN Stille. null = noch nicht erinnert.
+  erinnertAm DateTime?
+
   begonnenAm       DateTime @default(now())
   letzteAktivitaet DateTime @default(now())
 

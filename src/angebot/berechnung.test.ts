@@ -13,6 +13,39 @@ const p = (over: Partial<EingabePosition>): EingabePosition => ({
   einzelpreis: null, preisquelle: "UNBEKANNT", mengeUnsicher: false, ...over,
 });
 
+describe("berechneAngebot: Raumblöcke bei mehreren Räumen", () => {
+  it("gruppiert nach Raum (Material vor Arbeit je Raum), Kleinmaterial ohne Raum zuletzt, Nummern fortlaufend", () => {
+    const s = berechneAngebot(
+      [
+        p({ kategorie: "LEISTUNG", beschreibung: "Wände streichen", raumBezug: "Kinderzimmer links", einzelpreis: 300 }),
+        p({ kategorie: "LEISTUNG", beschreibung: "Wände streichen", raumBezug: "Kinderzimmer rechts", einzelpreis: 250 }),
+        p({ kategorie: "MATERIAL", beschreibung: "Farbe, Kinderzimmer links", raumBezug: "Kinderzimmer links", menge: 10, einheit: "l", einzelpreis: 5 }),
+        p({ kategorie: "MATERIAL", beschreibung: "Abdeckmaterial", raumBezug: null, menge: 1, einheit: "pauschal", einzelpreis: 20 }),
+        p({ kategorie: "MATERIAL", beschreibung: "Farbe, Kinderzimmer rechts", raumBezug: "Kinderzimmer rechts", menge: 8, einheit: "l", einzelpreis: 5 }),
+      ],
+      preisliste,
+    );
+    expect(s.bloecke.map((b) => b.name)).toEqual(["Kinderzimmer links", "Kinderzimmer rechts", "Klein- und Hilfsmaterial"]);
+    expect(s.bloecke[0]!.positionen.map((x) => x.beschreibung)).toEqual(["Farbe, Kinderzimmer links", "Wände streichen"]);
+    expect(s.bloecke[0]!.netto).toBe(350);
+    expect(s.bloecke[1]!.netto).toBe(290);
+    expect(s.bloecke[2]!.netto).toBe(20);
+    expect(s.positionen.map((x) => x.nummer)).toEqual([1, 2, 3, 4, 5]);
+    expect(s.netto).toBe(660);
+  });
+
+  it("bleibt bei einem Raum oder ohne Raumbezug bei den Kategorieblöcken", () => {
+    const s = berechneAngebot(
+      [
+        p({ kategorie: "LEISTUNG", beschreibung: "Streichen", raumBezug: "Wohnzimmer", einzelpreis: 100 }),
+        p({ kategorie: "MATERIAL", beschreibung: "Farbe", raumBezug: "Wohnzimmer", menge: 2, einheit: "l", einzelpreis: 10 }),
+      ],
+      preisliste,
+    );
+    expect(s.bloecke.map((b) => b.name)).toEqual(["Material", "Arbeitsaufwand"]);
+  });
+});
+
 describe("berechneAngebot: Regression der Kernberechnung", () => {
   it("stellt Material vor Arbeitsaufwand (Positionsnummern folgen der Anzeige)", () => {
     const s = berechneAngebot(

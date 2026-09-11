@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fotoAlsDialogText, fotoFeedback, fotoProbleme, oeffnungenBeschreibung, type WandfotoAnalyse } from "./wandfoto.js";
+import { bereinigeAnalyse, fotoAlsDialogText, fotoFeedback, fotoProbleme, oeffnungenBeschreibung, type WandfotoAnalyse } from "./wandfoto.js";
 
 const basis: WandfotoAnalyse = {
   istWandfoto: true,
@@ -44,7 +44,33 @@ describe("Wandfoto-Helfer", () => {
     expect(fotoProbleme(mitNachbar)).toEqual([]); // die offene Nachbartür zählt nicht
     expect(fotoAlsDialogText(mitNachbar, 1, null)).not.toContain("(offen)");
     expect(fotoAlsDialogText(mitNachbar, 1, null)).toContain("vermutlich Nachbarwand (nur übernehmen, wenn der Handwerker es bestätigt): Tür ca. 0,85 x 2 m.");
-    expect(fotoFeedback(mitNachbar, 1, "Bad")).toContain("❓ Am Bildrand noch: Tür.");
+    // Kleine Zimmertür am Rand: wird ohnehin übermessen, keine Nachfrage mehr (Live-Test 11.09.)
+    expect(fotoFeedback(mitNachbar, 1, "Bad")).not.toContain("❓ Am Bildrand");
+    // Große Öffnung am Rand (Fenstertür > 2,5 m²): Nachfrage lohnt sich
+    const mitGrosserNachbar = { ...basis, oeffnungen: [...basis.oeffnungen, { art: "Fenstertuer" as const, offen: false, breiteM: 1.8, hoeheM: 2.2, sicherheit: "niedrig" as const, inNachbarwand: true }] };
+    expect(fotoFeedback(mitGrosserNachbar, 1, "Bad")).toContain("❓ Am Bildrand noch: Fenstertür.");
+    // Unbekanntes Maß: nur bei typischerweise großen Arten fragen
+    const ohneMass = (art: "Tuer" | "Durchgang") => ({ ...basis, oeffnungen: [{ art, offen: false, breiteM: null, hoeheM: null, sicherheit: "niedrig" as const, inNachbarwand: true }] });
+    expect(fotoFeedback(ohneMass("Durchgang"), 1, null)).toContain("❓ Am Bildrand noch: Durchgang.");
+    expect(fotoFeedback(ohneMass("Tuer"), 1, null)).not.toContain("❓");
+  });
+
+  it("bereinigeAnalyse führt dieselbe doppelt gemeldete Öffnung zusammen", () => {
+    const doppelt = {
+      ...basis,
+      oeffnungen: [
+        { art: "Tuer" as const, offen: false, breiteM: 0.85, hoeheM: 2, sicherheit: "hoch" as const, inNachbarwand: false },
+        { art: "Tuer" as const, offen: false, breiteM: 0.85, hoeheM: 2.03, sicherheit: "mittel" as const, inNachbarwand: false },
+        { art: "Fenster" as const, offen: false, breiteM: 1, hoeheM: 1.35, sicherheit: "hoch" as const, inNachbarwand: false },
+      ],
+    };
+    const b = bereinigeAnalyse(doppelt);
+    expect(b.oeffnungen).toHaveLength(2);
+    expect(b.oeffnungen.map((o) => o.art)).toEqual(["Tuer", "Fenster"]);
+    // Zwei verschiedene Türen bleiben zwei
+    const zwei = { ...basis, oeffnungen: [doppelt.oeffnungen[0]!, { ...doppelt.oeffnungen[0]!, breiteM: 1.0 }] };
+    expect(bereinigeAnalyse(zwei).oeffnungen).toHaveLength(2);
+    expect(bereinigeAnalyse(basis)).toBe(basis); // unverändert → dasselbe Objekt
   });
 
   it("unvollständige Wand ist nur ein Hinweis, kein Nachfassen", () => {

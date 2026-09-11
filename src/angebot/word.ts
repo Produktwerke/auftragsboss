@@ -316,18 +316,28 @@ export async function erzeugeAngebotWord(args: {
       children: [new TextRun({ text: `${titel} ${nummer}`, bold: true, size: 30 })],
     }),
     new Paragraph({
-      spacing: { after: 320 },
+      spacing: { after: daten.objekt ? 60 : 320 },
       children: [
         new TextRun({
-          text:
-            `Datum: ${datumDE(datum)}` +
-            (kundenNummer ? `   ·   Kundennummer: ${kundenNummer}` : "") +
-            (daten.objekt ? `   ·   Objekt: ${daten.objekt}` : ""),
+          text: `Datum: ${datumDE(datum)}` + (kundenNummer ? `   ·   Kundennummer: ${kundenNummer}` : ""),
           size: 18,
           color: GRAU,
         }),
       ],
     }),
+    // Objekt als eigene Zeile mit Luft zur Anrede (Live-Test 11.09.2026: in der
+    // Datumszeile wirkte ein längeres Objekt wie der Beginn des Anschreibens).
+    ...(daten.objekt
+      ? [
+          new Paragraph({
+            spacing: { after: 360 },
+            children: [
+              new TextRun({ text: "Objekt: ", size: 18, color: GRAU }),
+              new TextRun({ text: daten.objekt, size: 18, color: GRAU, bold: true }),
+            ],
+          }),
+        ]
+      : []),
 
     // ── Anschreiben ───────────────────────────────────────
     ...textAbsaetze(daten.einleitung),

@@ -56,9 +56,14 @@ export function extrahiereEingabe(msg: WhatsAppMessage):
   if (msg.type === "interactive" && msg.interactive?.button_reply?.id) {
     return { vonNummer: msg.from, knopfPayload: msg.interactive.button_reply.id };
   }
-  // Alles andere (Video, PDF, Sticker, Kontakt, Standort, "unsupported"): nicht
-  // still verschlucken, sondern dem Absender kurz sagen, was wir lesen können.
-  if (msg.from && msg.type && msg.type !== "reaction") return { vonNummer: msg.from, unbekannterTyp: msg.type };
+  // "unsupported" ist bei Meta u.a. die Album-Hülle, die WhatsApp zusätzlich zu
+  // den Einzelfotos eines Mehrfach-Versands schickt (Live-Test 11.09.2026: zwei
+  // Mal „Das Format kann ich nicht lesen" mitten im Fotoschwung). Still ignorieren;
+  // die Fotos kommen als eigene image-Nachrichten. Umfragen u.ä. fallen mit drunter.
+  if (msg.type === "unsupported" || msg.type === "reaction") return null;
+  // Alles andere (Video, PDF, Sticker, Kontakt, Standort): nicht still
+  // verschlucken, sondern dem Absender kurz sagen, was wir lesen können.
+  if (msg.from && msg.type) return { vonNummer: msg.from, unbekannterTyp: msg.type };
   return null;
 }
 

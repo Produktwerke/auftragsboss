@@ -90,9 +90,32 @@ export function berechneAngebot(
   // innerhalb einer Kategorie erhalten bleibt. Weil wir hier sortieren, werden
   // auch die Positionsnummern (Pos. 1, 2, …) in der Anzeige-Reihenfolge vergeben.
   const kategorieRang = (k: string): number => (k === "MATERIAL" ? 0 : k === "LEISTUNG" ? 1 : 2);
+
+  // RAUMBLÖCKE (Live-Test 11.09.2026, Dirk): Bei mehreren Räumen will der Kunde
+  // die Kosten je Raum nachvollziehen. Dann wird nicht nach Kategorie, sondern
+  // nach Raum gruppiert (Raumname als Zwischenüberschrift, darin Material vor
+  // Arbeitsaufwand wie gewohnt), und alles ohne Raumbezug (Klein-/Hilfsmaterial,
+  // Anfahrt) kommt als letzter Block. Bei einem oder keinem Raum bleibt alles
+  // wie bisher. Der Editor gruppiert weiterhin nach Kategorie.
+  const raumName = (p: EingabePosition): string => p.raumBezug?.trim() ?? "";
+  const raeume: string[] = [];
+  for (const p of positionen) {
+    const r = raumName(p);
+    if (r && !raeume.includes(r)) raeume.push(r);
+  }
+  const nachRaum = raeume.length >= 2;
+  const raumRang = (p: EingabePosition): number => {
+    const r = raumName(p);
+    return r ? raeume.indexOf(r) : raeume.length;
+  };
   const sortiert = positionen
     .map((p, i) => ({ p, i }))
-    .sort((a, b) => kategorieRang(a.p.kategorie) - kategorieRang(b.p.kategorie) || a.i - b.i)
+    .sort(
+      (a, b) =>
+        (nachRaum ? raumRang(a.p) - raumRang(b.p) : 0) ||
+        kategorieRang(a.p.kategorie) - kategorieRang(b.p.kategorie) ||
+        a.i - b.i,
+    )
     .map((x) => x.p);
 
   const berechnet: BerechnetePosition[] = sortiert.map((p, i) => {
@@ -115,15 +138,32 @@ export function berechneAngebot(
     anzahl: auswahl.length,
   });
 
-  // Blöcke in der Reihenfolge des ersten Auftretens der Kategorie
-  const reihenfolge: string[] = [];
-  for (const p of berechnet) {
-    if (!reihenfolge.includes(p.kategorie)) reihenfolge.push(p.kategorie);
+  let bloecke: Kategorieblock[];
+  if (nachRaum) {
+    bloecke = raeume.map((raum) => {
+      const eigene = berechnet.filter((p) => raumName(p) === raum);
+      return { kategorie: `RAUM:${raum}`, name: raum, positionen: eigene, ...teilsumme(eigene) };
+    });
+    const rest = berechnet.filter((p) => !raumName(p));
+    if (rest.length > 0) {
+      const name = rest.every((p) => p.kategorie === "MATERIAL")
+        ? "Klein- und Hilfsmaterial"
+        : rest.every((p) => p.kategorie !== "MATERIAL")
+          ? "Weitere Leistungen"
+          : "Allgemein";
+      bloecke.push({ kategorie: "RAUM:", name, positionen: rest, ...teilsumme(rest) });
+    }
+  } else {
+    // Blöcke in der Reihenfolge des ersten Auftretens der Kategorie
+    const reihenfolge: string[] = [];
+    for (const p of berechnet) {
+      if (!reihenfolge.includes(p.kategorie)) reihenfolge.push(p.kategorie);
+    }
+    bloecke = reihenfolge.map((kategorie) => {
+      const eigene = berechnet.filter((p) => p.kategorie === kategorie);
+      return { kategorie, name: kategorieName(kategorie), positionen: eigene, ...teilsumme(eigene) };
+    });
   }
-  const bloecke: Kategorieblock[] = reihenfolge.map((kategorie) => {
-    const eigene = berechnet.filter((p) => p.kategorie === kategorie);
-    return { kategorie, name: kategorieName(kategorie), positionen: eigene, ...teilsumme(eigene) };
-  });
 
   const leistungen = teilsumme(berechnet.filter((p) => p.kategorie !== "MATERIAL"));
   const material = teilsumme(berechnet.filter((p) => p.kategorie === "MATERIAL"));

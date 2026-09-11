@@ -69,7 +69,13 @@ export const PositionSchema = z.object({
     .enum(["WAND", "DECKE"])
     .nullable()
     .describe("Nur bei Flächenleistungen an Wänden/Decke eines Raums aus raeumeText. Sonst null."),
-  raumBezug: z.string().nullable().describe("Raumname exakt wie in raeumeText geschrieben, sonst null."),
+  raumBezug: z
+    .string()
+    .nullable()
+    .describe(
+      "Raum, zu dem diese Position gehört, exakt wie in raeumeText geschrieben; bei Leistungen UND Material dieses Raums. " +
+        "null für Raumübergreifendes (Klein-/Hilfsmaterial, Anfahrt, Abdeckarbeiten für alles).",
+    ),
 });
 
 export const DokumentSchema = z.object({
@@ -96,7 +102,10 @@ export const DokumentSchema = z.object({
   objekt: z
     .string()
     .nullable()
-    .describe("Kurzbeschreibung des Objekts/Raums, z.B. 'Wohnzimmer, ca. 45 m², Deckenhöhe 2,50 m'."),
+    .describe(
+      "Kurzbezeichnung des Objekts, nur Raum- oder Gebäudenamen: 'Wohnzimmer' oder 'Kinderzimmer links, Kinderzimmer rechts und Dachzimmer'. " +
+        "KEINE Maße, Höhen, Paneel- oder Flächenangaben (die stehen im Aufmaßblatt).",
+    ),
   positionen: z
     .array(PositionSchema)
     .describe(
@@ -301,6 +310,7 @@ Du erhältst das Roh-Transkript einer WhatsApp-Sprachnachricht, die ein Handwerk
    - Keine Produktnamen oder Marken erfinden. "Tapetenkleister" ja, "Metylan Ovalit T" nein.
    - Keine Dopplung: wurde ein Material bereits diktiert, ist es eine normale Position mit vorschlag false.
    - Im Zweifel weglassen. Ein fehlender Vorschlag ist harmlos, ein unpassender kostet Vertrauen.
+   - MEHRERE RÄUME (mindestens zwei Raumzeilen in raeumeText): Das Angebot wird dem Kunden je Raum gegliedert. Deshalb bekommt JEDE Leistung ihren raumBezug, und das Hauptmaterial (Farbe, Grundierung, Vlies, Spachtelmasse) wird JE RAUM als eigene Position mit raumBezug vorgeschlagen, mit dem Namen des Raums in der Beschreibung („Dispersionsfarbe weiß, Kinderzimmer links"). Klein-, Hilfs- und Verbrauchsmaterial (Abdeckmaterial, Klebeband, Abdeckvlies) nur EINMAL, ohne raumBezug. Ebenso raumübergreifende Leistungen wie Anfahrt oder Baustelleneinrichtung ohne raumBezug.
 
 6. **Fehlende Angaben melden.** Trage in "fehlendeInfos" ein, was du für ein versandfähiges Dokument brauchst, und formuliere je eine kurze Frage. Halte dich kurz: höchstens 3 Fragen, davon so wenige PFLICHT wie möglich.
 

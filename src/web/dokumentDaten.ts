@@ -43,6 +43,8 @@ export interface EditorPosition {
   mengeUnsicher?: boolean;
   /** true = Preis wurde bewusst „vergessen" — Automatik-Lernen aussetzen. */
   gedSperre?: boolean;
+  /** Raum, zu dem die Position gehört (Raumblöcke im Angebot); bleibt beim Speichern erhalten. */
+  raumBezug?: string | null;
 }
 
 export function editorZuPositionen(eingabe: EditorPosition[]): EingabePosition[] {
@@ -60,5 +62,6 @@ export function editorZuPositionen(eingabe: EditorPosition[]): EingabePosition[]
     mengeUnsicher: p.mengeUnsicher ?? false,
     // Nur mitschreiben, wenn gesetzt — hält das gespeicherte JSON schlank.
     ...(p.gedSperre ? { gedSperre: true } : {}),
+    ...(p.raumBezug?.trim() ? { raumBezug: p.raumBezug.trim() } : {}),
   }));
 }

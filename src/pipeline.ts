@@ -16,7 +16,8 @@ import { erkenneBildTyp } from "./betrieb/bildpruefung.js";
 import { sendeWhatsAppText } from "./whatsapp/send.js";
 import { transkribiereAudio } from "./ai/transcribe.js";
 import { liesBildNotiz } from "./ai/bildLesen.js";
-import { analysiereWandfoto, fotoAlsDialogText, fotoFeedback, type WandfotoAnalyse } from "./ai/wandfoto.js";
+import { analysiereWandfoto, bereinigeAnalyse, fotoAlsDialogText, fotoFeedback, type WandfotoAnalyse } from "./ai/wandfoto.js";
+import { floskel } from "./whatsapp/floskeln.js";
 import { speichereFoto } from "./betrieb/fotoAblage.js";
 import { ladeAufmassAnlage } from "./angebot/aufmassblatt.js";
 import { ordneFotoZu } from "./maler/fotoZuordnung.js";
@@ -45,7 +46,10 @@ import {
   ergaenzeNachricht,
   holeNachtragsVorgang,
   holeOffenenVorgang,
+  istBestaetigung,
+  istFertigWunsch,
   nachrichtenLesen,
+  raumBilanz,
 } from "./dialog.js";
 
 /** Erkennt, ob eine Nachricht nach den Betriebseinstellungen fragt. Bewusst
@@ -312,14 +316,10 @@ export async function verarbeiteNachricht(args: {
       // Sprachnachricht sofort kurz bestätigen — Transkription + KI brauchen ein
       // paar Sekunden; so weiß der Absender, dass im Hintergrund schon gearbeitet
       // wird, und wartet nicht auf eine scheinbar stumme Leitung.
-      await sendeWhatsAppText(
-        vonNummer,
-        imDialog
-          ? "🎙️ Hab ich! Einen kurzen Moment, ich arbeite im Hintergrund weiter …"
-          // Bewusst neutral ("verarbeite", nicht "erstelle dein Angebot"): die
-          // Nachricht kann auch eine Frage sein — was sie ist, weiß erst die KI.
-          : "🎙️ Hab ich! Ich verarbeite deine Sprachnachricht, einen kurzen Moment …",
-      );
+      // Wechselnde Formulierungen (Live-Test 11.09.: nicht jede Antwort mit
+      // „Hab ich!"). Bewusst neutral, nicht „erstelle dein Angebot": was die
+      // Nachricht ist, weiß erst die KI.
+      await sendeWhatsAppText(vonNummer, floskel(imDialog ? "spracheDialog" : "spracheNeu", vonNummer));
       let audio: Buffer;
       try {
         audio = await ladeAudio(mediaId);
@@ -342,7 +342,7 @@ export async function verarbeiteNachricht(args: {
       // Foto: entweder ein WANDFOTO fürs Aufmaß (Teiletappe 2) oder wie bisher
       // ein Notizzettel/Screenshot. EIN Vision-Aufruf entscheidet und liefert
       // bei Notizen gleich den Text mit.
-      await sendeWhatsAppText(vonNummer, "📷 Foto hab ich! Ich schau es mir an, einen kurzen Moment …");
+      await sendeWhatsAppText(vonNummer, floskel("foto", vonNummer));
       // Größe und Format werden VOR dem KI-Aufruf geprüft (F-03/F-04): der
       // Download ist gekappt, und nur was laut Magic Bytes wirklich ein
       // JPEG/PNG/WebP/GIF ist, geht an die Vision und in die Ablage.
@@ -364,7 +364,7 @@ export async function verarbeiteNachricht(args: {
       // sonst fehlen Raumname und Raumhöhe beim ersten nachgereichten Foto.
       if (!vorgang) vorgang = await holeNachtragsVorgang(prisma, handwerker.id);
       const zuordnung = ordneFotoZu(vorgang, bildText);
-      const analyse = await analysiereWandfoto(
+      const analyse = bereinigeAnalyse(await analysiereWandfoto(
         bild,
         { raumhoeheM: zuordnung.raumhoeheM, raumName: zuordnung.raumName },
         (ein, aus) => {
@@ -373,7 +373,7 @@ export async function verarbeiteNachricht(args: {
             data: { dienst: "wandfoto", tokensEin: ein, tokensAus: aus, kostenCent: kostenClaudeCent(ein, aus) },
           });
         },
-      );
+      ));
       if (analyse.istWandfoto) {
         await verarbeiteWandfoto({ handwerker, vorgang, vonNummer, bild, analyse, bildText, zuordnung });
         return;
@@ -471,14 +471,16 @@ export async function verarbeiteNachricht(args: {
  * verzögerten Foto-Auswertung genutzt (Teiletappe 2).
  * stumm = Eingangsbestätigung wurde schon gesendet (Sprache/Foto).
  */
-async function werteVorgangAus(args: {
+export async function werteVorgangAus(args: {
   handwerker: Handwerker;
   vorgang: Vorgang;
   vonNummer: string;
   inhalt: string;
   stumm: boolean;
+  /** true = Zeitablauf: keine Rückfrage, keine Zusammenfassung, Angebot mit dem, was da ist. */
+  erzwungen?: boolean;
 }): Promise<void> {
-  const { handwerker, vorgang, vonNummer, inhalt, stumm } = args;
+  const { handwerker, vorgang, vonNummer, inhalt, stumm, erzwungen = false } = args;
     // 4. Gesamten Verlauf auswerten
     const preisliste = ladePreisliste();
     const dialog = alsDialog(vorgang);
@@ -494,9 +496,9 @@ async function werteVorgangAus(args: {
     if (!stumm) {
       await sendeWhatsAppText(
         vonNummer,
-        vorgang.zusammenfassungGezeigt
+        vorgang.zusammenfassungGezeigt && istBestaetigung(inhalt)
           ? "⏳ Super, ich stelle dein Angebot jetzt fertig, einen kurzen Moment …"
-          : "👍 Hab ich! Einen kurzen Moment, ich arbeite im Hintergrund weiter …",
+          : floskel("text", vonNummer),
       );
     }
     const daten = await strukturiereDialog(dialog, preisliste, (ein, aus) => {
@@ -518,13 +520,35 @@ async function werteVorgangAus(args: {
       console.log(`📐 Aufmaß: ${aufmass.raeume.length} Raum/Räume berechnet, ${aufmass.uebersprungen.length} übersprungen (${handwerker.firma}).`);
     }
 
+    // SAMMELMODUS (Live-Test 11.09.2026): Sobald Räume im Spiel sind, geht der
+    // Maler Raum für Raum durch (Maße sprechen, Wände fotografieren). Das Angebot
+    // entsteht dann erst auf „fertig", auf die Bestätigung der Zusammenfassung
+    // oder per Zeitablauf. Bis dahin bekommt er nach jedem Schritt eine Raumbilanz
+    // mit der Frage „nächster Raum oder fertig?". Vorher wurde die nächste
+    // Nachricht nach der Zusammenfassung als Bestätigung gewertet und ein halbes
+    // Angebot verschickt, während die Fotos des zweiten Raums noch hochluden.
+    const sammelModus = aufmass.raeume.length > 0 || aufmass.uebersprungen.length > 0;
+    const fertigGesagt = istFertigWunsch(inhalt);
+    const bestaetigt = vorgang.zusammenfassungGezeigt && istBestaetigung(inhalt);
+    const abschliessen = erzwungen || fertigGesagt || bestaetigt;
+
     // 5. Nachfragen oder abschließen? Das entscheidet die KI aus dem Verlauf —
     //    kein Stichwort, das der Handwerker kennen müsste. Das Rundenlimit ist
-    //    nur ein Sicherheitsnetz gegen Endlosschleifen.
+    //    nur ein Sicherheitsnetz gegen Endlosschleifen (im Sammelmodus großzügiger:
+    //    jeder Raum darf eine Rückfrage brauchen).
     const nachfragen =
+      !erzwungen &&
       daten.dialog.aktion === "NACHFRAGEN" &&
-      vorgang.runde < MAX_RUNDEN &&
+      vorgang.runde < (sammelModus ? MAX_RUNDEN + 4 : MAX_RUNDEN) &&
       daten.dialog.nachricht.trim().length > 0;
+
+    // Zusammenfassung gezeigt, aber statt „ja" kommt neuer Inhalt (weiterer Raum,
+    // Korrektur): das ist eine Fortsetzung, keine Bestätigung. Die Zusammenfassung
+    // kommt später aktualisiert noch einmal.
+    if (sammelModus && vorgang.zusammenfassungGezeigt && !abschliessen && !nachfragen) {
+      await prisma.vorgang.updateMany({ where: { id: vorgang.id }, data: { zusammenfassungGezeigt: false } });
+      vorgang.zusammenfassungGezeigt = false;
+    }
 
     if (nachfragen) {
       const frageText = daten.dialog.nachricht.trim();
@@ -559,11 +583,39 @@ async function werteVorgangAus(args: {
       await prisma.handwerker.update({ where: { id: handwerker.id }, data: { zusammenfassungAktiv: false } });
       handwerker.zusammenfassungAktiv = false;
     }
+
+    // 5a. Sammelmodus ohne Abschlusswunsch: Raumbilanz statt Angebot. Immer mit
+    //     der Aufforderung, weiterzumachen oder „fertig" zu sagen, damit nie der
+    //     Eindruck entsteht, das Programm hänge.
+    if (sammelModus && !abschliessen) {
+      const letzterRaum = aufmass.raeume[aufmass.raeume.length - 1]?.name;
+      const hatFotos =
+        !!letzterRaum && nachrichtenLesen(vorgang).some((n) => n.art === "foto" && n.text.includes(`(Raum: ${letzterRaum})`));
+      const bilanz = raumBilanz(daten.raeumeText, floskel(hatFotos ? "weiterOderFertig" : "fotosOderWeiter", vonNummer));
+      if (bilanz) {
+        await sendeWhatsAppText(vonNummer, bilanz);
+        await prisma.vorgang.updateMany({
+          where: { id: vorgang.id },
+          data: {
+            letzteAktivitaet: new Date(),
+            erinnertAm: null,
+            nachrichtenJson: JSON.stringify([
+              ...JSON.parse(vorgang.nachrichtenJson),
+              { rolle: "assistent", text: "(Raumbilanz gesendet, warte auf nächsten Raum oder das Wort fertig)", art: "text", zeit: new Date().toISOString() },
+            ]),
+          },
+        });
+        await spurEvent(prisma, "RAUMBILANZ", { handwerkerId: handwerker.id, data: { raeume: aufmass.raeume.length } });
+        return;
+      }
+    }
+
     if (
       featureConfig().FEATURE_ZUSAMMENFASSUNG &&
       handwerker.zusammenfassungAktiv &&
       !vorgang.zusammenfassungGezeigt &&
-      !willKeineZusammenfassung
+      !willKeineZusammenfassung &&
+      !erzwungen
     ) {
       const zusammenfassung = baueZusammenfassung(daten);
       await sendeWhatsAppText(
@@ -598,8 +650,9 @@ async function werteVorgangAus(args: {
 
 // ── Wandfotos (Teiletappe 2) ─────────────────────────────────────────
 
-/** Nach dem letzten Foto so lange warten, bevor das Angebot gerechnet wird. */
-const FOTO_PAUSE_MS = 90_000;
+/** Nach dem letzten Foto so lange warten, bevor die Wände gerechnet werden.
+ *  Jedes Foto wird vorher einzeln bestätigt, deshalb reichen 45 s (vorher 90). */
+const FOTO_PAUSE_MS = 45_000;
 const fotoTimer = new Map<string, NodeJS.Timeout>();
 
 function brichFotoAuswertungAb(vonNummer: string): void {
@@ -689,7 +742,7 @@ function planeFotoAuswertung(vonNummer: string, handwerkerId: string, vorgangId:
       }
       const handwerker = await prisma.handwerker.findUnique({ where: { id: handwerkerId } });
       if (!handwerker) return;
-      await sendeWhatsAppText(vonNummer, "📐 Ich rechne das Angebot jetzt mit deinen Fotos durch, einen Moment …");
+      await sendeWhatsAppText(vonNummer, "📐 Fotos sind komplett, ich rechne die Wände durch …");
       await werteVorgangAus({ handwerker, vorgang: frisch, vonNummer, inhalt: "", stumm: true });
     }).catch((err) => console.error("Verzögerte Foto-Auswertung fehlgeschlagen:", err));
   }, FOTO_PAUSE_MS);

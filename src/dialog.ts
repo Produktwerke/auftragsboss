@@ -13,7 +13,11 @@ import { aufmassKurz, berechneAufmass, parseRaeumeText } from "./maler/aufmass.j
 export const MAX_RUNDEN = 2;
 
 /** Nach so langer Funkstille gilt ein Vorgang als beendet und wird fertiggestellt. */
-export const TIMEOUT_MINUTEN = 20;
+export const TIMEOUT_MINUTEN = 15;
+
+/** Im Sammelmodus (Räume + Fotos): nach so langer Stille einmal nachfragen
+ *  „noch ein Raum, oder fertig?", bevor der Zeitablauf das Angebot erzwingt. */
+export const ERINNERUNG_MINUTEN = 5;
 
 /** Nach so langer Pause zählt eine neue Nachricht als neuer Auftrag, nicht als Antwort. */
 export const NEUER_VORGANG_NACH_MINUTEN = 60;
@@ -85,6 +89,59 @@ export function istAbschluss(text: string): boolean {
     .trim();
   if (sauber.length > 40) return false;
   return ABSCHLUSS_WOERTER.some((w) => sauber === w || sauber.startsWith(w + " ") || sauber.endsWith(" " + w));
+}
+
+const kurzUndSauber = (text: string): string =>
+  text
+    .toLowerCase()
+    .replace(/[.,!?;:„"“”'’]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/**
+ * SAMMELMODUS (Räume und Wandfotos, Live-Test 11.09.2026): Erst wenn der Maler
+ * „fertig" sagt, wird das Angebot gemacht. Bis dahin bekommt er nach jedem Raum
+ * eine Bilanz mit der Frage „nächster Raum oder fertig?". Kurze Nachrichten,
+ * die diesen Wunsch ausdrücken:
+ */
+export function istFertigWunsch(text: string): boolean {
+  const s = kurzUndSauber(text);
+  if (!s || s.length > 80) return false;
+  return /(^|\s)(fertig|das wars|das war s|alles drin|mach (das|mir das|jetzt das) angebot|angebot (jetzt )?(machen|erstellen|fertig ?machen)|schick (mir )?(das|den) (angebot|entwurf)|abschließen|abschliessen|mach fertig)(\s|$)/.test(s);
+}
+
+/** Kurze Bestätigung einer Zusammenfassung („ja", „passt so"). */
+export function istBestaetigung(text: string): boolean {
+  const s = kurzUndSauber(text);
+  if (!s || s.length > 40) return false;
+  return /^(ja|jo|jep|jup|jawohl|genau|stimmt|richtig|korrekt|passt|passt so|ok|okay|alles richtig|so passt es|ja passt|ja stimmt|ja genau)( so)?( danke)?$/.test(s);
+}
+
+/**
+ * Raumbilanz nach einem Raum (Sammelmodus): was ist drin, und die Aufforderung
+ * weiterzumachen oder „fertig" zu sagen. Eine Zeile je Raum, ohne Eingangsmaße
+ * (die stehen in der Rückfrage bzw. im Aufmaßblatt), dafür mit dem Ergebnis.
+ */
+export function raumBilanz(raeumeText: string | null | undefined, aufforderung: string): string | null {
+  const aufmass = berechneAufmass(parseRaeumeText(raeumeText));
+  if (aufmass.raeume.length === 0) return null;
+  const zeilen: string[] = [];
+  const letzter = aufmass.raeume[aufmass.raeume.length - 1]!;
+  zeilen.push(aufmass.raeume.length === 1 ? `✅ *${letzter.name}* ist drin.` : `✅ *${letzter.name}* ist drin. Bisher ${aufmass.raeume.length} Räume:`);
+  const z2 = (x: number) => x.toFixed(2).replace(".", ",");
+  for (const r of aufmass.raeume) {
+    const teile: string[] = [];
+    teile.push(`Wände ${z2(r.wandNettoM2)} m²${r.paneelHoeheM ? " oberhalb der Paneele" : ""}`);
+    if (r.schraegenM2 > 0) teile.push(`davon ${z2(r.schraegenM2)} m² Dachschrägen`);
+    if (r.deckeM2 !== null) teile.push(`Decke ${z2(r.deckeM2)} m²`);
+    if (r.abzugM2 > 0) teile.push(`${z2(r.abzugM2)} m² Öffnungen abgezogen`);
+    zeilen.push(`• ${r.name}: ${teile.join(", ")}`);
+    for (const v of r.verworfen) zeilen.push(`⚠️ ${r.name}: ${v}, nicht abgezogen`);
+    for (const w of r.warnungen) zeilen.push(`⚠️ ${r.name}: ${w}`);
+  }
+  for (const u of aufmass.uebersprungen) zeilen.push(`⚠️ ${u.name}: noch nicht berechnet (${u.grund})`);
+  zeilen.push("", aufforderung);
+  return zeilen.join("\n");
 }
 
 /**

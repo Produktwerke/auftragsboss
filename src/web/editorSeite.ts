@@ -692,7 +692,9 @@ let positionen = START.positionen.map(p => ({
   vorschlag: !!p.vorschlag, mengeUnsicher: !!p.mengeUnsicher,
   preisStand: p.preisStand || null,
   // Sperre fürs Automatik-Lernen: bewusst "vergessene" Preise bleiben vergessen.
-  gedSperre: !!p.gedSperre
+  gedSperre: !!p.gedSperre,
+  // Raumzuordnung (Raumblöcke im Kundendokument) unverändert mitführen.
+  raumBezug: p.raumBezug || null
 }));
 
 const euro = n => n.toLocaleString('de-DE',{style:'currency',currency:'EUR'});

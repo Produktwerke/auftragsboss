@@ -87,14 +87,15 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
     .fillColor(grau)
     .font("Helvetica")
     .fontSize(9)
-    .text(
-      `Datum: ${datumDE(datum)}` +
-        (kundenNummer ? `   ·   Kundennummer: ${kundenNummer}` : "") +
-        (daten.objekt ? `   ·   Objekt: ${daten.objekt}` : ""),
-      L,
-      y,
-    );
-  y += 22;
+    .text(`Datum: ${datumDE(datum)}` + (kundenNummer ? `   ·   Kundennummer: ${kundenNummer}` : ""), L, y);
+  y += 14;
+  // Objekt als eigene Zeile, mit Luft zur Anrede (wie in der Word-Fassung).
+  if (daten.objekt) {
+    doc.fillColor(grau).font("Helvetica").fontSize(9).text("Objekt: ", L, y, { continued: true });
+    doc.font("Helvetica-Bold").text(daten.objekt);
+    y += 14;
+  }
+  y += 10;
 
   // ── Annahme-Vermerk (nur Auftragsbestätigung) ─────────
   if (annahme) {

@@ -73,6 +73,7 @@ Beantworte das Formular. Regeln:
 - Lichte Maße schätzen (Innenkante des Lochs bzw. der Zarge), nicht die Rahmen-Außenkante. Typische Werte: Zimmertür 0,7 bis 0,9 × 2,0 m; Fenster 0,6 bis 2,0 m breit; Fenstertür 0,8 bis 2,0 × 2,1 bis 2,3 m.
 - Ist eine Öffnung nur teilweise sichtbar (angeschnitten, hinter Vorhang), schätze trotzdem und setze Sicherheit 'niedrig'.
 - Eine geöffnete Tür oder ein geöffneter Fensterflügel: offen = true.
+- Jede Öffnung genau EINMAL eintragen. Ein Türblatt und seine Zarge sind eine Öffnung, nicht zwei.
 - Ist es KEIN Wandfoto (z.B. handschriftlicher Zettel, Handy-Notiz, Screenshot): istWandfoto false, den lesbaren Inhalt wörtlich in notizText, alles andere leer/false.
 - Halbhohe Verkleidung (Lambris, Holzpaneele, Fliesenspiegel) nur melden, wenn ein echter Materialwechsel sichtbar ist: Holzmaserung, Nut-und-Feder-Fugen, Fliesenfugen, eine Abschlussleiste oder ein Profil an der Oberkante. Ist die Wand unten nur in einer anderen Farbe gestrichen (glatte Fläche, gleiche Struktur, nur ein Farbwechsel), ist das ein zweifarbiger Anstrich und KEINE Verkleidung. Im Zweifel: zweifarbiger Anstrich.
 - Nichts erfinden. Keine Rechnungen.`;
@@ -130,6 +131,42 @@ export function unsichereOeffnungen(a: WandfotoAnalyse): WandfotoAnalyse["oeffnu
   return a.oeffnungen.filter((o) => o.inNachbarwand);
 }
 
+/**
+ * Bildrand-Öffnungen, bei denen sich die Nachfrage lohnt (Live-Test 11.09.2026:
+ * die Frage kam bei 6 von 8 Fotos und nervte). Nachgefragt wird nur, wenn die
+ * Öffnung nach VOB abgezogen würde (> 2,5 m², Grauzone ab 2,2 m²) oder ihre
+ * Größe unbekannt ist und die Art typischerweise groß ist. Kleine Fenster und
+ * Zimmertüren werden ohnehin übermessen, ändern also nichts am Preis.
+ */
+export function nachfragewuerdigeRandoeffnungen(a: WandfotoAnalyse): WandfotoAnalyse["oeffnungen"] {
+  const grosseArten = new Set<WandfotoAnalyse["oeffnungen"][number]["art"]>(["Fenstertuer", "Haustuer", "Durchgang"]);
+  return unsichereOeffnungen(a).filter((o) => {
+    if (o.breiteM === null || o.hoeheM === null) return grosseArten.has(o.art);
+    return o.breiteM * o.hoeheM >= 2.2;
+  });
+}
+
+/**
+ * Doppelt gemeldete Öffnungen zusammenführen (Live-Test 11.09.2026: „Tür 0,85 × 2 m;
+ * Tür 0,85 × 2 m" auf EINEM Foto). Gleiche Art, gleiche Wandseite und Maße auf
+ * 5 cm gleich gilt als dieselbe Öffnung. Zwei wirklich gleiche Türen nebeneinander
+ * sind selten und lassen sich diktieren.
+ */
+export function bereinigeAnalyse(a: WandfotoAnalyse): WandfotoAnalyse {
+  const behalten: WandfotoAnalyse["oeffnungen"] = [];
+  for (const o of a.oeffnungen) {
+    const doppelt = behalten.some(
+      (b) =>
+        b.art === o.art &&
+        b.inNachbarwand === o.inNachbarwand &&
+        b.breiteM !== null && o.breiteM !== null && Math.abs(b.breiteM - o.breiteM) <= 0.05 &&
+        b.hoeheM !== null && o.hoeheM !== null && Math.abs(b.hoeheM - o.hoeheM) <= 0.05,
+    );
+    if (!doppelt) behalten.push(o);
+  }
+  return behalten.length === a.oeffnungen.length ? a : { ...a, oeffnungen: behalten };
+}
+
 export interface FotoProblem {
   schwere: "nachfassen" | "hinweis";
   text: string;
@@ -175,7 +212,7 @@ export function fotoFeedback(a: WandfotoAnalyse, wandNr: number, raumName: strin
     zeilen.push(oeff.length ? `✅ ${wo}: ${oeff.join("; ")}.` : `✅ ${wo}: keine Öffnungen, notiert.`);
   }
   for (const p of probleme.filter((p) => p.schwere === "hinweis")) zeilen.push(`ℹ️ ${p.text}`);
-  const unsicher = unsichereOeffnungen(a);
+  const unsicher = nachfragewuerdigeRandoeffnungen(a);
   if (unsicher.length) {
     const namen = unsicher.map((o) => ART_NAME[o.art]).join(", ");
     zeilen.push(`❓ Am Bildrand noch: ${namen}. Sieht nach Nachbarwand aus, deshalb nicht mitgezählt. Gehört das doch zu dieser Wand? Dann sag kurz Bescheid.`);

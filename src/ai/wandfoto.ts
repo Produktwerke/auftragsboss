@@ -74,6 +74,7 @@ Beantworte das Formular. Regeln:
 - Ist eine Öffnung nur teilweise sichtbar (angeschnitten, hinter Vorhang), schätze trotzdem und setze Sicherheit 'niedrig'.
 - Eine geöffnete Tür oder ein geöffneter Fensterflügel: offen = true.
 - Jede Öffnung genau EINMAL eintragen. Ein Türblatt und seine Zarge sind eine Öffnung, nicht zwei.
+- Das Foto zeigt oft nur einen AUSSCHNITT der Wand (hochkant, eine Öffnung mit Boden und Decke). Das ist normal und kein Mangel: Öffnungen darin mit normaler Sicherheit schätzen, solange der Boden oder die Decke als Maßstab zu sehen ist.
 - Ist es KEIN Wandfoto (z.B. handschriftlicher Zettel, Handy-Notiz, Screenshot): istWandfoto false, den lesbaren Inhalt wörtlich in notizText, alles andere leer/false.
 - Halbhohe Verkleidung (Lambris, Holzpaneele, Fliesenspiegel) nur melden, wenn ein echter Materialwechsel sichtbar ist: Holzmaserung, Nut-und-Feder-Fugen, Fliesenfugen, eine Abschlussleiste oder ein Profil an der Oberkante. Ist die Wand unten nur in einer anderen Farbe gestrichen (glatte Fläche, gleiche Struktur, nur ein Farbwechsel), ist das ein zweifarbiger Anstrich und KEINE Verkleidung. Im Zweifel: zweifarbiger Anstrich.
 - Nichts erfinden. Keine Rechnungen.`;
@@ -176,7 +177,10 @@ export interface FotoProblem {
 export function fotoProbleme(a: WandfotoAnalyse): FotoProblem[] {
   const p: FotoProblem[] = [];
   if (!a.hellGenug) p.push({ schwere: "nachfassen", text: "Das Foto ist zu dunkel oder überstrahlt." });
-  if (!a.wandKomplett) p.push({ schwere: "hinweis", text: "Die Wand ist nicht ganz im Bild (Ecken oder Boden fehlen)." });
+  // Die ganze Wand muss NICHT im Bild sein (11.09.2026, Dirk: die WhatsApp-Kamera
+  // hat kein Weitwinkel). Ein Ausschnitt mit der Öffnung reicht, solange der
+  // Boden als Maßstab zu sehen ist. Nur dessen Fehlen ist einen Hinweis wert.
+  if (!a.bodenSichtbar) p.push({ schwere: "hinweis", text: "Der Boden ist nicht im Bild, dann werden die Maße ungenauer. Hochkant mit Boden und Decke reicht." });
   const offen = relevanteOeffnungen(a).filter((o) => o.offen);
   if (offen.length) {
     p.push({
@@ -238,7 +242,7 @@ export function fotoAlsDialogText(a: WandfotoAnalyse, wandNr: number, raumName: 
         .join(", ")}.`,
     );
   }
-  if (!a.wandKomplett) teile.push("Wand nicht vollständig im Bild.");
+  if (!a.bodenSichtbar) teile.push("Boden nicht im Bild (Maße ungenauer).");
   if (a.besonderheiten.length) teile.push(`Besonderheiten: ${a.besonderheiten.join(", ")}.`);
   return teile.join(" ");
 }

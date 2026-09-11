@@ -31,10 +31,10 @@ describe("Wandfoto-Helfer", () => {
     );
     const offen = { ...basis, oeffnungen: [{ ...basis.oeffnungen[1]!, offen: true }] };
     expect(fotoFeedback(offen, 1, null)).toBe("⚠️ Wand 1: Tür steht offen, bitte schließen und nochmal fotografieren.");
-    const dunkel = { ...basis, hellGenug: false, wandKomplett: false };
+    const dunkel = { ...basis, hellGenug: false, bodenSichtbar: false };
     const f = fotoFeedback(dunkel, 3, "Küche");
     expect(f).toContain("⚠️ Küche, Wand 3: Das Foto ist zu dunkel");
-    expect(f).toContain("ℹ️ Die Wand ist nicht ganz im Bild");
+    expect(f).toContain("ℹ️ Der Boden ist nicht im Bild");
     expect(fotoFeedback({ ...basis, oeffnungen: [] }, 4, "Bad")).toBe("✅ Bad, Wand 4: keine Öffnungen, notiert.");
   });
 
@@ -73,9 +73,10 @@ describe("Wandfoto-Helfer", () => {
     expect(bereinigeAnalyse(basis)).toBe(basis); // unverändert → dasselbe Objekt
   });
 
-  it("unvollständige Wand ist nur ein Hinweis, kein Nachfassen", () => {
-    expect(fotoProbleme({ ...basis, wandKomplett: false })).toEqual([
-      { schwere: "hinweis", text: "Die Wand ist nicht ganz im Bild (Ecken oder Boden fehlen)." },
+  it("Wandausschnitt ist kein Mangel; nur fehlender Boden ist ein Hinweis, kein Nachfassen", () => {
+    expect(fotoProbleme({ ...basis, wandKomplett: false })).toEqual([]);
+    expect(fotoProbleme({ ...basis, wandKomplett: false, bodenSichtbar: false })).toEqual([
+      { schwere: "hinweis", text: "Der Boden ist nicht im Bild, dann werden die Maße ungenauer. Hochkant mit Boden und Decke reicht." },
     ]);
   });
 
@@ -87,7 +88,7 @@ describe("Wandfoto-Helfer", () => {
       "Wohnzimmer Wand 2",
     );
     expect(t).toBe(
-      "FOTO Wand 2 (Raum: Wohnzimmer) [Bildunterschrift: Wohnzimmer Wand 2]: Öffnungen: Fenstertür ca. 1,7 x 2,2 m (offen) (unsicher). Wand nicht vollständig im Bild. Besonderheiten: Lambris halbhoch.",
+      "FOTO Wand 2 (Raum: Wohnzimmer) [Bildunterschrift: Wohnzimmer Wand 2]: Öffnungen: Fenstertür ca. 1,7 x 2,2 m (offen) (unsicher). Besonderheiten: Lambris halbhoch.",
     );
     expect(fotoAlsDialogText({ ...basis, oeffnungen: [] }, 1, null)).toBe("FOTO Wand 1: Keine Öffnungen.");
   });

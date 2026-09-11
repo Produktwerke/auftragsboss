@@ -17,7 +17,7 @@ import { sendeWhatsAppText } from "./whatsapp/send.js";
 import { transkribiereAudio } from "./ai/transcribe.js";
 import { liesBildNotiz } from "./ai/bildLesen.js";
 import { analysiereWandfoto, bereinigeAnalyse, fotoAlsDialogText, fotoFeedback, type WandfotoAnalyse } from "./ai/wandfoto.js";
-import { floskel } from "./whatsapp/floskeln.js";
+import { floskel, FOTO_ANLEITUNG } from "./whatsapp/floskeln.js";
 import { speichereFoto } from "./betrieb/fotoAblage.js";
 import { ladeAufmassAnlage } from "./angebot/aufmassblatt.js";
 import { ordneFotoZu } from "./maler/fotoZuordnung.js";
@@ -589,9 +589,13 @@ export async function werteVorgangAus(args: {
     //     Eindruck entsteht, das Programm hänge.
     if (sammelModus && !abschliessen) {
       const letzterRaum = aufmass.raeume[aufmass.raeume.length - 1]?.name;
-      const hatFotos =
-        !!letzterRaum && nachrichtenLesen(vorgang).some((n) => n.art === "foto" && n.text.includes(`(Raum: ${letzterRaum})`));
-      const bilanz = raumBilanz(daten.raeumeText, floskel(hatFotos ? "weiterOderFertig" : "fotosOderWeiter", vonNummer));
+      const nachrichten = nachrichtenLesen(vorgang);
+      const hatFotos = !!letzterRaum && nachrichten.some((n) => n.art === "foto" && n.text.includes(`(Raum: ${letzterRaum})`));
+      const nochNieFotos = !nachrichten.some((n) => n.art === "foto");
+      // Aufforderung: mit Fotos → weiter oder fertig; ohne Fotos → Fotos anbieten,
+      // beim allerersten Mal mit der kurzen Anleitung (Öffnungen statt ganze Wand).
+      const aufforderung = hatFotos ? floskel("weiterOderFertig", vonNummer) : nochNieFotos ? FOTO_ANLEITUNG : floskel("fotosOderWeiter", vonNummer);
+      const bilanz = raumBilanz(daten.raeumeText, aufforderung);
       if (bilanz) {
         await sendeWhatsAppText(vonNummer, bilanz);
         await prisma.vorgang.updateMany({

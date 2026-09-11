@@ -40,13 +40,24 @@ const VARIANTEN: Record<FloskelArt, string[]> = {
     "Wenn noch ein Raum kommt, einfach weitermachen. Sonst sag *fertig*.",
     "Weiter mit dem nächsten Raum, oder *fertig* für das Angebot?",
   ],
-  // Raum diktiert, aber noch keine Wandfotos dazu
+  // Raum diktiert, aber noch keine Fotos dazu (Kurzform; die ausführliche
+  // Anleitung FOTO_ANLEITUNG kommt einmal je Auftrag)
   fotosOderWeiter: [
-    "Schick mir jetzt die Wandfotos dazu, den nächsten Raum, oder sag *fertig*.",
-    "Wenn du magst, jetzt die Wandfotos. Sonst nächster Raum, oder *fertig* für das Angebot.",
-    "Fotos der Wände? Gern jetzt. Oder weiter mit dem nächsten Raum, oder *fertig*.",
+    "Wenn du magst, jetzt je Fenster oder Tür ein Foto. Sonst nächster Raum, oder *fertig* für das Angebot.",
+    "Fotos von Fenstern und Türen? Gern jetzt. Oder weiter mit dem nächsten Raum, oder *fertig*.",
+    "Schick mir je Öffnung ein Foto, den nächsten Raum, oder sag *fertig*.",
   ],
 };
+
+/**
+ * Einmal je Auftrag, beim ersten Raum ohne Fotos: wie fotografiert wird
+ * (11.09.2026, Dirk: die WhatsApp-Kamera hat kein Weitwinkel, die ganze Wand
+ * passt oft nicht drauf, muss sie aber auch nicht).
+ */
+export const FOTO_ANLEITUNG =
+  "Wenn du magst, jetzt Fotos: je Fenster oder Tür ein Foto, hochkant, Boden und Decke mit drauf. " +
+  "Wände ohne Öffnung brauchen kein Foto. Die ganze Wand darfst du fürs Protokoll trotzdem aufnehmen. " +
+  "Sonst nächster Raum, oder sag *fertig* für das Angebot.";
 
 const zuletzt = new Map<string, number>();
 

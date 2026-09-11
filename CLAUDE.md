@@ -120,6 +120,34 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 11.09.2026 — LIVE-TEST TEILETAPPE 3 + SAMMELMODUS ✅ DEPLOYT (Commits 46df7ca, 97ebd5a, d672716; 251 Tests):**
+> - **Live-Test durch Dirk (12:53 bis 13:00):** zwei Kinderzimmer (Paneele 0,97 m / zweifarbig) + Dachzimmer diktiert, 8 Fotos ohne
+>   Bildunterschrift. Technisch alles korrekt (Zuordnung, Paneelrückfrage, Kniestock/Schrägen/Restdecke, zweifarbig ohne Paneele,
+>   0 Fehler). Befunde: Angebot kam nach Raum 1 (nächste Nachricht nach der Zusammenfassung galt als „ja"), Album-Hülle löste
+>   „Format kann ich nicht lesen" aus, Bildrand-Frage bei 6/8 Fotos, Tür doppelt erkannt, Objektzeile mit Maßen zu dicht an der
+>   Anrede, Positionen/Material nicht je Raum. Vorab entdeckt und gefixt: gleichnamige Räume (`findeRaum` exakt vor unscharf).
+> - **SAMMELMODUS (`werteVorgangAus`, sobald Räume da sind):** Angebot erst auf *fertig* (`istFertigWunsch`), auf „ja" zur
+>   Zusammenfassung (`istBestaetigung`) oder per Zeitablauf (`erzwungen`). Sonst nach jedem Schritt `raumBilanz()` (alle Räume,
+>   Ergebnis ohne Eingangsmaße) + Aufforderung „nächster Raum oder *fertig*" (`floskel("weiterOderFertig")`, ohne Fotos
+>   `FOTO_ANLEITUNG` einmal je Auftrag, danach `fotosOderWeiter`). Neuer Inhalt nach der Zusammenfassung = Fortsetzung
+>   (`zusammenfassungGezeigt` zurück auf false). Rückfragen kommen weiter sofort (Rundenlimit im Sammelmodus MAX_RUNDEN+4).
+>   Timeout-Job alle 2 Min: Erinnerung nach 5 Min Stille (`Vorgang.erinnertAm`, verlängert die Frist nicht), Abschluss nach
+>   15 Min über `werteVorgangAus(erzwungen)` (vorher lief der Job am Aufmaß vorbei). Fotopause 90 → 45 s. Klassischer Modus
+>   (Diktat ohne Räume) unverändert. Design-Grundsatz (Dirk): AuftragsBoss schweigt nie, jede Nachricht endet mit Stand + Frage.
+> - **Fotos:** Album-Hülle (`type: "unsupported"`) still ignoriert. `bereinigeAnalyse` führt doppelt gemeldete Öffnungen zusammen.
+>   Bildrand-Frage nur noch bei abzugsrelevanten Öffnungen (`nachfragewuerdigeRandoeffnungen`: ≥ 2,2 m² oder große Art ohne Maß).
+>   **Ganze Wand muss NICHT ins Bild** (WhatsApp-Kamera hat kein Weitwinkel): Standard = ein Foto je Fenster/Tür, hochkant, Boden
+>   und Decke drauf; Wände ohne Öffnung ohne Foto; ganze Wand fürs Protokoll erlaubt. Hinweis „Wand nicht ganz im Bild" entfällt,
+>   nur fehlender Boden ist ein Hinweis. Landingpage entsprechend („Foto je Fenster oder Tür"), **IONOS-Upload durch Dirk offen**.
+> - **Angebot:** Objekt als eigene Zeile, nur Raumnamen (Prompt), Abstand zur Anrede (Word + PDF). `berechneAngebot`: bei ≥ 2
+>   Räumen Raumblöcke (Raumname als Überschrift, Material vor Arbeit je Raum, Zwischensumme je Raum, Rest „Klein- und
+>   Hilfsmaterial"/„Weitere Leistungen"/„Allgemein" zuletzt; `kategorie: "RAUM:<name>"`). Prompt: Hauptmaterial je Raum mit
+>   `raumBezug`, Kleinmaterial einmal ohne. `raumBezug` wird jetzt im Editor mitgeführt (dokumentDaten/editorSeite). Der Editor
+>   selbst gruppiert weiter nach Kategorie → Positionsnummern können vom Kundendokument abweichen (Dirk weiß es; später ggf.
+>   Editor nach Räumen). Wechselnde Eingangsbestätigungen: `src/whatsapp/floskeln.ts` (nie zweimal dieselbe je Nummer).
+> - ⏳ **Nächster Schritt:** Dirks zweiter Live-Test (Fotos aus der WhatsApp-Kamera, ein Foto je Öffnung, am Ende „fertig"); erste
+>   echte KI-Probe für Objektzeile ohne Maße und Material je Raum.
+
 > **Update 10.09.2026 — NACH-AUDIT + 6 PFLICHTPUNKTE ✅ DEPLOYT (Commits 7327025, Folgecommit deploy.sh; 220 Tests grün; Bericht https://claude.ai/code/artifact/11d0c0f7-c951-4322-9478-69d2c2ffa959):**
 > - **NEUES DEPLOY-RITUAL (ersetzt alle älteren Blöcke!):** `bash scripts/deploy-lokal.sh` im Git-Bash. Packt (ohne dev.db*/.env),
 >   prüft, lädt nach `/home/auftragsboss/eingang/`, ruft `su - auftragsboss -c '~/deploy.sh'` (Repo-Kopie `scripts/deploy.sh`).

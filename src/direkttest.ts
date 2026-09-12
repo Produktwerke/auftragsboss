@@ -79,6 +79,14 @@ function tagesStand(): number {
  * Beispiel-Angebot sieht wie ein sauberer, zusammenhängender Muster-Briefkopf
  * aus — genau das, was ein Interessent sehen soll.
  */
+/** Nummer (nur Ziffern, mit Landeskennung, z.B. 4917…) gegen die Länderliste prüfen. */
+export function nummerAusFreigegebenemLand(nummer: string, laender: readonly string[]): boolean {
+  const ziffern = String(nummer ?? "").replace(/\D/g, "");
+  if (!ziffern) return false;
+  if (laender.length === 0) return true; // Liste leer = keine Sperre
+  return laender.some((land) => ziffern.startsWith(land));
+}
+
 export async function starteTestFuerNeueNummer(
   prisma: PrismaClient,
   vonNummer: string,
@@ -96,6 +104,17 @@ export async function starteTestFuerNeueNummer(
     return {
       ablehnung:
         "🙏 Unser kostenloser Test ist heute sehr gefragt und für heute ausgebucht. Probier es morgen noch einmal, oder melde dich direkt beim AuftragsBoss-Team.",
+    };
+  }
+
+  // Ländersperre (12.09.2026): Nur Nummern aus den freigegebenen Ländern (Standard
+  // Deutschland) bekommen automatisch ein Test-Konto. Alles andere kostet nur
+  // KI-Geld und ist nicht unsere Zielgruppe. Kein Datensatz, keine Verarbeitung.
+  if (!nummerAusFreigegebenemLand(vonNummer, cfg.DIREKTTEST_LAENDER)) {
+    return {
+      ablehnung:
+        "👋 AuftragsBoss ist aktuell nur für Handwerksbetriebe in Deutschland verfügbar. " +
+        "AuftragsBoss is currently available for businesses in Germany only.",
     };
   }
 

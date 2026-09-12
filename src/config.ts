@@ -150,6 +150,14 @@ export const direkttestConfig = lade(
     DIREKTTEST_MAX_PRO_TAG: z.coerce.number().int().min(1).default(80),
     // Mindestabstand zwischen zwei Nachrichten derselben Nummer, in Sekunden.
     DIREKTTEST_MIN_ABSTAND_SEKUNDEN: z.coerce.number().int().min(0).default(3),
+    // Länderkennungen, aus denen unbekannte Nummern ein Test-Konto bekommen (ohne +,
+    // Komma-getrennt). Standard: nur Deutschland. Andere Nummern werden freundlich
+    // abgewiesen und verursachen keine KI-Kosten. Betreibt der Betreiber einen Lead
+    // über das Cockpit (dokumentiertes Opt-in), gilt die Sperre nicht.
+    DIREKTTEST_LAENDER: z
+      .string()
+      .default("49")
+      .transform((v) => v.split(",").map((s) => s.trim().replace(/^\+/, "")).filter((s) => /^\d{1,4}$/.test(s))),
   }),
 );
 

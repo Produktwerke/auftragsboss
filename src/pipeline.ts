@@ -614,10 +614,12 @@ async function verarbeiteAngebotsKnopf(handwerker: Handwerker, vonNummer: string
 // KI-Aufruf schon und kommt noch etwas, verwirft die Auswertung ihr Ergebnis
 // (Eingabestand, siehe eingabestand.ts); die neue Eingabe plant erneut.
 
-/** Pause nach Sprache oder Text, bevor ausgewertet wird. */
-const EINGABE_PAUSE_MS = 15_000;
-/** Fotos kommen meist im Schwung (je Öffnung eins), deshalb länger warten. */
-const FOTO_PAUSE_MS = 45_000;
+/** Pause nach Sprache oder Text: praktisch sofort (Dirk 13.09.: Wartezeit so kurz
+ *  wie möglich, Kosten egal). Die Überhol-Logik fängt Nachzügler ab. */
+const EINGABE_PAUSE_MS = 3_000;
+/** Fotos kommen im Schwung (je Öffnung eins, 10 bis 20 s Abstand): kurz warten,
+ *  sonst gäbe es je Foto eine eigene Fassung samt Fertigmeldung. */
+const FOTO_PAUSE_MS = 30_000;
 /** Foto-Eingangsbestätigung nur einmal je Schwung, nicht für jedes einzelne Foto. */
 const FOTO_SCHWUNG_MS = 90_000;
 const auswertungTimer = new Map<string, NodeJS.Timeout>();

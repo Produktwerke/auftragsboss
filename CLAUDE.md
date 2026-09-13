@@ -127,7 +127,7 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   Zusammenfassung „Das habe ich verstanden", Raumbilanz und der „fertig"-Schritt sind WEG (`baueZusammenfassung`, `raumBilanz`,
 >   `istFertigWunsch`, `istBestaetigung`, Floskeln `weiterOderFertig`/`fotosOderWeiter`, Einstellungs-Schalter „zusammenfassen" entfernt;
 >   DB-Spalten `zusammenfassungAktiv`/`zusammenfassungGezeigt`/`erinnertAm` bleiben ungenutzt stehen, kein db push).
-> - **Eingaben bündeln (`planeAuswertung` in pipeline.ts):** JEDE Eingabe (Sprache/Text 15 s, Foto 45 s) plant EINE Auswertung, jede
+> - **Eingaben bündeln (`planeAuswertung` in pipeline.ts):** JEDE Eingabe (Sprache/Text 3 s, Foto 30 s) plant EINE Auswertung, jede
 >   weitere verschiebt sie. **Überholen:** `src/eingabestand.ts` zählt Eingaben je Nummer (Zähler wird in `verarbeiteNachrichtSeriell`
 >   VOR dem Einreihen erhöht); `werteVorgangAus` merkt sich den Stand beim Start und verwirft das KI-Ergebnis, wenn er sich geändert hat
 >   (Event `AUSWERTUNG_UEBERHOLT`); ein feuernder Timer prüft dasselbe. Fehler in der geplanten Auswertung gehen als Hinweis an den Maler.

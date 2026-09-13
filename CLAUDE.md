@@ -149,6 +149,7 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 > - **Raumüberschrift schon bei EINEM Raum:** `berechneAngebot` `nachRaum` ab 1 Raum, Editor `raumModus()` ab 1, Prompt-Regel
 >   „RÄUME (auch bei nur EINEM Raum)". Editor: Vorschau wird nach Ablauf der Lösch-Reue-Frist aufgefrischt (Blocknummern rücken nach).
 > - **Lead-Onboarding:** `ERKLAERUNG` nach „Kurz erklären" ausführlicher (3 Eingabewege, was danach passiert), dann Knopf „Angebot ausprobieren".
+> - **Decke bei teilweise gestrichenen Wänden (ANG-2026-0018, Arbeitszimmer mit Paneelwand):** stehen in `Wände` nur die zu streichenden Längen (3 statt 4), ist der Raum kein Rechteck mehr und die Decke blieb unberechnet (drei DECKE-Positionen ohne Menge). Jetzt: Prompt schreibt das Grundmaß `Decke: 3,98 x 3,50`, `parseRaeumeText` rechnet daraus `deckeM2Genannt` (Test).
 > - 254 Tests grün. ⏳ Dirks dritter Live-Test mit dem neuen Ablauf; danach Chat-Auswertung in zwei Stufen (Memory chat-auswertung-dsgvo,
 >   VORHER Datenschutzerklärung/AVV anpassen).
 

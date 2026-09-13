@@ -199,6 +199,16 @@ describe("berechneRaum", () => {
     expect(berechneRaum({ ...schlafzimmer, schraegen: [{ laengeM: 4, schraegeM: 40 }] })).toEqual({ grund: "unplausible Dachschräge" });
   });
 
+  it("Decke: Grundmaß 'a x b', wenn nicht alle Wände gestrichen werden (Arbeitszimmer 13.09.2026)", () => {
+    const [r] = parseRaeumeText("Raum: Arbeitszimmer; Höhe: 2,55; Wände: 3,98, 3,50, 3,98; Decke: 3,98 x 3,50; Öffnungen: Tür 0,85 x 2,00, Fenster 1,10 x 1,20");
+    expect(r!.deckeStreichen).toBe(true);
+    expect(r!.deckeM2Genannt).toBe(13.93);
+    const a = berechneAufmass([r!]);
+    expect(a.raeume[0]!.rechteck).toBe(false);
+    expect(a.raeume[0]!.wandBruttoM2).toBe(29.22);
+    expect(a.raeume[0]!.deckeM2).toBe(13.93);
+  });
+
   it("Decke: direkt genannte Fläche gilt auch für Vielecke", () => {
     const a = berechneRaum({ name: "Flur", hoeheM: 2.5, wandlaengenM: [4.5, 2.0, 1.5, 1.0, 3.0], waendeStreichen: true, deckeStreichen: true, oeffnungen: [], deckeM2Genannt: 7.4 });
     if ("grund" in a) throw new Error(a.grund);

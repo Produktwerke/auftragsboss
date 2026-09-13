@@ -461,9 +461,13 @@ export function parseRaeumeText(text: string | null | undefined): RaumMasse[] {
     const hoehe = zahlenAus(hoeheRoh)[0] ?? null;
     const { laengen: wandlaengen, hoehen: wandhoehen } = waendeAus(felder.get("wände") ?? felder.get("waende") ?? "");
     const schraegen = schraegenAus(felder.get("schrägen") ?? felder.get("schraegen") ?? felder.get("schräge") ?? felder.get("schraege") ?? felder.get("dachschrägen") ?? "");
-    // Decke: "ja"/"nein" oder direkt die Fläche ("Decke: 14,2"), z.B. bei Vielecken.
+    // Decke: "ja"/"nein", direkt die Fläche ("Decke: 14,2", z.B. bei Vielecken) oder
+    // das Grundmaß ("Decke: 3,98 x 3,50"): nötig, wenn nicht alle Wände gestrichen
+    // werden und die Wandliste deshalb kein Rechteck mehr ergibt (13.09.2026).
     const deckeRoh = felder.get("decke") ?? "";
-    const deckeZahl = zahlenAus(deckeRoh)[0] ?? null;
+    const deckeZahlen = zahlenAus(deckeRoh);
+    const deckeZahl =
+      deckeZahlen.length >= 2 && /[x×*]|mal/i.test(deckeRoh) ? rund2(deckeZahlen[0]! * deckeZahlen[1]!) : (deckeZahlen[0] ?? null);
     const decke = /^(ja|yes|true)/i.test(deckeRoh) || (deckeZahl !== null && !/^(nein|no|false)/i.test(deckeRoh));
     // Teiletappe 3: Paneelhöhe (Lambris, Fliesenspiegel) und Laibungstiefe, beide optional.
     const paneel = zahlenAus(felder.get("paneel") ?? felder.get("paneele") ?? felder.get("paneelhöhe") ?? felder.get("paneelhoehe") ?? "")[0] ?? null;

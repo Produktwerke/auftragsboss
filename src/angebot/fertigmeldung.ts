@@ -22,7 +22,7 @@ export const ANTWORT_KEIN_ANGEBOT =
 
 /** Zusatz unter jeder Rückfrage: nichts muss jetzt beantwortet werden. */
 export const RUECKFRAGE_ZUSATZ =
-  "_Weißt du es gerade nicht? Kein Problem, das kannst du später im Angebot ergänzen. Sag einfach weiter, was noch kommt._";
+  "_Weißt du es gerade nicht? Kein Problem, das kannst du später im Angebot ergänzen._";
 
 /** Einmal je Angebot (erste Fassung mit Räumen, aber ohne Fotos). */
 export const FOTO_TIPP =

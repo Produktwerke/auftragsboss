@@ -418,23 +418,36 @@ export async function strukturiereDialog(
 
   // Claude Fable 5: Thinking ist immer aktiv (adaptive ist der einzige
   // zulässige Modus), Sampling-Parameter gibt es nicht mehr.
-  const response = await anthropic.messages.parse({
-    model: "claude-fable-5",
-    max_tokens: 16000,
-    thinking: { type: "adaptive" },
-    system: systemPrompt(preisliste),
-    messages: [
-      {
-        role: "user",
-        content:
-          `Betrieb: ${b.firma} (Inhaber: ${b.inhaber}${b.gewerk ? `, Gewerk: ${b.gewerk}` : ""})\n\n` +
-          `Bisheriger Verlauf (Diktat und ggf. Antworten auf deine Rückfragen):\n"""\n${verlauf}\n"""\n\n` +
-          `Werte den GESAMTEN Verlauf aus. Angaben aus späteren Antworten ergänzen oder korrigieren ` +
-          `frühere. Stelle keine Frage erneut, die bereits beantwortet wurde.`,
-      },
-    ],
-    output_config: { format: zodOutputFormat(DokumentSchema) },
-  });
+  // max_tokens umfasst das Thinking MIT. Bei langen Verläufen (Nachträge, viele
+  // Fotos) reichten 16.000 nicht: die JSON-Ausgabe wurde abgeschnitten
+  // („Unterminated string in JSON", 13.09.2026). Deshalb großzügig, und der
+  // Aufruf wird bei einem Fehler einmal wiederholt (Kosten sind zweitrangig).
+  const anfrage = () =>
+    anthropic.messages.parse({
+      model: "claude-fable-5",
+      max_tokens: 32000,
+      thinking: { type: "adaptive" },
+      system: systemPrompt(preisliste),
+      messages: [
+        {
+          role: "user",
+          content:
+            `Betrieb: ${b.firma} (Inhaber: ${b.inhaber}${b.gewerk ? `, Gewerk: ${b.gewerk}` : ""})\n\n` +
+            `Bisheriger Verlauf (Diktat und ggf. Antworten auf deine Rückfragen):\n"""\n${verlauf}\n"""\n\n` +
+            `Werte den GESAMTEN Verlauf aus. Angaben aus späteren Antworten ergänzen oder korrigieren ` +
+            `frühere. Stelle keine Frage erneut, die bereits beantwortet wurde.`,
+        },
+      ],
+      output_config: { format: zodOutputFormat(DokumentSchema) },
+    });
+  let response: Awaited<ReturnType<typeof anfrage>>;
+  try {
+    response = await anfrage();
+  } catch (err) {
+    console.warn("KI-Strukturierung fehlgeschlagen, zweiter Versuch:", err instanceof Error ? err.message.slice(0, 200) : err);
+    await new Promise((r) => setTimeout(r, 2000));
+    response = await anfrage();
+  }
 
   // Fable 5 kann Anfragen aus Sicherheitsgründen ablehnen (stop_reason
   // "refusal") — bei Handwerker-Diktaten praktisch ausgeschlossen, aber

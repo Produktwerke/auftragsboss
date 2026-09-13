@@ -21,6 +21,8 @@ import { liesBildNotiz } from "./ai/bildLesen.js";
 import { analysiereWandfoto, bereinigeAnalyse, fotoAlsDialogText, fotoHinweiseKurz, fotoNachfassHinweis, type WandfotoAnalyse } from "./ai/wandfoto.js";
 import { floskel } from "./whatsapp/floskeln.js";
 import { eingabeStandVon, istUeberholt, merkeEingabe } from "./eingabestand.js";
+import { meldeStoerung, meldeEntwarnung } from "./betrieb/betreiberAlarm.js";
+import { KUNDEN_SATZ, MALER_AUFGEGEBEN, MALER_HINWEIS_AB_VERSUCH, MALER_ZWISCHENSTAND, naechsteWiederholungMinuten, standText } from "./selbstheilung.js";
 import {
   ANGEBOTS_KNOEPFE,
   ANTWORT_KEIN_ANGEBOT,
@@ -472,7 +474,68 @@ export async function verarbeiteNachricht(args: {
       vonNummer,
       "⚠️ Da ist etwas schiefgelaufen, deine Nachricht konnte nicht verarbeitet werden. Bitte versuche es in ein paar Minuten noch einmal.",
     );
+    // Hier ist die Eingabe noch nicht im Vorgang (Transkription, Bilddownload …):
+    // der Maler muss sie erneut schicken, der Betreiber erfährt es sofort.
+    await meldeStoerung({
+      schluessel: `nachricht:${handwerker.id}`,
+      was: `Nachricht konnte nicht verarbeitet werden (${handwerker.firma || "Test-Konto"}, ${kanal})`,
+      stand: "Der Maler wurde gebeten, die Nachricht in ein paar Minuten noch einmal zu schicken. Keine automatische Wiederholung möglich, die Eingabe kam nicht bis zum Vorgang.",
+      details: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+      kundenSatz: KUNDEN_SATZ,
+    });
     throw err;
+  }
+}
+
+// ── Selbstheilung (13.09.2026) ────────────────────────────────────────
+
+/**
+ * Auswertung eines Vorgangs ausführen und Fehler SELBST behandeln: Erfolg nach
+ * Fehlversuchen löst eine Entwarnung aus, ein Fehler plant die Wiederholung
+ * (src/selbstheilung.ts) und alarmiert den Betreiber. Wirft nie. Wird von der
+ * geplanten Auswertung und vom Timeout-Job genutzt.
+ */
+export async function fuehreAuswertungAus(args: {
+  handwerker: Handwerker;
+  vorgang: Vorgang;
+  vonNummer: string;
+  erzwungen?: boolean;
+}): Promise<void> {
+  const { handwerker, vorgang, vonNummer, erzwungen = false } = args;
+  const schluessel = `auswertung:${vorgang.id}`;
+  const firma = handwerker.firma || "Test-Konto";
+  try {
+    await werteVorgangAus({ handwerker, vorgang, vonNummer, erzwungen });
+    if (vorgang.fehlversuche > 0) {
+      await prisma.vorgang.updateMany({ where: { id: vorgang.id }, data: { fehlversuche: 0, naechsterVersuch: null } });
+      await meldeEntwarnung({
+        schluessel,
+        was: `Angebot ist raus (${firma})`,
+        stand: `Nach ${vorgang.fehlversuche} Fehlversuch${vorgang.fehlversuche === 1 ? "" : "en"} geklappt. Nichts zu tun.`,
+      });
+    }
+  } catch (err) {
+    const fehlversuche = vorgang.fehlversuche + 1;
+    const naechste = naechsteWiederholungMinuten(fehlversuche);
+    console.error(`Auswertung fehlgeschlagen (${firma}, Versuch ${fehlversuche}):`, err);
+    if (naechste === null) {
+      // Aufgeben: Vorgang schließen, der Maler schickt später neu.
+      await prisma.vorgang.updateMany({ where: { id: vorgang.id }, data: { status: "ABGESCHLOSSEN", fehlversuche, naechsterVersuch: null } });
+      await sendeWhatsAppText(vonNummer, MALER_AUFGEGEBEN).catch(() => {});
+    } else {
+      await prisma.vorgang.updateMany({
+        where: { id: vorgang.id },
+        data: { fehlversuche, naechsterVersuch: new Date(Date.now() + naechste * 60_000) },
+      });
+      if (fehlversuche === MALER_HINWEIS_AB_VERSUCH) await sendeWhatsAppText(vonNummer, MALER_ZWISCHENSTAND).catch(() => {});
+    }
+    await meldeStoerung({
+      schluessel,
+      was: `Angebot konnte nicht erstellt werden (${firma})`,
+      stand: standText(fehlversuche),
+      details: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+      kundenSatz: KUNDEN_SATZ,
+    });
   }
 }
 
@@ -742,13 +805,17 @@ function planeAuswertung(vonNummer: string, handwerkerId: string, vorgangId: str
           neueFotos === 1 ? "📐 Das Foto ist drin, ich rechne das Angebot …" : `📐 ${neueFotos} Fotos sind drin, ich rechne das Angebot …`,
         );
       }
-      await werteVorgangAus({ handwerker, vorgang: frisch, vonNummer });
+      await fuehreAuswertungAus({ handwerker, vorgang: frisch, vonNummer });
     }).catch(async (err) => {
+      // Nur noch Fehler VOR der Auswertung (Datenbank, Versand); die Auswertung
+      // selbst behandelt ihre Fehler in fuehreAuswertungAus.
       console.error("Geplante Auswertung fehlgeschlagen:", err);
-      await sendeWhatsAppText(
-        vonNummer,
-        "⚠️ Da ist etwas schiefgelaufen, deine Nachricht konnte nicht verarbeitet werden. Bitte versuche es in ein paar Minuten noch einmal.",
-      ).catch(() => {});
+      await meldeStoerung({
+        schluessel: `planung:${vonNummer.slice(-4)}`,
+        was: "Geplante Auswertung ist vor dem KI-Aufruf gescheitert",
+        stand: "Der Timeout-Job holt die Eingabe in 3 Minuten nach.",
+        details: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+      });
     });
   }, pauseMs);
   auswertungTimer.set(vonNummer, timer);

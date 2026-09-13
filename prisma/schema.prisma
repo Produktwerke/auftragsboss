@@ -238,6 +238,11 @@ model Vorgang {
   // Raum, oder fertig?" nach ERINNERUNG_MINUTEN Stille. null = noch nicht erinnert.
   erinnertAm DateTime?
 
+  // Selbstheilung (13.09.2026): gescheiterte KI-Auswertungen werden mit wachsendem
+  // Abstand wiederholt (src/selbstheilung.ts) statt den Vorgang zu schließen.
+  fehlversuche     Int       @default(0)
+  naechsterVersuch DateTime?
+
   begonnenAm       DateTime @default(now())
   letzteAktivitaet DateTime @default(now())
 

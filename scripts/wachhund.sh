@@ -63,7 +63,16 @@ if [ "$db_ergebnis" != "ok" ]; then
 Prüfen: su - auftragsboss -c 'pm2 logs auftragsboss --err --lines 50'. Ursache 07.09.2026 waren fremde dev.db-wal/-shm aus einem Deploy-Paket (siehe CLAUDE.md, Vorfall 07.09.). Nicht blind weiter deployen; erst Backup-Stand prüfen (/root/backups)."
 fi
 
-# 5) Herzschlag an healthchecks.io (nur wenn eine URL hinterlegt ist)
+# 5) Hängende Angebots-Vorgänge (13.09.2026): offen seit über 45 Minuten mit Inhalt,
+#    oder schon drei gescheiterte KI-Auswertungen (Selbstheilung läuft, aber es hakt).
+#    Prisma speichert DateTime als Unix-Millisekunden.
+haengend=$(sqlite3 -readonly /home/auftragsboss/daten/dev.db "SELECT count(*) FROM Vorgang WHERE status='OFFEN' AND (fehlversuche >= 3 OR (nachrichtenJson <> '[]' AND letzteAktivitaet < (strftime('%s','now') - 2700) * 1000));" 2>/dev/null || echo "?")
+if [ "$haengend" != "0" ]; then
+  melde vorgaenge "ALARM AuftragsBoss: $haengend Angebots-Vorgang/Vorgänge hängen"     "Es gibt $haengend offene Vorgänge, die seit über 45 Minuten kein Angebot bekommen haben oder mindestens dreimal an der KI-Auswertung gescheitert sind.
+Prüfen: su - auftragsboss -c 'pm2 logs auftragsboss --err --lines 50' und die Alarm-Mails der App (Betreff ALARM AuftragsBoss: Angebot konnte nicht erstellt werden)."
+fi
+
+# 6) Herzschlag an healthchecks.io (nur wenn eine URL hinterlegt ist)
 HEARTBEAT=/root/wachhund-heartbeat-url.txt
 if [ -s "$HEARTBEAT" ]; then
   url=$(head -1 "$HEARTBEAT")

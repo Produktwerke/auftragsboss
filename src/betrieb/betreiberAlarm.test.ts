@@ -55,3 +55,32 @@ describe("Betreiber-Benachrichtigung: Vorlagen-Inhalt", () => {
     expect(baueVorlagenNachricht("49123456789", "x", []).template.components).toEqual([]);
   });
 });
+
+describe("Störungsalarm (13.09.2026)", () => {
+  it("meldet je Schlüssel höchstens einmal pro Stunde", async () => {
+    const { darfMelden, alarmZuruecksetzen, ALARM_ABSTAND_MS } = await import("./betreiberAlarm.js");
+    alarmZuruecksetzen();
+    expect(darfMelden("a", 1_000)).toBe(true);
+    expect(darfMelden("a", 1_000 + ALARM_ABSTAND_MS - 1)).toBe(false);
+    expect(darfMelden("b", 2_000)).toBe(true);
+    expect(darfMelden("a", 1_000 + ALARM_ABSTAND_MS)).toBe(true);
+  });
+
+  it("macht aus Was und Stand saubere Vorlagen-Platzhalter ohne Zeilenumbruch", async () => {
+    const { alarmParameter } = await import("./betreiberAlarm.js");
+    expect(alarmParameter("Angebot konnte nicht\nerstellt werden   (Firma)", "")).toEqual(["Angebot konnte nicht erstellt werden (Firma)", "-"]);
+    expect(alarmParameter("x".repeat(400), "ok")[0]!.length).toBe(300);
+  });
+
+  it("baut die Alarm-Mail mit Kundensatz und die Entwarnung ohne", async () => {
+    const { alarmMailHtml } = await import("./betreiberAlarm.js");
+    const s = { schluessel: "auswertung:1", was: "Angebot konnte nicht erstellt werden (Firma)", stand: "Versuch 1 von 6", details: "Error <x>", kundenSatz: "Hallo Kunde" };
+    const alarm = alarmMailHtml(s, false);
+    expect(alarm).toContain("⚠️ Störung");
+    expect(alarm).toContain("Error &lt;x&gt;");
+    expect(alarm).toContain("Hallo Kunde");
+    const ok = alarmMailHtml(s, true);
+    expect(ok).toContain("✅ Entwarnung");
+    expect(ok).not.toContain("Hallo Kunde");
+  });
+});

@@ -260,6 +260,8 @@ export const betreiberConfig = lade(
   z.object({
     BETREIBER_HANDY: z.string().optional().transform(normalisiereHandy),
     BETREIBER_VORLAGE_NEUER_KUNDE: z.string().default("neuer_kunde"),
+    // Störungsalarm + Entwarnung (13.09.2026), Vorlage: Verwaltung/Utility, {{1}} was, {{2}} Stand.
+    BETREIBER_VORLAGE_ALARM: z.string().default("betreiber_alarm"),
   }),
 );
 

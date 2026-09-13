@@ -422,8 +422,11 @@ export async function strukturiereDialog(
   // Fotos) reichten 16.000 nicht: die JSON-Ausgabe wurde abgeschnitten
   // („Unterminated string in JSON", 13.09.2026). Deshalb großzügig, und der
   // Aufruf wird bei einem Fehler einmal wiederholt (Kosten sind zweitrangig).
+  // Als STREAM: ab etwa 21.000 max_tokens verweigert das SDK den normalen
+  // Aufruf („Streaming is required for operations that may take longer than
+  // 10 minutes"); finalMessage() liefert dieselbe geparste Antwort.
   const anfrage = () =>
-    anthropic.messages.parse({
+    anthropic.messages.stream({
       model: "claude-fable-5",
       max_tokens: 32000,
       thinking: { type: "adaptive" },
@@ -439,7 +442,7 @@ export async function strukturiereDialog(
         },
       ],
       output_config: { format: zodOutputFormat(DokumentSchema) },
-    });
+    }).finalMessage();
   let response: Awaited<ReturnType<typeof anfrage>>;
   try {
     response = await anfrage();

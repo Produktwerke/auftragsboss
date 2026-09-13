@@ -1,7 +1,7 @@
 // Abwechslungsreiche Kurzantworten (Live-Test 11.09.2026, Dirk: nicht jede
 // Nachricht mit „Hab ich!" beginnen). Je Art mehrere Varianten; je Nummer wird
 // nie zweimal hintereinander dieselbe gewählt.
-export type FloskelArt = "spracheNeu" | "spracheDialog" | "foto" | "text" | "weiterOderFertig" | "fotosOderWeiter";
+export type FloskelArt = "spracheNeu" | "spracheDialog" | "foto" | "text";
 
 const VARIANTEN: Record<FloskelArt, string[]> = {
   // Erste Sprachnachricht eines Auftrags
@@ -32,32 +32,7 @@ const VARIANTEN: Record<FloskelArt, string[]> = {
     "👍 Notiert, ich rechne weiter …",
     "👍 Gut, einen Moment …",
   ],
-  // Schluss jeder Raumbilanz: der Maler muss wissen, dass er weitermachen
-  // oder abschließen kann, ohne ein Zauberwort zu kennen.
-  weiterOderFertig: [
-    "Nächster Raum? Oder sag *fertig*, dann mache ich das Angebot.",
-    "Schick mir den nächsten Raum, oder sag *fertig* für das Angebot.",
-    "Wenn noch ein Raum kommt, einfach weitermachen. Sonst sag *fertig*.",
-    "Weiter mit dem nächsten Raum, oder *fertig* für das Angebot?",
-  ],
-  // Raum diktiert, aber noch keine Fotos dazu (Kurzform; die ausführliche
-  // Anleitung FOTO_ANLEITUNG kommt einmal je Auftrag)
-  fotosOderWeiter: [
-    "Wenn du magst, jetzt je Fenster oder Tür ein Foto. Sonst nächster Raum, oder *fertig* für das Angebot.",
-    "Fotos von Fenstern und Türen? Gern jetzt. Oder weiter mit dem nächsten Raum, oder *fertig*.",
-    "Schick mir je Öffnung ein Foto, den nächsten Raum, oder sag *fertig*.",
-  ],
 };
-
-/**
- * Einmal je Auftrag, beim ersten Raum ohne Fotos: wie fotografiert wird
- * (11.09.2026, Dirk: die WhatsApp-Kamera hat kein Weitwinkel, die ganze Wand
- * passt oft nicht drauf, muss sie aber auch nicht).
- */
-export const FOTO_ANLEITUNG =
-  "Wenn du magst, jetzt Fotos: je Fenster oder Tür ein Foto, hochkant, Boden und Decke mit drauf. " +
-  "Wände ohne Öffnung brauchen kein Foto. Die ganze Wand darfst du fürs Protokoll trotzdem aufnehmen. " +
-  "Sonst nächster Raum, oder sag *fertig* für das Angebot.";
 
 const zuletzt = new Map<string, number>();
 

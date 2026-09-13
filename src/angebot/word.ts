@@ -160,8 +160,10 @@ function positionsTabelle(summe: Angebotssumme, akzent: string): Table {
   // Raumblöcke tragen ihre Nummer in der Überschrift ("1  Kinderzimmer links"),
   // die Positionen darunter 1.1, 1.2 … (Entscheidung 11.09.2026).
   const mehrereBloecke = summe.bloecke.length > 1;
+  // Raumüberschrift auch bei einem einzigen Raumblock (13.09.2026).
+  const mitUeberschrift = mehrereBloecke || summe.nachRaum;
   const inhaltsZeilen: TableRow[] = summe.bloecke.flatMap((block) => [
-    ...(mehrereBloecke ? [abschnittsZeile(block.nummer !== null ? `${block.nummer}   ${block.name}` : block.name)] : []),
+    ...(mitUeberschrift ? [abschnittsZeile(block.nummer !== null ? `${block.nummer}   ${block.name}` : block.name)] : []),
     ...block.positionen.map(positionsZeile),
     ...(mehrereBloecke ? [zwischensumme(`Zwischensumme ${block.name}`, block)] : []),
   ]);

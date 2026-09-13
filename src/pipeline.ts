@@ -8,16 +8,30 @@
 //                                            ▼
 //                        Word-Datei + E-Mail + Archiv + Gewährleistung
 //
-// Abgeschlossen wird außerdem bei Stichwort ("weiter", "später"),
-// nach MAX_RUNDEN Rückfragen oder bei Zeitablauf (siehe jobs/vorgangTimeout.ts).
+// Seit 13.09.2026: Jede Eingabe (Sprache, Text, Foto) plant nach kurzer Pause
+// EINE Auswertung; Ergebnis ist sofort ein Angebot (oder eine neue Fassung),
+// Rückfragen nur bei Pflichtangaben. Abgeschlossen wird außerdem nach
+// MAX_RUNDEN Rückfragen oder bei Zeitablauf (siehe jobs/vorgangTimeout.ts).
 import { PrismaClient, type Handwerker, type Vorgang } from "@prisma/client";
 import { ladeAudio, ladeBild, MediumZuGross, BILD_MAX_BYTES, AUDIO_MAX_BYTES } from "./whatsapp/media.js";
 import { erkenneBildTyp } from "./betrieb/bildpruefung.js";
-import { sendeWhatsAppText } from "./whatsapp/send.js";
+import { sendeWhatsAppText, sendeWhatsAppKnoepfe } from "./whatsapp/send.js";
 import { transkribiereAudio } from "./ai/transcribe.js";
 import { liesBildNotiz } from "./ai/bildLesen.js";
-import { analysiereWandfoto, bereinigeAnalyse, fotoAlsDialogText, fotoFeedback, type WandfotoAnalyse } from "./ai/wandfoto.js";
-import { floskel, FOTO_ANLEITUNG } from "./whatsapp/floskeln.js";
+import { analysiereWandfoto, bereinigeAnalyse, fotoAlsDialogText, fotoHinweiseKurz, fotoNachfassHinweis, type WandfotoAnalyse } from "./ai/wandfoto.js";
+import { floskel } from "./whatsapp/floskeln.js";
+import { eingabeStandVon, istUeberholt, merkeEingabe } from "./eingabestand.js";
+import {
+  ANGEBOTS_KNOEPFE,
+  ANTWORT_KEIN_ANGEBOT,
+  ANTWORT_KORRIGIEREN,
+  ANTWORT_RAUM_WEITER,
+  KNOPF_KORRIGIEREN,
+  KNOPF_RAUM_WEITER,
+  RUECKFRAGE_ZUSATZ,
+  baueFertigmeldung,
+  kurzeBilanz,
+} from "./angebot/fertigmeldung.js";
 import { speichereFoto } from "./betrieb/fotoAblage.js";
 import { ladeAufmassAnlage } from "./angebot/aufmassblatt.js";
 import { ordneFotoZu } from "./maler/fotoZuordnung.js";
@@ -39,18 +53,7 @@ import { aufmassText, berechneAufmass, parseRaeumeText, wendeAufmassAn } from ".
 import { schlagePreiseVor } from "./betrieb/preisgedaechtnis.js";
 import { spurEvent } from "./analytics/event.js";
 import { schaetzeAudioSekunden, kostenAudioCent, kostenClaudeCent } from "./analytics/kikosten.js";
-import {
-  MAX_RUNDEN,
-  alsDialog,
-  baueZusammenfassung,
-  ergaenzeNachricht,
-  holeNachtragsVorgang,
-  holeOffenenVorgang,
-  istBestaetigung,
-  istFertigWunsch,
-  nachrichtenLesen,
-  raumBilanz,
-} from "./dialog.js";
+import { MAX_RUNDEN, alsDialog, ergaenzeNachricht, holeNachtragsVorgang, holeOffenenVorgang, nachrichtenLesen } from "./dialog.js";
 
 /** Erkennt, ob eine Nachricht nach den Betriebseinstellungen fragt. Bewusst
  *  tolerant (kein Zauberwort) — deckt die üblichen Formulierungen ab. */
@@ -125,9 +128,6 @@ export async function verarbeiteNachricht(args: {
   const { vonNummer, mediaId, bildMediaId, bildText, text, knopfPayload, unbekannterTyp } = args;
   const kanal = mediaId ? "sprache" : bildMediaId ? "foto" : knopfPayload ? "knopf" : "text";
 
-  // Wartet eine verzögerte Foto-Auswertung? Die neue Nachricht übernimmt.
-  brichFotoAuswertungAb(vonNummer);
-
   // 1. Absender kennen wir? (Kein Login — die Nummer IST die Identität)
   let handwerker = await prisma.handwerker.findUnique({ where: { whatsappNummer: vonNummer } });
 
@@ -170,6 +170,12 @@ export async function verarbeiteNachricht(args: {
 
   // Lead-Onboarding: Klick auf einen Antwort-Knopf (Telefon-Akquise) — kurze,
   // feste Antworten ohne KI, ohne Kontingent-Verbrauch. Danach fertig.
+  // Knöpfe unter der Fertigmeldung (13.09.2026): kein KI-Aufruf, nur eine kurze
+  // Ansage, und der Vorgang wird für die nächste Eingabe wieder geöffnet.
+  if (knopfPayload === KNOPF_RAUM_WEITER || knopfPayload === KNOPF_KORRIGIEREN) {
+    await verarbeiteAngebotsKnopf(handwerker, vonNummer, knopfPayload);
+    return;
+  }
   if (knopfPayload) {
     await verarbeiteOnboardingKnopf(prisma, handwerker, knopfPayload);
     return;
@@ -342,7 +348,9 @@ export async function verarbeiteNachricht(args: {
       // Foto: entweder ein WANDFOTO fürs Aufmaß (Teiletappe 2) oder wie bisher
       // ein Notizzettel/Screenshot. EIN Vision-Aufruf entscheidet und liefert
       // bei Notizen gleich den Text mit.
-      await sendeWhatsAppText(vonNummer, floskel("foto", vonNummer));
+      // Eingangsbestätigung nur einmal je Foto-Schwung (13.09.2026: nicht für
+      // jedes einzelne Foto eine Nachricht).
+      if (fotoBestaetigungFaellig(vonNummer)) await sendeWhatsAppText(vonNummer, floskel("foto", vonNummer));
       // Größe und Format werden VOR dem KI-Aufruf geprüft (F-03/F-04): der
       // Download ist gekappt, und nur was laut Magic Bytes wirklich ein
       // JPEG/PNG/WebP/GIF ist, geht an die Vision und in die Ablage.
@@ -446,6 +454,8 @@ export async function verarbeiteNachricht(args: {
     if (!vorgang) {
       vorgang = await prisma.vorgang.create({ data: { handwerkerId: handwerker.id } });
     }
+    // Textnachricht kurz bestätigen (Sprache und Foto sind oben schon bestätigt).
+    if (!mediaId && !bildMediaId) await sendeWhatsAppText(vonNummer, floskel("text", vonNummer));
     vorgang = await ergaenzeNachricht(prisma, vorgang, {
       rolle: "handwerker",
       text: inhalt,
@@ -453,7 +463,9 @@ export async function verarbeiteNachricht(args: {
       ...(zweitfassung ? { zweitfassung } : {}),
     });
 
-    await werteVorgangAus({ handwerker, vorgang, vonNummer, inhalt, stumm: !!mediaId || !!bildMediaId });
+    // Nicht sofort auswerten: kurze Pause, in der weitere Eingaben (Fotos, zweite
+    // Sprachnachricht) dazukommen können. Dann EINE Auswertung, EIN Angebot.
+    planeAuswertung(vonNummer, handwerker.id, vorgang.id, EINGABE_PAUSE_MS);
   } catch (err) {
     console.error("Pipeline-Fehler:", err);
     await sendeWhatsAppText(
@@ -466,208 +478,173 @@ export async function verarbeiteNachricht(args: {
 
 
 /**
- * Schritte 4–6: gesamten Verlauf auswerten, nachfragen, zusammenfassen oder
- * das Dokument erstellen. Wird von der Nachrichtenverarbeitung UND von der
- * verzögerten Foto-Auswertung genutzt (Teiletappe 2).
- * stumm = Eingangsbestätigung wurde schon gesendet (Sprache/Foto).
+ * Auswertung des gesamten Verlaufs: nachfragen oder das Dokument erstellen.
+ * Wird von der geplanten Auswertung (nach jeder Eingabe) und vom Timeout-Job
+ * genutzt. Seit 13.09.2026 ohne Zusammenfassung, Raumbilanz und „fertig"-Schritt:
+ * jede Ruhephase erzeugt sofort ein Angebot bzw. eine neue Fassung (Dirk: lieber
+ * schnell ein Angebot und dann korrigieren, als lange mit WhatsApp interagieren).
  */
 export async function werteVorgangAus(args: {
   handwerker: Handwerker;
   vorgang: Vorgang;
   vonNummer: string;
-  inhalt: string;
-  stumm: boolean;
-  /** true = Zeitablauf: keine Rückfrage, keine Zusammenfassung, Angebot mit dem, was da ist. */
+  /** true = Zeitablauf: keine Rückfrage, Angebot mit dem, was da ist. */
   erzwungen?: boolean;
 }): Promise<void> {
-  const { handwerker, vorgang, vonNummer, inhalt, stumm, erzwungen = false } = args;
-    // 4. Gesamten Verlauf auswerten
-    const preisliste = ladePreisliste();
-    const dialog = alsDialog(vorgang);
-    if (dialog.length === 0) {
-      await sendeWhatsAppText(vonNummer, "🎙️ Mir fehlt noch der Auftrag, diktier mir kurz, worum es geht.");
-      return;
-    }
-    // Kurze Eingangsbestätigung bei TEXT-Nachrichten. Sprache/Foto sind oben schon
-    // bestätigt; eine Textantwort (Rückfrage beantworten oder Zusammenfassung mit
-    // "ja" bestätigen) lief bisher stumm in die mehrsekündige KI-Auswertung, das
-    // wirkt schnell wie eingefroren. Nach der Zusammenfassung folgt meist das
-    // Angebot, deshalb dort eine passendere Formulierung.
-    if (!stumm) {
-      await sendeWhatsAppText(
-        vonNummer,
-        vorgang.zusammenfassungGezeigt && istBestaetigung(inhalt)
-          ? "⏳ Super, ich stelle dein Angebot jetzt fertig, einen kurzen Moment …"
-          : floskel("text", vonNummer),
-      );
-    }
-    const daten = await strukturiereDialog(dialog, preisliste, (ein, aus) => {
-      void spurEvent(prisma, "KI_AUFRUF", {
-        handwerkerId: handwerker.id,
-        data: { dienst: "struktur", tokensEin: ein, tokensAus: aus, kostenCent: kostenClaudeCent(ein, aus) },
-      });
+  const { handwerker, vorgang, vonNummer, erzwungen = false } = args;
+  // Stand der Eingaben beim Start: kommt während des KI-Aufrufs eine weitere
+  // Eingabe, ist diese Auswertung überholt (die neue hat eine neue geplant).
+  const standBeiStart = eingabeStandVon(vonNummer);
+  const preisliste = ladePreisliste();
+  const dialog = alsDialog(vorgang);
+  if (dialog.length === 0) {
+    await sendeWhatsAppText(vonNummer, "🎙️ Mir fehlt noch der Auftrag, diktier mir kurz, worum es geht.");
+    return;
+  }
+  const daten = await strukturiereDialog(dialog, preisliste, (ein, aus) => {
+    void spurEvent(prisma, "KI_AUFRUF", {
+      handwerkerId: handwerker.id,
+      data: { dienst: "struktur", tokensEin: ein, tokensAus: aus, kostenCent: kostenClaudeCent(ein, aus) },
     });
+  });
+  if (istUeberholt(vonNummer, standBeiStart)) {
+    console.log(`⏩ Auswertung überholt, neue Eingabe wartet (${handwerker.firma}).`);
+    await spurEvent(prisma, "AUSWERTUNG_UEBERHOLT", { handwerkerId: handwerker.id });
+    return;
+  }
 
-    // 4b. Aufmaß aus Raummaßen: Die KI hat nur Zahlen ausgelesen, gerechnet wird
-    //     hier (VOB: Öffnungen bis 2,5 m² übermessen, größere abgezogen). Vor der
-    //     Zusammenfassung, damit der Handwerker die Flächen schon dort sieht.
-    await prisma.vorgang.updateMany({ where: { id: vorgang.id }, data: { raeumeText: daten.raeumeText ?? null } });
-    const aufmass = berechneAufmass(parseRaeumeText(daten.raeumeText));
-    if (aufmass.raeume.length > 0 || aufmass.uebersprungen.length > 0) {
-      daten.positionen = wendeAufmassAn(daten.positionen, aufmass);
-      daten.aufmassNotizen = [aufmassText(aufmass), daten.aufmassNotizen?.trim()].filter(Boolean).join("\n");
-      daten.rueckfragen = [...daten.rueckfragen, ...aufmass.rueckfragen];
-      console.log(`📐 Aufmaß: ${aufmass.raeume.length} Raum/Räume berechnet, ${aufmass.uebersprungen.length} übersprungen (${handwerker.firma}).`);
-    }
+  // Aufmaß aus Raummaßen: Die KI hat nur Zahlen ausgelesen, gerechnet wird
+  // hier (VOB: Öffnungen bis 2,5 m² übermessen, größere abgezogen). Auffälliges
+  // (verworfene Öffnungen, unplausible Maße, Grauzone) wandert als Warnhinweis
+  // in die Fertigmeldung statt in eine Rückfrage.
+  await prisma.vorgang.updateMany({ where: { id: vorgang.id }, data: { raeumeText: daten.raeumeText ?? null } });
+  const aufmass = berechneAufmass(parseRaeumeText(daten.raeumeText));
+  const hinweise: string[] = [];
+  if (aufmass.raeume.length > 0 || aufmass.uebersprungen.length > 0) {
+    daten.positionen = wendeAufmassAn(daten.positionen, aufmass);
+    daten.aufmassNotizen = [aufmassText(aufmass), daten.aufmassNotizen?.trim()].filter(Boolean).join("\n");
+    daten.rueckfragen = [...daten.rueckfragen, ...aufmass.rueckfragen];
+    hinweise.push(...aufmassHinweise(aufmass));
+    console.log(`📐 Aufmaß: ${aufmass.raeume.length} Raum/Räume berechnet, ${aufmass.uebersprungen.length} übersprungen (${handwerker.firma}).`);
+  }
 
-    // SAMMELMODUS (Live-Test 11.09.2026): Sobald Räume im Spiel sind, geht der
-    // Maler Raum für Raum durch (Maße sprechen, Wände fotografieren). Das Angebot
-    // entsteht dann erst auf „fertig", auf die Bestätigung der Zusammenfassung
-    // oder per Zeitablauf. Bis dahin bekommt er nach jedem Schritt eine Raumbilanz
-    // mit der Frage „nächster Raum oder fertig?". Vorher wurde die nächste
-    // Nachricht nach der Zusammenfassung als Bestätigung gewertet und ein halbes
-    // Angebot verschickt, während die Fotos des zweiten Raums noch hochluden.
-    const sammelModus = aufmass.raeume.length > 0 || aufmass.uebersprungen.length > 0;
-    const fertigGesagt = istFertigWunsch(inhalt);
-    const bestaetigt = vorgang.zusammenfassungGezeigt && istBestaetigung(inhalt);
-    const abschliessen = erzwungen || fertigGesagt || bestaetigt;
+  // Nachfragen oder abschließen? Das entscheidet die KI aus dem Verlauf (nur
+  // Pflichtangaben, kein Stichwort, das der Handwerker kennen müsste). Das
+  // Rundenlimit ist ein Sicherheitsnetz gegen Schleifen; je Fassung zählt es
+  // neu (holeNachtragsVorgang setzt runde zurück).
+  const nachfragen =
+    !erzwungen &&
+    daten.dialog.aktion === "NACHFRAGEN" &&
+    vorgang.runde < MAX_RUNDEN &&
+    daten.dialog.nachricht.trim().length > 0;
 
-    // 5. Nachfragen oder abschließen? Das entscheidet die KI aus dem Verlauf —
-    //    kein Stichwort, das der Handwerker kennen müsste. Das Rundenlimit ist
-    //    nur ein Sicherheitsnetz gegen Endlosschleifen (im Sammelmodus großzügiger:
-    //    jeder Raum darf eine Rückfrage brauchen).
-    const nachfragen =
-      !erzwungen &&
-      daten.dialog.aktion === "NACHFRAGEN" &&
-      vorgang.runde < (sammelModus ? MAX_RUNDEN + 4 : MAX_RUNDEN) &&
-      daten.dialog.nachricht.trim().length > 0;
+  if (nachfragen) {
+    const frageText = daten.dialog.nachricht.trim();
+    // Mit dem Zusatz, dass nichts jetzt beantwortet werden muss (Dirk, 13.09.2026).
+    await sendeWhatsAppText(vonNummer, `${frageText}\n\n${RUECKFRAGE_ZUSATZ}`);
+    // updateMany statt update: Zwischen dem Laden des Vorgangs und hier liegt
+    // der (mehrere Sekunden dauernde) KI-Aufruf. Wird der Vorgang in dieser
+    // Zeit entfernt (z.B. Test-Konto zurückgesetzt), darf das kein Fehler
+    // sein — updateMany trifft dann einfach 0 Zeilen, statt P2025 zu werfen.
+    await prisma.vorgang.updateMany({
+      where: { id: vorgang.id },
+      data: {
+        runde: vorgang.runde + 1,
+        nachrichtenJson: JSON.stringify([
+          ...JSON.parse(vorgang.nachrichtenJson),
+          { rolle: "assistent", text: frageText, art: "text", zeit: new Date().toISOString() },
+        ]),
+        letzteAktivitaet: new Date(),
+      },
+    });
+    console.log(`❓ Rückfrage an ${handwerker.firma} (Runde ${vorgang.runde + 1}).`);
+    await spurEvent(prisma, "RUECKFRAGE", { handwerkerId: handwerker.id, data: { runde: vorgang.runde + 1 } });
+    return;
+  }
 
-    // Zusammenfassung gezeigt, aber statt „ja" kommt neuer Inhalt (weiterer Raum,
-    // Korrektur): das ist eine Fortsetzung, keine Bestätigung. Die Zusammenfassung
-    // kommt später aktualisiert noch einmal.
-    if (sammelModus && vorgang.zusammenfassungGezeigt && !abschliessen && !nachfragen) {
-      await prisma.vorgang.updateMany({ where: { id: vorgang.id }, data: { zusammenfassungGezeigt: false } });
-      vorgang.zusammenfassungGezeigt = false;
-    }
-
-    if (nachfragen) {
-      const frageText = daten.dialog.nachricht.trim();
-      await sendeWhatsAppText(vonNummer, frageText);
-      // updateMany statt update: Zwischen dem Laden des Vorgangs und hier liegt
-      // der (mehrere Sekunden dauernde) KI-Aufruf. Wird der Vorgang in dieser
-      // Zeit entfernt (z.B. Test-Konto zurückgesetzt), darf das kein Fehler
-      // sein — updateMany trifft dann einfach 0 Zeilen, statt P2025 zu werfen.
-      await prisma.vorgang.updateMany({
-        where: { id: vorgang.id },
-        data: {
-          runde: vorgang.runde + 1,
-          nachrichtenJson: JSON.stringify([
-            ...JSON.parse(vorgang.nachrichtenJson),
-            { rolle: "assistent", text: frageText, art: "text", zeit: new Date().toISOString() },
-          ]),
-          letzteAktivitaet: new Date(),
-        },
-      });
-      console.log(`❓ Rückfrage an ${handwerker.firma} (Runde ${vorgang.runde + 1}).`);
-      await spurEvent(prisma, "RUECKFRAGE", { handwerkerId: handwerker.id, data: { runde: vorgang.runde + 1 } });
-      return;
-    }
-
-    // 5b. Zusammenfassung "das habe ich verstanden" vor dem Angebot — einmal je
-    //     Vorgang, sofern der Betrieb sie nicht abgeschaltet hat. Der Handwerker
-    //     bestätigt mit "ja" oder korrigiert per Sprache; ohne Antwort stellt der
-    //     Timeout-Job das Angebot ohnehin fertig. Dauerhaft abschaltbar per
-    //     Stichwort ("ohne Zusammenfassung") oder in den Einstellungen.
-    const willKeineZusammenfassung = /ohne zusammenfassung|keine zusammenfassung|zusammenfassung aus/i.test(inhalt);
-    if (willKeineZusammenfassung && handwerker.zusammenfassungAktiv) {
-      await prisma.handwerker.update({ where: { id: handwerker.id }, data: { zusammenfassungAktiv: false } });
-      handwerker.zusammenfassungAktiv = false;
-    }
-
-    // 5a. Sammelmodus ohne Abschlusswunsch: Raumbilanz statt Angebot. Immer mit
-    //     der Aufforderung, weiterzumachen oder „fertig" zu sagen, damit nie der
-    //     Eindruck entsteht, das Programm hänge.
-    if (sammelModus && !abschliessen) {
-      const letzterRaum = aufmass.raeume[aufmass.raeume.length - 1]?.name;
-      const nachrichten = nachrichtenLesen(vorgang);
-      const hatFotos = !!letzterRaum && nachrichten.some((n) => n.art === "foto" && n.text.includes(`(Raum: ${letzterRaum})`));
-      const nochNieFotos = !nachrichten.some((n) => n.art === "foto");
-      // Aufforderung: mit Fotos → weiter oder fertig; ohne Fotos → Fotos anbieten,
-      // beim allerersten Mal mit der kurzen Anleitung (Öffnungen statt ganze Wand).
-      const aufforderung = hatFotos ? floskel("weiterOderFertig", vonNummer) : nochNieFotos ? FOTO_ANLEITUNG : floskel("fotosOderWeiter", vonNummer);
-      const bilanz = raumBilanz(daten.raeumeText, aufforderung);
-      if (bilanz) {
-        await sendeWhatsAppText(vonNummer, bilanz);
-        await prisma.vorgang.updateMany({
-          where: { id: vorgang.id },
-          data: {
-            letzteAktivitaet: new Date(),
-            erinnertAm: null,
-            nachrichtenJson: JSON.stringify([
-              ...JSON.parse(vorgang.nachrichtenJson),
-              { rolle: "assistent", text: "(Raumbilanz gesendet, warte auf nächsten Raum oder das Wort fertig)", art: "text", zeit: new Date().toISOString() },
-            ]),
-          },
-        });
-        await spurEvent(prisma, "RAUMBILANZ", { handwerkerId: handwerker.id, data: { raeume: aufmass.raeume.length } });
-        return;
-      }
-    }
-
-    if (
-      featureConfig().FEATURE_ZUSAMMENFASSUNG &&
-      handwerker.zusammenfassungAktiv &&
-      !vorgang.zusammenfassungGezeigt &&
-      !willKeineZusammenfassung &&
-      !erzwungen
-    ) {
-      const zusammenfassung = baueZusammenfassung(daten);
-      await sendeWhatsAppText(
-        vonNummer,
-        zusammenfassung +
-          `\n\nPasst das? Antworte mit *ja*, oder korrigier's einfach per Sprache oder Text.` +
-          `\n_Zusammenfassung künftig weglassen: schreib „ohne Zusammenfassung"._`,
-      );
-      await prisma.vorgang.updateMany({
-        where: { id: vorgang.id },
-        data: {
-          zusammenfassungGezeigt: true,
-          letzteAktivitaet: new Date(),
-          nachrichtenJson: JSON.stringify([
-            ...JSON.parse(vorgang.nachrichtenJson),
-            { rolle: "assistent", text: zusammenfassung, art: "text", zeit: new Date().toISOString() },
-          ]),
-        },
-      });
-      await spurEvent(prisma, "ZUSAMMENFASSUNG_GEZEIGT", { handwerkerId: handwerker.id });
-      return;
-    }
-
-    // 6. Abschließen. Hat der Handwerker etwas vertagt, greift die KI das
-    //    kurz auf ("Alles klar, ich schick dir schon mal einen Entwurf…") —
-    //    danach folgt die Fertigmeldung des Programms.
-    if (daten.dialog.nachricht.trim().length > 0) {
-      await sendeWhatsAppText(vonNummer, daten.dialog.nachricht.trim());
-    }
-    await erstelleDokument({ vorgang, handwerkerId: handwerker.id, vonNummer, daten, preisliste });
+  // Abschließen. Hat der Handwerker etwas vertagt, greift die KI das kurz auf
+  // ("Alles klar, ich schick dir schon mal einen Entwurf…"), danach folgt die
+  // Fertigmeldung des Programms.
+  if (daten.dialog.nachricht.trim().length > 0) {
+    await sendeWhatsAppText(vonNummer, daten.dialog.nachricht.trim());
+  }
+  await erstelleDokument({ vorgang, handwerkerId: handwerker.id, vonNummer, daten, preisliste, hinweise });
 }
 
-// ── Wandfotos (Teiletappe 2) ─────────────────────────────────────────
+/** Warnhinweise aus dem Aufmaß für die Fertigmeldung (kurz, mit Symbol). */
+function aufmassHinweise(aufmass: ReturnType<typeof berechneAufmass>): string[] {
+  const z2 = (x: number) => x.toFixed(2).replace(".", ",");
+  const zeilen: string[] = [];
+  for (const r of aufmass.raeume) {
+    for (const v of r.verworfen) zeilen.push(`⚠️ ${r.name}: ${v}, nicht abgezogen. Bitte Maß prüfen.`);
+    for (const w of r.warnungen) zeilen.push(`⚠️ ${r.name}: ${w}.`);
+    for (const o of r.oeffnungen) {
+      if (o.grauzone) zeilen.push(`⚠️ ${r.name}: ${o.art} ${z2(o.breiteM)} x ${z2(o.hoeheM)} m liegt nahe der 2,5-m²-Grenze, bitte nachmessen.`);
+    }
+  }
+  for (const u of aufmass.uebersprungen) zeilen.push(`⚠️ ${u.name}: nicht berechnet (${u.grund}).`);
+  return zeilen;
+}
 
-/** Nach dem letzten Foto so lange warten, bevor die Wände gerechnet werden.
- *  Jedes Foto wird vorher einzeln bestätigt, deshalb reichen 45 s (vorher 90). */
+// ── Knöpfe unter der Fertigmeldung ───────────────────────────────────
+
+/**
+ * „Nächster Raum" / „Angebot korrigieren": kein KI-Aufruf, nur eine kurze
+ * Ansage. Der eben abgeschlossene Vorgang wird wieder geöffnet, damit die
+ * nächste Eingabe sicher als neue Fassung DESSELBEN Angebots landet.
+ */
+async function verarbeiteAngebotsKnopf(handwerker: Handwerker, vonNummer: string, knopf: string): Promise<void> {
+  const vorgang = (await holeOffenenVorgang(prisma, handwerker.id)) ?? (await holeNachtragsVorgang(prisma, handwerker.id));
+  await spurEvent(prisma, "ANGEBOT_KNOPF", {
+    handwerkerId: handwerker.id,
+    data: { knopf: knopf === KNOPF_RAUM_WEITER ? "raum_weiter" : "korrigieren", offen: !!vorgang },
+  });
+  if (!vorgang) {
+    await sendeWhatsAppText(vonNummer, ANTWORT_KEIN_ANGEBOT);
+    return;
+  }
+  await sendeWhatsAppText(vonNummer, knopf === KNOPF_RAUM_WEITER ? ANTWORT_RAUM_WEITER : ANTWORT_KORRIGIEREN);
+}
+
+// ── Eingaben bündeln und auswerten ───────────────────────────────────
+//
+// Seit 13.09.2026: JEDE Eingabe (Sprache, Text, Foto) plant die Auswertung mit
+// einer kurzen Pause; jede weitere Eingabe verschiebt sie. So wird ein Schwung
+// „Sprachnachricht + vier Fotos" einmal ausgewertet, nicht fünfmal. Läuft der
+// KI-Aufruf schon und kommt noch etwas, verwirft die Auswertung ihr Ergebnis
+// (Eingabestand, siehe eingabestand.ts); die neue Eingabe plant erneut.
+
+/** Pause nach Sprache oder Text, bevor ausgewertet wird. */
+const EINGABE_PAUSE_MS = 15_000;
+/** Fotos kommen meist im Schwung (je Öffnung eins), deshalb länger warten. */
 const FOTO_PAUSE_MS = 45_000;
-const fotoTimer = new Map<string, NodeJS.Timeout>();
+/** Foto-Eingangsbestätigung nur einmal je Schwung, nicht für jedes einzelne Foto. */
+const FOTO_SCHWUNG_MS = 90_000;
+const auswertungTimer = new Map<string, NodeJS.Timeout>();
+const letztesFoto = new Map<string, number>();
 
-function brichFotoAuswertungAb(vonNummer: string): void {
-  const t = fotoTimer.get(vonNummer);
+/** Wartet für diese Nummer eine geplante Auswertung? (Timeout-Job) */
+export function auswertungGeplant(nummer: string): boolean {
+  return auswertungTimer.has(nummer);
+}
+
+function brichAuswertungAb(vonNummer: string): void {
+  const t = auswertungTimer.get(vonNummer);
   if (t) {
     clearTimeout(t);
-    fotoTimer.delete(vonNummer);
+    auswertungTimer.delete(vonNummer);
   }
 }
 
-/** Speichert das Wandfoto, hängt die Erkennung an den Vorgang, antwortet sofort und plant die Auswertung. */
+/** Foto-Eingangsbestätigung nur, wenn das letzte Foto dieser Nummer länger her ist. */
+function fotoBestaetigungFaellig(vonNummer: string): boolean {
+  const jetzt = Date.now();
+  const vorher = letztesFoto.get(vonNummer) ?? 0;
+  letztesFoto.set(vonNummer, jetzt);
+  return jetzt - vorher > FOTO_SCHWUNG_MS;
+}
+
+/** Speichert das Wandfoto, hängt die Erkennung an den Vorgang, meldet nur Unlesbares sofort und plant die Auswertung. */
 async function verarbeiteWandfoto(args: {
   handwerker: Handwerker;
   vorgang: Vorgang | null;
@@ -712,24 +689,30 @@ async function verarbeiteWandfoto(args: {
     art: "foto",
     text: fotoAlsDialogText(analyse, wandNr, raumName, bildText),
   });
-  await sendeWhatsAppText(vonNummer, fotoFeedback(analyse, wandNr, raumName));
+  // Sofort nur, was ein neues Foto braucht (zu dunkel, Tür offen). Alles andere
+  // (Öffnungen, fehlender Boden, Bildrand) steht gesammelt in der Fertigmeldung.
+  const nachfassen = fotoNachfassHinweis(analyse, wandNr, raumName);
+  if (nachfassen) await sendeWhatsAppText(vonNummer, nachfassen);
   await spurEvent(prisma, "WANDFOTO", {
     handwerkerId: handwerker.id,
-    data: { wandNr, oeffnungen: analyse.oeffnungen.length, komplett: analyse.wandKomplett, offen: analyse.oeffnungen.some((o) => o.offen) },
+    data: { wandNr, oeffnungen: analyse.oeffnungen.length, komplett: analyse.wandKomplett, offen: analyse.oeffnungen.some((o) => o.offen), nachfassen: !!nachfassen },
   });
-  planeFotoAuswertung(vonNummer, handwerker.id, vorgang.id);
+  planeAuswertung(vonNummer, handwerker.id, vorgang.id, FOTO_PAUSE_MS);
 }
 
 /**
- * Fotos kommen meist im Schwung (vier Wände). Statt nach jedem Foto die KI
- * zu bemühen, warten wir eine Pause ab und werten dann einmal aus. Eine neue
- * Nachricht (Sprache/Text/Foto) bricht den Timer ab und übernimmt.
+ * Auswertung nach einer Pause planen. Jede neue Eingabe derselben Nummer
+ * verschiebt sie; feuert der Timer, läuft die Auswertung in der seriellen
+ * Warteschlange der Nummer und prüft zuerst, ob sie noch aktuell ist.
  */
-function planeFotoAuswertung(vonNummer: string, handwerkerId: string, vorgangId: string): void {
-  brichFotoAuswertungAb(vonNummer);
+function planeAuswertung(vonNummer: string, handwerkerId: string, vorgangId: string, pauseMs: number): void {
+  brichAuswertungAb(vonNummer);
+  const stand = eingabeStandVon(vonNummer);
   const timer = setTimeout(() => {
-    fotoTimer.delete(vonNummer);
+    auswertungTimer.delete(vonNummer);
     inReiheProNummer(vonNummer, async () => {
+      // Eine neuere Eingabe hat inzwischen neu geplant: diese Auswertung entfällt.
+      if (istUeberholt(vonNummer, stand)) return;
       const frisch = await prisma.vorgang.findUnique({ where: { id: vorgangId } });
       if (!frisch || frisch.status !== "OFFEN") return;
       const nachrichten = nachrichtenLesen(frisch);
@@ -746,11 +729,27 @@ function planeFotoAuswertung(vonNummer: string, handwerkerId: string, vorgangId:
       }
       const handwerker = await prisma.handwerker.findUnique({ where: { id: handwerkerId } });
       if (!handwerker) return;
-      await sendeWhatsAppText(vonNummer, "📐 Fotos sind komplett, ich rechne die Wände durch …");
-      await werteVorgangAus({ handwerker, vorgang: frisch, vonNummer, inhalt: "", stumm: true });
-    }).catch((err) => console.error("Verzögerte Foto-Auswertung fehlgeschlagen:", err));
-  }, FOTO_PAUSE_MS);
-  fotoTimer.set(vonNummer, timer);
+      // Gebündelte Bestätigung der Fotos seit der letzten Antwort (statt je Foto).
+      let neueFotos = 0;
+      for (let i = nachrichten.length - 1; i >= 0 && nachrichten[i]!.rolle === "handwerker"; i--) {
+        if (nachrichten[i]!.art === "foto") neueFotos++;
+      }
+      if (neueFotos > 0) {
+        await sendeWhatsAppText(
+          vonNummer,
+          neueFotos === 1 ? "📐 Das Foto ist drin, ich rechne das Angebot …" : `📐 ${neueFotos} Fotos sind drin, ich rechne das Angebot …`,
+        );
+      }
+      await werteVorgangAus({ handwerker, vorgang: frisch, vonNummer });
+    }).catch(async (err) => {
+      console.error("Geplante Auswertung fehlgeschlagen:", err);
+      await sendeWhatsAppText(
+        vonNummer,
+        "⚠️ Da ist etwas schiefgelaufen, deine Nachricht konnte nicht verarbeitet werden. Bitte versuche es in ein paar Minuten noch einmal.",
+      ).catch(() => {});
+    });
+  }, pauseMs);
+  auswertungTimer.set(vonNummer, timer);
 }
 
 // ── Serielle Verarbeitung pro Nummer ──────────────────────────────────
@@ -787,6 +786,9 @@ export function verarbeiteNachrichtSeriell(args: {
   text?: string;
   knopfPayload?: string;
 }): Promise<void> {
+  // Eingabestand VOR dem Einreihen erhöhen: eine gerade laufende Auswertung
+  // sieht so, dass sie überholt ist, und verwirft ihr Ergebnis.
+  if (args.mediaId || args.bildMediaId || args.text) merkeEingabe(args.vonNummer);
   return inReiheProNummer(args.vonNummer, () => verarbeiteNachricht(args));
 }
 
@@ -797,8 +799,10 @@ export async function erstelleDokument(args: {
   vonNummer: string;
   daten: Awaited<ReturnType<typeof strukturiereDialog>>;
   preisliste: ReturnType<typeof ladePreisliste>;
+  /** Warnhinweise fürs WhatsApp (Aufmaß), schon mit Symbol. */
+  hinweise?: string[];
 }): Promise<void> {
-  const { vorgang, handwerkerId, vonNummer, daten, preisliste } = args;
+  const { vorgang, handwerkerId, vonNummer, daten, preisliste, hinweise = [] } = args;
 
   const handwerker = await prisma.handwerker.findUniqueOrThrow({ where: { id: handwerkerId } });
   // Betriebsdaten des Handwerkers (Logo, Adresse, Farbe) über die Vorgaben
@@ -928,7 +932,10 @@ export async function erstelleDokument(args: {
     },
   });
 
-  // Wandfotos dieses Vorgangs als Belegfotos ans Dokument hängen.
+  // Fotos dieser Fassung (noch ohne Dokument) für die Hinweise merken, dann
+  // alle Wandfotos des Vorgangs als Belegfotos ans Dokument hängen.
+  const neueFotos = await prisma.foto.findMany({ where: { vorgangId: vorgang.id, dokumentId: null }, orderBy: { erstelltAm: "asc" } });
+  const anzahlFotos = await prisma.foto.count({ where: { vorgangId: vorgang.id } });
   await prisma.foto.updateMany({ where: { vorgangId: vorgang.id, dokumentId: null }, data: { dokumentId: dokument.id } });
 
   // Word-Datei (mit Aufmaßblatt und Belegfotos als Anlage) + E-Mail
@@ -965,52 +972,66 @@ export async function erstelleDokument(args: {
     }
   }
 
-  // updateMany statt update aus demselben Grund wie oben: Der Vorgang kann
-  // während Dokument-Erstellung/E-Mail-Versand entfernt worden sein. Dann soll
-  // der Abschluss-Vermerk still ins Leere laufen statt zu scheitern.
+  // Abschluss-Vermerk im Verlauf (die KI sieht so, ab wann Nachträge Korrekturen
+  // sind; der Timeout-Job erkennt daran, dass nichts mehr offen ist) und Vorgang
+  // schließen. updateMany: der Vorgang kann während Dokument-Erstellung und
+  // E-Mail-Versand entfernt worden sein, dann läuft das still ins Leere.
+  const bezeichnung: "Angebot" | "Protokoll" = daten.art === "ANGEBOT" ? "Angebot" : "Protokoll";
   await prisma.vorgang.updateMany({
     where: { id: vorgang.id },
-    data: { status: "ABGESCHLOSSEN", dokumentId: dokument.id },
+    data: {
+      status: "ABGESCHLOSSEN",
+      dokumentId: dokument.id,
+      nachrichtenJson: JSON.stringify([
+        ...nachrichtenLesen(vorgang),
+        { rolle: "assistent", text: `(${bezeichnung} ${nummer}, Fassung ${version}, erstellt und Link gesendet)`, art: "text", zeit: new Date().toISOString() },
+      ]),
+    },
   });
 
-  // Bestätigung auf WhatsApp
-  const kunde = daten.kunde.name ?? "deinen Auftrag";
-  const bezeichnung = daten.art === "ANGEBOT" ? "Angebot" : "Protokoll";
-  const anzahlMaterial = summe.positionen.filter((p) => p.kategorie === "MATERIAL").length;
-
-  const zeilen = [
-    istNachtrag
-      ? `✅ ${bezeichnung} ${nummer} aktualisiert (Fassung ${version}), ${summe.positionen.length} Positionen`
-      : `✅ ${bezeichnung} ${nummer} für *${kunde}* ist fertig`,
-    ``,
-    `👉 ${bearbeitenLink(dokument.bearbeitenToken)}`,
-    `Dort Preise eintragen, Positionen anpassen und an den Kunden schicken.`,
-    ``,
-    summe.vollstaendig
-      ? `Gesamt: ${euro(summe.brutto)} brutto`
-      : `✏️ Preise kannst du auch einfach durchsagen, ich rechne und aktualisiere.`,
-  ];
-  if (!istNachtrag && anzahlMaterial > 0) {
-    zeilen.push(`📦 ${anzahlMaterial} Materialposten vorgeschlagen, bitte prüfen`);
+  // Fertigmeldung (13.09.2026): EINE kompakte Nachricht mit Link, Kurzbilanz,
+  // Warnhinweisen (Aufmaß, Fotos, offene Pflichtangaben) und den Knöpfen
+  // „Nächster Raum" / „Angebot korrigieren". Schlägt die Knopfnachricht fehl
+  // (z.B. 24-h-Fenster), geht derselbe Text ohne Knöpfe raus.
+  const bilanz = kurzeBilanz(summe.positionen);
+  const fotoHinweise = neueFotos.flatMap((f) => {
+    try {
+      return fotoHinweiseKurz(JSON.parse(f.erkennungJson) as WandfotoAnalyse, f.wandNr, f.raum);
+    } catch {
+      return [];
+    }
+  });
+  const fehlende = daten.fehlendeInfos
+    .filter((f) => f.wichtigkeit === "PFLICHT")
+    .map((f) => f.feld.trim())
+    .filter(Boolean);
+  const hatRaeume = parseRaeumeText(daten.raeumeText).length > 0;
+  const meldung = {
+    bezeichnung,
+    nummer,
+    version,
+    kunde: daten.kunde.name,
+    link: bearbeitenLink(dokument.bearbeitenToken),
+    raeume: bilanz.raeume,
+    leistungen: bilanz.leistungen,
+    anzahlPositionen: summe.positionen.length,
+    gesamtBrutto: summe.vollstaendig ? euro(summe.brutto) : null,
+    hinweise: [...hinweise, ...fotoHinweise],
+    fehlende,
+    fotoTipp: !istNachtrag && hatRaeume && anzahlFotos === 0,
+    istTest: handwerker.istTest,
+    gewaehrleistungJahre: istProtokoll ? fristJahre : null,
+    mitKnoepfen: daten.art === "ANGEBOT",
+  };
+  let gesendet = false;
+  if (meldung.mitKnoepfen) {
+    try {
+      gesendet = await sendeWhatsAppKnoepfe(vonNummer, baueFertigmeldung(meldung), ANGEBOTS_KNOEPFE);
+    } catch (err) {
+      console.warn("Fertigmeldung mit Knöpfen fehlgeschlagen, sende Text:", err instanceof Error ? err.message : err);
+    }
   }
-  if (istProtokoll) zeilen.push(`Gewährleistung: ${fristJahre} Jahre, ich erinnere dich vor Ablauf.`);
-
-  if (handwerker.istTest) {
-    // Test-Interessent: kein Einstellungslink, sondern ein kurzer Hinweis, dass
-    // dasselbe mit seinem eigenen Briefkopf entsteht — und dass er alles ändern kann.
-    zeilen.push(
-      ``,
-      `👆 Das war ein Test. Öffne den Link oben: dort kannst du jede Position, Menge und jeden Preis anpassen.`,
-      `Als AuftragsBoss-Nutzer hinterlegst du einmal dein Logo, deine Adresse und deine Preise, dann trägt AuftragsBoss sie automatisch in jedes Angebot ein.`,
-    );
-  } else {
-    // Weg 2: Der Zugang zu Einstellungen & Angebotsübersicht steht unauffällig
-    // unter jedem Angebot — so ist er immer auffindbar, ohne aufdringlich zu sein.
-    const einstToken = await einstellungenTokenBereit(prisma, handwerker);
-    zeilen.push(``, `⚙️ Betriebsdaten, Logo & alle Angebote: ${einstellungenLink(einstToken)}`);
-  }
-
-  await sendeWhatsAppText(vonNummer, zeilen.join("\n"));
+  if (!gesendet) await sendeWhatsAppText(vonNummer, baueFertigmeldung({ ...meldung, mitKnoepfen: false }));
 
   await spurEvent(prisma, "ANGEBOT_ERSTELLT", {
     handwerkerId,

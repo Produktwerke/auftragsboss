@@ -885,7 +885,7 @@ function raeume(){
   for(const p of positionen){ const n=raumVon(p); if(n && !r.includes(n)) r.push(n); }
   return r;
 }
-function raumModus(){ return raeume().length >= 2; }
+function raumModus(){ return raeume().length >= 1; }
 function allgemeinName(ps){
   if(ps.length && ps.every(p=>p.kategorie==='MATERIAL')) return 'Klein- und Hilfsmaterial';
   if(ps.length && ps.every(p=>p.kategorie!=='MATERIAL')) return 'Allgemeine Leistungen';
@@ -1455,7 +1455,9 @@ function loeschen(i){
   clearTimeout(p._timer);
   p._timer = setTimeout(()=>{
     const idx = positionen.indexOf(p);
-    if(idx >= 0 && positionen[idx]._geloescht){ positionen.splice(idx,1); render(); }
+    // Nach der Reue-Frist auch die Vorschau auffrischen: fällt der letzte Raum weg,
+    // rücken die Blocknummern nach (13.09.2026).
+    if(idx >= 0 && positionen[idx]._geloescht){ positionen.splice(idx,1); render(); vorschauAktualisieren(); }
   }, 8000);
   render(); markiereGeaendert();
   zeigeGroessenwechsel(document.querySelector('#postab tr.geloescht-zeile[data-i="'+i+'"]'), altHoehe);
@@ -1616,11 +1618,12 @@ function pvZeilen(){
   const grp = gruppen();
   const mehrere = grp.length > 1;
   const imRaum = raumModus();
+  const mitUeberschrift = mehrere || imRaum; // Raumüberschrift auch bei einem Raum
   let html=''; let nr=0; let nettoGesamt=0; let alleDa=positionen.some(p=>!p._geloescht);
   for(const g of grp){
     const eigene = gruppenPositionen(g).map(x=>x.p).filter(p=>!p._geloescht);
     if(!eigene.length) continue;
-    if(mehrere) html += '<tr class="kat"><td colspan="5">'+(g.nummer!=null ? g.nummer+'&nbsp;&nbsp;' : '')+esc(g.name)+'</td></tr>';
+    if(mitUeberschrift) html += '<tr class="kat"><td colspan="5">'+(g.nummer!=null ? g.nummer+'&nbsp;&nbsp;' : '')+esc(g.name)+'</td></tr>';
     let netto=0, voll=true, lauf=0;
     for(const p of eigene){
       nr++; lauf++;

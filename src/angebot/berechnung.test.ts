@@ -58,14 +58,29 @@ describe("berechneAngebot: Raumblöcke bei mehreren Räumen", () => {
     expect(aus.arbeitskostenBrutto).toBeNull();
   });
 
-  it("bleibt bei einem Raum oder ohne Raumbezug bei den Kategorieblöcken", () => {
+  it("gliedert schon bei einem Raum nach Raum (Live-Test 12.09.: Überschrift Wohnzimmer statt Arbeitsaufwand)", () => {
     const s = berechneAngebot(
       [
         p({ kategorie: "LEISTUNG", beschreibung: "Streichen", raumBezug: "Wohnzimmer", einzelpreis: 100 }),
         p({ kategorie: "MATERIAL", beschreibung: "Farbe", raumBezug: "Wohnzimmer", menge: 2, einheit: "l", einzelpreis: 10 }),
+        p({ kategorie: "LEISTUNG", beschreibung: "Schutz- und Abdeckarbeiten", raumBezug: null, einzelpreis: 50 }),
       ],
       preisliste,
     );
+    expect(s.nachRaum).toBe(true);
+    expect(s.bloecke.map((b) => b.name)).toEqual(["Wohnzimmer", "Allgemeine Leistungen"]);
+    expect(s.positionen.map((x) => x.nummerText)).toEqual(["1.1", "1.2", "2.1"]);
+  });
+
+  it("bleibt ohne Raumbezug bei den Kategorieblöcken", () => {
+    const s = berechneAngebot(
+      [
+        p({ kategorie: "LEISTUNG", beschreibung: "Streichen", einzelpreis: 100 }),
+        p({ kategorie: "MATERIAL", beschreibung: "Farbe", menge: 2, einheit: "l", einzelpreis: 10 }),
+      ],
+      preisliste,
+    );
+    expect(s.nachRaum).toBe(false);
     expect(s.bloecke.map((b) => b.name)).toEqual(["Material", "Arbeitsaufwand"]);
   });
 });

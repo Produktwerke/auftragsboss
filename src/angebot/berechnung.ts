@@ -126,15 +126,15 @@ export function berechneAngebot(
   // die Kosten je Raum nachvollziehen. Dann wird nicht nach Kategorie, sondern
   // nach Raum gruppiert (Raumname als Zwischenüberschrift, darin Material vor
   // Arbeitsaufwand wie gewohnt), und alles ohne Raumbezug (Klein-/Hilfsmaterial,
-  // Anfahrt) kommt als letzter Block. Bei einem oder keinem Raum bleibt alles
-  // wie bisher. Der Editor gruppiert weiterhin nach Kategorie.
+  // Anfahrt) kommt als letzter Block. Seit 13.09.2026 schon ab EINEM Raum (Dirk:
+  // Raumüberschrift statt Arbeitsaufwand); ohne Raumbezug bleibt alles wie bisher.
   const raumName = (p: EingabePosition): string => p.raumBezug?.trim() ?? "";
   const raeume: string[] = [];
   for (const p of positionen) {
     const r = raumName(p);
     if (r && !raeume.includes(r)) raeume.push(r);
   }
-  const nachRaum = raeume.length >= 2;
+  const nachRaum = raeume.length >= 1;
   const raumRang = (p: EingabePosition): number => {
     const r = raumName(p);
     return r ? raeume.indexOf(r) : raeume.length;

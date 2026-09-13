@@ -143,6 +143,8 @@ function positionsTabelle(summe: Angebotssumme): string {
   // Gleiche Blöcke wie Word/PDF: bei mehreren Räumen Raumblöcke mit Nummern,
   // sonst Material vor Arbeitsaufwand. Materialvorschläge bleiben gekennzeichnet.
   const mehrereBloecke = summe.bloecke.length > 1;
+  // Raumüberschrift auch bei einem einzigen Raumblock (13.09.2026).
+  const mitUeberschrift = mehrereBloecke || summe.nachRaum;
   const zeilen = summe.bloecke
     .flatMap((block) => {
       const titel = block.nummer !== null ? `${block.nummer}   ${block.name}` : block.name;
@@ -151,7 +153,7 @@ function positionsTabelle(summe: Angebotssumme): string {
           ? "  (Vorschlag: bitte prüfen und Mengen ergänzen)"
           : "";
       return [
-        ...(mehrereBloecke ? [abschnitt(titel + vorschlagHinweis)] : []),
+        ...(mitUeberschrift ? [abschnitt(titel + vorschlagHinweis)] : []),
         ...block.positionen.map(zeile),
         ...(mehrereBloecke ? [zwischensumme(`Zwischensumme ${block.name}`, block)] : []),
       ];

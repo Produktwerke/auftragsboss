@@ -70,6 +70,8 @@ vs. **Protokoll** (nach getaner Arbeit, mit Gewährleistungs-Tracking § 634a BG
 | | `ai/structure.ts` | **Claude Fable 5**, Structured Outputs (Zod), Systemprompt |
 | Pipeline | `pipeline.ts` | Kern: Nachricht → Dialog → Dokument erzeugen; Feedback/Einstellungs-Stichworte |
 | | `dialog.ts` | Vorgangs-Verwaltung, Nachtrag, Notfall-Wortliste |
+| | `eingabestand.ts` | Eingabezähler je Nummer: laufende Auswertung erkennt, dass sie überholt ist |
+| | `angebot/fertigmeldung.ts` | Kompakte WhatsApp-Fertigmeldung mit Warnhinweisen und Knöpfen |
 | | `feedback.ts` | Tolerante Feedback-Erkennung für den WhatsApp-Weg |
 | | `empfehlung.ts` | Empfehlungsprogramm: Einladungscode je Betrieb, „ab 3. Angebot" |
 | | `direkttest.ts` | „Direkt testen": unbekannte Nummer → Test-Konto + mehrschichtiger Missbrauchsschutz |
@@ -88,7 +90,7 @@ vs. **Protokoll** (nach getaner Arbeit, mit Gewährleistungs-Tracking § 634a BG
 | | `web/devServer.ts` | Editor-Vorschau ohne Keys (`npm run dev:editor`) |
 | | `web/tokens.ts` / `dokumentDaten.ts` | Tokens + DB↔Editor-Konvertierung |
 | Jobs | `jobs/warrantyReminders.ts` | Täglich: Gewährleistungs-Erinnerungen |
-| | `jobs/vorgangTimeout.ts` | Alle 5 Min: offene Vorgänge nach 20 Min abschließen |
+| | `jobs/vorgangTimeout.ts` | Alle 2 Min: Sicherheitsnetz (liegengebliebene Eingabe nachholen, offene Rückfrage nach 15 Min erzwingen) |
 
 **Datenbank:** Prisma + SQLite (`prisma/schema.prisma`). Modelle: `Handwerker`,
 `Dokument` (Angebot/Protokoll; `kiOriginalJson` = KI-Momentaufnahme für die
@@ -119,6 +121,36 @@ Tools — in PowerShell voranstellen:
 laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
+
+> **Update 13.09.2026 — DIREKTANGEBOT STATT SAMMELMODUS (nach Dirks vier Sprachnotizen vom Test am 12.09.; ersetzt den Sammelmodus-Block vom 11.09.):**
+> - **Leitsatz (Dirk):** So schnell wie möglich das Angebot anbieten, im Zweifel lieber korrigieren als lange per WhatsApp interagieren.
+>   Zusammenfassung „Das habe ich verstanden", Raumbilanz und der „fertig"-Schritt sind WEG (`baueZusammenfassung`, `raumBilanz`,
+>   `istFertigWunsch`, `istBestaetigung`, Floskeln `weiterOderFertig`/`fotosOderWeiter`, Einstellungs-Schalter „zusammenfassen" entfernt;
+>   DB-Spalten `zusammenfassungAktiv`/`zusammenfassungGezeigt`/`erinnertAm` bleiben ungenutzt stehen, kein db push).
+> - **Eingaben bündeln (`planeAuswertung` in pipeline.ts):** JEDE Eingabe (Sprache/Text 15 s, Foto 45 s) plant EINE Auswertung, jede
+>   weitere verschiebt sie. **Überholen:** `src/eingabestand.ts` zählt Eingaben je Nummer (Zähler wird in `verarbeiteNachrichtSeriell`
+>   VOR dem Einreihen erhöht); `werteVorgangAus` merkt sich den Stand beim Start und verwirft das KI-Ergebnis, wenn er sich geändert hat
+>   (Event `AUSWERTUNG_UEBERHOLT`); ein feuernder Timer prüft dasselbe. Fehler in der geplanten Auswertung gehen als Hinweis an den Maler.
+> - **Jede Ruhephase = Angebot bzw. neue Fassung.** Nach dem Angebot ist der Vorgang ABGESCHLOSSEN; die nächste Eingabe innerhalb von
+>   NACHTRAG_MINUTEN (45) öffnet ihn wieder (`holeNachtragsVorgang`, runde 0) → Fassung n+1. `erstelleDokument` hängt jetzt einen
+>   Assistent-Vermerk „(Angebot X, Fassung n, erstellt und Link gesendet)" an den Verlauf (KI sieht Nachtrag-Grenze, Job erkennt „nichts offen").
+> - **Fertigmeldung (`src/angebot/fertigmeldung.ts`, rein, 6 Tests):** EINE Knopfnachricht (`sendeWhatsAppKnoepfe`, Fallback Text):
+>   Kopf (Kunde bzw. „Fassung n"), Zeile „📋 Räume: Leistungen (n Positionen)" (`kurzeBilanz`), Gesamt nur bei vollständigen Preisen,
+>   Link, max. 4 Warnhinweise (Aufmaß: verworfene/unplausible/Grauzonen-Öffnungen; Fotos: Boden fehlt, Bildrand-Öffnung; „✏️ Im Angebot
+>   noch ergänzen: …" aus PFLICHT-`fehlendeInfos`), Fototipp einmal (erste Fassung mit Räumen ohne Fotos), Testhinweis; Knöpfe
+>   **„Nächster Raum"** (`RAUM_WEITER`) und **„Angebot korrigieren"** (`ANGEBOT_KORRIGIEREN`) → `verarbeiteAngebotsKnopf` (kein KI-Aufruf,
+>   öffnet den Vorgang wieder, Event `ANGEBOT_KNOPF`). Kein Materialhinweis, kein Einstellungslink, kein „Preise durchsagen" mehr.
+> - **Fotos:** Eingangsbestätigung nur einmal je Schwung (90 s), kein Feedback je Foto; sofort NUR `fotoNachfassHinweis` (zu dunkel,
+>   Tür offen). Bei der Auswertung „📐 n Fotos sind drin, ich rechne das Angebot …". Boden/Bildrand-Hinweise kommen aus
+>   `Foto.erkennungJson` der neuen Fotos (`fotoHinweiseKurz`) in die Fertigmeldung. `fotoFeedback` bleibt nur für Tests.
+> - **Rückfragen** (nur Pflicht, MAX_RUNDEN je Fassung) enden mit `RUECKFRAGE_ZUSATZ` („kannst du später im Angebot ergänzen").
+> - **Timeout-Job neu:** alle 2 Min; Eingabe ohne geplante Auswertung (Neustart) nach NACHHOL_MINUTEN (3) auswerten; offene Rückfrage
+>   nach 15 Min erzwingen; per Knopf wieder geöffnet ohne neue Eingabe → nach 15 Min still schließen; Erinnerung „noch ein Raum?" entfällt.
+> - **Raumüberschrift schon bei EINEM Raum:** `berechneAngebot` `nachRaum` ab 1 Raum, Editor `raumModus()` ab 1, Prompt-Regel
+>   „RÄUME (auch bei nur EINEM Raum)". Editor: Vorschau wird nach Ablauf der Lösch-Reue-Frist aufgefrischt (Blocknummern rücken nach).
+> - **Lead-Onboarding:** `ERKLAERUNG` nach „Kurz erklären" ausführlicher (3 Eingabewege, was danach passiert), dann Knopf „Angebot ausprobieren".
+> - 254 Tests grün. ⏳ Dirks dritter Live-Test mit dem neuen Ablauf; danach Chat-Auswertung in zwei Stufen (Memory chat-auswertung-dsgvo,
+>   VORHER Datenschutzerklärung/AVV anpassen).
 
 > **Update 11.09.2026 — LIVE-TEST TEILETAPPE 3 + SAMMELMODUS ✅ DEPLOYT (Commits 46df7ca, 97ebd5a, d672716; 251 Tests):**
 > - **Live-Test durch Dirk (12:53 bis 13:00):** zwei Kinderzimmer (Paneele 0,97 m / zweifarbig) + Dachzimmer diktiert, 8 Fotos ohne

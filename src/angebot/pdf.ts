@@ -174,8 +174,10 @@ export function erzeugeAngebotPdf(opts: PdfOptionen): Promise<Buffer> {
   // Jede Kategorie als eigener Block — bei nur einem Block ohne Überschrift
   // und Zwischensumme.
   const mehrereBloecke = summe.bloecke.length > 1;
+  // Raumüberschrift auch bei einem einzigen Raumblock (13.09.2026).
+  const mitUeberschrift = mehrereBloecke || summe.nachRaum;
   for (const block of summe.bloecke) {
-    if (mehrereBloecke) y = zeichneAbschnitt(block.nummer !== null ? `${block.nummer}   ${block.name}` : block.name, y);
+    if (mitUeberschrift) y = zeichneAbschnitt(block.nummer !== null ? `${block.nummer}   ${block.name}` : block.name, y);
     for (const p of block.positionen) y = zeichneZeile(p, y);
     if (mehrereBloecke) y = zeichneZwischensumme(`Zwischensumme ${block.name}`, block, y);
   }

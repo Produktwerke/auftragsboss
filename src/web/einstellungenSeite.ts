@@ -162,15 +162,11 @@ export function einstellungenSeite(args: {
           </div>
 
           <div class="section">
-            <div class="section-h"><h2>Preise &amp; Ablauf</h2><p>AuftragsBoss erfindet nie Preise. Diese Schalter steuern, wie es dich unterstützt.</p></div>
+            <div class="section-h"><h2>Preise</h2><p>AuftragsBoss erfindet nie Preise. Dieser Schalter steuert, wie es dich unterstützt.</p></div>
             <div class="section-b">
-              <label class="check" style="margin-bottom:14px;">
+              <label class="check">
                 <input type="checkbox" id="preisGedaechtnisAktiv" ${h.preisGedaechtnisAktiv ? "checked" : ""}>
                 <span><b>Meine Preise merken (Preisgedächtnis).</b><br><span class="hint" style="margin:0;">Merkt sich datiert, wie du ähnliche Leistungen zuletzt kalkuliert hast, und schlägt den Preis beim nächsten Mal vor. Du bestätigst jeden Vorschlag selbst.</span></span>
-              </label>
-              <label class="check">
-                <input type="checkbox" id="zusammenfassungAktiv" ${h.zusammenfassungAktiv ? "checked" : ""}>
-                <span><b>Bei WhatsApp vor dem Angebot kurz zusammenfassen, was verstanden wurde.</b><br><span class="hint" style="margin:0;">Du bestätigst per „ja" oder korrigierst per Sprache. Abschaltbar auch per Nachricht „ohne Zusammenfassung".</span></span>
               </label>
             </div>
           </div>
@@ -366,7 +362,6 @@ async function speichern(){
   const daten={farbe:document.getElementById("farbe").value.replace("#","")};
   for(const id of FELDER) daten[id]=val(id);
   daten.preisGedaechtnisAktiv=document.getElementById("preisGedaechtnisAktiv").checked;
-  daten.zusammenfassungAktiv=document.getElementById("zusammenfassungAktiv").checked;
   daten.materialGetrennt=document.getElementById("materialGetrennt").checked;
   daten.zeige35a=document.getElementById("zeige35a").checked;
   daten.lohnanteilProzent=document.getElementById("lohnanteilProzent").value;
@@ -388,7 +383,6 @@ farbeHexInput.addEventListener("input",()=>{
 });
 farbeHexInput.addEventListener("blur",()=>{ farbeHexInput.value=farbeInput.value.toUpperCase(); });
 document.getElementById("preisGedaechtnisAktiv").addEventListener("change",markiere);
-document.getElementById("zusammenfassungAktiv").addEventListener("change",markiere);
 // Direktsprung aus dem Editor (#angebotsaufbau): zum Abschnitt scrollen und kurz hervorheben.
 if(location.hash){
   const ziel=document.querySelector(location.hash);

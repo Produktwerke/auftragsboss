@@ -37,10 +37,18 @@ const AUFFORDERUNG =
   "Schick mir einfach eine Sprachnachricht und erzähl mir, was gemacht werden soll. " +
   "So, wie du es einem Mitarbeiter erklären würdest. 🎙️";
 
+// Ausführlicher seit 13.09.2026 (Dirks Sprachnotizen): Ziel, die drei Eingabewege
+// und was danach passiert. Bleibt unter den 1024 Zeichen einer Knopfnachricht.
 const ERKLAERUNG =
-  "Ganz einfach: Du erzählst mir per Sprachnachricht, was beim Kunden gemacht werden soll. " +
-  "Ich fasse den Auftrag zusammen, frage bei Bedarf kurz nach und erstelle daraus deinen Angebotsentwurf.\n\n" +
-  "Preise musst du nicht diktieren. Was fehlt, bleibt im Entwurf einfach offen.";
+  "So funktioniert AuftragsBoss:\n\n" +
+  "1️⃣ Du erzählst mir per Sprachnachricht, was beim Kunden gemacht werden soll: Kunde, Adresse, Raum, Maße, Arbeiten. " +
+  "So, wie du es einem Mitarbeiter sagen würdest.\n" +
+  "2️⃣ Hast du einen Notizzettel mit den Maßen? Einfach abfotografieren, ich lese ihn.\n" +
+  "3️⃣ Fotos von Fenstern und Türen (hochkant, Boden und Decke mit drauf) sind freiwillig. Daraus rechne ich die Abzüge fürs Aufmaß.\n\n" +
+  "Daraus mache ich sofort ein Angebot mit allen Positionen und schicke dir den Link. " +
+  "Fehlt etwas oder passt etwas nicht, sagst du es mir einfach, ich mache eine neue Fassung. " +
+  "Preise musst du nicht diktieren, die trägst du im Angebot ein oder sagst sie mir.\n\n" +
+  "Probier es aus, das dauert keine zwei Minuten.";
 
 export type LeadSender = {
   vorlage: typeof sendeWhatsAppVorlage;

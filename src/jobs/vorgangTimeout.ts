@@ -1,60 +1,57 @@
-// Schließt Vorgänge, bei denen der Handwerker nicht mehr geantwortet hat.
+// Sicherheitsnetz für offene Vorgänge (alle 2 Minuten).
 //
-// Ohne das würde ein Angebot nie erstellt, wenn er das Handy einfach weglegt —
-// aus seiner Sicht wäre das Diktat verloren. Stattdessen wird nach kurzer
-// Funkstille mit den vorhandenen Angaben fertiggestellt.
-//
-// Sammelmodus (Räume + Wandfotos, seit 11.09.2026): Nach ERINNERUNG_MINUTEN Stille
-// einmal nachfragen „noch ein Raum, oder fertig?", nach TIMEOUT_MINUTEN das Angebot
-// erzwingen. Der Abschluss läuft über werteVorgangAus (erzwungen), damit Aufmaß,
-// Validator und Preisgedächtnis genauso greifen wie beim normalen Weg.
+// Seit dem Umbau 13.09.2026 entsteht das Angebot direkt nach jeder Eingabe
+// (geplante Auswertung im Speicher, siehe pipeline.ts). Dieser Job fängt nur
+// noch ab, was dort liegen bleibt:
+//   1. Eingabe ohne Auswertung (z.B. nach einem Neustart ging der Timer
+//      verloren): nach NACHHOL_MINUTEN normal auswerten.
+//   2. Offene Rückfrage ohne Antwort: nach TIMEOUT_MINUTEN das Angebot mit
+//      dem, was da ist, erzwingen (werteVorgangAus(erzwungen), damit Aufmaß,
+//      Validator und Preisgedächtnis genauso greifen wie sonst).
+//   3. Per Knopf wieder geöffneter Vorgang ohne neue Eingabe: still schließen.
+//   4. Leerer Vorgang (nie diktiert): verwerfen.
 import cron from "node-cron";
-import { prisma, inReiheProNummer, werteVorgangAus } from "../pipeline.js";
+import { prisma, inReiheProNummer, werteVorgangAus, auswertungGeplant } from "../pipeline.js";
 import { sendeWhatsAppText } from "../whatsapp/send.js";
-import { TIMEOUT_MINUTEN, ERINNERUNG_MINUTEN, alsDialog } from "../dialog.js";
+import { TIMEOUT_MINUTEN, NACHHOL_MINUTEN, nachrichtenLesen } from "../dialog.js";
 
 async function schliesseAbgelaufeneVorgaenge(): Promise<void> {
   const jetzt = Date.now();
-  const erinnerungsGrenze = new Date(jetzt - ERINNERUNG_MINUTEN * 60_000);
+  const nachholGrenze = new Date(jetzt - NACHHOL_MINUTEN * 60_000);
   const abschlussGrenze = new Date(jetzt - TIMEOUT_MINUTEN * 60_000);
 
   const still = await prisma.vorgang.findMany({
-    where: { status: "OFFEN", letzteAktivitaet: { lt: erinnerungsGrenze } },
+    where: { status: "OFFEN", letzteAktivitaet: { lt: nachholGrenze } },
     include: { handwerker: true },
   });
 
   for (const vorgang of still) {
-    const dialog = alsDialog(vorgang);
+    const nachrichten = nachrichtenLesen(vorgang);
     const nummer = vorgang.handwerker.whatsappNummer;
 
-    // Leerer Vorgang (nur begonnen, nie diktiert) — einfach verwerfen
-    if (dialog.filter((n) => n.rolle === "handwerker").length === 0) {
+    // 4. Leerer Vorgang (nur begonnen, nie diktiert): einfach verwerfen
+    if (!nachrichten.some((n) => n.rolle === "handwerker")) {
       await prisma.vorgang.update({ where: { id: vorgang.id }, data: { status: "ABGESCHLOSSEN" } });
       continue;
     }
 
+    const letzte = nachrichten[nachrichten.length - 1]!;
+    const eingabeWartet = letzte.rolle === "handwerker";
     const abgelaufen = vorgang.letzteAktivitaet < abschlussGrenze;
 
-    // Noch nicht abgelaufen: im Sammelmodus einmal erinnern, sonst nichts tun.
-    if (!abgelaufen) {
-      if (!vorgang.raeumeText || vorgang.erinnertAm) continue;
-      try {
-        await inReiheProNummer(nummer, async () => {
-          const frisch = await prisma.vorgang.findUnique({ where: { id: vorgang.id } });
-          if (!frisch || frisch.status !== "OFFEN" || frisch.erinnertAm || frisch.letzteAktivitaet >= erinnerungsGrenze) return;
-          const rest = Math.max(1, TIMEOUT_MINUTEN - ERINNERUNG_MINUTEN);
-          await sendeWhatsAppText(
-            nummer,
-            `⏳ Noch ein Raum, oder fertig? Sag *fertig*, dann mache ich das Angebot sofort. Kommt nichts mehr, mache ich es in ${rest} Minuten mit dem, was ich habe.`,
-          );
-          // Bewusst NICHT letzteAktivitaet anfassen: die Erinnerung verlängert die Frist nicht.
-          await prisma.vorgang.updateMany({ where: { id: vorgang.id }, data: { erinnertAm: new Date() } });
-        });
-      } catch (err) {
-        console.error(`Erinnerung fehlgeschlagen (${vorgang.id}):`, err);
-      }
+    // 3. Wieder geöffnet (Knopf „Nächster Raum"), aber nichts Neues gekommen:
+    //    das Angebot existiert schon, nichts zu tun. Erst nach Ablauf schließen,
+    //    damit der Nachtrag-Weg so lange offen bleibt.
+    if (!eingabeWartet && vorgang.dokumentId && vorgang.runde === 0) {
+      if (abgelaufen) await prisma.vorgang.updateMany({ where: { id: vorgang.id, status: "OFFEN" }, data: { status: "ABGESCHLOSSEN" } });
       continue;
     }
+
+    // 2. Offene Rückfrage (oder Bitte um Raummaße): bis zum Ablauf warten.
+    if (!eingabeWartet && !abgelaufen) continue;
+
+    // 1. Eingabe wartet: wenn die Pipeline sie noch geplant hat, ihr den Vortritt lassen.
+    if (eingabeWartet && !abgelaufen && auswertungGeplant(nummer)) continue;
 
     try {
       // In die Warteschlange DIESER Nummer einreihen (Audit AB-M03): so kann
@@ -64,13 +61,12 @@ async function schliesseAbgelaufeneVorgaenge(): Promise<void> {
       // hier nichts mehr zu tun.
       await inReiheProNummer(nummer, async () => {
         const frisch = await prisma.vorgang.findUnique({ where: { id: vorgang.id } });
-        const grenzeJetzt = new Date(Date.now() - TIMEOUT_MINUTEN * 60_000);
-        if (!frisch || frisch.status !== "OFFEN" || frisch.letzteAktivitaet >= grenzeJetzt) {
-          return;
+        if (!frisch || frisch.status !== "OFFEN" || frisch.letzteAktivitaet > vorgang.letzteAktivitaet) return;
+        if (abgelaufen && !eingabeWartet) {
+          await sendeWhatsAppText(nummer, "⏱️ Ich habe nichts mehr von dir gehört, ich mache das Angebot mit den vorhandenen Angaben fertig.");
         }
-        await sendeWhatsAppText(nummer, "⏱️ Ich habe nichts mehr von dir gehört, ich mache das Angebot mit den vorhandenen Angaben fertig.");
-        await werteVorgangAus({ handwerker: vorgang.handwerker, vorgang: frisch, vonNummer: nummer, inhalt: "", stumm: true, erzwungen: true });
-        console.log(`⏱️ Vorgang ${vorgang.id} nach Zeitablauf fertiggestellt.`);
+        await werteVorgangAus({ handwerker: vorgang.handwerker, vorgang: frisch, vonNummer: nummer, erzwungen: abgelaufen });
+        console.log(`⏱️ Vorgang ${vorgang.id} ${abgelaufen ? "nach Zeitablauf fertiggestellt" : "nachgeholt (Auswertung war nicht geplant)"}.`);
       });
     } catch (err) {
       console.error(`Zeitablauf-Abschluss fehlgeschlagen (${vorgang.id}):`, err);
@@ -82,9 +78,8 @@ async function schliesseAbgelaufeneVorgaenge(): Promise<void> {
 }
 
 export function starteVorgangTimeoutJob(): void {
-  // Alle 2 Minuten prüfen (Erinnerung nach 5, Abschluss nach 15 Minuten Stille)
   cron.schedule("*/2 * * * *", () => {
     schliesseAbgelaufeneVorgaenge().catch((err) => console.error("Vorgang-Timeout-Job fehlgeschlagen:", err));
   });
-  console.log(`⏱️  Vorgang-Timeout-Job geplant (alle 2 Min, Erinnerung ${ERINNERUNG_MINUTEN} Min, Abschluss ${TIMEOUT_MINUTEN} Min).`);
+  console.log(`⏱️  Vorgang-Timeout-Job geplant (alle 2 Min, Nachholen ${NACHHOL_MINUTEN} Min, Abschluss ${TIMEOUT_MINUTEN} Min).`);
 }

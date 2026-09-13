@@ -10,11 +10,10 @@ describe("floskel", () => {
       vorher = jetzt;
     }
   });
-  it("liefert nur bekannte Varianten, und die Raumbilanz-Aufforderung nennt immer das Wort fertig", () => {
+  it("liefert nur bekannte Varianten", () => {
     for (let i = 0; i < 20; i++) {
       expect(floskelVarianten("spracheNeu")).toContain(floskel("spracheNeu"));
-      expect(floskel("weiterOderFertig")).toMatch(/\*fertig\*/);
-      expect(floskel("fotosOderWeiter")).toMatch(/\*fertig\*/);
+      expect(floskelVarianten("text")).toContain(floskel("text"));
     }
   });
 });

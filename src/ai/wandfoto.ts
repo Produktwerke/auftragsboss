@@ -246,3 +246,28 @@ export function fotoAlsDialogText(a: WandfotoAnalyse, wandNr: number, raumName: 
   if (a.besonderheiten.length) teile.push(`Besonderheiten: ${a.besonderheiten.join(", ")}.`);
   return teile.join(" ");
 }
+
+/**
+ * Sofort-Hinweis NUR bei Mängeln, die ein neues Foto brauchen (zu dunkel,
+ * offene Tür). Alles andere (Öffnungsliste, fehlender Boden, Bildrand) wird
+ * seit dem Umbau 13.09.2026 nicht mehr je Foto gemeldet, sondern gesammelt in
+ * der Fertigmeldung des Angebots. Gibt null zurück, wenn nichts nachzufassen ist.
+ */
+export function fotoNachfassHinweis(a: WandfotoAnalyse, wandNr: number, raumName: string | null): string | null {
+  const nachfassen = fotoProbleme(a).filter((p) => p.schwere === "nachfassen");
+  if (!nachfassen.length) return null;
+  const wo = `${raumName ? raumName + ", " : ""}Wand ${wandNr}`;
+  return `⚠️ ${wo}: ${nachfassen.map((p) => p.text).join(" ")}`;
+}
+
+/** Kurze Hinweise je Foto für die Fertigmeldung: fehlender Boden, Öffnungen am Bildrand. */
+export function fotoHinweiseKurz(a: WandfotoAnalyse, wandNr: number, raumName: string | null): string[] {
+  const wo = `Wand ${wandNr}${raumName ? ` (${raumName})` : ""}`;
+  const zeilen: string[] = [];
+  if (!a.bodenSichtbar) zeilen.push(`ℹ️ ${wo}: Boden nicht im Bild, Maße ungenauer.`);
+  const unsicher = nachfragewuerdigeRandoeffnungen(a);
+  if (unsicher.length) {
+    zeilen.push(`❓ ${wo}: am Bildrand noch ${unsicher.map((o) => ART_NAME[o.art]).join(", ")}, nicht mitgezählt. Gehört das dazu? Sag kurz Bescheid.`);
+  }
+  return zeilen;
+}

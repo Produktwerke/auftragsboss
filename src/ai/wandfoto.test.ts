@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bereinigeAnalyse, fotoAlsDialogText, fotoFeedback, fotoProbleme, oeffnungenBeschreibung, type WandfotoAnalyse } from "./wandfoto.js";
+import { bereinigeAnalyse, fotoAlsDialogText, fotoBeschreibung, fotoFeedback, fotoHinweiseKurz, fotoNachfassHinweis, fotoProbleme, oeffnungenBeschreibung, type WandfotoAnalyse } from "./wandfoto.js";
 
 const basis: WandfotoAnalyse = {
   istWandfoto: true,
@@ -91,5 +91,20 @@ describe("Wandfoto-Helfer", () => {
       "FOTO Wand 2 (Raum: Wohnzimmer) [Bildunterschrift: Wohnzimmer Wand 2]: Öffnungen: Fenstertür ca. 1,7 x 2,2 m (offen) (unsicher). Besonderheiten: Lambris halbhoch.",
     );
     expect(fotoAlsDialogText({ ...basis, oeffnungen: [] }, 1, null)).toBe("FOTO Wand 1: Keine Öffnungen.");
+  });
+});
+
+describe("Foto-Hinweise für die Fertigmeldung (13.09.2026: nach Inhalt statt Wandnummer)", () => {
+  it("beschreibt das Foto nach seinen Öffnungen und dem Raum", () => {
+    expect(fotoBeschreibung(basis, "Kinderzimmer")).toBe("Foto mit Fenstertür ca. 1,7 x 2,2 m und Tür ca. 0,82 x 1,98 m (Kinderzimmer)");
+    expect(fotoBeschreibung({ ...basis, oeffnungen: [] }, null)).toBe("Foto ohne Öffnung");
+    expect(fotoBeschreibung({ ...basis, oeffnungen: [], besonderheiten: ["Heizkörper"] }, "Bad")).toBe("Foto mit Heizkörper (Bad)");
+  });
+  it("nennt in den Hinweisen keine Wandnummer", () => {
+    const z = fotoHinweiseKurz({ ...basis, bodenSichtbar: false }, 3, "Kinderzimmer");
+    expect(z).toEqual(["ℹ️ Foto mit Fenstertür ca. 1,7 x 2,2 m und Tür ca. 0,82 x 1,98 m (Kinderzimmer): Boden nicht im Bild, Maße ungenauer."]);
+    expect(fotoHinweiseKurz(basis, 3, "Kinderzimmer")).toEqual([]);
+    expect(fotoNachfassHinweis({ ...basis, hellGenug: false }, 3, "Bad")).toBe("⚠️ Dein letztes Foto (Bad): Das Foto ist zu dunkel oder überstrahlt.");
+    expect(fotoNachfassHinweis(basis, 3, "Bad")).toBeNull();
   });
 });

@@ -142,7 +142,7 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   öffnet den Vorgang wieder, Event `ANGEBOT_KNOPF`). Kein Materialhinweis, kein Einstellungslink, kein „Preise durchsagen" mehr.
 > - **Fotos:** Eingangsbestätigung nur einmal je Schwung (90 s), kein Feedback je Foto; sofort NUR `fotoNachfassHinweis` (zu dunkel,
 >   Tür offen). Bei der Auswertung „📐 n Fotos sind drin, ich rechne das Angebot …". Boden/Bildrand-Hinweise kommen aus
->   `Foto.erkennungJson` der neuen Fotos (`fotoHinweiseKurz`) in die Fertigmeldung. `fotoFeedback` bleibt nur für Tests.
+>   `Foto.erkennungJson` der neuen Fotos (`fotoHinweiseKurz`) in die Fertigmeldung, beschrieben nach Inhalt statt Wandnummer (`fotoBeschreibung`: „Foto mit Fenster ca. 1,1 x 1,2 m (Kinderzimmer)"; Nachfass-Hinweis „Dein letztes Foto"). `fotoFeedback` bleibt nur für Tests.
 > - **Rückfragen** (nur Pflicht, MAX_RUNDEN je Fassung) enden mit `RUECKFRAGE_ZUSATZ` („kannst du später im Angebot ergänzen").
 > - **Timeout-Job neu:** alle 2 Min; Eingabe ohne geplante Auswertung (Neustart) nach NACHHOL_MINUTEN (3) auswerten; offene Rückfrage
 >   nach 15 Min erzwingen; per Knopf wieder geöffnet ohne neue Eingabe → nach 15 Min still schließen; Erinnerung „noch ein Raum?" entfällt.

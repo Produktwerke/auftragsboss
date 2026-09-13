@@ -256,13 +256,32 @@ export function fotoAlsDialogText(a: WandfotoAnalyse, wandNr: number, raumName: 
 export function fotoNachfassHinweis(a: WandfotoAnalyse, wandNr: number, raumName: string | null): string | null {
   const nachfassen = fotoProbleme(a).filter((p) => p.schwere === "nachfassen");
   if (!nachfassen.length) return null;
-  const wo = `${raumName ? raumName + ", " : ""}Wand ${wandNr}`;
-  return `⚠️ ${wo}: ${nachfassen.map((p) => p.text).join(" ")}`;
+  void wandNr;
+  // Kommt direkt nach dem Foto, deshalb „dein letztes Foto" statt einer Wandnummer.
+  return `⚠️ Dein letztes Foto${raumName ? ` (${raumName})` : ""}: ${nachfassen.map((p) => p.text).join(" ")}`;
+}
+
+/**
+ * Beschreibt ein Foto so, wie der Maler es wiedererkennt: nach dem, was darauf
+ * zu sehen ist, nicht nach einer Wandnummer (Dirk 13.09.2026: „Wand 3" sagt ihm
+ * nichts). Beispiel: „Foto mit Fenster ca. 1,1 x 1,2 m (Kinderzimmer)".
+ */
+export function fotoBeschreibung(a: WandfotoAnalyse, raumName: string | null): string {
+  const oeff = relevanteOeffnungen(a).map((o) => {
+    const name = ART_NAME[o.art];
+    return o.breiteM !== null && o.hoeheM !== null ? `${name} ca. ${m(o.breiteM)} x ${m(o.hoeheM)} m` : name;
+  });
+  let was: string;
+  if (oeff.length) was = `Foto mit ${oeff.join(" und ")}`;
+  else if (a.besonderheiten.length) was = `Foto mit ${a.besonderheiten[0]}`;
+  else was = "Foto ohne Öffnung";
+  return raumName ? `${was} (${raumName})` : was;
 }
 
 /** Kurze Hinweise je Foto für die Fertigmeldung: fehlender Boden, Öffnungen am Bildrand. */
 export function fotoHinweiseKurz(a: WandfotoAnalyse, wandNr: number, raumName: string | null): string[] {
-  const wo = `Wand ${wandNr}${raumName ? ` (${raumName})` : ""}`;
+  void wandNr;
+  const wo = fotoBeschreibung(a, raumName);
   const zeilen: string[] = [];
   if (!a.bodenSichtbar) zeilen.push(`ℹ️ ${wo}: Boden nicht im Bild, Maße ungenauer.`);
   const unsicher = nachfragewuerdigeRandoeffnungen(a);

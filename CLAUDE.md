@@ -122,6 +122,21 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 13.09.2026 nachm. — SELBSTHEILUNG + BETREIBER-ALARM (Commits 2fd1450, 2f933a2, deployt inkl. db push; 262 Tests):**
+> - **Auslöser:** Dirks langer Verlauf (Diktat, Fotos, Rückfrage, 2 Fassungen) → KI-JSON abgeschnitten („Unterminated string"), weil
+>   `max_tokens` 16.000 das adaptive Thinking MIT enthält. Jetzt 32.000, als **Stream** (`messages.stream(...).finalMessage()`; das SDK
+>   verweigert ab ~21k max_tokens den normalen Aufruf: „Streaming is required …"), plus ein automatischer zweiter Versuch.
+> - **Selbstheilung (`src/selbstheilung.ts`, `pipeline.fuehreAuswertungAus`):** scheitert die Auswertung, wird der Vorgang NICHT mehr
+>   geschlossen, sondern `Vorgang.fehlversuche`/`naechsterVersuch` gesetzt (3/10/30/60/60/60 Min); der Timeout-Job führt fällige
+>   Wiederholungen aus. Ab dem 2. Fehlversuch bekommt der Maler `MALER_ZWISCHENSTAND` („klemmt gerade, Diktat ist gespeichert"), nach
+>   dem 6. `MALER_AUFGEGEBEN` (Vorgang zu, später neu schicken). Erfolg nach Fehlversuchen = Entwarnung. Fehler VOR dem Vorgang
+>   (Transkription, Download) bleiben „bitte noch einmal schicken" + Alarm.
+> - **Betreiber-Alarm (`betrieb/betreiberAlarm.ts` `meldeStoerung`/`meldeEntwarnung`):** E-Mail an ADMIN_EMAIL (App-SMTP, mit Fehlertext,
+>   Anleitung und Kundensatz `KUNDEN_SATZ`) UND WhatsApp-Vorlage `betreiber_alarm` ({{1}} was, {{2}} Stand; Meta-Genehmigung von Dirk am
+>   13.09. eingereicht; Name per `BETREIBER_VORLAGE_ALARM` überschreibbar) an BETREIBER_HANDY. Höchstens 1 Alarm je Stunde und Schlüssel.
+> - **Wachhund Check 5:** offene Vorgänge > 45 Min mit Inhalt oder ≥ 3 Fehlversuche → Alarm-Mail (`/root/wachhund.sh` installiert).
+> - Lehre: Ein Job, der bei Fehlern den Vorgang schließt, macht aus einem KI-Aussetzer einen Datenverlust für den Kunden.
+
 > **Update 13.09.2026 — DIREKTANGEBOT STATT SAMMELMODUS (nach Dirks vier Sprachnotizen vom Test am 12.09.; ersetzt den Sammelmodus-Block vom 11.09.):**
 > - **Leitsatz (Dirk):** So schnell wie möglich das Angebot anbieten, im Zweifel lieber korrigieren als lange per WhatsApp interagieren.
 >   Zusammenfassung „Das habe ich verstanden", Raumbilanz und der „fertig"-Schritt sind WEG (`baueZusammenfassung`, `raumBilanz`,

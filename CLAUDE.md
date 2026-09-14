@@ -11,10 +11,23 @@ Ergebnisse zeigen (Screenshots, geöffnete Dateien, Browser), nicht nur Code
 beschreiben. Bei Entscheidungen, die Dirk besser beurteilen kann (z. B. wie
 Handwerker wirklich kalkulieren), nachfragen statt raten.
 
+## Wo der Code liegt (seit 14.09.2026) und wie zwei PCs zusammenarbeiten
+
+- **Firma:** AuftragsBoss gehört der **DAG Deutsche Automotive GmbH**, nicht der Screens GmbH (Tyra, Billo).
+- **GitHub:** https://github.com/Produktwerke/auftragsboss — privat, eigenes GitHub-Konto `Produktwerke` (= DAG), getrennt vom Screens-Konto `ScreensGmbH`. Branch `master`.
+- **Arbeitskopie auf jedem PC:** `C:\dev\dag\auftragsboss`. **Nicht mehr in OneDrive.** Der alte Ordner `OneDrive…\_Claude\Angebotsblitz\voiceprotokoll-guard` ist stillgelegt (Marker-Datei). Dirks Geschäftsunterlagen (Excel, Word, Datenschutz, Messbank-Fotos, Logos, Videos) liegen weiter dort in OneDrive und waren nie Teil des Repos.
+- **Zwei PCs (Büro-PC, Heim-PC):** Abgleich nur über GitHub: PC → GitHub → anderer PC. Nie beide gleichzeitig am Projekt. Heim-PC-Einrichtung: OneDrive `_Claude\Screens-GitHub-Umzug-Heim-PC.md`, Abschnitt AuftragsBoss.
+- **Routine:** Sitzungsbeginn `git pull` („hol den aktuellen Stand") und diese Datei erneut lesen; Sitzungsende Stand hier eintragen, committen, `git push` („lade alles hoch"). Für Git-Befehle `GCM_INTERACTIVE=never` setzen, sonst hängt ein unsichtbarer Anmeldedialog.
+- **Zwei GitHub-Konten auf einem PC:** Die Remote-URL trägt den Benutzernamen (`https://Produktwerke@github.com/…`), damit der Credential Manager das DAG-Konto wählt. Wenn ein PC noch nicht angemeldet ist, per PowerShell-Tool `$env:GCM_INTERACTIVE="always"; Start-Process "C:\Program Files\Git\mingw64\bin\git-credential-manager.exe" -ArgumentList "github login"` → Fenster „Connect to GitHub" → Dirk meldet sich im Browser als `Produktwerke` an. Kontrolle: `git credential-manager github list`.
+- **Sicherheits-Wächter** `.claude/hooks/guard.cjs` + `settings.json` (Modus „auto") liegt seit 14.09.2026 im Repo. Nie umgehen; er sperrt u. a. winget/choco und den Schlüsselordner.
+- **Nach dem Klonen:** `npm install`, `npx prisma generate` (npm 11 führt Installationsskripte nicht automatisch aus), `npm run typecheck`, `npm test` (Stand 14.09.2026: 0 Typfehler, 262 Tests grün).
+- **Server-Zugang:** Der Büro-PC erreicht den VPS `87.106.165.151` (Schlüssel im Profil, geprüft 14.09.2026). Deploys bleiben ein bewusster Schritt, siehe Abschnitt Deploy — nie als Nebeneffekt.
+
 ## Was das Produkt ist
 
 **AuftragsBoss** (Domain: AuftragsBoss.de; früher „Angebotsblitz" genannt — der
-Projektordner heißt aus historischen Gründen noch `voiceprotokoll-guard`).
+alte Projektordner in OneDrive hieß `voiceprotokoll-guard`, seit 14.09.2026 liegt
+die Arbeitskopie unter `C:\dev\dag\auftragsboss`, siehe Abschnitt „Wo der Code liegt").
 Der Handwerker diktiert nach dem Kundentermin im Auto eine
 **WhatsApp-Sprachnachricht**, das System erzeugt daraus ein **fertiges Angebot**.
 Kein App-Download, kein Login. Das ist der Kernvorteil gegenüber dem Vorbild

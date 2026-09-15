@@ -32,15 +32,22 @@ export function leadVorlagenName(): string {
 
 // Die EINE Aufforderung nach "Ja, los geht's" — danach wird gewartet, nichts
 // weiter gesendet. (Hausregel: keine Gedankenstriche in Nutzertexten.)
+// Beide Antworten beginnen mit einer kurzen Vorstellung der KI (15.09.2026, Dirk):
+// Die Einladung per Vorlage klingt nach Sie, AuftragsBoss selbst duzt wie auf der
+// Baustelle. So ist klar, dass ab hier die KI spricht, nicht der Anrufer von eben.
+const VORSTELLUNG = "👋 Hallo, ich bin AuftragsBoss, deine KI für Malerangebote. Ich duze dich, wie auf der Baustelle.";
+
 const AUFFORDERUNG =
-  "Perfekt. Denk an einen echten Auftrag, den du gerade auf dem Tisch hast.\n\n" +
+  VORSTELLUNG +
+  "\n\nDenk an einen echten Auftrag, den du gerade auf dem Tisch hast.\n\n" +
   "Schick mir einfach eine Sprachnachricht und erzähl mir, was gemacht werden soll. " +
   "So, wie du es einem Mitarbeiter erklären würdest. 🎙️";
 
 // Ausführlicher seit 13.09.2026 (Dirks Sprachnotizen): Ziel, die drei Eingabewege
 // und was danach passiert. Bleibt unter den 1024 Zeichen einer Knopfnachricht.
 const ERKLAERUNG =
-  "So funktioniert AuftragsBoss:\n\n" +
+  VORSTELLUNG +
+  "\n\nSo funktioniert es:\n\n" +
   "1️⃣ Du erzählst mir per Sprachnachricht, was beim Kunden gemacht werden soll: Kunde, Adresse, Raum, Maße, Arbeiten. " +
   "So, wie du es einem Mitarbeiter sagen würdest.\n" +
   "2️⃣ Hast du einen Notizzettel mit den Maßen? Einfach abfotografieren, ich lese ihn.\n" +

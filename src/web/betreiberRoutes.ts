@@ -23,6 +23,7 @@ import {
   betreiberListe,
   betreiberDetail,
   betreiberUmsatz,
+  betreiberFunnel,
   istInaktiv,
   type BetriebZeile,
   type BetriebsFilter,
@@ -45,6 +46,8 @@ import { cockpitLink, einstellungenLink } from "./tokens.js";
 import { hatAdminSitzung } from "./adminAuth.js";
 import { legeLeadAnUndLadeEin } from "../lead/onboarding.js";
 import { WEBTEST_NUMMER } from "./webtest.js";
+import { berechneFunnel } from "../lead/funnel.js";
+import { featureConfig } from "../config.js";
 import type { FastifyRequest } from "fastify";
 
 // Der alte Notfall-Zugang /admin/<ADMIN_TOKEN>/… ist ABGESCHALTET (Audit
@@ -238,6 +241,8 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
         email: h.email,
         istTest: h.istTest,
         blockiert: h.blockiert,
+        leadQuelle: h.leadQuelle,
+        onboardingStatus: h.onboardingStatus,
         blockiertGrund: h.blockiertGrund,
         blockiertAm: h.blockiertAm,
         erstelltAm: h.erstelltAm,
@@ -550,6 +555,43 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
     });
     return reply.type("text/html; charset=utf-8").send(html);
   });
+
+  // ── Lead-Auswertung (Etappe 2): Funnel je Quelle + offene Leads ──────
+  for (const pfad of beide("/funnel")) app.get<{ Params: { token?: string }; Querystring: { tage?: string } }>(pfad, async (req, reply) => {
+    const z = zugang(req);
+    if (!z.ok) return z.basis === "/stasi" ? reply.redirect("/stasi") : reply.code(404).type("text/html").send(nichtGefunden());
+    const tageRoh = Number(req.query.tage ?? "");
+    const tage = Number.isFinite(tageRoh) && tageRoh > 0 ? Math.floor(tageRoh) : null;
+    const seit = tage ? new Date(Date.now() - tage * 86_400_000) : null;
+
+    const betriebe = await prisma.handwerker.findMany({
+      where: { whatsappNummer: { not: WEBTEST_NUMMER }, ...(seit ? { erstelltAm: { gte: seit } } : {}) },
+      select: { id: true, leadQuelle: true, istTest: true, onboardingStatus: true, testNachrichten: true, erstelltAm: true, blockiert: true, name: true, firma: true },
+    });
+    const ids = betriebe.map((b) => b.id);
+    const [events, angebote, abos] = await Promise.all([
+      prisma.event.findMany({
+        where: { handwerkerId: { in: ids }, typ: { in: ["LEAD_EINLADUNG_GESENDET", "LEAD_ZUGESTELLT", "LEAD_GELESEN", "LEAD_KNOPF", "LEAD_ERSTE_EINGABE", "LEAD_ERINNERUNG", "LEAD_EINLADUNG_FEHLGESCHLAGEN"] } },
+        select: { handwerkerId: true, typ: true },
+      }),
+      prisma.dokument.groupBy({ by: ["handwerkerId"], where: { version: 1, handwerkerId: { in: ids } }, _count: { _all: true } }),
+      prisma.abo.findMany({ where: { handwerkerId: { in: ids } }, select: { handwerkerId: true } }),
+    ]);
+    const eventsJeBetrieb = new Map<string, Set<string>>();
+    for (const e of events) {
+      if (!e.handwerkerId) continue;
+      if (!eventsJeBetrieb.has(e.handwerkerId)) eventsJeBetrieb.set(e.handwerkerId, new Set());
+      eventsJeBetrieb.get(e.handwerkerId)!.add(e.typ);
+    }
+    const ergebnis = berechneFunnel({
+      betriebe,
+      eventsJeBetrieb,
+      angeboteJeBetrieb: new Map(angebote.map((a) => [a.handwerkerId, a._count._all])),
+      aboBetriebe: new Set(abos.map((a) => a.handwerkerId)),
+    });
+    return reply.type("text/html; charset=utf-8").send(betreiberFunnel({ basis: z.basis, ergebnis, tage, erinnerungAktiv: featureConfig().FEATURE_LEAD_ERINNERUNG }));
+  });
+
 
   // ── Löschen (DSGVO-Kaskade) ───────────────────────────
   for (const pfad of beide("/betrieb/:id/loeschen")) app.post<{ Params: { token?: string; id: string }; Body: { bestaetigung?: string } }>(

@@ -1,5 +1,7 @@
 import { jsonInsSkript } from "./jsonInsSkript.js";
 import { EMPFEHLUNGS_PRAEMIE_EUR } from "../empfehlung.js";
+import { quelleLabel, zustandLabel } from "../lead/status.js";
+import type { FunnelErgebnis } from "../lead/funnel.js";
 // Betreiber-Cockpit (Stufe 1): Kundenliste + Kundendetail mit Verwaltungs-
 // Aktionen (Kontakt ändern, blockieren, Gutschrift, löschen) und Usage-Zahlen.
 // Nur intern erreichbar über /admin/:ADMIN_TOKEN/betriebe (siehe betreiberRoutes.ts).
@@ -127,6 +129,9 @@ export interface BetriebZeile {
   istTest: boolean;
   blockiert: boolean;
   erstelltAm: Date;
+  /** Lead-Onboarding (Etappe 2): Quelle TELEFON/WEBSITE (null = direkt) und Zustand. */
+  leadQuelle?: string | null;
+  onboardingStatus?: string | null;
   /** Offenes Konto-Guthaben in Euro (Empfehlungsprämie, Kulanz), bei der nächsten Zahlung zu verrechnen. */
   guthabenEuro: number;
   angebote: number;
@@ -238,7 +243,7 @@ export function betreiberListe(args: {
     "Kunden",
     `
   <h1>Kunden</h1>
-  <p class="unter">Alle Betriebe mit Nutzung, Abo und Status. <a href="${basis}/umsatz">Zur Umsatz-Übersicht</a> · <a href="${basis === "/stasi" ? "/stasi/auswertung" : basis}">Zur Lern-Auswertung</a>${basis === "/stasi" ? ` · <a href="/stasi/abmelden">Abmelden</a>` : ""}</p>
+  <p class="unter">Alle Betriebe mit Nutzung, Abo und Status. <a href="${basis}/umsatz">Zur Umsatz-Übersicht</a> · <a href="${basis}/funnel">Zur Lead-Auswertung</a> · <a href="${basis === "/stasi" ? "/stasi/auswertung" : basis}">Zur Lern-Auswertung</a>${basis === "/stasi" ? ` · <a href="/stasi/abmelden">Abmelden</a>` : ""}</p>
 
   <div class="kennz">
     <div class="kachel"><div class="wert">${kpis.kunden}</div><div class="lab">Kunden</div></div>
@@ -389,6 +394,7 @@ export function betreiberDetail(args: {
     <div>
       <h1>${escapeHtml(anzeigeName(b))}</h1>
       <p class="unter">${escapeHtml(b.name)} · ${escapeHtml(b.gewerkTyp)}${b.ort ? " · " + escapeHtml(b.ort) : ""} · Mitglied seit ${datumDE(b.erstelltAm)}</p>
+      ${b.leadQuelle ? `<p class="unter">Lead über ${escapeHtml(quelleLabel(b.leadQuelle))} · Onboarding: <b>${escapeHtml(zustandLabel(b.onboardingStatus ?? null))}</b></p>` : ""}
     </div>
     <div>${statusBadge(b)}</div>
   </div>
@@ -666,6 +672,64 @@ export function betreiberUmsatz(args: {
   <table class="liste">
     <thead><tr><th>Betrieb</th><th>Tarif</th><th style="text-align:right;">Umsatz gesamt</th></tr></thead>
     <tbody>${topHtml || `<tr><td colspan="3" style="text-align:center;color:#888;padding:20px;">Noch keine Umsätze.</td></tr>`}</tbody>
+  </table>
+  </div>`,
+  );
+}
+
+/** Lead-Auswertung (Etappe 2): Funnel je Quelle + offene Leads zum Nachfassen. */
+export function betreiberFunnel(args: { basis: string; ergebnis: FunnelErgebnis; tage: number | null; erinnerungAktiv: boolean }): string {
+  const { basis, ergebnis, tage, erinnerungAktiv } = args;
+  const zeitraumLink = (t: number | null, label: string) =>
+    t === tage ? `<b>${label}</b>` : `<a href="${basis}/funnel${t ? `?tage=${t}` : ""}">${label}</a>`;
+
+  const kopf = ergebnis.quellen
+    .map((q) => `<th style="text-align:right;">${escapeHtml(q.label)}<br><span style="font-weight:400;color:#8a9099;text-transform:none;letter-spacing:0;">${q.leads} ${q.leads === 1 ? "Lead" : "Leads"}</span></th>`)
+    .join("");
+  const stufenKeys = ergebnis.quellen[0]?.stufen.map((s) => s.key) ?? [];
+  const zeilen = stufenKeys
+    .map((key) => {
+      const label = ergebnis.quellen[0]!.stufen.find((s) => s.key === key)!.label;
+      const zellen = ergebnis.quellen
+        .map((q) => {
+          const s = q.stufen.find((x) => x.key === key)!;
+          if (!s.anwendbar) return `<td style="text-align:right;color:#bbb;">–</td>`;
+          const anteil = s.anteil === null ? "" : ` <span style="color:#8a9099;font-size:12.5px;">(${s.anteil} %)</span>`;
+          return `<td style="text-align:right;">${s.anzahl}${anteil}</td>`;
+        })
+        .join("");
+      return `<tr><td>${escapeHtml(label)}</td>${zellen}</tr>`;
+    })
+    .join("");
+
+  const offene = ergebnis.offeneLeads
+    .map(
+      (l) =>
+        `<tr><td><a href="${basis}/betrieb/${l.id}"><b>${escapeHtml(l.anzeige)}</b></a></td><td>${escapeHtml(quelleLabel(l.quelle === "DIREKT" ? null : l.quelle))}</td><td><span class="badge ${l.zustand === "EINLADUNG_FEHLGESCHLAGEN" ? "b-warn" : "b-neutral"}">${escapeHtml(l.zustandLabel)}</span></td><td style="text-align:right;">${l.tage}</td><td>${l.erinnert ? "ja" : "–"}</td></tr>`,
+    )
+    .join("");
+
+  return seite(
+    "Lead-Auswertung",
+    `
+  <p class="zurueck"><a href="${basis}/betriebe">← Zur Kundenliste</a></p>
+  <h1>Lead-Auswertung</h1>
+  <p class="unter">Wie weit kommen Interessenten je Quelle? Zeitraum nach Anlage: ${zeitraumLink(30, "30 Tage")} · ${zeitraumLink(90, "90 Tage")} · ${zeitraumLink(null, "alle")}</p>
+
+  <div class="tabellenrahmen">
+  <table class="liste">
+    <thead><tr><th>Stufe</th>${kopf}</tr></thead>
+    <tbody>${zeilen || `<tr><td colspan="4" style="text-align:center;color:#888;padding:20px;">Noch keine Betriebe im Zeitraum.</td></tr>`}</tbody>
+  </table>
+  </div>
+  <p class="unter" style="margin-top:8px;">Zugestellt und gelesen kommen aus den WhatsApp-Statusmeldungen; ein Knopfklick oder eine Eingabe zählt automatisch als zugestellt und gelesen. Direkt-Interessenten schreiben von sich aus, für sie gibt es keine Einladungsstufen.</p>
+
+  <h2>Offene Leads zum Nachfassen</h2>
+  <p class="unter">Eingeladen, aber noch nichts eingesprochen. Automatische Erinnerung: ${erinnerungAktiv ? "an (einmalig nach ein paar Tagen)" : "aus (Feature-Flag FEATURE_LEAD_ERINNERUNG, braucht die genehmigte Vorlage)"}.</p>
+  <div class="tabellenrahmen">
+  <table class="liste">
+    <thead><tr><th>Betrieb</th><th>Quelle</th><th>Zustand</th><th style="text-align:right;">Tage seit Einladung</th><th>Erinnert</th></tr></thead>
+    <tbody>${offene || `<tr><td colspan="5" style="text-align:center;color:#888;padding:20px;">Keine offenen Leads.</td></tr>`}</tbody>
   </table>
   </div>`,
   );

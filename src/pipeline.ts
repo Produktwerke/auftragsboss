@@ -1186,6 +1186,20 @@ export async function erstelleDokument(args: {
     }
   }
 
+  // Leads (Telefon/Website) erfahren erst NACH dem ersten Angebot, dass sie 14 Tage
+  // kostenlos testen (Sales-Frank-Brief: erst das Erlebnis, dann die Rahmenbedingungen).
+  // Einmalig, über ein Event gemerkt.
+  if (handwerker.istTest && handwerker.leadQuelle && !istNachtrag) {
+    const anzahlV1 = await prisma.dokument.count({ where: { handwerkerId, version: 1 } });
+    if (anzahlV1 === 1 && (await prisma.event.count({ where: { handwerkerId, typ: "TEST_HINWEIS" } })) === 0) {
+      await sendeWhatsAppText(
+        vonNummer,
+        `ℹ️ Übrigens: Du kannst AuftragsBoss ${direkttestConfig().DIREKTTEST_TAGE} Tage kostenlos testen, ohne Anmeldung. Deine Angebote bleiben dabei erhalten.`,
+      );
+      await spurEvent(prisma, "TEST_HINWEIS", { handwerkerId, data: { nachAngebot: 1 } });
+    }
+  }
+
   console.log(
     `✅ ${daten.art} ${nummer}${version > 1 ? ` (Fassung ${version})` : ""} für ${handwerker.firma} erstellt (${dokument.id}).`,
   );

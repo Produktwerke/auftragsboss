@@ -46,7 +46,7 @@ function lade<T extends z.ZodObject<z.ZodRawShape>>(name: string, schema: T): ()
 // sie nicht als Tippfehler meldet.
 export const DIREKT_GELESENE_SCHLUESSEL = [
   "DATABASE_URL", "BASE_URL", "ADMIN_TOKEN", "ADMIN_EMAIL", "ADMIN_PASSWORT_HASH",
-  "SESSION_SECRET", "WHATSAPP_APP_SECRET", "LEAD_VORLAGE", "TEST_VORLAGE", "TEST_VORLAGE_ENDET_BALD", "TEST_VORLAGE_ABGELAUFEN", "TEAM_MAIL", "UPLOADS_DIR",
+  "SESSION_SECRET", "WHATSAPP_APP_SECRET", "LEAD_VORLAGE", "LEAD_VORLAGE_ERINNERUNG", "LEAD_ERINNERUNG_TAGE", "TEST_VORLAGE", "TEST_VORLAGE_ENDET_BALD", "TEST_VORLAGE_ABGELAUFEN", "TEAM_MAIL", "UPLOADS_DIR",
 ] as const;
 
 /** Alle gültigen .env-Schlüssel: aus den Schemata abgeleitet plus die direkt gelesenen. */
@@ -190,6 +190,10 @@ export const featureConfig = lade(
     // Selbst-Registrierung: Ein Test-Konto kann sich per Web-Formular selbst zum
     // echten Betrieb aufwerten (WhatsApp-verifizierte Nummer). Standardmäßig aus.
     FEATURE_SELBSTREGISTRIERUNG: flagge(false),
+    // Lead-Erinnerung: eingeladene Leads ohne Eingabe bekommen nach LEAD_ERINNERUNG_TAGE
+    // (Standard 2) einmalig die Meta-Vorlage LEAD_VORLAGE_ERINNERUNG. Erst einschalten,
+    // wenn die Vorlage genehmigt ist.
+    FEATURE_LEAD_ERINNERUNG: flagge(false),
     // PLZ-Nachschlag im Editor über OpenPLZ (EU/DE). Manueller Knopf, serverseitig.
     // Erst scharfschalten, wenn der OpenPLZ-Hinweis in der Datenschutzerklärung steht.
     FEATURE_PLZ_LOOKUP: flagge(false),

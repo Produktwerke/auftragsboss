@@ -15,6 +15,8 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { whatsappConfig } from "../config.js";
 import { verarbeiteNachrichtSeriell } from "../pipeline.js";
 import { maskiereNummer } from "./maskierung.js";
+import { prisma } from "../pipeline.js";
+import { verarbeiteNachrichtStatus, type MetaStatusMeldung } from "../lead/status.js";
 
 // Minimale Typen für den Ausschnitt des Meta-Payloads, den wir brauchen
 interface WhatsAppMessage {
@@ -70,7 +72,7 @@ export function extrahiereEingabe(msg: WhatsAppMessage):
 interface WebhookBody {
   entry?: Array<{
     changes?: Array<{
-      value?: { messages?: WhatsAppMessage[] };
+      value?: { messages?: WhatsAppMessage[]; statuses?: MetaStatusMeldung[] };
     }>;
   }>;
 }
@@ -152,8 +154,18 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     reply.code(200).send({ status: "ok" });
 
     const body = req.body as WebhookBody;
-    const messages =
-      body.entry?.flatMap((e) => e.changes ?? []).flatMap((c) => c.value?.messages ?? []) ?? [];
+    const changes = body.entry?.flatMap((e) => e.changes ?? []) ?? [];
+    const messages = changes.flatMap((c) => c.value?.messages ?? []);
+
+    // Zustellstatus unserer Nachrichten (sent/delivered/read/failed): treibt das
+    // Lead-Zustandsmodell (eingeladen → zugestellt → gelesen), sonst ohne Wirkung.
+    for (const st of changes.flatMap((c) => c.value?.statuses ?? [])) {
+      verarbeiteNachrichtStatus(prisma, st)
+        .then((neu) => {
+          if (neu) app.log.info({ status: st.status, zustand: neu }, "Lead-Zustand aktualisiert");
+        })
+        .catch((err) => app.log.error({ err }, "Status-Callback fehlgeschlagen"));
+    }
 
     // Sprache, Foto UND Text sind gleichwertige Eingaben — der Handwerker darf
     // so liefern, wie es ihm im Moment leichter fällt (diktieren, Aufmaß-Zettel

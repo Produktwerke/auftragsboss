@@ -136,6 +136,29 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 15.09.2026 (2) — KOSTENPROBE-ERGEBNIS (5 echte Verläufe × 4 Konfigurationen, 20 KI-Aufrufe, 5,80 $):**
+> - Je Auswertung: Fable 5/high (heute) 0,47 $ · Fable 5/medium 0,35 $ · **Opus 5/high 0,19 $** · Opus 5/medium 0,15 $; Dauer 80/53/57/42 s.
+> - Qualität: Räume, Öffnungen, Flächen und Positionen bei allen vier praktisch identisch (nur Wortwahl „beschichten" statt „streichen",
+>   eine übermessene Tür mal drin, mal nicht, ohne Flächenwirkung). EIN Fehler: Opus 5/medium schrieb „Schrägen: …; Schrägen: …" als zwei
+>   Felder, der Parser behielt nur das letzte (Dachzimmer 35,7 statt 44,52 m²) → Parser führt doppelte Felder jetzt zusammen (Test).
+> - Caching bestätigt: ab dem 2. Aufruf je Betrieb 17.350 Token aus dem Cache. Achtung: jeder Wechsel von Modell oder Effort
+>   invalidiert den Cache (in der Probe sichtbar), im Betrieb bleiben beide konstant.
+> - Empfehlung: **ANGEBOT_MODELL=claude-opus-5, ANGEBOT_EFFORT=high** (−60 % je Auswertung, schneller, gleiche Qualität); medium nicht.
+>   Umstellung = Server-.env + pm2 restart, kein Deploy. Wandfoto/Bildlesen/Import bleiben vorerst auf Fable 5 (Vision-Prüfstand dort gemessen).
+
+> **Update 15.09.2026 — KI-KOSTEN: CACHING, ECHTE PREISE, KOSTENPROBE (Commit 7f0ae2a, deployt, 263 Tests):**
+> - **Befund:** Die Kostentabelle (`analytics/kikosten.ts`) rechnete mit Sonnet-Preisen (2,80/14 €), das Modell ist aber Claude Fable 5
+>   (Listenpreis 10/50 $ je 1M Token). Cockpit zeigte ein Viertel der echten Kosten. Real (30 Tage bis 13.09.): 49 Auswertungen ≈ 21 €,
+>   39 Wandfotos ≈ 4 €, Transkription ≈ 0,30 € → ~1,50 € je Angebot inkl. Fassungen; Basis-Tarif (29 €/50 Angebote = 58 ct) wäre bei
+>   voller Nutzung ein Verlust. Ausgabe (inkl. Thinking) ist ~60 % der Auswertungskosten, die 18k-Token-Anleitung ~20 %.
+> - **Prompt-Caching:** `strukturiereDialog` schickt die Anleitung als System-Block mit `cache_control: ephemeral, ttl 1h`
+>   (Lesen 0,1×, Schreiben 2×). Verlauf/Betriebsname bleiben in der Nutzernachricht (veränderlich, nach dem Marker). Cache-Nutzung
+>   im Log (`🧠 KI …`) und im Event `KI_AUFRUF` (`cacheGelesen`/`cacheGeschrieben`), `kostenClaudeCent(ein, aus, cache)`.
+> - **Modell + Denktiefe per .env:** `ANGEBOT_MODELL` (Vorgabe claude-fable-5), `ANGEBOT_EFFORT` (low…max, Vorgabe high) in
+>   `anthropicConfig`; `strukturiereDialog(…, optionen)` überschreibt je Aufruf (Proben). Wandfoto/Bildlesen/Import bleiben fest auf Fable 5.
+> - **Kostenprobe:** `scratch/kosten-probe.ts` (auf dem Server: `npx tsx scratch/kosten-probe.ts 5`) jagt die letzten 5 echten Verläufe
+>   durch Fable 5 / Opus 5 × high / medium und schreibt `scratch/kosten-probe-ergebnis.md` (gitignored). Ergebnis + Entscheidung: siehe Folgeblock.
+
 > **Update 13.09.2026 nachm. — SELBSTHEILUNG + BETREIBER-ALARM (Commits 2fd1450, 2f933a2, deployt inkl. db push; 262 Tests):**
 > - **Auslöser:** Dirks langer Verlauf (Diktat, Fotos, Rückfrage, 2 Fassungen) → KI-JSON abgeschnitten („Unterminated string"), weil
 >   `max_tokens` 16.000 das adaptive Thinking MIT enthält. Jetzt 32.000, als **Stream** (`messages.stream(...).finalMessage()`; das SDK

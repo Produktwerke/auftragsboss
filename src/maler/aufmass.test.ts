@@ -199,6 +199,12 @@ describe("berechneRaum", () => {
     expect(berechneRaum({ ...schlafzimmer, schraegen: [{ laengeM: 4, schraegeM: 40 }] })).toEqual({ grund: "unplausible Dachschräge" });
   });
 
+  it("führt doppelt genannte Felder zusammen (Schrägen zweimal, Kostenprobe 15.09.2026)", () => {
+    const [r] = parseRaeumeText("Raum: Dachzimmer; Höhe: 2,40; Wände: 4,20 (1,20), 3,50, 4,20 (1,20), 3,50; Decke: 5,9; Öffnungen: Dachfenster 0,80 x 1,20; Schrägen: 4,20 x 2,10; Schrägen: 4,20 x 2,10");
+    expect(r!.schraegen?.length).toBe(2);
+    expect(berechneAufmass([r!]).raeume[0]!.schraegenM2).toBe(17.64);
+  });
+
   it("Decke: Grundmaß 'a x b', wenn nicht alle Wände gestrichen werden (Arbeitszimmer 13.09.2026)", () => {
     const [r] = parseRaeumeText("Raum: Arbeitszimmer; Höhe: 2,55; Wände: 3,98, 3,50, 3,98; Decke: 3,98 x 3,50; Öffnungen: Tür 0,85 x 2,00, Fenster 1,10 x 1,20");
     expect(r!.deckeStreichen).toBe(true);

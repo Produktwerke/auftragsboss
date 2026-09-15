@@ -453,7 +453,12 @@ export function parseRaeumeText(text: string | null | undefined): RaumMasse[] {
     for (const teil of zeile.split(";")) {
       const i = teil.indexOf(":");
       if (i < 0) continue;
-      felder.set(teil.slice(0, i).trim().toLowerCase(), teil.slice(i + 1).trim().slice(0, 500));
+      // Doppelt genannte Felder ("Schrägen: 4,20 x 2,10; Schrägen: 4,20 x 2,10") zusammenführen
+      // statt überschreiben (Kostenprobe 15.09.2026: sonst fehlte eine Dachschräge).
+      const schluessel = teil.slice(0, i).trim().toLowerCase();
+      const wert = teil.slice(i + 1).trim().slice(0, 500);
+      const vorher = felder.get(schluessel);
+      felder.set(schluessel, vorher ? `${vorher}, ${wert}`.slice(0, 500) : wert);
     }
     const name = felder.get("raum") ?? "";
     if (!name) continue;

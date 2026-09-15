@@ -216,10 +216,17 @@ export async function verarbeiteNachricht(args: {
       return;
     }
     // handwerker.testNachrichten trägt hier noch den Stand VOR dieser Nachricht:
-    // 0 = allererste Nachricht dieser Nummer → einmal begrüßen. Telefon-Leads
-    // NICHT: die wurden per Einladung schon begrüßt (KI-Hinweis steht dort in
-    // der Vorlagen-Fußzeile), eine zweite Begrüßung wäre verwirrend.
-    if (handwerker.testNachrichten === 0 && !handwerker.leadQuelle) {
+    // 0 = allererste Nachricht dieser Nummer → einmal begrüßen. Leads, die die
+    // WhatsApp-Einladung bekommen haben, NICHT: die wurden dort schon begrüßt
+    // (KI-Hinweis steht in der Vorlagen-Fußzeile), eine zweite Begrüßung wäre
+    // verwirrend. Ein Lead OHNE gesendete Einladung (Vorlage nicht genehmigt,
+    // Website-Formular) hat aber noch nie etwas von uns gehört → begrüßen wie
+    // eine neue Nummer. (15.09.2026: Startnachricht per QR-Code blieb sonst stumm.)
+    const schonEingeladen =
+      handwerker.leadQuelle !== null &&
+      (await prisma.event.count({ where: { handwerkerId: handwerker.id, typ: "LEAD_EINLADUNG_GESENDET" } })) > 0;
+    const begruessen = handwerker.testNachrichten === 0 && !schonEingeladen;
+    if (begruessen) {
       const anmeldeHinweis = featureConfig().FEATURE_SELBSTREGISTRIERUNG
         ? `\n\nWillst du AuftragsBoss richtig nutzen? Schreib einfach *anmelden*.`
         : "";
@@ -232,14 +239,16 @@ export async function verarbeiteNachricht(args: {
       // kein return — die eigentliche Nachricht wird gleich weiterverarbeitet
     }
     // Startnachricht von der Landingpage („ich möchte 14 Tage kostenlos testen"):
-    // kein Auftrag, nichts für die KI. Begrüßung reicht, Tarifwunsch fürs Cockpit notieren.
+    // kein Auftrag, nichts für die KI. Begrüßung reicht, Tarifwunsch fürs Cockpit
+    // notieren. Wer gerade nicht begrüßt wurde, bekommt in jedem Fall ein „Los geht's",
+    // eine Startnachricht darf nie unbeantwortet bleiben.
     const testStart = text ? testStartAusText(text) : null;
     if (testStart) {
       await prisma.adminLog.create({
         data: { aktion: "TEST_ANGEFORDERT", handwerkerId: handwerker.id, betrieb: handwerker.firma || `+${vonNummer}`, detail: `per WhatsApp${testStart.tarif ? `, Tarifwunsch ${testStart.tarif}` : ""}` },
       });
       await spurEvent(prisma, "TEST_ANGEFORDERT", { handwerkerId: handwerker.id, data: { quelle: "whatsapp", tarif: testStart.tarif } });
-      if (handwerker.testNachrichten > 0) {
+      if (!begruessen) {
         await sendeWhatsAppText(vonNummer, "👋 Los geht's: Sprich mir einfach eine kurze *Sprachnachricht* ein, Kunde, Adresse und was gemacht werden soll. Ich mache ein fertiges Angebot daraus. 🎙️");
       }
       return;

@@ -5,6 +5,11 @@ import { EMPFEHLUNGS_PRAEMIE_EUR } from "../empfehlung.js";
 // Nur intern erreichbar über /admin/:ADMIN_TOKEN/betriebe (siehe betreiberRoutes.ts).
 // Reine Render-Funktionen ohne Prisma-Abhängigkeit — die Routen liefern die Daten.
 
+/** Anzeigename für Links: Firma, sonst Name, sonst Nummer (Konten ohne Firma waren sonst nicht anklickbar). */
+function anzeigeName(x: { firma: string; name?: string | null; whatsappNummer?: string | null }): string {
+  return x.firma.trim() || (x.name ?? "").trim() || (x.whatsappNummer ? "+" + x.whatsappNummer : "(ohne Namen)");
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -166,22 +171,22 @@ function alarmBox(basis: string, a: Alarme): string {
   const zeilen: string[] = [];
   for (const k of a.inaktiveKunden) {
     zeilen.push(
-      `<li>💤 <a href="${basis}/betrieb/${k.id}"><b>${escapeHtml(k.firma)}</b></a> ist seit ${k.tage} Tagen inaktiv — anrufen?</li>`,
+      `<li>💤 <a href="${basis}/betrieb/${k.id}"><b>${escapeHtml(anzeigeName(k))}</b></a> ist seit ${k.tage} Tagen inaktiv — anrufen?</li>`,
     );
   }
   for (const t of a.testAmLimit) {
     zeilen.push(
-      `<li>🧪 Test-Konto <a href="${basis}/betrieb/${t.id}"><b>${escapeHtml(t.firma)}</b></a> am Limit (${t.nachrichten}/${t.limit} Nachrichten) — nachfassen und zum Abo einladen?</li>`,
+      `<li>🧪 Test-Konto <a href="${basis}/betrieb/${t.id}"><b>${escapeHtml(anzeigeName(t))}</b></a> am Limit (${t.nachrichten}/${t.limit} Nachrichten) — nachfassen und zum Abo einladen?</li>`,
     );
   }
   for (const r of a.rueckfragen) {
     zeilen.push(
-      `<li>❓ Kundenrückfrage zu Angebot ${escapeHtml(r.nummer)} bei <a href="${basis}/betrieb/${r.id}"><b>${escapeHtml(r.firma)}</b></a> (${datumDE(r.datum)})</li>`,
+      `<li>❓ Kundenrückfrage zu Angebot ${escapeHtml(r.nummer)} bei <a href="${basis}/betrieb/${r.id}"><b>${escapeHtml(anzeigeName(r))}</b></a> (${datumDE(r.datum)})</li>`,
     );
   }
   for (const z of a.zahlungOffen ?? []) {
     zeilen.push(
-      `<li>💳 Zahlung offen bei <a href="${basis}/betrieb/${z.id}"><b>${escapeHtml(z.firma)}</b></a> seit ${datumDE(z.seit)} (${z.versuche} Fehlversuch${z.versuche === 1 ? "" : "e"}) — Stripe wiederholt den Einzug, Betrieb ist informiert</li>`,
+      `<li>💳 Zahlung offen bei <a href="${basis}/betrieb/${z.id}"><b>${escapeHtml(anzeigeName(z))}</b></a> seit ${datumDE(z.seit)} (${z.versuche} Fehlversuch${z.versuche === 1 ? "" : "e"}) — Stripe wiederholt den Einzug, Betrieb ist informiert</li>`,
     );
   }
   if (!zeilen.length) return "";
@@ -217,7 +222,7 @@ export function betreiberListe(args: {
   const zeilenHtml = zeilen
     .map(
       (z) => `<tr>
-      <td><a href="${basis}/betrieb/${z.id}"><b>${escapeHtml(z.firma)}</b></a><br><span style="color:#888;font-size:12.5px;">${escapeHtml(z.name)}</span></td>
+      <td><a href="${basis}/betrieb/${z.id}"><b>${escapeHtml(anzeigeName(z))}</b></a><br><span style="color:#888;font-size:12.5px;">${escapeHtml(z.firma.trim() ? z.name : "")}</span></td>
       <td>+${escapeHtml(z.whatsappNummer)}<br><span style="color:#888;font-size:12.5px;">${escapeHtml(z.email || "—")}</span></td>
       <td>${datumDE(z.erstelltAm)}</td>
       <td style="text-align:right;">${z.angebote}</td>
@@ -382,7 +387,7 @@ export function betreiberDetail(args: {
   <p class="zurueck"><a href="${basis}/betriebe">← Zur Kundenliste</a></p>
   <div class="kopfzeile">
     <div>
-      <h1>${escapeHtml(b.firma)}</h1>
+      <h1>${escapeHtml(anzeigeName(b))}</h1>
       <p class="unter">${escapeHtml(b.name)} · ${escapeHtml(b.gewerkTyp)}${b.ort ? " · " + escapeHtml(b.ort) : ""} · Mitglied seit ${datumDE(b.erstelltAm)}</p>
     </div>
     <div>${statusBadge(b)}</div>
@@ -627,7 +632,7 @@ export function betreiberUmsatz(args: {
   const topHtml = topKunden
     .map(
       (k) =>
-        `<tr><td><a href="${basis}/betrieb/${k.id}"><b>${escapeHtml(k.firma)}</b></a></td><td>${k.tarif ? `<span class="badge b-test">${escapeHtml(k.tarif)}</span>` : "—"}</td><td style="text-align:right;">${euroDE(k.umsatz)}</td></tr>`,
+        `<tr><td><a href="${basis}/betrieb/${k.id}"><b>${escapeHtml(anzeigeName(k))}</b></a></td><td>${k.tarif ? `<span class="badge b-test">${escapeHtml(k.tarif)}</span>` : "—"}</td><td style="text-align:right;">${euroDE(k.umsatz)}</td></tr>`,
     )
     .join("");
 

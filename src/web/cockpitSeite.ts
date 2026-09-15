@@ -37,8 +37,16 @@ export function cockpitSeite(args: {
   dokumente: DokUebersicht[];
   kennzahlen: Kennzahlen;
   token: string;
+  /** Offene Abo-Zahlung (Stripe): Hinweis oben mit Link zur Zahlungsart. */
+  zahlungOffen?: { seit: Date; portalUrl: string; rechnungUrl: string | null } | null;
 }): string {
-  const { handwerker: h, logoDataUrl, dokumente, kennzahlen, token } = args;
+  const { handwerker: h, logoDataUrl, dokumente, kennzahlen, token, zahlungOffen } = args;
+  const zahlungHinweis = zahlungOffen
+    ? `<div class="panel zahlung-offen"><div class="panel-b">
+        <b>💳 Deine Abo-Zahlung hat nicht geklappt.</b> Seit dem ${zahlungOffen.seit.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })} konnten wir die Rechnung nicht einziehen. Dein Zugang bleibt, bitte prüfe kurz deine Zahlungsart.
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;"><a class="btn prim" href="${escapeHtml(zahlungOffen.portalUrl)}">Zahlungsart prüfen</a>${zahlungOffen.rechnungUrl ? `<a class="btn" href="${escapeHtml(zahlungOffen.rechnungUrl)}" target="_blank" rel="noopener">Rechnung bezahlen</a>` : ""}</div>
+      </div></div>`
+    : "";
   const versandbereit = Math.max(0, kennzahlen.anzahl - kennzahlen.offen);
   const anrede = h.name ? escapeHtml(h.name.split(" ")[0]) : escapeHtml(h.firma || "");
 
@@ -86,6 +94,7 @@ export function cockpitSeite(args: {
         </a>
       </div>
 
+${zahlungHinweis}
       <div class="stats">
         <div class="stat"><div class="k"><span class="dot"></span>Angebote gesamt</div><div class="v num">${kennzahlen.anzahl}</div><div class="m">alle Angebote &amp; Protokolle</div></div>
         <div class="stat"><div class="k"><span class="dot ok"></span>Versandbereit</div><div class="v num">${versandbereit}</div><div class="m">vollständig kalkuliert</div></div>
@@ -176,7 +185,8 @@ document.querySelectorAll(".seg button").forEach(function(b){
     logoDataUrl,
     titel: "Übersicht",
     content,
-    headExtra: `.t-art{font-size:11.5px;color:var(--faint);margin-top:3px;}
+    headExtra: `
+  .zahlung-offen{border-left:4px solid #e9b949;background:#fff8e6;margin-bottom:16px;}.t-art{font-size:11.5px;color:var(--faint);margin-top:3px;}
   .badge.sent{background:#e6e9ef;color:#454b56;} .badge.sent::before{background:#8a92a0;}
   .row-sent td:not(.t-actions){opacity:.5;}
   .t-actions{white-space:nowrap;width:1%;text-align:right;}

@@ -148,6 +148,13 @@ model Abo {
   stripeCustomerId     String?
   stripeSubscriptionId String?
 
+  // Zahlungsausfall (Stripe Etappe 3, Teil 2): seit wann eine Rechnung offen ist,
+  // wie oft der Einzug scheiterte und der Link zur offenen Stripe-Rechnung.
+  // null/0 = alles bezahlt. Wird bei invoice.paid zurückgesetzt.
+  zahlungOffenSeit      DateTime?
+  zahlungFehlversuche   Int       @default(0)
+  zahlungOffeneRechnung String?
+
   erstelltAm DateTime @default(now())
 
   @@index([stripeSubscriptionId])

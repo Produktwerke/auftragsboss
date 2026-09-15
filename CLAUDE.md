@@ -136,6 +136,21 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 15.09.2026 (6) — STRIPE ETAPPE 3, TEIL 2: ZAHLUNGSAUSFALL (280 Tests, deployt inkl. db push):**
+> - `Abo.zahlungOffenSeit` / `zahlungFehlversuche` / `zahlungOffeneRechnung` (additiv). Webhook `invoice.payment_failed` markiert das Abo
+>   (Versuch n, Link zur gehosteten Rechnung), AdminLog, Hooks (`betrieb/zahlungsausfall.ts`, injizierbar): E-Mail an den Maler
+>   (`email/templates.zahlungsausfallMail`: Zugang bleibt, Zahlungsart im Portal prüfen, Rechnung direkt zahlen) + Betreiber-Alarm
+>   (`meldeStoerung`, Schlüssel `zahlung:<hwId>`, 1×/h). `invoice.paid` setzt zurück + AdminLog STRIPE_ZAHLUNG_NACHGEHOLT + Entwarnung.
+>   `customer.subscription.deleted` bei offener Zahlung → Vermerk „nach n fehlgeschlagenen Einzügen" + Alarm `abo-ende:<hwId>`.
+> - Anzeige: Maler-Cockpit (`/start`) und „Abo & Abrechnung" zeigen den gelben Hinweis mit „Zahlungsart prüfen" (Portal) und „Rechnung
+>   bezahlen"; Betreiber-Cockpit: Warnsignal „💳 Zahlung offen bei …" + Zeile im Abo-Abschnitt der Detailseite.
+> - Bewusst KEIN automatischer Zugriffsentzug: Stripe wiederholt den Einzug (Smart Retries) und beendet das Abo nach den Einstellungen im
+>   Dashboard; sperren entscheidet Dirk im Cockpit. Kein WhatsApp an den Maler (bräuchte eine Meta-Vorlage; bei Bedarf später).
+> - **Dirk im Stripe-Dashboard (Sandbox + später Live):** Einstellungen → Abrechnung → Abonnements und E-Mails: Smart Retries an,
+>   „E-Mails bei fehlgeschlagenen Zahlungen" an, nach den Wiederholungen „Abonnement kündigen"; Webhook-Ereignisse
+>   `invoice.payment_failed` (schon drin) und `customer.subscription.updated`. Test in der Sandbox mit der Karte 4000 0000 0000 0341
+>   (Zahlung schlägt beim Einzug fehl). ⏳ Danach Teil 3: Live-Umstellung.
+
 > **Update 15.09.2026 (5) — EMPFEHLUNGSPROGRAMM: 100 € PRÄMIE FÜR DEN WERBER (Dirks Entscheidung, 276 Tests, deployt inkl. db push):**
 > - Vorher „beide 1 Monat gratis" (Freimonate im Cockpit). Jetzt: Wird der geworbene Kollege Kunde, bekommt der WERBER
 >   `EMPFEHLUNGS_PRAEMIE_EUR` (100 €, `empfehlung.ts`) auf seine kommenden Abrechnungen; der Kollege testet wie jeder 14 Tage kostenlos.

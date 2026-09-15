@@ -156,6 +156,10 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
           nummer: d.nummer,
           datum: d.kundenRueckfrageAm as Date,
         })),
+        // Zahlungsausfall (Stripe): offene Abo-Rechnungen
+        zahlungOffen: abos
+          .filter((a) => a.zahlungOffenSeit)
+          .map((a) => ({ id: a.handwerkerId, firma: firmaVon.get(a.handwerkerId) ?? "Unbekannt", seit: a.zahlungOffenSeit as Date, versuche: a.zahlungFehlversuche })),
       };
 
       const f = (req.query.filter ?? "alle") as BetriebsFilter;
@@ -258,7 +262,16 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
       empfehlungen: empfehlungen.map((e) => ({ id: e.id, firma: e.firma, name: e.name, status: e.status, erstelltAm: e.erstelltAm })),
       logs: logs.map((l) => ({ aktion: l.aktion, detail: l.detail, erstelltAm: l.erstelltAm })),
       abo: abo
-        ? { tarif: abo.tarif, monatspreis: abo.monatspreis, status: abo.status, beginntAm: abo.beginntAm, gekuendigtAm: abo.gekuendigtAm }
+        ? {
+            tarif: abo.tarif,
+            monatspreis: abo.monatspreis,
+            status: abo.status,
+            beginntAm: abo.beginntAm,
+            gekuendigtAm: abo.gekuendigtAm,
+            zahlungOffenSeit: abo.zahlungOffenSeit,
+            zahlungFehlversuche: abo.zahlungFehlversuche,
+            zahlungOffeneRechnung: abo.zahlungOffeneRechnung,
+          }
         : null,
       buchungen: buchungen.map((bu) => ({ typ: bu.typ, betrag: bu.betrag, zeitraum: bu.zeitraum, notiz: bu.notiz, erstelltAm: bu.erstelltAm })),
       aktuellerZeitraum: monatsZeitraum(),

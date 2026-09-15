@@ -103,6 +103,7 @@ export async function aboRoutes(app: FastifyInstance): Promise<void> {
         portalVerfuegbar: Boolean(abo?.stripeCustomerId) && stripeKonfiguriert(),
         gekuendigtZum,
         guthabenEuro,
+        zahlungOffen: abo?.zahlungOffenSeit ? { seit: abo.zahlungOffenSeit, rechnungUrl: abo.zahlungOffeneRechnung } : null,
       }),
     );
   });

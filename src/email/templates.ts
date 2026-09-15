@@ -463,3 +463,34 @@ export function gewaehrleistungsErinnerung(args: {
 </div>`,
   };
 }
+
+/** Zahlungsausfall beim Abo (Stripe Etappe 3): Bitte, die Zahlungsart im Kundenportal zu prüfen. */
+export function zahlungsausfallMail(args: {
+  versuch: number;
+  bruttoEuro: number | null;
+  portalUrl: string;
+  rechnungUrl: string | null;
+}): { betreff: string; html: string } {
+  const { versuch, bruttoEuro, portalUrl, rechnungUrl } = args;
+  const betrag = bruttoEuro != null ? ` über ${bruttoEuro.toLocaleString("de-DE", { style: "currency", currency: "EUR" })}` : "";
+  return {
+    betreff: versuch === 1 ? "💳 Deine AuftragsBoss-Zahlung hat nicht geklappt" : `💳 Erinnerung: AuftragsBoss-Rechnung noch offen (Versuch ${versuch})`,
+    html: `
+<div style="${RAHMEN}">
+  ${kopfBanner}
+  <div style="padding:24px;">
+    <h2 style="color:#b7791f;margin:4px 0 12px;font-size:20px;">💳 Zahlung nicht eingezogen</h2>
+    <p>Wir konnten deine Abo-Rechnung${betrag} gerade nicht einziehen. Das passiert zum Beispiel, wenn eine Karte abgelaufen ist oder das Konto kurz nicht gedeckt war. Dein Zugang bleibt bestehen, Stripe versucht den Einzug in den nächsten Tagen automatisch noch einmal.</p>
+    ${box(
+      `<strong>Bitte kurz prüfen:</strong> Im Kundenportal kannst du deine Zahlungsart aktualisieren, dann klappt der nächste Einzug.
+       <p style="margin:14px 0 0;"><a href="${escapeHtml(portalUrl)}" style="background:#0B5CAD;color:#fff;text-decoration:none;padding:11px 20px;border-radius:8px;font-weight:600;display:inline-block;">Zahlungsart prüfen</a></p>`,
+      AMBER,
+      AMBER_BORDER,
+    )}
+    ${rechnungUrl ? `<p style="font-size:14px;">Du kannst die offene Rechnung auch direkt bezahlen: <a href="${escapeHtml(rechnungUrl)}">Rechnung öffnen</a></p>` : ""}
+    <p style="font-size:14px;color:#666;">Fragen? Antworte einfach auf diese E-Mail.</p>
+    ${signatur}
+  </div>
+</div>`,
+  };
+}

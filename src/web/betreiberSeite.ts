@@ -158,6 +158,8 @@ export interface Alarme {
   inaktiveKunden: Array<{ id: string; firma: string; tage: number }>;
   testAmLimit: Array<{ id: string; firma: string; nachrichten: number; limit: number }>;
   rueckfragen: Array<{ id: string; firma: string; nummer: string; datum: Date }>;
+  /** Stripe-Abos mit offener, fehlgeschlagener Zahlung. */
+  zahlungOffen?: Array<{ id: string; firma: string; seit: Date; versuche: number }>;
 }
 
 function alarmBox(basis: string, a: Alarme): string {
@@ -175,6 +177,11 @@ function alarmBox(basis: string, a: Alarme): string {
   for (const r of a.rueckfragen) {
     zeilen.push(
       `<li>❓ Kundenrückfrage zu Angebot ${escapeHtml(r.nummer)} bei <a href="${basis}/betrieb/${r.id}"><b>${escapeHtml(r.firma)}</b></a> (${datumDE(r.datum)})</li>`,
+    );
+  }
+  for (const z of a.zahlungOffen ?? []) {
+    zeilen.push(
+      `<li>💳 Zahlung offen bei <a href="${basis}/betrieb/${z.id}"><b>${escapeHtml(z.firma)}</b></a> seit ${datumDE(z.seit)} (${z.versuche} Fehlversuch${z.versuche === 1 ? "" : "e"}) — Stripe wiederholt den Einzug, Betrieb ist informiert</li>`,
     );
   }
   if (!zeilen.length) return "";
@@ -297,6 +304,10 @@ export interface AboInfo {
   status: string; // "AKTIV" | "GEKUENDIGT"
   beginntAm: Date;
   gekuendigtAm: Date | null;
+  /** Zahlungsausfall (Stripe): seit wann offen, wie viele Fehlversuche, Link zur Rechnung. */
+  zahlungOffenSeit?: Date | null;
+  zahlungFehlversuche?: number;
+  zahlungOffeneRechnung?: string | null;
 }
 
 export interface BuchungZeile {
@@ -442,7 +453,11 @@ export function betreiberDetail(args: {
             <span class="badge b-test">${escapeHtml(abo.tarif)}</span>
             <b>${euroDE(abo.monatspreis)}/Monat</b> · seit ${datumDE(abo.beginntAm)} ·
             ${abo.status === "AKTIV" ? `<span class="badge b-aktiv">aktiv</span>` : `<span class="badge b-inaktiv">gekündigt${abo.gekuendigtAm ? " am " + datumDE(abo.gekuendigtAm) : ""}</span>`}
-          </p>`
+          </p>${
+            abo.zahlungOffenSeit
+              ? `<p class="hinweis" style="color:#b7791f;">💳 Zahlung offen seit ${datumDE(abo.zahlungOffenSeit)}, ${abo.zahlungFehlversuche ?? 0} Fehlversuch(e). Stripe wiederholt den Einzug, der Betrieb wurde per E-Mail gebeten, die Zahlungsart zu prüfen.${abo.zahlungOffeneRechnung ? ` <a href="${escapeHtml(abo.zahlungOffeneRechnung)}" target="_blank" rel="noopener">Offene Rechnung</a>` : ""}</p>`
+              : ""
+          }`
         : `<p style="margin:0 0 12px;font-size:14px;color:#888;">Noch kein Abo hinterlegt.</p>`
     }
     <form class="zeile" data-post="${aktion("abo")}">

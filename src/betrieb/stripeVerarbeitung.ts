@@ -20,6 +20,7 @@ import { meldeNeuenKunden } from "./betreiberAlarm.js";
 import { nachAboAbschluss } from "./gutschrift.js";
 import { stripeGutschreiben } from "./stripeCheckout.js";
 import { stripeKonfiguriert } from "../config.js";
+import { echteZahlungsHooks, type ZahlungsHooks } from "./zahlungsausfall.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -132,6 +133,8 @@ export async function verarbeiteStripeEvent(
   melde: typeof meldeNeuenKunden = meldeNeuenKunden,
   /** Nach dem Abo-Abschluss: Konto-Guthaben nach Stripe, offene Empfehlung aktivieren (injizierbar). */
   nachCheckout: typeof nachAboAbschluss = (p, hw, cus, g) => nachAboAbschluss(p, hw, cus, g ?? (stripeKonfiguriert() ? stripeGutschreiben : null)),
+  /** Zahlungsausfall: Maler-Mail, Betreiber-Alarm, Entwarnung (injizierbar). */
+  zahlung: ZahlungsHooks = echteZahlungsHooks,
 ): Promise<StripeErgebnis> {
   switch (event.type) {
     case "checkout.session.completed": {
@@ -198,6 +201,20 @@ export async function verarbeiteStripeEvent(
       if (!handwerkerId) {
         console.error(`Stripe: Rechnung ${r.invoiceId} keinem Betrieb zuzuordnen (Abo ${r.subscriptionId}).`);
         return { aktion: "ignoriert", detail: `Rechnung ${r.invoiceId} ohne Betrieb` };
+      }
+      // Zahlungsausfall (Teil 2): war eine Zahlung offen, ist sie jetzt nachgeholt.
+      if (abo?.zahlungOffenSeit) {
+        await prisma.abo.updateMany({
+          where: { stripeSubscriptionId: r.subscriptionId },
+          data: { zahlungOffenSeit: null, zahlungFehlversuche: 0, zahlungOffeneRechnung: null },
+        });
+        const hwOffen = await prisma.handwerker.findUnique({ where: { id: handwerkerId } });
+        if (hwOffen) {
+          await prisma.adminLog.create({
+            data: { aktion: "STRIPE_ZAHLUNG_NACHGEHOLT", handwerkerId, betrieb: hwOffen.firma || hwOffen.name, detail: `Rechnung ${r.invoiceId} nach ${abo.zahlungFehlversuche} Fehlversuch(en) bezahlt` },
+          });
+          await zahlung.nachgeholt(prisma, hwOffen);
+        }
       }
       // Idempotenz: dieselbe Stripe-Rechnung nie doppelt buchen. Anker ist
       // das eigene Unique-Feld stripeInvoiceId (Audit AB-M04) — die frühere
@@ -276,15 +293,17 @@ export async function verarbeiteStripeEvent(
         data: { status: "GEKUENDIGT", gekuendigtAm: new Date() },
       });
       const hw = await prisma.handwerker.findUnique({ where: { id: abo.handwerkerId } });
+      const nachAusfall = !!abo.zahlungOffenSeit;
       await prisma.adminLog.create({
         data: {
           aktion: "STRIPE_ABO_GEKUENDIGT",
           handwerkerId: abo.handwerkerId,
           betrieb: hw ? hw.firma || hw.name : "(unbekannt)",
-          detail: `Abo ${subId} über Stripe beendet`,
+          detail: nachAusfall ? `Abo ${subId} von Stripe nach ${abo.zahlungFehlversuche} fehlgeschlagenen Einzügen beendet` : `Abo ${subId} über Stripe beendet`,
         },
       });
-      return { aktion: "gekuendigt", detail: subId };
+      if (nachAusfall && hw) await zahlung.aboBeendet(prisma, hw);
+      return { aktion: "gekuendigt", detail: `${subId}${nachAusfall ? " (Zahlungsausfall)" : ""}` };
     }
 
     case "charge.refunded": {
@@ -337,15 +356,25 @@ export async function verarbeiteStripeEvent(
         ? await prisma.abo.findFirst({ where: { stripeSubscriptionId: r.subscriptionId } })
         : null;
       if (abo) {
+        const inv = event.data.object;
+        const versuch = (abo.zahlungFehlversuche ?? 0) + 1;
+        const rechnungUrl = typeof inv?.hosted_invoice_url === "string" ? inv.hosted_invoice_url : null;
+        const bruttoEuro = typeof inv?.amount_due === "number" ? inv.amount_due / 100 : typeof inv?.total === "number" ? inv.total / 100 : null;
+        await prisma.abo.updateMany({
+          where: { stripeSubscriptionId: r.subscriptionId! },
+          data: { zahlungOffenSeit: abo.zahlungOffenSeit ?? new Date(), zahlungFehlversuche: versuch, zahlungOffeneRechnung: rechnungUrl },
+        });
         const hw = await prisma.handwerker.findUnique({ where: { id: abo.handwerkerId } });
         await prisma.adminLog.create({
           data: {
             aktion: "STRIPE_ZAHLUNG_FEHLGESCHLAGEN",
             handwerkerId: abo.handwerkerId,
             betrieb: hw ? hw.firma || hw.name : "(unbekannt)",
-            detail: `Rechnung ${r.invoiceId ?? "?"} — Stripe versucht es automatisch erneut`,
+            detail: `Rechnung ${r.invoiceId ?? "?"}, Versuch ${versuch}: Stripe wiederholt den Einzug, Betrieb per E-Mail informiert`,
           },
         });
+        if (hw) await zahlung.fehlgeschlagen(prisma, hw, { versuch, rechnungUrl, bruttoEuro });
+        return { aktion: "zahlung-fehlgeschlagen", detail: `${r.invoiceId ?? "?"} (Versuch ${versuch})` };
       }
       return { aktion: "zahlung-fehlgeschlagen", detail: r.invoiceId ?? undefined };
     }

@@ -786,10 +786,16 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       data: { ziel: "cockpit", geraet: geraetAusUA(req.headers["user-agent"]) },
     });
 
+    // Offene Abo-Zahlung (Stripe Etappe 3, Teil 2): Hinweis mit Portal-Link.
+    const aboStand = await prisma.abo.findUnique({ where: { handwerkerId: handwerker.id } });
+    const zahlungOffen = aboStand?.zahlungOffenSeit
+      ? { seit: aboStand.zahlungOffenSeit, portalUrl: `/abo/verwalten/${req.params.token}`, rechnungUrl: aboStand.zahlungOffeneRechnung }
+      : null;
+
     return reply.type("text/html; charset=utf-8").send(
       cockpitSeite({
         handwerker, logoDataUrl: logo?.dataUrl ?? null, akzent,
-        dokumente: uebersicht, kennzahlen, token: req.params.token,
+        dokumente: uebersicht, kennzahlen, token: req.params.token, zahlungOffen,
       }),
     );
   });

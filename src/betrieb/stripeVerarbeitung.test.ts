@@ -193,6 +193,53 @@ describe("Stripe: Ereignis-Verarbeitung", () => {
     expect(erste.data.detail).toContain("Kundenportal");
   });
 
+  it("Zahlungsausfall: markiert das Abo, ruft den Hook, und invoice.paid hebt es wieder auf", async () => {
+    const abo = { handwerkerId: "hw1", stripeSubscriptionId: "sub_123", zahlungOffenSeit: null, zahlungFehlversuche: 0 };
+    const { p, aufrufe } = fakePrisma({ abo, handwerker: { id: "hw1", firma: "Maler Müller GmbH", name: "Müller", email: "m@x.de" } });
+    const hooks = { fehlgeschlagen: vi.fn(async () => {}), nachgeholt: vi.fn(async () => {}), aboBeendet: vi.fn(async () => {}) };
+    const erg = await verarbeiteStripeEvent(
+      p,
+      { type: "invoice.payment_failed", data: { object: { id: "in_9", subscription: "sub_123", hosted_invoice_url: "https://stripe.test/in_9", amount_due: 9401 } } },
+      vi.fn(async () => true),
+      undefined,
+      hooks,
+    );
+    expect(erg.aktion).toBe("zahlung-fehlgeschlagen");
+    expect(erg.detail).toContain("Versuch 1");
+    const um = aufrufe.aboUpdateMany[0] as { data: Record<string, unknown> };
+    expect(um.data.zahlungFehlversuche).toBe(1);
+    expect(um.data.zahlungOffeneRechnung).toBe("https://stripe.test/in_9");
+    expect(um.data.zahlungOffenSeit).toBeInstanceOf(Date);
+    expect(hooks.fehlgeschlagen).toHaveBeenCalledTimes(1);
+    expect((hooks.fehlgeschlagen.mock.calls[0] as unknown[])[2]).toEqual({ versuch: 1, rechnungUrl: "https://stripe.test/in_9", bruttoEuro: 94.01 });
+
+    // Nachgeholt: invoice.paid mit offener Zahlung setzt zurück und entwarnt
+    const offen = { ...abo, zahlungOffenSeit: new Date(), zahlungFehlversuche: 2 };
+    const zweite = fakePrisma({ abo: offen, handwerker: { id: "hw1", firma: "Maler Müller GmbH", name: "Müller", email: "m@x.de" } });
+    const bezahlt = await verarbeiteStripeEvent(
+      zweite.p,
+      { type: "invoice.paid", data: { object: { id: "in_10", subscription: "sub_123", total_excluding_tax: 7900, lines: { data: [{ period: { start: 1759276800 }, price: { lookup_key: "profi" } }] } } } },
+      vi.fn(async () => true),
+      undefined,
+      hooks,
+    );
+    expect(bezahlt.aktion).toBe("gebucht");
+    const reset = zweite.aufrufe.aboUpdateMany[0] as { data: Record<string, unknown> };
+    expect(reset.data.zahlungOffenSeit).toBeNull();
+    expect(reset.data.zahlungFehlversuche).toBe(0);
+    expect(hooks.nachgeholt).toHaveBeenCalledTimes(1);
+  });
+
+  it("Abo-Ende nach Zahlungsausfall wird als solches vermerkt und gemeldet", async () => {
+    const abo = { handwerkerId: "hw1", stripeSubscriptionId: "sub_123", zahlungOffenSeit: new Date(), zahlungFehlversuche: 4 };
+    const { p, aufrufe } = fakePrisma({ abo, handwerker: { id: "hw1", firma: "Maler Müller GmbH", name: "Müller", email: "" } });
+    const hooks = { fehlgeschlagen: vi.fn(async () => {}), nachgeholt: vi.fn(async () => {}), aboBeendet: vi.fn(async () => {}) };
+    const erg = await verarbeiteStripeEvent(p, { type: "customer.subscription.deleted", data: { object: { id: "sub_123" } } }, vi.fn(async () => true), undefined, hooks);
+    expect(erg.detail).toContain("Zahlungsausfall");
+    expect((aufrufe.adminLogCreate[0] as { data: { detail: string } }).data.detail).toContain("4 fehlgeschlagenen Einzügen");
+    expect(hooks.aboBeendet).toHaveBeenCalledTimes(1);
+  });
+
   // Original-Buchung, auf die sich die Erstattungen beziehen (Netto 99 €).
   const origBuchung = { handwerkerId: "hw1", betrieb: "Maler Müller GmbH", betrag: 99, zeitraum: "2026-08" };
   const erstattungsEvent = (erstattetCent: number) => ({

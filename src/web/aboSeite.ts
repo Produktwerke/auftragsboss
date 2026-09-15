@@ -36,8 +36,16 @@ export function aboSeite(args: {
   gekuendigtZum?: Date | null;
   /** Offenes Guthaben in Euro (Empfehlungsprämie), wird mit den nächsten Rechnungen verrechnet. */
   guthabenEuro?: number;
+  /** Offene, fehlgeschlagene Abo-Zahlung (Stripe). */
+  zahlungOffen?: { seit: Date; rechnungUrl: string | null } | null;
 }): string {
-  const { handwerker: h, token, werbeUrl, abo, aboBuchbar, rechnungen = [], hatStripeKunde, portalVerfuegbar, gekuendigtZum, guthabenEuro = 0 } = args;
+  const { handwerker: h, token, werbeUrl, abo, aboBuchbar, rechnungen = [], hatStripeKunde, portalVerfuegbar, gekuendigtZum, guthabenEuro = 0, zahlungOffen } = args;
+  const zahlungHinweis = zahlungOffen
+    ? `<div class="panel zahlung-offen"><div class="panel-b">
+        <b>💳 Deine Abo-Zahlung hat nicht geklappt.</b> Seit dem ${zahlungOffen.seit.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })} konnten wir die Rechnung nicht einziehen. Dein Zugang bleibt, bitte prüfe kurz deine Zahlungsart.
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;"><a class="btn prim" href="/abo/verwalten/${escapeHtml(token)}">Zahlungsart prüfen</a>${zahlungOffen.rechnungUrl ? `<a class="btn" href="${escapeHtml(zahlungOffen.rechnungUrl)}" target="_blank" rel="noopener">Rechnung bezahlen</a>` : ""}</div>
+      </div></div>`
+    : "";
   const datumDE = (d: Date) => d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
   const euro = (n: number) => n.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
   const guthabenZeile =
@@ -153,6 +161,7 @@ export function aboSeite(args: {
           <p class="sub">Dein Tarif, deine Rechnungen und dein Empfehlungs-Bonus an einem Ort.</p>
         </div>
       </div>
+${zahlungHinweis}
 ${aboPanel}
 ${guthabenZeile}
 ${rechnungsPanel}
@@ -224,6 +233,7 @@ window.linkKopieren = linkKopieren; window.perMailEinladen = perMailEinladen;
   .abo-v{font-size:16px;font-weight:700;}
   .abo-fuss{border-top:1px solid var(--line);padding-top:14px;}
   .abo-guthaben{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+  .zahlung-offen{border-left:4px solid #e9b949;background:#fff8e6;}
   .abo-hinweis{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.55;}
   .abo-aktionen{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
   .abo-erkl{color:var(--faint);font-size:13px;}

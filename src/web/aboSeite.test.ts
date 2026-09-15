@@ -21,6 +21,15 @@ describe("Abo & Abrechnung: Kundenportal (Stripe Etappe 3)", () => {
     expect(html).toContain("zurücknehmen");
   });
 
+  it("zeigt offenes Guthaben mit Hinweis auf die Verrechnung, sonst nichts", () => {
+    const mit = aboSeite({ ...basis, abo: { tarif: "PROFI", monatspreis: 79, status: "AKTIV" }, hatStripeKunde: true, portalVerfuegbar: true, guthabenEuro: 100 });
+    expect(mit).toContain("Dein Guthaben");
+    expect(mit).toContain("100,00");
+    expect(mit).toContain("nächsten Rechnungen verrechnet");
+    const ohne = aboSeite({ ...basis, abo: { tarif: "PROFI", monatspreis: 79, status: "AKTIV" }, hatStripeKunde: true, portalVerfuegbar: true, guthabenEuro: 0 });
+    expect(ohne).not.toContain("Dein Guthaben");
+  });
+
   it("ohne Stripe-Kunde (manuelles Abo) kein Portal-Knopf", () => {
     const html = aboSeite({ ...basis, abo: { tarif: "INDIVIDUELL", monatspreis: 60, status: "AKTIV" }, hatStripeKunde: false, portalVerfuegbar: false });
     expect(html).not.toContain("/abo/verwalten/");

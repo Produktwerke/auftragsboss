@@ -14,6 +14,7 @@ import {
   erzeugePortalUrl,
   ladeAboLaufzeit,
   ladeRechnungen,
+  ladeStripeGuthaben,
   type BuchbarerTarif,
   type RechnungsZeile,
 } from "../betrieb/stripeCheckout.js";
@@ -67,7 +68,14 @@ export async function aboRoutes(app: FastifyInstance): Promise<void> {
     // Fehler sind nicht fatal — die Seite zeigt dann einfach keine Liste.
     let rechnungen: RechnungsZeile[] = [];
     let gekuendigtZum: Date | null = null;
+    // Offenes Guthaben (Empfehlungsprämie): Stripe-Kunde → Stripe-Saldo, sonst Konto-Guthaben.
+    let guthabenEuro = handwerker.guthabenEuro;
     if (abo?.stripeCustomerId && stripeKonfiguriert()) {
+      try {
+        guthabenEuro += await ladeStripeGuthaben(abo.stripeCustomerId);
+      } catch (err) {
+        req.log.warn({ err }, "Stripe-Guthaben konnte nicht geladen werden");
+      }
       try {
         rechnungen = await ladeRechnungen(abo.stripeCustomerId);
       } catch (err) {
@@ -94,6 +102,7 @@ export async function aboRoutes(app: FastifyInstance): Promise<void> {
         hatStripeKunde: Boolean(abo?.stripeCustomerId),
         portalVerfuegbar: Boolean(abo?.stripeCustomerId) && stripeKonfiguriert(),
         gekuendigtZum,
+        guthabenEuro,
       }),
     );
   });

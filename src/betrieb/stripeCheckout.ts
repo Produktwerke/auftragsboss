@@ -182,3 +182,10 @@ export async function stripeGutschreiben(stripeCustomerId: string, euro: number,
     description: beschreibung.slice(0, 350),
   });
 }
+
+/** Offenes Guthaben eines Stripe-Kunden in Euro (Stripe führt Guthaben als negativen Saldo). */
+export async function ladeStripeGuthaben(stripeCustomerId: string): Promise<number> {
+  const kunde = await stripe().customers.retrieve(stripeCustomerId);
+  if ("deleted" in kunde && kunde.deleted) return 0;
+  return Math.max(0, -(kunde.balance ?? 0)) / 100;
+}

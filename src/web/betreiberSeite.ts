@@ -323,7 +323,7 @@ export interface EmpfehlungZeile {
 
 export function betreiberDetail(args: {
   basis: string;
-  betrieb: BetriebZeile & { blockiertGrund: string | null; blockiertAm: Date | null; gewerkTyp: string; ort: string | null };
+  betrieb: BetriebZeile & { blockiertGrund: string | null; blockiertAm: Date | null; gewerkTyp: string; ort: string | null; stripeGuthabenEuro?: number };
   usage: { versandbereit: number; offenePreise: number; versendet: number; protokolle: number };
   angebote: AngebotZeile[]; // die letzten N
   empfehlungen: EmpfehlungZeile[];
@@ -389,7 +389,7 @@ export function betreiberDetail(args: {
     <div class="kachel"><div class="wert">${usage.versandbereit}</div><div class="lab">Versandbereit</div></div>
     <div class="kachel"><div class="wert">${usage.offenePreise}</div><div class="lab">Offene Preise</div></div>
     <div class="kachel"><div class="wert">${usage.versendet}</div><div class="lab">Versendet</div></div>
-    <div class="kachel"><div class="wert">${euroDE(b.guthabenEuro)}</div><div class="lab">Guthaben offen</div></div>
+    <div class="kachel"><div class="wert">${euroDE(b.guthabenEuro + (b.stripeGuthabenEuro ?? 0))}</div><div class="lab">Guthaben offen${b.stripeGuthabenEuro ? ` (davon ${euroDE(b.stripeGuthabenEuro)} in Stripe)` : ""}</div></div>
     <div class="kachel"><div class="wert">${euroDE(b.umsatz)}</div><div class="lab">Umsatz seit Beitritt</div></div>
     <div class="kachel"><div class="wert">${euroDE(kiKosten.cent30Tage / 100)}</div><div class="lab">KI-Kosten, 30 Tage</div></div>
     <div class="kachel"><div class="wert">${euroDE(kiKosten.centGesamt / 100)}</div><div class="lab">KI-Kosten gesamt</div></div>

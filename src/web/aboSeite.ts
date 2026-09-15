@@ -34,10 +34,16 @@ export function aboSeite(args: {
   portalVerfuegbar?: boolean;
   /** Vorgemerkte Kündigung zum Periodenende (aus Stripe); null = läuft weiter. */
   gekuendigtZum?: Date | null;
+  /** Offenes Guthaben in Euro (Empfehlungsprämie), wird mit den nächsten Rechnungen verrechnet. */
+  guthabenEuro?: number;
 }): string {
-  const { handwerker: h, token, werbeUrl, abo, aboBuchbar, rechnungen = [], hatStripeKunde, portalVerfuegbar, gekuendigtZum } = args;
+  const { handwerker: h, token, werbeUrl, abo, aboBuchbar, rechnungen = [], hatStripeKunde, portalVerfuegbar, gekuendigtZum, guthabenEuro = 0 } = args;
   const datumDE = (d: Date) => d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
   const euro = (n: number) => n.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
+  const guthabenZeile =
+    guthabenEuro > 0
+      ? `<div class="panel"><div class="panel-b abo-guthaben"><span class="abo-k">Dein Guthaben</span><span class="abo-v">${euro(guthabenEuro)}</span><span class="abo-erkl">wird mit deinen nächsten Rechnungen verrechnet und steht dort ausgewiesen</span></div></div>`
+      : "";
   const teilenText = empfehlungsText(h.firma || "Ein Kollege", werbeUrl);
   const waHref = `https://wa.me/?text=${encodeURIComponent(teilenText)}`;
   const mailHref = `mailto:?subject=${encodeURIComponent("Empfehlung: AuftragsBoss")}&body=${encodeURIComponent(teilenText)}`;
@@ -148,6 +154,7 @@ export function aboSeite(args: {
         </div>
       </div>
 ${aboPanel}
+${guthabenZeile}
 ${rechnungsPanel}
       <div class="panel promo">
         <div class="promo-head">
@@ -216,6 +223,7 @@ window.linkKopieren = linkKopieren; window.perMailEinladen = perMailEinladen;
   .abo-k{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);margin-bottom:4px;}
   .abo-v{font-size:16px;font-weight:700;}
   .abo-fuss{border-top:1px solid var(--line);padding-top:14px;}
+  .abo-guthaben{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
   .abo-hinweis{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.55;}
   .abo-aktionen{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
   .abo-erkl{color:var(--faint);font-size:13px;}

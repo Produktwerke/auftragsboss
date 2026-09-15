@@ -17,7 +17,7 @@ import type { FastifyInstance } from "fastify";
 import { unlink } from "node:fs/promises";
 import { prisma } from "../pipeline.js";
 import { schreibeGut, verrechneGuthaben, aktiviereEmpfehlung } from "../betrieb/gutschrift.js";
-import { stripeGutschreiben } from "../betrieb/stripeCheckout.js";
+import { stripeGutschreiben, ladeStripeGuthaben } from "../betrieb/stripeCheckout.js";
 import { stripeKonfiguriert } from "../config.js";
 import {
   betreiberListe,
@@ -206,6 +206,16 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
       centGesamt: summiereKostenCent(kiEvents),
     };
 
+    // Guthaben in Stripe (Empfehlungsprämie bei Online-Kunden) mit anzeigen; Fehler nicht fatal.
+    let stripeGuthaben = 0;
+    if (abo?.stripeCustomerId && stripeKonfiguriert()) {
+      try {
+        stripeGuthaben = await ladeStripeGuthaben(abo.stripeCustomerId);
+      } catch (err) {
+        req.log.warn({ err }, "Stripe-Guthaben konnte nicht geladen werden");
+      }
+    }
+
     const angebote = dokumente.filter((d) => d.art === "ANGEBOT");
     const usage = {
       versandbereit: angebote.filter((d) => !d.versendetAm && d.anzahlOffen === 0).length,
@@ -228,6 +238,7 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
         blockiertAm: h.blockiertAm,
         erstelltAm: h.erstelltAm,
         guthabenEuro: h.guthabenEuro,
+        stripeGuthabenEuro: stripeGuthaben,
         gewerkTyp: h.gewerkTyp,
         ort: h.ort,
         angebote: angebote.length,

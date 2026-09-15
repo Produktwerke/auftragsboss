@@ -104,6 +104,9 @@ export const anthropicConfig = lade(
   "Anthropic",
   z.object({
     ANTHROPIC_API_KEY: z.string().startsWith("sk-ant-", "muss mit 'sk-ant-' beginnen"),
+    // Angebots-KI (15.09.2026, Kostenproben): Modell und Denktiefe ohne Deploy umstellbar.
+    ANGEBOT_MODELL: z.string().trim().min(1).default("claude-fable-5"),
+    ANGEBOT_EFFORT: z.enum(["low", "medium", "high", "xhigh", "max"]).default("high"),
   }),
 );
 

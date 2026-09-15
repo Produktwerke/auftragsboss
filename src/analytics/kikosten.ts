@@ -7,9 +7,13 @@
 // Es geht um die Größenordnung je Kunde ("kostet mich ein 49-€-Kunde 80 €?"),
 // nicht um centgenaue Anbieterabrechnung.
 
-/** EUR je 1 Mio. Token (Anthropic, Sonnet-Klasse als Annahme für claude-fable-5). */
-export const PREIS_CLAUDE_EIN_JE_1M_EUR = 2.8;
-export const PREIS_CLAUDE_AUS_JE_1M_EUR = 14.0;
+/** EUR je 1 Mio. Token für Claude Fable 5 (Listenpreis 10 $ / 50 $, Kurs 0,92 €/$; Stand 15.09.2026).
+ *  Vorher stand hier fälschlich die Sonnet-Klasse (2,80/14,00), das Cockpit zeigte ein Viertel der echten Kosten. */
+export const PREIS_CLAUDE_EIN_JE_1M_EUR = 9.2;
+export const PREIS_CLAUDE_AUS_JE_1M_EUR = 46.0;
+/** Prompt-Caching: gelesene Token kosten 0,1×, in den 1-Stunden-Cache geschriebene 2× des Eingabepreises. */
+export const PREIS_CLAUDE_CACHE_LESEN_JE_1M_EUR = PREIS_CLAUDE_EIN_JE_1M_EUR * 0.1;
+export const PREIS_CLAUDE_CACHE_SCHREIBEN_JE_1M_EUR = PREIS_CLAUDE_EIN_JE_1M_EUR * 2;
 
 /** EUR je Audiominute — BEIDE Transkriptionen zusammen (whisper-1 + gpt-4o-transcribe,
  *  je ~0,55 ct/min). Wer die Doppel-Transkription abschaltet, halbiert den Wert. */
@@ -23,11 +27,17 @@ export function schaetzeAudioSekunden(bytes: number): number {
 }
 
 /** Kosten eines Claude-Aufrufs in EUR-Cent (aufgerundet, min. 1 Cent bei Nutzung). */
-export function kostenClaudeCent(tokensEin: number, tokensAus: number): number {
+export function kostenClaudeCent(tokensEin: number, tokensAus: number, cache?: { gelesen: number; geschrieben: number }): number {
   const ein = Math.max(0, tokensEin || 0);
   const aus = Math.max(0, tokensAus || 0);
-  if (ein + aus === 0) return 0;
-  const eur = (ein / 1_000_000) * PREIS_CLAUDE_EIN_JE_1M_EUR + (aus / 1_000_000) * PREIS_CLAUDE_AUS_JE_1M_EUR;
+  const gelesen = Math.max(0, cache?.gelesen || 0);
+  const geschrieben = Math.max(0, cache?.geschrieben || 0);
+  if (ein + aus + gelesen + geschrieben === 0) return 0;
+  const eur =
+    (ein / 1_000_000) * PREIS_CLAUDE_EIN_JE_1M_EUR +
+    (aus / 1_000_000) * PREIS_CLAUDE_AUS_JE_1M_EUR +
+    (gelesen / 1_000_000) * PREIS_CLAUDE_CACHE_LESEN_JE_1M_EUR +
+    (geschrieben / 1_000_000) * PREIS_CLAUDE_CACHE_SCHREIBEN_JE_1M_EUR;
   return Math.max(1, Math.ceil(eur * 100));
 }
 

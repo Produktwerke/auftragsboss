@@ -394,13 +394,29 @@ export interface DialogNachricht {
  * enthält der Dialog auch die gestellten Fragen und die Antworten darauf —
  * so kann die KI Angaben aus späteren Nachrichten korrekt einsortieren.
  */
+/** Cache-Nutzung eines Aufrufs (Prompt-Caching): gelesene Token kosten ein Zehntel, geschriebene das Doppelte. */
+export interface CacheNutzung {
+  gelesen: number;
+  geschrieben: number;
+}
+
+/** Modell und Denktiefe je Aufruf (Vorgabe aus der .env: ANGEBOT_MODELL, ANGEBOT_EFFORT). */
+export interface KiOptionen {
+  modell?: string;
+  effort?: "low" | "medium" | "high" | "xhigh" | "max";
+}
+
 export async function strukturiereDialog(
   nachrichten: DialogNachricht[],
   preisliste: Preisliste,
   /** Optional: meldet den Token-Verbrauch (Kosten-Tracking im Betreiber-Cockpit). */
-  verbrauch?: (tokensEin: number, tokensAus: number) => void,
+  verbrauch?: (tokensEin: number, tokensAus: number, cache?: CacheNutzung) => void,
+  optionen: KiOptionen = {},
 ): Promise<DokumentDaten> {
-  const anthropic = new Anthropic({ apiKey: anthropicConfig().ANTHROPIC_API_KEY });
+  const cfg = anthropicConfig();
+  const anthropic = new Anthropic({ apiKey: cfg.ANTHROPIC_API_KEY });
+  const modell = optionen.modell ?? cfg.ANGEBOT_MODELL;
+  const effort = optionen.effort ?? cfg.ANGEBOT_EFFORT;
   const b = preisliste.betrieb;
 
   const verlauf = nachrichten
@@ -425,12 +441,17 @@ export async function strukturiereDialog(
   // Als STREAM: ab etwa 21.000 max_tokens verweigert das SDK den normalen
   // Aufruf („Streaming is required for operations that may take longer than
   // 10 minutes"); finalMessage() liefert dieselbe geparste Antwort.
+  // PROMPT-CACHING (15.09.2026): Die Anleitung (Regeln, Fachwissen, Preisliste)
+  // ist rund 18.000 Token und je Betrieb byte-identisch. Mit dem Cache-Marker
+  // kostet sie ab dem zweiten Aufruf ein Zehntel. 1-Stunden-Frist, weil die
+  // Aufrufe eines Auftrags (Rückfrage, Fotos, Fassungen) Minuten auseinanderliegen.
+  // Alles Veränderliche (Verlauf, Betriebsname) steht in der Nutzernachricht danach.
   const anfrage = () =>
     anthropic.messages.stream({
-      model: "claude-fable-5",
+      model: modell,
       max_tokens: 32000,
       thinking: { type: "adaptive" },
-      system: systemPrompt(preisliste),
+      system: [{ type: "text", text: systemPrompt(preisliste), cache_control: { type: "ephemeral", ttl: "1h" } }],
       messages: [
         {
           role: "user",
@@ -441,7 +462,7 @@ export async function strukturiereDialog(
             `frühere. Stelle keine Frage erneut, die bereits beantwortet wurde.`,
         },
       ],
-      output_config: { format: zodOutputFormat(DokumentSchema) },
+      output_config: { format: zodOutputFormat(DokumentSchema), effort },
     }).finalMessage();
   let response: Awaited<ReturnType<typeof anfrage>>;
   try {
@@ -456,7 +477,14 @@ export async function strukturiereDialog(
   // "refusal") — bei Handwerker-Diktaten praktisch ausgeschlossen, aber
   // sauber abfangen statt kryptisch scheitern.
   // Verbrauch auch bei refusal melden — die Token sind trotzdem angefallen.
-  verbrauch?.(response.usage?.input_tokens ?? 0, response.usage?.output_tokens ?? 0);
+  const cache: CacheNutzung = {
+    gelesen: response.usage?.cache_read_input_tokens ?? 0,
+    geschrieben: response.usage?.cache_creation_input_tokens ?? 0,
+  };
+  console.log(
+    `🧠 KI ${modell}/${effort}: ein ${response.usage?.input_tokens ?? 0} + Cache gelesen ${cache.gelesen} + geschrieben ${cache.geschrieben}, aus ${response.usage?.output_tokens ?? 0}`,
+  );
+  verbrauch?.(response.usage?.input_tokens ?? 0, response.usage?.output_tokens ?? 0, cache);
 
   if (response.stop_reason === "refusal") {
     throw new Error("Die KI hat die Verarbeitung abgelehnt (refusal) — bitte Diktat prüfen.");

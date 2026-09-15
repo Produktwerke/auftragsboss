@@ -22,11 +22,16 @@ describe("schaetzeAudioSekunden", () => {
 
 describe("kostenClaudeCent", () => {
   it("rechnet Ein-/Ausgabetoken getrennt", () => {
-    // 1M ein (2,80 €) + 1M aus (14,00 €) = 16,80 € = 1680 Cent
-    expect(kostenClaudeCent(1_000_000, 1_000_000)).toBe(1680);
+    // 1M ein (9,20 €) + 1M aus (46,00 €) = 55,20 € = 5520 Cent
+    expect(kostenClaudeCent(1_000_000, 1_000_000)).toBe(5520);
+  });
+  it("rechnet Cache-Token mit: gelesen 0,1×, geschrieben 2× des Eingabepreises", () => {
+    // 1M gelesen = 0,92 € = 92 Cent; 1M geschrieben = 18,40 € = 1840 Cent
+    expect(kostenClaudeCent(0, 0, { gelesen: 1_000_000, geschrieben: 0 })).toBe(92);
+    expect(kostenClaudeCent(0, 0, { gelesen: 0, geschrieben: 1_000_000 })).toBe(1840);
   });
   it("kleine Aufrufe kosten mindestens 1 Cent", () => {
-    expect(kostenClaudeCent(1000, 500)).toBe(1);
+    expect(kostenClaudeCent(100, 10)).toBe(1);
   });
   it("0 Token = 0 Cent", () => {
     expect(kostenClaudeCent(0, 0)).toBe(0);

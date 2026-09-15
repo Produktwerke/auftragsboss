@@ -564,10 +564,17 @@ export async function werteVorgangAus(args: {
     await sendeWhatsAppText(vonNummer, "🎙️ Mir fehlt noch der Auftrag, diktier mir kurz, worum es geht.");
     return;
   }
-  const daten = await strukturiereDialog(dialog, preisliste, (ein, aus) => {
+  const daten = await strukturiereDialog(dialog, preisliste, (ein, aus, cache) => {
     void spurEvent(prisma, "KI_AUFRUF", {
       handwerkerId: handwerker.id,
-      data: { dienst: "struktur", tokensEin: ein, tokensAus: aus, kostenCent: kostenClaudeCent(ein, aus) },
+      data: {
+        dienst: "struktur",
+        tokensEin: ein,
+        tokensAus: aus,
+        cacheGelesen: cache?.gelesen ?? 0,
+        cacheGeschrieben: cache?.geschrieben ?? 0,
+        kostenCent: kostenClaudeCent(ein, aus, cache),
+      },
     });
   });
   if (istUeberholt(vonNummer, standBeiStart)) {

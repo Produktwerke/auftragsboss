@@ -559,8 +559,14 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
       const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
       if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
 
-      if ((req.body.bestaetigung ?? "").trim() !== h.firma) {
-        return reply.code(400).send({ fehler: `Zur Bestätigung bitte exakt „${h.firma}" eintippen.` });
+      // Bestätigung: Firmenname; Konten ohne Firma (reine WhatsApp-Tests) über die
+      // Handynummer (mit oder ohne +). 15.09.2026: vorher ließen sich solche Konten
+      // nicht löschen, weil das Pflichtfeld nie „leer" sein konnte.
+      const eingabe = (req.body.bestaetigung ?? "").trim();
+      const erwartet = h.firma.trim() ? h.firma.trim() : h.whatsappNummer;
+      const passt = h.firma.trim() ? eingabe === erwartet : eingabe.replace(/D/g, "") === h.whatsappNummer;
+      if (!passt) {
+        return reply.code(400).send({ fehler: `Zur Bestätigung bitte exakt „${h.firma.trim() ? h.firma : "+" + h.whatsappNummer}" eintippen.` });
       }
 
       // Alles Fachliche in EINER Transaktion; Events (PII-frei) bleiben für

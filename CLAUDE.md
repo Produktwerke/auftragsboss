@@ -136,6 +136,14 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 15.09.2026 (8) — TESTPHASE-ERINNERUNGEN PER WHATSAPP (288 Tests, deployt):** `jobs/testphaseErinnerung.ts`, täglich 09:00:
+>   Test-Konten (istTest, nicht blockiert, kein Webtest-Sammelkonto) mit ≥ 1 Angebot bekommen 3 Tage vor Ablauf die Vorlage
+>   `test_endet_bald` ({{1}} Anrede, {{2}} Ablaufdatum, {{3}} Registrier-Link) und am Tag nach Ablauf `test_abgelaufen` ({{1}}, {{2}} Link);
+>   Anrede = Name, sonst Firma, sonst „Boss". Idempotent über Event TEST_ERINNERUNG (art), AdminLog je Versand; längst abgelaufene Konten
+>   bekommen nichts (Fenster 2 Tage). `faelligeErinnerung` rein + getestet. Vorlagennamen per `TEST_VORLAGE_ENDET_BALD`/`_ABGELAUFEN`.
+>   Probelauf: `npx tsx src/testphase-erinnerung-jetzt.ts <nummer>` sendet beide an diese Nummer. ⏳ Dirk legt beide Vorlagen bei Meta an
+>   (Texte im Chat vom 15.09.); bis zur Genehmigung loggt der Job „nicht gesendet (Vorlage genehmigt?)".
+
 > **Update 15.09.2026 (7) — TEST STARTEN VON DER LANDINGPAGE (Dirk: „Gratis testen führte nur zur Browser-Demo, und was macht jemand am PC?"; 284 Tests, deployt):**
 > - Preiskarten-Knöpfe heißen „14 Tage gratis testen" und sind wa.me-Links mit vorgefülltem Text samt Tarif („… 14 Tage kostenlos testen
 >   (Tarif Profi)"). Am Handy (pointer:coarse oder mobiler UA) öffnet WhatsApp direkt. Am PC fängt JS den Klick ab und zeigt das Overlay

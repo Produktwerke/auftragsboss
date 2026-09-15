@@ -14,6 +14,7 @@ import { testStartRoutes } from "./web/testStartRoutes.js";
 import { starteGewaehrleistungsJob } from "./jobs/warrantyReminders.js";
 import { starteVorgangTimeoutJob } from "./jobs/vorgangTimeout.js";
 import { starteFotoWaisenJob } from "./jobs/fotoWaisen.js";
+import { starteTestphaseErinnerungsJob } from "./jobs/testphaseErinnerung.js";
 import { prisma } from "./pipeline.js";
 
 // Boot-Gate (Nach-Audit 10.09., D-04): Ohne vollständige Zugangsdaten startet
@@ -111,6 +112,7 @@ await app.register(testStartRoutes);
 starteGewaehrleistungsJob();
 starteVorgangTimeoutJob();
 starteFotoWaisenJob();
+starteTestphaseErinnerungsJob();
 
 const { PORT, HOST } = serverConfig();
 

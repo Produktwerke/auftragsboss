@@ -46,7 +46,7 @@ function lade<T extends z.ZodObject<z.ZodRawShape>>(name: string, schema: T): ()
 // sie nicht als Tippfehler meldet.
 export const DIREKT_GELESENE_SCHLUESSEL = [
   "DATABASE_URL", "BASE_URL", "ADMIN_TOKEN", "ADMIN_EMAIL", "ADMIN_PASSWORT_HASH",
-  "SESSION_SECRET", "WHATSAPP_APP_SECRET", "LEAD_VORLAGE", "TEST_VORLAGE", "TEAM_MAIL", "UPLOADS_DIR",
+  "SESSION_SECRET", "WHATSAPP_APP_SECRET", "LEAD_VORLAGE", "TEST_VORLAGE", "TEST_VORLAGE_ENDET_BALD", "TEST_VORLAGE_ABGELAUFEN", "TEAM_MAIL", "UPLOADS_DIR",
 ] as const;
 
 /** Alle gültigen .env-Schlüssel: aus den Schemata abgeleitet plus die direkt gelesenen. */

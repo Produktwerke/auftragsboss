@@ -22,6 +22,7 @@ Handwerker wirklich kalkulieren), nachfragen statt raten.
 - **Sicherheits-Wächter** `.claude/hooks/guard.cjs` + `settings.json` (Modus „auto") liegt seit 14.09.2026 im Repo. Nie umgehen; er sperrt u. a. winget/choco und den Schlüsselordner.
 - **Nach dem Klonen:** `npm install`, `npx prisma generate` (npm 11 führt Installationsskripte nicht automatisch aus), `npm run typecheck`, `npm test` (Stand 14.09.2026: 0 Typfehler, 262 Tests grün).
 - **Server-Zugang:** Der Büro-PC erreicht den VPS `87.106.165.151` (Schlüssel im Profil, geprüft 14.09.2026). Deploys bleiben ein bewusster Schritt, siehe Abschnitt Deploy — nie als Nebeneffekt.
+- **Heim-PC eingerichtet 15.09.2026:** geklont nach `C:\dev\dag\auftragsboss`, Pakete installiert, Typprüfung 0 Fehler, 262 Tests grün. Beide GitHub-Konten (ScreensGmbH, Produktwerke) im Credential Manager gespeichert, Kontrolle `git credential-manager github list` zeigt beide.
 
 ## Was das Produkt ist
 

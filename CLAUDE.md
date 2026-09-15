@@ -136,6 +136,22 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 15.09.2026 (5) — EMPFEHLUNGSPROGRAMM: 100 € PRÄMIE FÜR DEN WERBER (Dirks Entscheidung, 276 Tests, deployt inkl. db push):**
+> - Vorher „beide 1 Monat gratis" (Freimonate im Cockpit). Jetzt: Wird der geworbene Kollege Kunde, bekommt der WERBER
+>   `EMPFEHLUNGS_PRAEMIE_EUR` (100 €, `empfehlung.ts`) auf seine kommenden Abrechnungen; der Kollege testet wie jeder 14 Tage kostenlos.
+> - **`betrieb/gutschrift.ts`:** `schreibeGut` (Stripe-Kunde → Guthaben beim Stripe-Kunden per `customers.createBalanceTransaction`, verrechnet
+>   sich automatisch mit den nächsten Rechnungen, plus negative GUTSCHRIFT-Zeile im Ledger, weil das Geld nie ankommt; sonst Konto-Guthaben
+>   `Handwerker.guthabenEuro`), `verrechneGuthaben` (Konto-Guthaben atomar mit manueller Zahlung verrechnen → Ledger), `aktiviereEmpfehlung`
+>   (OFFEN → AKTIVIERT genau einmal, dann Prämie), `nachAboAbschluss` (im Stripe-Webhook nach checkout.session.completed: Konto-Guthaben nach
+>   Stripe übertragen + offene Empfehlung auf die Nummer des neuen Kunden automatisch aktivieren; Fehler dort brechen den Abo-Abschluss nie).
+> - **Cockpit:** Gutschrift in Euro (Vorgabe 100 €, 1 bis 1000), Kachel „Guthaben offen", Formular „Guthaben verrechnen" (nur bei Guthaben),
+>   Knopf „Ist Kunde: 100 € gutschreiben" je offener Empfehlung (`POST /stasi/betrieb/:id/empfehlung/:eid/aktivieren`), Umsatz-KPI „Offenes
+>   Guthaben". Routen `gutschrift` (Body betrag/grund) und `guthaben-verrechnen` ersetzen Freimonat-Gutschrift/-Einlösung. Spalte
+>   `Handwerker.freimonate` bleibt ungenutzt stehen (kein Datenverlust-Flag nötig).
+> - **Texte:** Abo-Seite („100 € Prämie"), Teilen-Text + Empfehlungs-Mail (Kollege: 14 Tage kostenlos, Werber bekommt Gutschrift), Einladungsseite
+>   (14 Tage kostenlos, Knopf „Kostenlos testen"), WhatsApp-Aufforderung nach dem 3. Angebot, Landingpage „Kollegen werben = 100 € Gutschrift"
+>   → **IONOS-Upload durch Dirk**.
+
 > **Update 15.09.2026 (4) — STRIPE ETAPPE 3, TEIL 1: KUNDENPORTAL (270 Tests, deployt):**
 > - `betrieb/stripeCheckout.ts`: `portalKonfigurationBereit()` legt je Stripe-Umgebung EINE Portal-Konfiguration an (Metadaten-Kennung
 >   `auftragsboss-portal-v1`; Rechnungen, Zahlungsart, Kundendaten inkl. USt-IdNr., Kündigung zum Periodenende mit Grund, Datenschutz-Link),
@@ -1300,7 +1316,7 @@ fehlendem Guthaben deaktiviert; er bleibt bei der neuen Organisation.
   - ⚠️ **Weiterhin offen:** PostgreSQL (statt SQLite) + DSGVO-Erweiterung der Datenschutzerklärung
     (KI-Verarbeitung der Sprachdaten via OpenAI/Anthropic).
 - **#2 Empfehlungsprogramm — Mechanik gebaut.** Offen: **Abo/Abrechnung**
-  (z. B. Stripe), damit der „1 Monat gratis" wirklich eingelöst wird, plus
+  (z. B. Stripe); seit 15.09.2026 gibt es statt „1 Monat gratis" 100 € Gutschrift für den Werber, plus
   Aktivierung der Leads (heute manuell durch das Team, Status OFFEN→AKTIVIERT).
 - **Härtung:** ✅ erledigt (`X-Hub-Signature-256` + Systembenutzer-Token).
   Verbleibend für Produktion: Hosting/Domain (statt Tunnel), PostgreSQL, DSGVO,

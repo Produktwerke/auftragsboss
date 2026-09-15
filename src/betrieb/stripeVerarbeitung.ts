@@ -17,6 +17,9 @@
 import type { PrismaClient } from "@prisma/client";
 import { istTarif, monatsZeitraum, TARIF_PRESETS, type Tarif } from "./abrechnung.js";
 import { meldeNeuenKunden } from "./betreiberAlarm.js";
+import { nachAboAbschluss } from "./gutschrift.js";
+import { stripeGutschreiben } from "./stripeCheckout.js";
+import { stripeKonfiguriert } from "../config.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -127,6 +130,8 @@ export async function verarbeiteStripeEvent(
   prisma: PrismaClient,
   event: { type: string; data: { object: any; previous_attributes?: any } },
   melde: typeof meldeNeuenKunden = meldeNeuenKunden,
+  /** Nach dem Abo-Abschluss: Konto-Guthaben nach Stripe, offene Empfehlung aktivieren (injizierbar). */
+  nachCheckout: typeof nachAboAbschluss = (p, hw, cus, g) => nachAboAbschluss(p, hw, cus, g ?? (stripeKonfiguriert() ? stripeGutschreiben : null)),
 ): Promise<StripeErgebnis> {
   switch (event.type) {
     case "checkout.session.completed": {
@@ -168,7 +173,13 @@ export async function verarbeiteStripeEvent(
       });
       // Die WhatsApp an den Betreiber — Fehler hier sind egal, die Buchung zählt.
       await melde(hw.firma || hw.name, tarifLabel(tarif), monatspreis);
-      return { aktion: "abo-aktiv", detail: s.subscriptionId };
+      // Empfehlungsprogramm: Konto-Guthaben des neuen Kunden nach Stripe übertragen
+      // und eine offene Empfehlung auf seine Nummer aktivieren (Prämie an den Werber).
+      const praemie = await nachCheckout(prisma, hw, s.customerId, null);
+      return {
+        aktion: "abo-aktiv",
+        detail: `${s.subscriptionId}${praemie.empfehlungAktiviert ? ", Empfehlung aktiviert" : ""}${praemie.uebertragen ? `, ${praemie.uebertragen} € Guthaben übertragen` : ""}`,
+      };
     }
 
     case "invoice.paid": {

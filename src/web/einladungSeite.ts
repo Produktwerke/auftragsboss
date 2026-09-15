@@ -1,7 +1,8 @@
 import { jsonInsSkript } from "./jsonInsSkript.js";
 // Einladungs-Landingpage: Das sieht ein Kollege, der über den persönlichen
-// Empfehlungslink eines Betriebs kommt. Er trägt sich als Lead ein — beide
-// bekommen 1 Monat gratis. Selbsttragend (HTML+JS, kein Framework).
+// Empfehlungslink eines Betriebs kommt. Er trägt sich als Lead ein und testet
+// 14 Tage kostenlos; der Werber bekommt 100 € Prämie, wenn der Kollege Kunde
+// wird (seit 15.09.2026). Selbsttragend (HTML+JS, kein Framework).
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -51,7 +52,7 @@ export function einladungSeite(args: { code: string; werberFirma: string }): str
     <h1>Angebote diktieren statt tippen.</h1>
     <p>Sprich nach dem Kundentermin einfach eine WhatsApp-Sprachnachricht. Du bekommst ein fertiges Angebot zurück. Keine App, kein Login.</p>
 
-    <div class="geschenk">🎁 Ihr bekommt beide 1 Monat gratis.</div>
+    <div class="geschenk">🎁 14 Tage kostenlos testen, ohne Abo und ohne Kreditkarte.</div>
 
     <ul class="nutzen">
       <li>Fertiges Angebot aus einer Sprachnachricht</li>
@@ -68,9 +69,9 @@ export function einladungSeite(args: { code: string; werberFirma: string }): str
     <label>E-Mail (optional)</label>
     <input id="email" type="email" placeholder="fuer Rueckfragen">
 
-    <button class="btn" id="senden">Gratis-Monat sichern</button>
+    <button class="btn" id="senden">Kostenlos testen</button>
     <div class="fehler" id="fehler"></div>
-    <p class="klein">Wir melden uns und schalten dich frei. Kein Abo, keine Kündigung nötig, solange du nur den Gratis-Monat nutzt.</p>
+    <p class="klein">Wir melden uns und schalten dich frei. Kein Abo, keine Kündigung nötig, solange du nur testest.</p>
   </div>
 </div>
 
@@ -93,9 +94,9 @@ btn.addEventListener("click", async () => {
     if (!r.ok) throw 0;
     document.getElementById("karte").innerHTML =
       '<div class="danke"><div class="haken">✅</div><h2>Geschafft!</h2>' +
-      '<p>Danke, ' + (daten.name.split(" ")[0] || "") + '. Wir melden uns in Kürze und schalten dich frei. Dein Gratis-Monat ist reserviert.</p></div>';
+      '<p>Danke, ' + (daten.name.split(" ")[0] || "") + '. Wir melden uns in Kürze und schalten dich frei. Deine kostenlose Testphase ist reserviert.</p></div>';
   } catch(e) {
-    btn.disabled = false; btn.textContent = "Gratis-Monat sichern";
+    btn.disabled = false; btn.textContent = "Kostenlos testen";
     fehler.textContent = "Das hat nicht geklappt. Bitte versuche es gleich noch einmal.";
   }
 });

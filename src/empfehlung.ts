@@ -1,13 +1,20 @@
 // Empfehlungsprogramm ("Freundschaftswerbung").
 //
 // Jeder Betrieb hat einen kurzen, persönlichen Einladungscode. Teilt er den
-// Link, kann ein Kollege sich als Lead eintragen — beide bekommen 1 Monat
-// gratis (wird beim Freischalten durch das Team gutgeschrieben).
+// Link, kann ein Kollege sich als Lead eintragen. Wird der Kollege Kunde,
+// bekommt der WERBER 100 € auf seine kommenden Abrechnungen gutgeschrieben
+// (seit 15.09.2026, Dirks Entscheidung: zieht mehr als „beide 1 Monat gratis");
+// der Kollege selbst testet wie jeder 14 Tage kostenlos. Gutschrift-Mechanik:
+// betrieb/gutschrift.ts (automatisch beim Stripe-Abo-Abschluss des Geworbenen
+// oder per Knopf im Betreiber-Cockpit).
 import type { Handwerker, PrismaClient } from "@prisma/client";
 import { erzeugeToken } from "./web/tokens.js";
 
 /** Nach so vielen erstellten Angeboten wird zum Einladen aufgefordert. */
 export const EMPFEHLUNG_AB_ANGEBOT = 3;
+
+/** Prämie für den Werber je Kollege, der Kunde wird (Euro, auf kommende Abrechnungen). */
+export const EMPFEHLUNGS_PRAEMIE_EUR = 100;
 
 /** Liefert den Einladungscode des Betriebs — erzeugt ihn beim ersten Bedarf. */
 export async function werbeCodeBereit(prisma: PrismaClient, handwerker: Handwerker): Promise<string> {
@@ -22,7 +29,7 @@ export function empfehlungsText(werberFirma: string, werbeUrl: string): string {
   return (
     `Hi, ich nutze AuftragsBoss, damit sprichst du dein Angebot einfach per WhatsApp ` +
     `ein und bekommst ein fertiges Angebot als PDF/Word. Spart mir richtig Zeit. ` +
-    `Wenn du dich über meinen Link anmeldest, bekommen wir beide 1 Monat gratis: ${werbeUrl}`
+    `Über meinen Link kannst du es 14 Tage kostenlos testen: ${werbeUrl}`
   );
 }
 
@@ -48,7 +55,7 @@ export function empfehlungsEinladungMail(
   <p>Hallo ${name},</p>
   <p><strong>${firma}</strong> nutzt <strong>AuftragsBoss</strong> und empfiehlt es dir persönlich.</p>
   <p>Die Idee: Du sprichst nach dem Kundentermin dein Angebot einfach per WhatsApp-Sprachnachricht ein, AuftragsBoss macht daraus ein fertiges Angebot als PDF oder Word. Keine App, kein Login.</p>
-  <p>Wenn du dich über den Link von ${firma} anmeldest, bekommt <em>ihr beide 1 Monat gratis</em>:</p>
+  <p>Über den Link von ${firma} kannst du AuftragsBoss <em>14 Tage kostenlos testen</em>. Wirst du Kunde, bekommt ${firma} von uns eine Gutschrift, so bedanken wir uns fürs Weitersagen:</p>
   <p style="margin:22px 0;">
     <a href="${url}" style="background:#0B5CAD;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block;">Einladung ansehen</a>
   </p>

@@ -13,7 +13,7 @@ function zeile(teil: Partial<BetriebZeile> = {}): BetriebZeile {
     istTest: false,
     blockiert: false,
     erstelltAm: new Date("2026-06-01"),
-    freimonate: 0,
+    guthabenEuro: 0,
     angebote: 3,
     letzteAktivitaet: new Date(),
     tarif: null,
@@ -157,12 +157,29 @@ describe("betreiberDetail", () => {
     expect(html).toContain(`value="99"`);
   });
 
-  it("Freimonat-Formular nur bei vorhandenen Freimonaten", () => {
-    expect(detailHtml()).not.toContain("Freimonat einlösen");
+  it("Guthaben-verrechnen-Formular nur bei offenem Guthaben; Gutschrift in Euro mit 100 € vorbelegt", () => {
+    const ohne = detailHtml();
+    expect(ohne).not.toContain("Guthaben verrechnen");
+    expect(ohne).toContain("Gutschrift (Euro)");
+    expect(ohne).toContain(`value="100"`);
     const mit = detailHtml({
-      betrieb: { ...zeile({ freimonate: 2 }), blockiertGrund: null, blockiertAm: null, gewerkTyp: "MALER", ort: null },
+      betrieb: { ...zeile({ guthabenEuro: 100 }), blockiertGrund: null, blockiertAm: null, gewerkTyp: "MALER", ort: null },
     });
-    expect(mit).toContain("Freimonat einlösen (2 übrig)");
+    expect(mit).toContain("Guthaben verrechnen (100,00 € offen)");
+    expect(mit).toContain("guthaben-verrechnen");
+  });
+
+  it("offene Empfehlung hat den Knopf zum Aktivieren mit der 100-€-Prämie", () => {
+    const html = detailHtml({
+      empfehlungen: [
+        { id: "e1", firma: "Malermeister Krause", name: "Kai Krause", status: "OFFEN", erstelltAm: new Date("2026-09-01") },
+        { id: "e2", firma: "Maler Schmidt", name: "S. Schmidt", status: "AKTIVIERT", erstelltAm: new Date("2026-08-01") },
+      ],
+    });
+    expect(html).toContain("empfehlung/e1/aktivieren");
+    expect(html).toContain("Ist Kunde: 100 € gutschreiben");
+    expect(html).not.toContain("empfehlung/e2/aktivieren");
+    expect(html).toContain("Prämie ausgezahlt");
   });
 
   it("zeigt die Zahlungshistorie", () => {
@@ -194,7 +211,7 @@ describe("betreiberUmsatz", () => {
   it("zeigt KPIs, Balken und Kundenliste", () => {
     const html = betreiberUmsatz({
       basis: "/admin/tok",
-      kpis: { mrr: 148, einnahmenMonat: 49, gesamtUmsatz: 490, zahlendeKunden: 2, offeneFreimonate: 3 },
+      kpis: { mrr: 148, einnahmenMonat: 49, gesamtUmsatz: 490, zahlendeKunden: 2, offenesGuthaben: 300 },
       verlauf: [
         { zeitraum: "2026-07", summe: 0 },
         { zeitraum: "2026-08", summe: 49 },
@@ -214,7 +231,7 @@ describe("betreiberUmsatz", () => {
   it("leerer Zustand ohne Buchungen", () => {
     const html = betreiberUmsatz({
       basis: "/b",
-      kpis: { mrr: 0, einnahmenMonat: 0, gesamtUmsatz: 0, zahlendeKunden: 0, offeneFreimonate: 0 },
+      kpis: { mrr: 0, einnahmenMonat: 0, gesamtUmsatz: 0, zahlendeKunden: 0, offenesGuthaben: 0 },
       verlauf: [],
       tarife: [],
       topKunden: [],

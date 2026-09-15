@@ -32,6 +32,7 @@ function fakePrisma(vorgaben: {
       create: vi.fn(async (a: unknown) => { aufrufe.buchungCreate.push(a); return {}; }),
     },
     adminLog: { create: vi.fn(async (a: unknown) => { aufrufe.adminLogCreate.push(a); return {}; }) },
+    empfehlung: { findMany: vi.fn(async () => []) },
   };
   return { p: p as unknown as PrismaClient, aufrufe };
 }

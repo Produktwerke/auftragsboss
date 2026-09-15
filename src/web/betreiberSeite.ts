@@ -1,4 +1,5 @@
 import { jsonInsSkript } from "./jsonInsSkript.js";
+import { EMPFEHLUNGS_PRAEMIE_EUR } from "../empfehlung.js";
 // Betreiber-Cockpit (Stufe 1): Kundenliste + Kundendetail mit Verwaltungs-
 // Aktionen (Kontakt ändern, blockieren, Gutschrift, löschen) und Usage-Zahlen.
 // Nur intern erreichbar über /admin/:ADMIN_TOKEN/betriebe (siehe betreiberRoutes.ts).
@@ -48,6 +49,8 @@ function seite(titel: string, inhalt: string): string {
   .filter { margin:0 0 14px; display:flex; gap:8px; flex-wrap:wrap; font-size:13.5px; }
   .filter a { text-decoration:none; padding:5px 12px; border-radius:20px; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.06); color:#444; }
   .filter a.an { background:#0b5cad; color:#fff; }
+  form.inline { display:inline-flex; align-items:center; gap:8px; margin-left:8px; }
+  form.inline .meldung { margin:0; }
   form.zeile { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
   label.feld { display:block; font-size:12.5px; color:#555; }
   label.feld input, label.feld select { display:block; margin-top:3px; padding:8px 10px; border:1px solid #cdd3da; border-radius:8px; font-size:14px; width:220px; max-width:100%; }
@@ -119,7 +122,8 @@ export interface BetriebZeile {
   istTest: boolean;
   blockiert: boolean;
   erstelltAm: Date;
-  freimonate: number;
+  /** Offenes Konto-Guthaben in Euro (Empfehlungsprämie, Kulanz), bei der nächsten Zahlung zu verrechnen. */
+  guthabenEuro: number;
   angebote: number;
   letzteAktivitaet: Date | null;
   /** Abrechnung (Stufe 2): aktueller Tarif (null = kein Abo) + Umsatz aus dem Ledger. */
@@ -310,6 +314,7 @@ export interface LogZeile {
 }
 
 export interface EmpfehlungZeile {
+  id: string;
   firma: string;
   name: string;
   status: string;
@@ -349,7 +354,9 @@ export function betreiberDetail(args: {
     .map(
       (e) =>
         `<li><span class="zeit">${datumDE(e.erstelltAm)}</span><b>${escapeHtml(e.firma)}</b> (${escapeHtml(e.name)}) — ${
-          e.status === "AKTIVIERT" ? `<span class="badge b-aktiv">aktiviert</span>` : `<span class="badge b-neutral">offen</span>`
+          e.status === "AKTIVIERT"
+            ? `<span class="badge b-aktiv">Kunde, Prämie ausgezahlt</span>`
+            : `<span class="badge b-neutral">offen</span> <form class="inline" data-post="${aktion(`empfehlung/${e.id}/aktivieren`)}" data-frage="${escapeHtml(e.firma)} ist Kunde geworden? Dann bekommt ${escapeHtml(b.firma)} ${EMPFEHLUNGS_PRAEMIE_EUR} € gutgeschrieben."><button class="kn">Ist Kunde: ${EMPFEHLUNGS_PRAEMIE_EUR} € gutschreiben</button><div class="meldung"></div></form>`
         }</li>`,
     )
     .join("");
@@ -382,7 +389,7 @@ export function betreiberDetail(args: {
     <div class="kachel"><div class="wert">${usage.versandbereit}</div><div class="lab">Versandbereit</div></div>
     <div class="kachel"><div class="wert">${usage.offenePreise}</div><div class="lab">Offene Preise</div></div>
     <div class="kachel"><div class="wert">${usage.versendet}</div><div class="lab">Versendet</div></div>
-    <div class="kachel"><div class="wert">${b.freimonate}</div><div class="lab">Freimonate</div></div>
+    <div class="kachel"><div class="wert">${euroDE(b.guthabenEuro)}</div><div class="lab">Guthaben offen</div></div>
     <div class="kachel"><div class="wert">${euroDE(b.umsatz)}</div><div class="lab">Umsatz seit Beitritt</div></div>
     <div class="kachel"><div class="wert">${euroDE(kiKosten.cent30Tage / 100)}</div><div class="lab">KI-Kosten, 30 Tage</div></div>
     <div class="kachel"><div class="wert">${euroDE(kiKosten.centGesamt / 100)}</div><div class="lab">KI-Kosten gesamt</div></div>
@@ -413,17 +420,18 @@ export function betreiberDetail(args: {
   </div>
 
   <div class="karte">
-    <h2 style="margin-top:0;">Gutschrift (Freimonate)</h2>
+    <h2 style="margin-top:0;">Gutschrift (Euro)</h2>
     <form class="zeile" data-post="${aktion("gutschrift")}">
-      <label class="feld">Monate
-        <input name="monate" type="number" min="1" max="12" value="1" required>
+      <label class="feld">Betrag in €
+        <input name="betrag" type="number" min="1" max="1000" step="0.01" value="100" required>
       </label>
-      <label class="feld">Grund (z.B. „Empfehlung Malermeister Krause")
+      <label class="feld">Grund (z.B. „Kulanz" oder „Empfehlung Malermeister Krause")
         <input name="grund" required minlength="3">
       </label>
       <button class="kn">Gutschreiben</button>
       <div class="meldung"></div>
     </form>
+    <p class="hinweis">Stripe-Kunden: verrechnet sich automatisch mit den nächsten Rechnungen. Sonst als Konto-Guthaben vermerkt, das du bei der nächsten Zahlung unten verrechnest. Empfehlungen aktivierst du im Abschnitt „Geworbene Kollegen", die Prämie von ${EMPFEHLUNGS_PRAEMIE_EUR} € geht dann automatisch raus.</p>
   </div>
 
   <div class="karte">
@@ -477,12 +485,15 @@ export function betreiberDetail(args: {
       <div class="meldung"></div>
     </form>
     ${
-      b.freimonate > 0
-        ? `<form class="zeile" style="margin-top:10px;" data-post="${aktion("freimonat")}" data-frage="1 Freimonat für diesen Monat einlösen? (0-€-Buchung, Freimonate ${b.freimonate} → ${b.freimonate - 1})">
+      b.guthabenEuro > 0
+        ? `<form class="zeile" style="margin-top:10px;" data-post="${aktion("guthaben-verrechnen")}" data-frage="Guthaben mit der Zahlung dieses Monats verrechnen? (negative Gutschrift-Buchung)">
+            <label class="feld">Betrag in €
+              <input name="betrag" type="number" min="0.01" max="${b.guthabenEuro}" step="0.01" value="${b.guthabenEuro}" required>
+            </label>
             <label class="feld">Monat (JJJJ-MM)
               <input name="zeitraum" value="${escapeHtml(aktuellerZeitraum)}" pattern="\\d{4}-(0[1-9]|1[0-2])" required>
             </label>
-            <button class="kn warn">Freimonat einlösen (${b.freimonate} übrig)</button>
+            <button class="kn warn">Guthaben verrechnen (${euroDE(b.guthabenEuro)} offen)</button>
             <div class="meldung"></div>
           </form>`
         : ""
@@ -572,7 +583,7 @@ export function betreiberDetail(args: {
 
 export function betreiberUmsatz(args: {
   basis: string;
-  kpis: { mrr: number; einnahmenMonat: number; gesamtUmsatz: number; zahlendeKunden: number; offeneFreimonate: number };
+  kpis: { mrr: number; einnahmenMonat: number; gesamtUmsatz: number; zahlendeKunden: number; offenesGuthaben: number };
   verlauf: Array<{ zeitraum: string; summe: number }>; // aufsteigend
   tarife: Array<{ tarif: string; anzahl: number }>;
   topKunden: Array<{ id: string; firma: string; tarif: string | null; umsatz: number }>;
@@ -617,7 +628,7 @@ export function betreiberUmsatz(args: {
     <div class="kachel"><div class="wert">${euroDE(kpis.einnahmenMonat)}</div><div class="lab">Einnahmen, dieser Monat</div></div>
     <div class="kachel"><div class="wert">${euroDE(kpis.gesamtUmsatz)}</div><div class="lab">Umsatz seit Start</div></div>
     <div class="kachel"><div class="wert">${kpis.zahlendeKunden}</div><div class="lab">Zahlende Kunden</div></div>
-    <div class="kachel"><div class="wert">${kpis.offeneFreimonate}</div><div class="lab">Offene Freimonate</div></div>
+    <div class="kachel"><div class="wert">${euroDE(kpis.offenesGuthaben)}</div><div class="lab">Offenes Guthaben</div></div>
   </div>
 
   <h2>Monatsverlauf</h2>

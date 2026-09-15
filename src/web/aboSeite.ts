@@ -4,7 +4,7 @@
 import { jsonInsSkript } from "./jsonInsSkript.js";
 import type { Handwerker } from "@prisma/client";
 import { appShell } from "./navigation.js";
-import { empfehlungsText } from "../empfehlung.js";
+import { empfehlungsText, EMPFEHLUNGS_PRAEMIE_EUR } from "../empfehlung.js";
 import { TARIF_PRESETS } from "../betrieb/abrechnung.js";
 import type { RechnungsZeile } from "../betrieb/stripeCheckout.js";
 
@@ -151,9 +151,9 @@ ${aboPanel}
 ${rechnungsPanel}
       <div class="panel promo">
         <div class="promo-head">
-          <span class="promo-badge">1 Monat gratis</span>
-          <h2>Empfehlen lohnt sich: spar dir einen ganzen Monat</h2>
-          <p>Für jeden Kollegen, der über deinen Link startet, bekommt ihr <b>beide einen Monat AuftragsBoss geschenkt</b>. Schon ein paar Empfehlungen, und dein Beitrag ist bezahlt.</p>
+          <span class="promo-badge">${EMPFEHLUNGS_PRAEMIE_EUR} € Prämie</span>
+          <h2>Empfehlen lohnt sich: ${EMPFEHLUNGS_PRAEMIE_EUR} € für jeden Kollegen</h2>
+          <p>Für jeden Kollegen, der über deinen Link Kunde wird, schreiben wir dir <b>${EMPFEHLUNGS_PRAEMIE_EUR} € auf deine nächsten Rechnungen gut</b>. Dein Kollege testet 14 Tage kostenlos. Schon ein paar Empfehlungen, und dein Abo ist für Monate bezahlt.</p>
         </div>
         <div class="panel-b">
           <div class="field"><label>Dein persönlicher Empfehlungslink</label>

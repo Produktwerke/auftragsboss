@@ -5,7 +5,9 @@
 //   POST /stasi/betrieb/:id/kontakt     { nummer, email }
 //   POST /stasi/betrieb/:id/blockieren  { grund }
 //   POST /stasi/betrieb/:id/entsperren  {}
-//   POST /stasi/betrieb/:id/gutschrift  { monate, grund }
+//   POST /stasi/betrieb/:id/gutschrift  { betrag, grund }      (Euro auf kommende Abrechnungen)
+//   POST /stasi/betrieb/:id/guthaben-verrechnen { betrag, zeitraum }
+//   POST /stasi/betrieb/:id/empfehlung/:eid/aktivieren        (Prämie an den Werber)
 //   POST /stasi/betrieb/:id/loeschen    { bestaetigung }  ← Firmenname
 //
 // Schutz: /stasi-Login-Cookie (adminAuth.ts), sonst 404. Jede schreibende
@@ -14,6 +16,9 @@ import { loescheFotosVonBetrieb } from "../betrieb/fotoAblage.js";
 import type { FastifyInstance } from "fastify";
 import { unlink } from "node:fs/promises";
 import { prisma } from "../pipeline.js";
+import { schreibeGut, verrechneGuthaben, aktiviereEmpfehlung } from "../betrieb/gutschrift.js";
+import { stripeGutschreiben } from "../betrieb/stripeCheckout.js";
+import { stripeKonfiguriert } from "../config.js";
 import {
   betreiberListe,
   betreiberDetail,
@@ -97,7 +102,7 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
         istTest: h.istTest,
         blockiert: h.blockiert,
         erstelltAm: h.erstelltAm,
-        freimonate: h.freimonate,
+        guthabenEuro: h.guthabenEuro,
         angebote: anzahlMap.get(h.id) ?? 0,
         letzteAktivitaet: letzteMap.get(h.id) ?? null,
         tarif: aboMap.get(h.id)?.tarif ?? null,
@@ -222,7 +227,7 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
         blockiertGrund: h.blockiertGrund,
         blockiertAm: h.blockiertAm,
         erstelltAm: h.erstelltAm,
-        freimonate: h.freimonate,
+        guthabenEuro: h.guthabenEuro,
         gewerkTyp: h.gewerkTyp,
         ort: h.ort,
         angebote: angebote.length,
@@ -239,7 +244,7 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
         anzahlOffen: d.anzahlOffen,
         versendet: !!d.versendetAm,
       })),
-      empfehlungen: empfehlungen.map((e) => ({ firma: e.firma, name: e.name, status: e.status, erstelltAm: e.erstelltAm })),
+      empfehlungen: empfehlungen.map((e) => ({ id: e.id, firma: e.firma, name: e.name, status: e.status, erstelltAm: e.erstelltAm })),
       logs: logs.map((l) => ({ aktion: l.aktion, detail: l.detail, erstelltAm: l.erstelltAm })),
       abo: abo
         ? { tarif: abo.tarif, monatspreis: abo.monatspreis, status: abo.status, beginntAm: abo.beginntAm, gekuendigtAm: abo.gekuendigtAm }
@@ -335,22 +340,40 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
     return reply.send({ ok: true, meldung: `Einladung an ${ergebnis.handwerker.whatsappNummer} gesendet.` });
   });
 
-  // ── Gutschrift (Freimonate) ───────────────────────────
-  for (const pfad of beide("/betrieb/:id/gutschrift")) app.post<{ Params: { token?: string; id: string }; Body: { monate?: string | number; grund?: string } }>(
+  // ── Gutschrift in Euro (Empfehlungsprämie, Kulanz) ───
+  // Stripe-Kunde: Guthaben in Stripe, verrechnet sich mit den nächsten Rechnungen.
+  // Sonst Konto-Guthaben am Betrieb, das bei der nächsten Zahlung verrechnet wird.
+  for (const pfad of beide("/betrieb/:id/gutschrift")) app.post<{ Params: { token?: string; id: string }; Body: { betrag?: string | number; grund?: string } }>(
     pfad,
     async (req, reply) => {
       if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
       const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
       if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
 
-      const monate = Math.trunc(Number(req.body.monate));
+      const betrag = Math.round(Number(req.body.betrag) * 100) / 100;
       const grund = (req.body.grund ?? "").trim();
-      if (!Number.isFinite(monate) || monate < 1 || monate > 12) return reply.code(400).send({ fehler: "Monate: 1 bis 12" });
+      if (!Number.isFinite(betrag) || betrag < 1 || betrag > 1000) return reply.code(400).send({ fehler: "Betrag: 1 bis 1000 €" });
       if (grund.length < 3) return reply.code(400).send({ fehler: "Bitte einen Grund angeben." });
 
-      await prisma.handwerker.update({ where: { id: h.id }, data: { freimonate: { increment: monate } } });
-      await protokolliere(h.id, h.firma, "GUTSCHRIFT", `${monate} Freimonat(e): ${grund}`);
-      return reply.send({ ok: true, meldung: `${monate} Freimonat(e) gutgeschrieben.` });
+      const { weg } = await schreibeGut(prisma, h, betrag, grund, stripeKonfiguriert() ? stripeGutschreiben : null);
+      return reply.send({
+        ok: true,
+        meldung: weg === "stripe" ? `${betrag} € in Stripe gutgeschrieben, wird mit den nächsten Rechnungen verrechnet.` : `${betrag} € als Konto-Guthaben vermerkt, bei der nächsten Zahlung verrechnen.`,
+      });
+    },
+  );
+
+  // ── Empfehlung aktivieren: Prämie an den Werber ───────
+  for (const pfad of beide("/betrieb/:id/empfehlung/:eid/aktivieren")) app.post<{ Params: { token?: string; id: string; eid: string } }>(
+    pfad,
+    async (req, reply) => {
+      if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
+      const e = await prisma.empfehlung.findFirst({ where: { id: req.params.eid, werberId: req.params.id } });
+      if (!e) return reply.code(404).send({ fehler: "Empfehlung nicht gefunden" });
+      const erg = await aktiviereEmpfehlung(prisma, e.id, stripeKonfiguriert() ? stripeGutschreiben : null);
+      if (!erg.ok) return reply.code(400).send({ fehler: "Empfehlung ist schon aktiviert." });
+      await protokolliere(req.params.id, erg.werber ?? null, "EMPFEHLUNG_AKTIVIERT", `${e.firma} (${e.name}) ist Kunde, Prämie ${erg.weg === "stripe" ? "in Stripe gutgeschrieben" : "als Konto-Guthaben vermerkt"}`);
+      return reply.send({ ok: true, meldung: `Empfehlung aktiviert, Prämie ${erg.weg === "stripe" ? "in Stripe gutgeschrieben" : "als Konto-Guthaben vermerkt"}.` });
     },
   );
 
@@ -439,33 +462,22 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
     },
   );
 
-  // ── Freimonat einlösen (0-€-Buchung + Zähler runter) ──
-  for (const pfad of beide("/betrieb/:id/freimonat")) app.post<{ Params: { token?: string; id: string }; Body: { zeitraum?: string } }>(
+  // ── Konto-Guthaben mit einer Zahlung verrechnen (Ledger GUTSCHRIFT, negativ) ──
+  for (const pfad of beide("/betrieb/:id/guthaben-verrechnen")) app.post<{ Params: { token?: string; id: string }; Body: { betrag?: string | number; zeitraum?: string } }>(
     pfad,
     async (req, reply) => {
       if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
       const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
       if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
+      const betrag = Math.round(Number(req.body.betrag) * 100) / 100;
       const zeitraum = (req.body.zeitraum ?? "").trim();
+      if (!Number.isFinite(betrag) || betrag <= 0) return reply.code(400).send({ fehler: "Betrag ungültig" });
       if (!istZeitraum(zeitraum)) return reply.code(400).send({ fehler: "Monat bitte als JJJJ-MM angeben" });
 
-      // Bedingung IN der Abzieh-Operation (Audit AB-M03): ein Doppelklick
-      // fand vorher zweimal freimonate=1 vor und buchte ins Minus. Jetzt
-      // zieht nur ab, wer wirklich noch >= 1 vorfindet — atomar.
-      const eingeloest = await prisma.$transaction(async (tx) => {
-        const abgezogen = await tx.handwerker.updateMany({
-          where: { id: h.id, freimonate: { gte: 1 } },
-          data: { freimonate: { decrement: 1 } },
-        });
-        if (abgezogen.count === 0) return false;
-        await tx.buchung.create({
-          data: { handwerkerId: h.id, betrieb: h.firma, typ: "FREIMONAT", betrag: 0, zeitraum, notiz: "Freimonat eingelöst" },
-        });
-        return true;
-      });
-      if (!eingeloest) return reply.code(400).send({ fehler: "Keine Freimonate übrig" });
-      await protokolliere(h.id, h.firma, "FREIMONAT", `eingelöst für ${zeitraum} (Rest: ${h.freimonate - 1})`);
-      return reply.send({ ok: true, meldung: `Freimonat für ${zeitraum} eingelöst.` });
+      const ok = await verrechneGuthaben(prisma, h, betrag, zeitraum);
+      if (!ok) return reply.code(400).send({ fehler: `Nicht genug Guthaben (offen: ${h.guthabenEuro} €)` });
+      await protokolliere(h.id, h.firma, "GUTHABEN_VERRECHNET", `${betrag} € für ${zeitraum} (Rest: ${Math.round((h.guthabenEuro - betrag) * 100) / 100} €)`);
+      return reply.send({ ok: true, meldung: `${betrag} € Guthaben für ${zeitraum} verrechnet.` });
     },
   );
 
@@ -478,7 +490,7 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
     const [abos, buchungen, betriebe] = await Promise.all([
       prisma.abo.findMany(),
       prisma.buchung.findMany(),
-      prisma.handwerker.findMany({ select: { id: true, firma: true, freimonate: true } }),
+      prisma.handwerker.findMany({ select: { id: true, firma: true, guthabenEuro: true } }),
     ]);
     const firmaMap = new Map(betriebe.map((b) => [b.id, b.firma]));
     const aboMap = new Map(abos.map((a) => [a.handwerkerId, a]));
@@ -505,7 +517,7 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
         einnahmenMonat: einnahmenImZeitraum(buchungen, monatsZeitraum()),
         gesamtUmsatz: gesamtUmsatz(buchungen),
         zahlendeKunden: abos.filter((a) => a.status === "AKTIV").length,
-        offeneFreimonate: betriebe.reduce((s, b) => s + b.freimonate, 0),
+        offenesGuthaben: Math.round(betriebe.reduce((s, b) => s + b.guthabenEuro, 0) * 100) / 100,
       },
       verlauf: monatsverlauf(buchungen),
       tarife: [...tarifZaehler.entries()].map(([tarif, anzahl]) => ({ tarif, anzahl })).sort((a, b) => b.anzahl - a.anzahl),

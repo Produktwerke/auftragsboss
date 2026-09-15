@@ -168,3 +168,17 @@ export async function ladeAboLaufzeit(stripeSubscriptionId: string): Promise<Abo
   const ende = sub.cancel_at ?? sub.items?.data?.[0]?.current_period_end ?? null;
   return { status: sub.status, gekuendigtZum: vorgemerkt && ende ? new Date(ende * 1000) : null };
 }
+
+// ── Guthaben (Empfehlungsprämie) ──────────────────────────────────────
+
+/**
+ * Schreibt dem Stripe-Kunden Guthaben gut (customer balance, negativer Betrag
+ * = Guthaben). Stripe verrechnet es automatisch mit den nächsten Rechnungen.
+ */
+export async function stripeGutschreiben(stripeCustomerId: string, euro: number, beschreibung: string): Promise<void> {
+  await stripe().customers.createBalanceTransaction(stripeCustomerId, {
+    amount: -Math.round(euro * 100),
+    currency: "eur",
+    description: beschreibung.slice(0, 350),
+  });
+}

@@ -89,10 +89,14 @@ model Handwerker {
   feedbackWartetSeit DateTime?
 
   // Empfehlungsprogramm ("Freundschaftswerbung"). werbeCode = persönlicher
-  // Einladungslink. freimonate = verdiente Gratis-Monate (bei Abo einzulösen).
+  // Einladungslink. freimonate = ALT (bis 15.09.2026 Gratis-Monate), ungenutzt.
+  // guthabenEuro = offenes Konto-Guthaben (z.B. Empfehlungsprämie 100 €) für Betriebe
+  // ohne Stripe-Kunden; wird bei der nächsten manuellen Zahlung verrechnet oder
+  // beim Online-Abo-Abschluss nach Stripe übertragen (betrieb/gutschrift.ts).
   werbeCode         String?  @unique
   empfehlungGenudgt Boolean  @default(false) // schon zum Einladen aufgefordert?
   freimonate        Int      @default(0)
+  guthabenEuro      Float    @default(0)
 
   // Test-Funktion "Direkt testen": Schickt ein Interessent von der Landingpage
   // aus eine Sprachnachricht, wird seine (unbekannte) Nummer automatisch zu

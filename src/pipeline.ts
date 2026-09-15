@@ -46,7 +46,7 @@ import { sendeMail, WORD_MIME } from "./email/send.js";
 import { bearbeitenLink, einstellungenLink, registrierLink, erzeugeToken, erzeugeKurzToken, kundenLink, werbeLink } from "./web/tokens.js";
 import { effektivePreisliste, einstellungenTokenBereit } from "./betrieb/betriebsdaten.js";
 import { willFeedback, extrahiereFeedback, FEEDBACK_FENSTER_MINUTEN } from "./feedback.js";
-import { werbeCodeBereit, EMPFEHLUNG_AB_ANGEBOT } from "./empfehlung.js";
+import { werbeCodeBereit, EMPFEHLUNG_AB_ANGEBOT, EMPFEHLUNGS_PRAEMIE_EUR } from "./empfehlung.js";
 import { starteTestFuerNeueNummer, testNachrichtBlockiert } from "./direkttest.js";
 import { verarbeiteOnboardingKnopf, markiereLeadAktiv } from "./lead/onboarding.js";
 import { direkttestConfig, featureConfig } from "./config.js";
@@ -1135,7 +1135,7 @@ export async function erstelleDokument(args: {
       await sendeWhatsAppText(
         vonNummer,
         `🎉 Schon ${anzahl} Angebote mit AuftragsBoss! Kennst du Kollegen, die auch ständig Angebote schreiben?\n\n` +
-          `Lade sie ein, *ihr bekommt beide 1 Monat gratis*:\n${werbeLink(code)}`,
+          `Lade sie ein: *Für jeden Kollegen, der Kunde wird, bekommst du ${EMPFEHLUNGS_PRAEMIE_EUR} € gutgeschrieben.* Dein Link:\n${werbeLink(code)}`,
       );
     }
   }

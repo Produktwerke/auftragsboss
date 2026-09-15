@@ -35,7 +35,7 @@ export function leadVorlagenName(): string {
 // Beide Antworten beginnen mit einer kurzen Vorstellung der KI (15.09.2026, Dirk):
 // Die Einladung per Vorlage klingt nach Sie, AuftragsBoss selbst duzt wie auf der
 // Baustelle. So ist klar, dass ab hier die KI spricht, nicht der Anrufer von eben.
-const VORSTELLUNG = "👋 Hallo, ich bin AuftragsBoss, deine KI für Malerangebote. Ich duze dich, wie auf der Baustelle.";
+const VORSTELLUNG = "👋 Hallo, ich bin AuftragsBoss, deine KI für Malerangebote.";
 
 const AUFFORDERUNG =
   VORSTELLUNG +

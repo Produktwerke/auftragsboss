@@ -229,7 +229,7 @@ export function berechneRaum(raum: RaumMasse): RaumAufmass | { grund: string } {
     }
     // Verworfene Öffnungen stehen NUR in rueckfragen (E-Mail/WhatsApp), nicht im
     // Kundendokument (15.09.2026); ebenso keine Vermerke wie „Tiefe nicht genannt".
-    if (oeffnungen.length === 0) teile.push("keine Öffnungen erfasst");
+    if (oeffnungen.length === 0 && verworfen.length === 0) teile.push("keine Öffnungen erfasst");
     if (laibungM2 > 0) teile.push(`Laibungen ${zahl(laibungM2)} m² (Tiefe ${masz(laibungTiefeM!)} m) hinzugerechnet`);
     else if (abgezogen.length && !laibungTiefeM) teile.push("Laibungen der abgezogenen Öffnungen nicht enthalten");
     teile.push(`Wandfläche netto ${zahl(wandNettoM2)} m²`);

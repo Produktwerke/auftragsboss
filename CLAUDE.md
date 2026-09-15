@@ -144,7 +144,7 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 > - Caching bestätigt: ab dem 2. Aufruf je Betrieb 17.350 Token aus dem Cache. Achtung: jeder Wechsel von Modell oder Effort
 >   invalidiert den Cache (in der Probe sichtbar), im Betrieb bleiben beide konstant.
 > - Empfehlung: **ANGEBOT_MODELL=claude-opus-5, ANGEBOT_EFFORT=high** (−60 % je Auswertung, schneller, gleiche Qualität); medium nicht.
->   Umstellung = Server-.env + pm2 restart, kein Deploy. Wandfoto/Bildlesen/Import bleiben vorerst auf Fable 5 (Vision-Prüfstand dort gemessen).
+>   ✅ 15.09. 11:30 UMGESTELLT (Dirks Entscheidung): Server-.env ANGEBOT_MODELL=claude-opus-5, ANGEBOT_EFFORT=high, pm2 restart, Probeaufruf bestätigt. Wandfoto/Bildlesen/Import bleiben vorerst auf Fable 5 (Vision-Prüfstand dort gemessen).
 
 > **Update 15.09.2026 — KI-KOSTEN: CACHING, ECHTE PREISE, KOSTENPROBE (Commit 7f0ae2a, deployt, 263 Tests):**
 > - **Befund:** Die Kostentabelle (`analytics/kikosten.ts`) rechnete mit Sonnet-Preisen (2,80/14 €), das Modell ist aber Claude Fable 5

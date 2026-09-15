@@ -78,7 +78,8 @@ describe("berechneRaum", () => {
       "Tor 4 × 3 m: höher als der Raum (2,55 m)",
       "Fenstertür 17 × 2,2 m: Maß unplausibel",
     ]);
-    expect(a.erklaerung).toContain("NICHT berücksichtigt: Fenster 0 × 1 m: Maß unplausibel; Tor 4 × 3 m");
+    // Verworfenes steht seit 15.09.2026 nur in verworfen/rueckfragen, nicht im Kunden-Erklärtext
+    expect(a.erklaerung).not.toContain("NICHT berücksichtigt");
     expect(a.erklaerung).not.toContain("keine Öffnungen erfasst");
     const e = berechneAufmass([{ ...schlafzimmer, oeffnungen: [{ art: "Fenstertür", breiteM: 17, hoeheM: 2.2 }] }]);
     expect(e.rueckfragen[0]).toBe("Schlafzimmer: Fenstertür 17 × 2,2 m: Maß unplausibel. Diese Öffnung wurde NICHT abgezogen, bitte das Maß prüfen.");
@@ -108,7 +109,7 @@ describe("berechneRaum", () => {
       "Schlafzimmer (Höhe 2,55 m, 3,84 × 3,99 m): Wandfläche brutto 39,93 m²; " +
         "1 Öffnung über 2,5 m² abgezogen (Fenstertür 1,69 × 2,22 m = 3,75 m²); " +
         "2 Öffnungen bis 2,5 m² übermessen (Tür 0,82 × 1,98 m; Fenster 0,69 × 0,74 m); " +
-        "Laibungen der abgezogenen Öffnungen nicht enthalten (Tiefe nicht genannt); " +
+        "Laibungen der abgezogenen Öffnungen nicht enthalten; " +
         "Wandfläche netto 36,18 m²; Decke 15,32 m².",
     );
     expect(a.erklaerung).not.toMatch(/[—–]/);
@@ -219,7 +220,7 @@ describe("berechneRaum", () => {
     const a = berechneRaum({ name: "Flur", hoeheM: 2.5, wandlaengenM: [4.5, 2.0, 1.5, 1.0, 3.0], waendeStreichen: true, deckeStreichen: true, oeffnungen: [], deckeM2Genannt: 7.4 });
     if ("grund" in a) throw new Error(a.grund);
     expect(a.deckeM2).toBe(7.4);
-    expect(a.erklaerung).toContain("Decke 7,40 m² (wie genannt)");
+    expect(a.erklaerung).toContain("Decke 7,40 m²");
   });
 });
 

@@ -227,17 +227,18 @@ export function berechneRaum(raum: RaumMasse): RaumAufmass | { grund: string } {
           .join("; ")})`,
       );
     }
-    if (oeffnungen.length === 0 && verworfen.length === 0) teile.push("keine Öffnungen erfasst");
-    if (verworfen.length) teile.push(`NICHT berücksichtigt: ${verworfen.join("; ")}`);
+    // Verworfene Öffnungen stehen NUR in rueckfragen (E-Mail/WhatsApp), nicht im
+    // Kundendokument (15.09.2026); ebenso keine Vermerke wie „Tiefe nicht genannt".
+    if (oeffnungen.length === 0) teile.push("keine Öffnungen erfasst");
     if (laibungM2 > 0) teile.push(`Laibungen ${zahl(laibungM2)} m² (Tiefe ${masz(laibungTiefeM!)} m) hinzugerechnet`);
-    else if (abgezogen.length && !laibungTiefeM) teile.push("Laibungen der abgezogenen Öffnungen nicht enthalten (Tiefe nicht genannt)");
+    else if (abgezogen.length && !laibungTiefeM) teile.push("Laibungen der abgezogenen Öffnungen nicht enthalten");
     teile.push(`Wandfläche netto ${zahl(wandNettoM2)} m²`);
   }
   if (raum.deckeStreichen) {
     teile.push(
       deckeM2 !== null
-        ? `Decke ${zahl(deckeM2)} m²${istMass(raum.deckeM2Genannt, 0.5, 500) ? " (wie genannt)" : ""}`
-        : "Decke: Grundfläche nicht berechenbar (kein Rechteck, Fläche nicht genannt)",
+        ? `Decke ${zahl(deckeM2)} m²`
+        : "Decke: Grundfläche nicht berechenbar",
     );
   }
 

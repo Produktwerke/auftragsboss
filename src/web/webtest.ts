@@ -144,7 +144,11 @@ async function erzeugeAusText(haupttext: string, zweitfassung?: string): Promise
   const aufmass = berechneAufmass(parseRaeumeText(daten.raeumeText));
   if (aufmass.raeume.length > 0 || aufmass.uebersprungen.length > 0) {
     daten.positionen = wendeAufmassAn(daten.positionen, aufmass);
-    daten.aufmassNotizen = [aufmassText(aufmass), daten.aufmassNotizen?.trim()].filter(Boolean).join("\n");
+    // Kundenanlage = nur der gerechnete Aufmaßtext. Der KI-Freitext („aus den Wandfotos …,
+    // Hochbett, Aufkleber …") ist Handwerker-Information und wandert in die E-Mail-Notizen (15.09.2026).
+    const kiNotiz = daten.aufmassNotizen?.trim();
+    if (kiNotiz) daten.rueckfragen = [...daten.rueckfragen, `Aufmaß-Notiz aus dem Diktat: ${kiNotiz}`];
+    daten.aufmassNotizen = aufmassText(aufmass);
     daten.rueckfragen = [...daten.rueckfragen, ...aufmass.rueckfragen];
   }
 

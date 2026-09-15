@@ -97,7 +97,7 @@ export function baueFertigmeldung(a: FertigmeldungArgs): string {
   kopfZeilen.push("", `👉 ${a.link}`);
 
   const alleHinweise = [...a.hinweise];
-  if (a.fehlende.length) alleHinweise.push(`✏️ Im Angebot noch ergänzen: ${a.fehlende.slice(0, 3).join(", ")}.`);
+  if (a.fehlende.length) alleHinweise.push(`✏️ Noch offen, bitte prüfen oder im Angebot ergänzen: ${a.fehlende.slice(0, 3).join(", ")}.`);
 
   const schluss: string[] = [];
   if (a.fotoTipp) schluss.push("", FOTO_TIPP);

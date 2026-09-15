@@ -22,7 +22,7 @@ import {
 } from "docx";
 import { liesFoto } from "../betrieb/fotoAblage.js";
 import { leseMasse } from "../betrieb/logo.js";
-import { oeffnungenBeschreibung, unsichereOeffnungen, type WandfotoAnalyse } from "../ai/wandfoto.js";
+import { type WandfotoAnalyse } from "../ai/wandfoto.js";
 
 export interface Belegfoto {
   id: string;
@@ -50,16 +50,25 @@ export function fotoBeschreibung(erkennungJson: string): string {
     return "";
   }
   if (!a || !Array.isArray(a.oeffnungen)) return "";
-  const teile: string[] = [];
-  const oeff = oeffnungenBeschreibung(a);
-  teile.push(oeff.length ? oeff.join("; ") : "keine Öffnungen");
-  const rand = unsichereOeffnungen(a);
-  if (rand.length) teile.push(`am Bildrand: ${rand.length} Öffnung${rand.length > 1 ? "en" : ""} der Nachbarwand`);
-  if (Array.isArray(a.besonderheiten) && a.besonderheiten.length) teile.push(a.besonderheiten.join(", "));
-  // Fotoqualität (zu dunkel, Wand nicht ganz im Bild) bleibt bewusst draußen: das ist
-  // ein Hinweis für den Moment des Fotografierens, im Angebot klänge es wie Kritik am Maler.
-  return teile.join(". ");
+  // Das Kundendokument bekommt NUR die Öffnungen mit Maß (15.09.2026, Dirk): keine
+  // Besonderheiten („Hochbett, Aufkleber"), keine Bildrand-Öffnungen, keine VOB-Grauzone
+  // („bitte nachmessen"), keine Fotoqualität. Alles davon ist Handwerker-Information
+  // und steht im Dialog bzw. in der E-Mail, nie beim Kunden.
+  const oeff = a.oeffnungen
+    .filter((o) => !o.inNachbarwand)
+    .map((o) => (o.breiteM !== null && o.hoeheM !== null ? `${ART_NAME[o.art]} ca. ${m(o.breiteM)} × ${m(o.hoeheM)} m` : ART_NAME[o.art]));
+  return oeff.length ? oeff.join("; ") : "keine Öffnungen";
 }
+
+const ART_NAME: Record<WandfotoAnalyse["oeffnungen"][number]["art"], string> = {
+  Tuer: "Tür",
+  Fenster: "Fenster",
+  Fenstertuer: "Fenstertür",
+  Haustuer: "Haustür",
+  Durchgang: "Durchgang",
+  Sonstige: "Öffnung",
+};
+const m = (x: number) => (Math.round(x * 100) / 100).toString().replace(".", ",");
 
 const TYP_JE_MIME: Record<string, Belegfoto["typ"]> = {
   "image/jpeg": "jpg",

@@ -62,7 +62,7 @@ describe("baueFertigmeldung", () => {
     expect(t).toContain("💶 Gesamt: 1.234,00 € brutto");
     expect(t).toContain("⚠️ Kinderzimmer links: Fenster");
     expect(t).toContain("ℹ️ Wand 2 (Dachzimmer)");
-    expect(t).toContain("✏️ Im Angebot noch ergänzen: Kundenadresse.");
+    expect(t).toContain("✏️ Noch offen, bitte prüfen oder im Angebot ergänzen: Kundenadresse.");
     expect(t).toContain(FOTO_TIPP);
     expect(t).toContain("👆 Das war ein Test.");
     // Mit Knöpfen kein Text-Hinweis zum Weitermachen

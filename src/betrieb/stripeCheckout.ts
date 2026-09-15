@@ -85,11 +85,42 @@ export interface RechnungsZeile {
   status: string; // "paid" | "open" | "void" | …
   pdfUrl: string | null;
   webUrl: string | null;
+  /**
+   * Stripes Zahlungsbeleg (Quittung) zur bezahlten Rechnung. Die Rechnungs-PDF
+   * selbst bleibt bei Stripe auch nach der Zahlung „fällig … Online bezahlen"
+   * (Live-Durchstich 15.09.2026); der Beleg weist die Zahlung aus.
+   */
+  belegUrl: string | null;
 }
 
 /** Rechnungshistorie eines Betriebs aus Stripe laden (neueste zuerst). */
 export async function ladeRechnungen(stripeCustomerId: string, limit = 24): Promise<RechnungsZeile[]> {
-  const rechnungen = await stripe().invoices.list({ customer: stripeCustomerId, limit });
+  const s = stripe();
+  const [rechnungen, charges] = await Promise.all([
+    s.invoices.list({ customer: stripeCustomerId, limit, expand: ["data.payments"] }),
+    s.charges.list({ customer: stripeCustomerId, limit: 100 }),
+  ]);
+  // Beleg-URL je Charge, erreichbar über Charge-ID oder PaymentIntent-ID
+  // (Abo-Rechnungen verweisen auf den PaymentIntent, nicht auf die Charge).
+  const belege = new Map<string, string>();
+  for (const c of charges.data) {
+    if (!c.receipt_url || !c.paid) continue;
+    belege.set(c.id, c.receipt_url);
+    const pi = typeof c.payment_intent === "string" ? c.payment_intent : c.payment_intent?.id;
+    if (pi) belege.set(pi, c.receipt_url);
+  }
+  const belegVon = (r: Stripe.Invoice): string | null => {
+    if (r.status !== "paid") return null;
+    for (const p of r.payments?.data ?? []) {
+      const z = p.payment;
+      const ids = [z.charge, z.payment_intent].map((x) => (typeof x === "string" ? x : x?.id)).filter((x): x is string => !!x);
+      for (const id of ids) {
+        const url = belege.get(id);
+        if (url) return url;
+      }
+    }
+    return null;
+  };
   return rechnungen.data.map((r) => ({
     nummer: r.number ?? r.id ?? "—",
     datum: new Date(r.created * 1000),
@@ -97,6 +128,7 @@ export async function ladeRechnungen(stripeCustomerId: string, limit = 24): Prom
     status: r.status ?? "",
     pdfUrl: r.invoice_pdf ?? null,
     webUrl: r.hosted_invoice_url ?? null,
+    belegUrl: belegVon(r),
   }));
 }
 

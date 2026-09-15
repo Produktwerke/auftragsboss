@@ -136,13 +136,13 @@ export function aboSeite(args: {
           <td class="num">${datumDE(r.datum)}</td>
           <td class="r t-amount">${euro(r.bruttoEuro)}</td>
           <td>${statusBadge(r.status)}</td>
-          <td class="r">${r.pdfUrl ? `<a class="btn sm" href="${escapeHtml(r.pdfUrl)}" target="_blank" rel="noopener">PDF herunterladen</a>` : r.webUrl ? `<a class="btn sm" href="${escapeHtml(r.webUrl)}" target="_blank" rel="noopener">Ansehen</a>` : "—"}</td>
+          <td class="r" style="white-space:nowrap;">${r.pdfUrl ? `<a class="btn sm" href="${escapeHtml(r.pdfUrl)}" target="_blank" rel="noopener">Rechnung (PDF)</a>` : r.webUrl ? `<a class="btn sm" href="${escapeHtml(r.webUrl)}" target="_blank" rel="noopener">Ansehen</a>` : "—"}${r.belegUrl ? ` <a class="btn sm" href="${escapeHtml(r.belegUrl)}" target="_blank" rel="noopener">Zahlungsbeleg</a>` : ""}</td>
         </tr>`,
       )
       .join("");
     rechnungsPanel = `
       <div class="panel">
-        <div class="panel-h"><div><h2>Rechnungen</h2><p>Alle Abo-Rechnungen mit Download, Beträge inkl. MwSt.</p></div></div>
+        <div class="panel-h"><div><h2>Rechnungen</h2><p>Alle Abo-Rechnungen mit Download, Beträge inkl. MwSt. Der Zahlungsbeleg bestätigt die Zahlung.</p></div></div>
         ${
           rechnungen.length
             ? `<div class="dtable-wrap"><table class="dtable rech-tabelle">

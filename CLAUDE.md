@@ -136,6 +136,12 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 15.09.2026 (9) — LEAD OHNE EINLADUNG BLIEB STUMM (behoben, deployt):** Vorfall: Nummer erst über das Website-Formular
+>   als Lead angelegt (Vorlage `test_starten` nicht genehmigt → keine Einladung), dann per QR-Code die Startnachricht geschrieben →
+>   Pipeline hielt den Lead für „schon per Einladung begrüßt" und antwortete nicht. Jetzt: `schonEingeladen` = Event
+>   LEAD_EINLADUNG_GESENDET vorhanden; nur dann entfällt die Begrüßung. Startnachricht bekommt IMMER eine Antwort (Begrüßung oder
+>   „Los geht's"). Hero-Knopf „Per WhatsApp testen" hat jetzt dieselbe Handy/PC-Weiche wie die Preiskarten (Klasse test-start).
+
 > **Update 15.09.2026 (8) — TESTPHASE-ERINNERUNGEN PER WHATSAPP (288 Tests, deployt):** `jobs/testphaseErinnerung.ts`, täglich 09:00:
 >   Test-Konten (istTest, nicht blockiert, kein Webtest-Sammelkonto) mit ≥ 1 Angebot bekommen 3 Tage vor Ablauf die Vorlage
 >   `test_endet_bald` ({{1}} Anrede, {{2}} Ablaufdatum, {{3}} Registrier-Link) und am Tag nach Ablauf `test_abgelaufen` ({{1}}, {{2}} Link);

@@ -277,6 +277,16 @@ describe("Stripe: Ereignis-Verarbeitung", () => {
     expect((aufrufe.buchungCreate[0] as { data: Record<string, unknown> }).data.betrag).toBe(-49.5);
   });
 
+  it("Erstattung ohne invoice-Feld (API 2026) → Rechnung über den PaymentIntent gefunden", async () => {
+    const { p, aufrufe } = fakePrisma({ buchungVorhanden: origBuchung });
+    const ohneInvoice = { type: "charge.refunded", data: { object: { payment_intent: "pi_1", amount: 11781, amount_refunded: 11781 } } };
+    const suche = vi.fn(async (pi: string) => (pi === "pi_1" ? "in_77" : null));
+    const erg = await verarbeiteStripeEvent(p, ohneInvoice, vi.fn(async () => true), undefined, undefined, suche);
+    expect(erg.aktion).toBe("erstattung-gebucht");
+    expect(suche).toHaveBeenCalledWith("pi_1");
+    expect((aufrufe.buchungCreate[0] as { data: Record<string, unknown> }).data.betrag).toBe(-99);
+  });
+
   it("unbekannter Ereignistyp → ignoriert, nichts passiert", async () => {
     const { p, aufrufe } = fakePrisma();
     const erg = await verarbeiteStripeEvent(p, { type: "product.created", data: { object: {} } }, vi.fn(async () => true));

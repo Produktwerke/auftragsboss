@@ -132,6 +132,18 @@ export async function ladeRechnungen(stripeCustomerId: string, limit = 24): Prom
   }));
 }
 
+/**
+ * Rechnung zu einer Zahlung (PaymentIntent) finden. Seit API 2026 (dahlia)
+ * trägt eine Charge keinen `invoice`-Verweis mehr; die Verknüpfung läuft über
+ * die Rechnungszahlungen. Gebraucht bei `charge.refunded` (Live-Durchstich
+ * 15.09.2026: Erstattung wurde sonst als „ohne Rechnungsbezug" ignoriert).
+ */
+export async function rechnungZuZahlung(paymentIntentId: string): Promise<string | null> {
+  const liste = await stripe().invoicePayments.list({ payment: { type: "payment_intent", payment_intent: paymentIntentId }, limit: 1 });
+  const inv = liste.data[0]?.invoice;
+  return typeof inv === "string" ? inv : (inv?.id ?? null);
+}
+
 // ── Kundenportal (Stripe Etappe 3, 15.09.2026) ────────────────────────
 //
 // Der Betrieb verwaltet sein Abo selbst: Zahlungsart, Rechnungsadresse und

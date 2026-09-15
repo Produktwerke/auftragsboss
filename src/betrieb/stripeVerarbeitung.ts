@@ -18,7 +18,7 @@ import type { PrismaClient } from "@prisma/client";
 import { istTarif, monatsZeitraum, TARIF_PRESETS, type Tarif } from "./abrechnung.js";
 import { meldeNeuenKunden } from "./betreiberAlarm.js";
 import { nachAboAbschluss } from "./gutschrift.js";
-import { stripeGutschreiben } from "./stripeCheckout.js";
+import { rechnungZuZahlung, stripeGutschreiben } from "./stripeCheckout.js";
 import { stripeKonfiguriert } from "../config.js";
 import { echteZahlungsHooks, type ZahlungsHooks } from "./zahlungsausfall.js";
 
@@ -135,6 +135,8 @@ export async function verarbeiteStripeEvent(
   nachCheckout: typeof nachAboAbschluss = (p, hw, cus, g) => nachAboAbschluss(p, hw, cus, g ?? (stripeKonfiguriert() ? stripeGutschreiben : null)),
   /** Zahlungsausfall: Maler-Mail, Betreiber-Alarm, Entwarnung (injizierbar). */
   zahlung: ZahlungsHooks = echteZahlungsHooks,
+  /** Rechnung zu einer Zahlung (für Erstattungen ohne invoice-Feld, injizierbar). */
+  sucheRechnung: (paymentIntentId: string) => Promise<string | null> = (pi) => (stripeKonfiguriert() ? rechnungZuZahlung(pi) : Promise.resolve(null)),
 ): Promise<StripeErgebnis> {
   switch (event.type) {
     case "checkout.session.completed": {
@@ -312,7 +314,12 @@ export async function verarbeiteStripeEvent(
       // ZIEL-Zustand: Summe aller Korrekturen zu dieser Rechnung soll dem
       // erstatteten Anteil entsprechen — mehrfache Zustellung bucht nur das Delta.
       const charge = event.data.object;
-      const invoiceId = idVon(charge?.invoice);
+      let invoiceId = idVon(charge?.invoice);
+      if (!invoiceId) {
+        // Neue API-Versionen: Charge ohne invoice-Feld → über den PaymentIntent nachschlagen.
+        const pi = idVon(charge?.payment_intent);
+        if (pi) invoiceId = await sucheRechnung(pi);
+      }
       if (!invoiceId) return { aktion: "ignoriert", detail: "Erstattung ohne Rechnungsbezug" };
       const gesamt = typeof charge?.amount === "number" ? charge.amount : null;
       const erstattet = typeof charge?.amount_refunded === "number" ? charge.amount_refunded : null;

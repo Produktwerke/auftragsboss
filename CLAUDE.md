@@ -146,8 +146,10 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   Test-Konten (istTest, nicht blockiert, kein Webtest-Sammelkonto) mit ≥ 1 Angebot bekommen 3 Tage vor Ablauf die Vorlage
 >   `test_endet_bald` ({{1}} Anrede, {{2}} Ablaufdatum, {{3}} Registrier-Link) und am Tag nach Ablauf `test_abgelaufen` ({{1}}, {{2}} Link);
 >   Anrede = Name, sonst Firma, sonst „Boss". Idempotent über Event TEST_ERINNERUNG (art), AdminLog je Versand; längst abgelaufene Konten
->   bekommen nichts (Fenster 2 Tage). `faelligeErinnerung` rein + getestet. Vorlagennamen per `TEST_VORLAGE_ENDET_BALD`/`_ABGELAUFEN`
->   (Server-.env: TEST_VORLAGE_ENDET_BALD=test_endet_bald_de, weil `test_endet_bald` bei Meta versehentlich auf Englisch angelegt wurde).
+>   bekommen nichts (Fenster 2 Tage). `faelligeErinnerung` rein + getestet. Vorlagennamen per `TEST_VORLAGE_ENDET_BALD`/`_ABGELAUFEN` (Standardnamen, .env leer).
+>   ⚠️ META-VORLAGEN IMMER IM KONTO „AuftragsBoss" (WABA 1680177866376806, Nummer +49 174 9364823) anlegen, NICHT im
+>   „Test WhatsApp Business Account" (WABA 27723291890696420, US-Testnummer, Jasper's-Market-Muster): Vorlagen lassen sich nicht
+>   verschieben. Direktlink: https://business.facebook.com/latest/whatsapp_manager/message_templates?business_id=1588652012858593&waba_id=1680177866376806
 >   Probelauf: `npx tsx src/testphase-erinnerung-jetzt.ts <nummer>` sendet beide an diese Nummer. ⏳ Dirk legt beide Vorlagen bei Meta an
 >   (Texte im Chat vom 15.09.); bis zur Genehmigung loggt der Job „nicht gesendet (Vorlage genehmigt?)".
 

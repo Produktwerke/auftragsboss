@@ -59,6 +59,18 @@ describe("Lead-Onboarding: anlegen + einladen", () => {
     expect(vorlage?.args[3]).toEqual([KNOPF_JA, KNOPF_ERKLAEREN]);
   });
 
+  it("Website-Interessent: eigene Vorlage, Leadquelle WEBSITE, Opt-in mit Tarifwunsch", async () => {
+    const { p, aufrufe } = fakePrisma();
+    const { sender, gesendet } = fakeSender();
+    const erg = await legeLeadAnUndLadeEin(p, { nummer: "0176 1234567", anrede: "Kai", optInQuelle: "website:profi", leadQuelle: "WEBSITE", vorlage: "test_starten" }, sender);
+    expect("handwerker" in erg).toBe(true);
+    const daten = (aufrufe.create[0] as { data: Record<string, unknown> }).data;
+    expect(daten.leadQuelle).toBe("WEBSITE");
+    expect(daten.optInQuelle).toBe("website:profi");
+    const vorlage = gesendet.find((g) => g.art === "vorlage");
+    expect(vorlage?.args[1]).toBe("test_starten");
+  });
+
   it("lehnt unbrauchbare Nummer und vorhandene Nummer ab", async () => {
     const { p } = fakePrisma();
     const { sender } = fakeSender();

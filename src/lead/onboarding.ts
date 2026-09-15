@@ -30,6 +30,11 @@ export function leadVorlagenName(): string {
   return process.env.LEAD_VORLAGE?.trim() || "angebot_ausprobieren";
 }
 
+/** Vorlage für Interessenten, die auf der Website ihre Nummer eintragen (15.09.2026). */
+export function testVorlagenName(): string {
+  return process.env.TEST_VORLAGE?.trim() || "test_starten";
+}
+
 // Die EINE Aufforderung nach "Ja, los geht's" — danach wird gewartet, nichts
 // weiter gesendet. (Hausregel: keine Gedankenstriche in Nutzertexten.)
 // Beide Antworten beginnen mit einer kurzen Vorstellung der KI (15.09.2026, Dirk):
@@ -74,7 +79,16 @@ const echterSender: LeadSender = {
  */
 export async function legeLeadAnUndLadeEin(
   prisma: PrismaClient,
-  args: { nummer: string; anrede: string; firma?: string; optInQuelle?: string },
+  args: {
+    nummer: string;
+    anrede: string;
+    firma?: string;
+    optInQuelle?: string;
+    /** "TELEFON" (Cockpit, Standard) oder "WEBSITE" (Nummer selbst eingetragen). */
+    leadQuelle?: string;
+    /** Abweichende Meta-Vorlage, z.B. test_starten für Website-Interessenten. */
+    vorlage?: string;
+  },
   sender: LeadSender = echterSender,
 ): Promise<{ handwerker: Handwerker } | { fehler: string }> {
   const nummer = normalisiereHandy(args.nummer);
@@ -94,7 +108,7 @@ export async function legeLeadAnUndLadeEin(
       firma: (args.firma ?? "").trim(),
       email: "",
       istTest: true, // startet mit dem Gratis-Kontingent wie jeder Test
-      leadQuelle: "TELEFON",
+      leadQuelle: args.leadQuelle ?? "TELEFON",
       optInAm: new Date(),
       optInQuelle: (args.optInQuelle ?? "telefonat").trim() || "telefonat",
       onboardingStatus: "EINGELADEN",
@@ -105,7 +119,7 @@ export async function legeLeadAnUndLadeEin(
     data: { quelle: handwerker.optInQuelle },
   });
 
-  const ok = await sender.vorlage(nummer, leadVorlagenName(), [anrede], [KNOPF_JA, KNOPF_ERKLAEREN]);
+  const ok = await sender.vorlage(nummer, args.vorlage ?? leadVorlagenName(), [anrede], [KNOPF_JA, KNOPF_ERKLAEREN]);
   if (!ok) {
     // Lead bleibt angelegt (Opt-in ist dokumentiert) — der Betreiber sieht den
     // Fehler und kann es erneut versuchen (z. B. Vorlage noch nicht genehmigt).

@@ -136,6 +136,23 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 15.09.2026 (7) — TEST STARTEN VON DER LANDINGPAGE (Dirk: „Gratis testen führte nur zur Browser-Demo, und was macht jemand am PC?"; 284 Tests, deployt):**
+> - Preiskarten-Knöpfe heißen „14 Tage gratis testen" und sind wa.me-Links mit vorgefülltem Text samt Tarif („… 14 Tage kostenlos testen
+>   (Tarif Profi)"). Am Handy (pointer:coarse oder mobiler UA) öffnet WhatsApp direkt. Am PC fängt JS den Klick ab und zeigt das Overlay
+>   `#tsOverlay`: (1) Formular Vorname + Handynummer → POST `https://api.auftragsboss.de/test-starten` (klassisches Formular, kein CORS),
+>   (2) QR-Code `auftragsboss-qr.png` (muss mit zu IONOS!), (3) Link „WhatsApp im Browser öffnen". Unter den Karten „Kein WhatsApp zur Hand?
+>   Im Browser ausprobieren" → `/testen` bleibt als Nebenweg. → **IONOS-Upload: index.html + auftragsboss-qr.png.**
+> - `src/web/testStartRoutes.ts`: Formular-Parser (urlencoded, nur in diesem Plugin), Honigtopf, Rate-Limit 10/h, DE-Nummern-Sperre,
+>   bekannte Nummer → „Du bist schon dabei" (kein Template), sonst `legeLeadAnUndLadeEin(…, { leadQuelle: "WEBSITE", vorlage: testVorlagenName(),
+>   optInQuelle: "website:<tarif>" })` → Meta-Vorlage **`test_starten`** (Knöpfe Ja/Erklären wie beim Telefon-Lead, `TEST_VORLAGE` in .env
+>   überschreibbar). Antwortseite „📲 Schau auf dein Handy"; scheitert der Versand (Vorlage nicht genehmigt), Lead bleibt angelegt und die Seite
+>   zeigt den WhatsApp-Weg. Betreiber-Mail „Neuer Test-Interessent" an ADMIN_EMAIL, Event TEST_ANGEFORDERT.
+> - Pipeline: `testStartAusText` (direkttest.ts) erkennt die vorgefüllte Startnachricht („kostenlos testen", ohne Maße/Räume) → nur Begrüßung
+>   (bzw. „Los geht's" ab der 2. Nachricht), AdminLog TEST_ANGEFORDERT mit Tarifwunsch, KEIN KI-Aufruf. Vorher wäre der Text als Diktat gelaufen.
+> - ⏳ Dirk: Meta-Vorlage `test_starten` anlegen (Utility, Text „Hallo {{1}}, hier ist AuftragsBoss. Du hast auf auftragsboss.de den kostenlosen
+>   Test angefordert. Wollen wir direkt loslegen und ein erstes Angebot ausprobieren?", Fußzeile KI-Hinweis, Quick-Reply-Knöpfe „Ja, los geht's" /
+>   „Kurz erklären"); bis zur Genehmigung greift der Ausweg. Lokale Landingpage-Vorschau: `.claude/launch.json` Konfiguration `landingpage` (Port 3030).
+
 > **Update 15.09.2026 (6) — STRIPE ETAPPE 3, TEIL 2: ZAHLUNGSAUSFALL (280 Tests, deployt inkl. db push):**
 > - `Abo.zahlungOffenSeit` / `zahlungFehlversuche` / `zahlungOffeneRechnung` (additiv). Webhook `invoice.payment_failed` markiert das Abo
 >   (Versuch n, Link zur gehosteten Rechnung), AdminLog, Hooks (`betrieb/zahlungsausfall.ts`, injizierbar): E-Mail an den Maler

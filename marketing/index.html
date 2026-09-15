@@ -496,6 +496,29 @@
   .beleg .quelle{display:inline-block;color:var(--dim);font-size:11px;margin-top:11px;font-family:var(--mono);letter-spacing:.02em;text-decoration:none;transition:color .15s;}
   .beleg .quelle:hover{color:var(--signal);text-decoration:underline;}
   @media(max-width:640px){ .belege{grid-template-columns:1fr;} }
+
+  /* Test starten (Preiskarten): Overlay am PC */
+  .nebenweg{margin:14px 0 0;text-align:center;color:var(--muted);font-size:13.5px;}
+  .nebenweg a{color:var(--ink);}
+  .ts-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;}
+  .ts-overlay[hidden]{display:none;}
+  .ts-box{position:relative;background:var(--bg2);border:1px solid var(--hair);border-radius:var(--r-lg);padding:28px 26px;max-width:720px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.6);}
+  .ts-box h3{font-size:24px;margin:8px 0 6px;}
+  .ts-box h3 span{color:var(--signal);}
+  .ts-p{color:var(--muted);margin:0 0 18px;font-size:14.5px;}
+  .ts-x{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--muted);font-size:26px;cursor:pointer;line-height:1;}
+  .ts-wege{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .ts-weg{background:var(--bg3);border:1px solid var(--hair);border-radius:var(--r);padding:18px;}
+  .ts-weg b{display:block;margin-bottom:4px;}
+  .ts-weg p{color:var(--muted);font-size:13.5px;margin:0 0 12px;}
+  .ts-form{display:flex;flex-direction:column;gap:10px;}
+  .ts-form input[type=text],.ts-form input[type=tel]{padding:12px 12px;border-radius:var(--r);border:1px solid var(--steel2);background:var(--bg4);color:var(--ink);font-size:15px;font-family:inherit;}
+  .ts-form .cta{padding:12px 14px;}
+  .ts-klein{color:var(--muted);font-size:12px;line-height:1.4;}
+  .ts-qr{text-align:center;}
+  .ts-qr img{border-radius:10px;background:#fff;padding:6px;}
+  .ts-wa{display:block;margin-top:12px;color:var(--ink);font-size:13.5px;}
+  @media (max-width:640px){.ts-wege{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -760,7 +783,7 @@
         <div class="preis"><span class="eur num">29&nbsp;€</span><span class="per">/ Monat</span></div>
         <p class="mwst">zzgl. MwSt.</p>
         <ul class="feat"><li><b>50</b> Angebote / Monat</li><li>1 Telefonnummer</li><li>Logo &amp; Briefkopf</li><li>Export als PDF &amp; Word</li><li>Standardtexte hinterlegen</li></ul>
-        <a class="cta" href="https://api.auftragsboss.de/testen" target="_blank" rel="noopener">Gratis testen</a>
+        <a class="cta test-start" data-tarif="basis" href="https://wa.me/491749364823?text=Hallo%20AuftragsBoss%2C%20ich%20m%C3%B6chte%2014%20Tage%20kostenlos%20testen%20(Tarif%20Basis)." target="_blank" rel="noopener">14 Tage gratis testen</a>
       </div>
       <div class="karte top">
         <div class="badge">★ Beliebt</div>
@@ -768,17 +791,18 @@
         <div class="preis"><span class="eur num">79&nbsp;€</span><span class="per">/ Monat</span></div>
         <p class="mwst">zzgl. MwSt. · nur 66 Cent je Angebot</p>
         <ul class="feat"><li><b>120</b> Angebote / Monat</li><li>Bis zu 3 Telefonnummern</li><li>Alles aus <b>Basis</b></li><li>Erweiterte Auswertung</li><li>Nachträge per Sprachnachricht</li></ul>
-        <a class="cta prim" href="https://api.auftragsboss.de/testen" target="_blank" rel="noopener">Gratis testen</a>
+        <a class="cta prim test-start" data-tarif="profi" href="https://wa.me/491749364823?text=Hallo%20AuftragsBoss%2C%20ich%20m%C3%B6chte%2014%20Tage%20kostenlos%20testen%20(Tarif%20Profi)." target="_blank" rel="noopener">14 Tage gratis testen</a>
       </div>
       <div class="karte">
         <div class="stufe">Team</div><p class="fuer">Für Teams bis 15</p>
         <div class="preis"><span class="eur num">149&nbsp;€</span><span class="per">/ Monat</span></div>
         <p class="mwst">zzgl. MwSt.</p>
         <ul class="feat"><li><b>300</b> Angebote / Monat</li><li>Bis zu 15 Telefonnummern</li><li>Alles aus <b>Profi</b></li><li>Vorrang-Support</li><li>Gemeinsames Betriebsprofil</li></ul>
-        <a class="cta" href="https://api.auftragsboss.de/testen" target="_blank" rel="noopener">Gratis testen</a>
+        <a class="cta test-start" data-tarif="team" href="https://wa.me/491749364823?text=Hallo%20AuftragsBoss%2C%20ich%20m%C3%B6chte%2014%20Tage%20kostenlos%20testen%20(Tarif%20Team)." target="_blank" rel="noopener">14 Tage gratis testen</a>
       </div>
     </div>
     <div class="inkl"><span><span class="dot"></span><b>In jeder Stufe:</b></span><span>Logo &amp; Briefkopf</span><span>PDF + Word</span><span>läuft über WhatsApp</span><span>Kollegen werben = 100 € Gutschrift</span></div>
+    <p class="nebenweg">Kein WhatsApp zur Hand? <a href="https://api.auftragsboss.de/testen" target="_blank" rel="noopener">Im Browser ausprobieren</a></p>
   </section>
 
   <!-- FAQ -->
@@ -824,6 +848,36 @@
 
 <!-- Zoom-Overlay fürs Angebot -->
 <div id="lightbox" aria-hidden="true"><span class="lb-x" aria-hidden="true">✕</span><div class="lb-inner"></div></div>
+
+<!-- Test starten am PC: QR-Code fürs Handy oder Nummer eintragen (WhatsApp kommt von uns) -->
+<div class="ts-overlay" id="tsOverlay" hidden>
+  <div class="ts-box" role="dialog" aria-modal="true" aria-labelledby="tsTitel">
+    <button class="ts-x" id="tsSchliessen" aria-label="Schließen">×</button>
+    <span class="eyebrow lbl">14 Tage kostenlos</span>
+    <h3 id="tsTitel">Test starten <span id="tsTarif"></span></h3>
+    <p class="ts-p">AuftragsBoss läuft über WhatsApp. Am Handy geht es sofort los, am PC hast du zwei Wege:</p>
+    <div class="ts-wege">
+      <div class="ts-weg">
+        <b>Nummer eintragen</b>
+        <p>Wir schicken dir eine WhatsApp, du antwortest mit „Ja, los geht's".</p>
+        <form method="post" action="https://api.auftragsboss.de/test-starten" class="ts-form">
+          <input type="hidden" name="tarif" id="tsTarifFeld" value="">
+          <input type="text" name="firma2" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;" aria-hidden="true">
+          <input type="text" name="name" placeholder="Vorname" required minlength="2" maxlength="60">
+          <input type="tel" name="nummer" placeholder="Handynummer, z. B. 0176 1234567" required inputmode="tel">
+          <button type="submit" class="cta prim">WhatsApp anfordern</button>
+          <span class="ts-klein">Mit dem Absenden erlaubst du uns, dich einmalig per WhatsApp anzuschreiben.</span>
+        </form>
+      </div>
+      <div class="ts-weg ts-qr">
+        <b>Mit dem Handy scannen</b>
+        <p>Der Code öffnet den WhatsApp-Chat mit AuftragsBoss.</p>
+        <img src="auftragsboss-qr.png" alt="QR-Code: WhatsApp-Chat mit AuftragsBoss" width="150" height="150">
+        <a class="ts-wa" id="tsWa" href="#" target="_blank" rel="noopener">oder WhatsApp im Browser öffnen</a>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
 (function(){
   var lb=document.getElementById('lightbox');
@@ -878,6 +932,28 @@
   });
   window.addEventListener('resize',function(){screens.forEach(pruefe);});
 })();
+
+  // Preiskarten: am Handy direkt WhatsApp (Link), am PC das Fenster mit QR-Code und Nummernformular.
+  (function(){
+    var mobil = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    var ov = document.getElementById('tsOverlay'); if(!ov) return;
+    var titel = document.getElementById('tsTarif'), feld = document.getElementById('tsTarifFeld'), wa = document.getElementById('tsWa');
+    function schliessen(){ ov.hidden = true; }
+    document.getElementById('tsSchliessen').addEventListener('click', schliessen);
+    ov.addEventListener('click', function(e){ if(e.target === ov) schliessen(); });
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') schliessen(); });
+    document.querySelectorAll('a.test-start').forEach(function(a){
+      a.addEventListener('click', function(e){
+        if(mobil) return; // Link öffnet WhatsApp direkt
+        e.preventDefault();
+        var t = a.getAttribute('data-tarif') || '';
+        titel.textContent = t ? '(' + t.charAt(0).toUpperCase() + t.slice(1) + ')' : '';
+        feld.value = t; wa.href = a.href;
+        ov.hidden = false;
+        var erstes = ov.querySelector('input[name=name]'); if(erstes) erstes.focus();
+      });
+    });
+  })();
 </script>
 </body>
 </html>

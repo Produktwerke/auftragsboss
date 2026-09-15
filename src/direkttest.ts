@@ -187,3 +187,20 @@ export async function testNachrichtBlockiert(
   });
   return null;
 }
+
+/**
+ * Erkennt die vorgefüllte Startnachricht von der Landingpage („Hallo AuftragsBoss,
+ * ich möchte 14 Tage kostenlos testen (Tarif Profi)"). Sie ist kein Auftrag und
+ * darf nicht an die KI: Der Interessent bekommt nur die Begrüßung, der
+ * Tarifwunsch wird fürs Cockpit notiert. Liefert null, wenn es keine Startnachricht ist.
+ */
+export function testStartAusText(text: string | undefined): { tarif: string | null } | null {
+  const t = (text ?? "").trim();
+  if (!t || t.length > 160) return null;
+  if (!/(kostenlos|gratis|14 tage|testen|ausprobieren)/i.test(t)) return null;
+  if (!/(test|ausprobier|angebot)/i.test(t)) return null;
+  // Ein echtes Diktat enthält Maße, Räume oder Adressen; dann ist es keine Startnachricht.
+  if (/\d+[,.]\d+|\bm²|quadrat|wand|decke|zimmer|straße|strasse|weg\b/i.test(t)) return null;
+  const m = t.match(/tarif\s*(basis|profi|team)/i);
+  return { tarif: m ? m[1]!.toLowerCase() : null };
+}

@@ -39,3 +39,15 @@ describe("Ländersperre für unbekannte Nummern (12.09.2026)", () => {
     });
   });
 });
+
+describe("Startnachricht von der Landingpage (15.09.2026)", () => {
+  it("erkennt vorgefüllte Testwünsche samt Tarif, aber keine Diktate", async () => {
+    const { testStartAusText } = await import("./direkttest.js");
+    expect(testStartAusText("Hallo AuftragsBoss, ich möchte 14 Tage kostenlos testen (Tarif Profi).")).toEqual({ tarif: "profi" });
+    expect(testStartAusText("Hallo AuftragsBoss, ich möchte kostenlos ein Angebot testen.")).toEqual({ tarif: null });
+    expect(testStartAusText("Angebot für Familie Bär, Bergstraße 12, Wohnzimmer 4,49 mal 4,36, Wände streichen")).toBeNull();
+    expect(testStartAusText("Wohnzimmer, Höhe 2,52, Wände und Decke streichen, das will ich mal testen")).toBeNull();
+    expect(testStartAusText("")).toBeNull();
+    expect(testStartAusText(undefined)).toBeNull();
+  });
+});

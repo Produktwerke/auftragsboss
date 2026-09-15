@@ -47,7 +47,7 @@ import { bearbeitenLink, einstellungenLink, registrierLink, erzeugeToken, erzeug
 import { effektivePreisliste, einstellungenTokenBereit } from "./betrieb/betriebsdaten.js";
 import { willFeedback, extrahiereFeedback, FEEDBACK_FENSTER_MINUTEN } from "./feedback.js";
 import { werbeCodeBereit, EMPFEHLUNG_AB_ANGEBOT, EMPFEHLUNGS_PRAEMIE_EUR } from "./empfehlung.js";
-import { starteTestFuerNeueNummer, testNachrichtBlockiert } from "./direkttest.js";
+import { starteTestFuerNeueNummer, testNachrichtBlockiert, testStartAusText } from "./direkttest.js";
 import { verarbeiteOnboardingKnopf, markiereLeadAktiv } from "./lead/onboarding.js";
 import { direkttestConfig, featureConfig } from "./config.js";
 import { validierePositionen } from "./validierung/validator.js";
@@ -230,6 +230,19 @@ export async function verarbeiteNachricht(args: {
           anmeldeHinweis,
       );
       // kein return — die eigentliche Nachricht wird gleich weiterverarbeitet
+    }
+    // Startnachricht von der Landingpage („ich möchte 14 Tage kostenlos testen"):
+    // kein Auftrag, nichts für die KI. Begrüßung reicht, Tarifwunsch fürs Cockpit notieren.
+    const testStart = text ? testStartAusText(text) : null;
+    if (testStart) {
+      await prisma.adminLog.create({
+        data: { aktion: "TEST_ANGEFORDERT", handwerkerId: handwerker.id, betrieb: handwerker.firma || `+${vonNummer}`, detail: `per WhatsApp${testStart.tarif ? `, Tarifwunsch ${testStart.tarif}` : ""}` },
+      });
+      await spurEvent(prisma, "TEST_ANGEFORDERT", { handwerkerId: handwerker.id, data: { quelle: "whatsapp", tarif: testStart.tarif } });
+      if (handwerker.testNachrichten > 0) {
+        await sendeWhatsAppText(vonNummer, "👋 Los geht's: Sprich mir einfach eine kurze *Sprachnachricht* ein, Kunde, Adresse und was gemacht werden soll. Ich mache ein fertiges Angebot daraus. 🎙️");
+      }
+      return;
     }
   }
 

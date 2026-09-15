@@ -99,3 +99,72 @@ export async function ladeRechnungen(stripeCustomerId: string, limit = 24): Prom
     webUrl: r.hosted_invoice_url ?? null,
   }));
 }
+
+// ── Kundenportal (Stripe Etappe 3, 15.09.2026) ────────────────────────
+//
+// Der Betrieb verwaltet sein Abo selbst: Zahlungsart, Rechnungsadresse und
+// USt-IdNr. ändern, Rechnungen einsehen, zum Periodenende kündigen (und die
+// Kündigung bis dahin zurücknehmen). Alles auf Stripes gehosteter Seite, in
+// unserem Branding. Die Konfiguration wird einmal je Stripe-Umgebung angelegt
+// und über ihre Metadaten-Kennung wiedergefunden (Sandbox und Live getrennt).
+
+export const PORTAL_KENNUNG = "auftragsboss-portal-v1";
+
+/** Portal-Konfiguration finden oder anlegen; liefert die Konfigurations-Id. */
+export async function portalKonfigurationBereit(s: Stripe = stripe()): Promise<string> {
+  const liste = await s.billingPortal.configurations.list({ active: true, limit: 100 });
+  const vorhandene = liste.data.find((c) => c.metadata?.kennung === PORTAL_KENNUNG);
+  if (vorhandene) return vorhandene.id;
+  const neu = await s.billingPortal.configurations.create({
+    business_profile: {
+      headline: "Dein AuftragsBoss-Abo",
+      privacy_policy_url: "https://auftragsboss.de/datenschutz.html",
+    },
+    features: {
+      invoice_history: { enabled: true },
+      payment_method_update: { enabled: true },
+      customer_update: { enabled: true, allowed_updates: ["email", "address", "name", "tax_id", "phone"] },
+      subscription_cancel: {
+        enabled: true,
+        mode: "at_period_end",
+        cancellation_reason: {
+          enabled: true,
+          options: ["too_expensive", "missing_features", "unused", "switched_service", "other"],
+        },
+      },
+    },
+    default_return_url: basisUrl(),
+    metadata: { kennung: PORTAL_KENNUNG },
+  });
+  return neu.id;
+}
+
+let portalKonfigCache: string | null = null;
+
+/** Persönlichen Link ins Kundenportal erzeugen (kurzlebige Stripe-Sitzung). */
+export async function erzeugePortalUrl(stripeCustomerId: string, rueckkehrUrl: string): Promise<string> {
+  if (!portalKonfigCache) portalKonfigCache = await portalKonfigurationBereit();
+  const session = await stripe().billingPortal.sessions.create({
+    customer: stripeCustomerId,
+    configuration: portalKonfigCache,
+    return_url: rueckkehrUrl,
+    locale: "de",
+  });
+  if (!session.url) throw new Error("Stripe lieferte keine Portal-URL.");
+  return session.url;
+}
+
+/** Laufzeit-Stand eines Abos direkt aus Stripe (Kündigung zum Periodenende sichtbar machen). */
+export interface AboLaufzeit {
+  status: string;
+  /** Datum, zu dem das Abo endet, wenn eine Kündigung vorgemerkt ist; sonst null. */
+  gekuendigtZum: Date | null;
+}
+
+export async function ladeAboLaufzeit(stripeSubscriptionId: string): Promise<AboLaufzeit> {
+  const sub = await stripe().subscriptions.retrieve(stripeSubscriptionId);
+  const vorgemerkt = sub.cancel_at_period_end || sub.cancel_at !== null;
+  // cancel_at ist bei cancel_at_period_end gesetzt; zur Sicherheit das Periodenende des ersten Postens.
+  const ende = sub.cancel_at ?? sub.items?.data?.[0]?.current_period_end ?? null;
+  return { status: sub.status, gekuendigtZum: vorgemerkt && ende ? new Date(ende * 1000) : null };
+}

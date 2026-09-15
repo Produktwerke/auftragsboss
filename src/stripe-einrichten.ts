@@ -15,6 +15,7 @@
 // Nach dem Lauf im Stripe-Dashboard unter Produkte kontrollierbar.
 import "./env.js";
 import Stripe from "stripe";
+import { portalKonfigurationBereit } from "./betrieb/stripeCheckout.js";
 
 const key = process.env.STRIPE_SECRET_KEY;
 if (!key?.startsWith("sk_")) {
@@ -102,5 +103,9 @@ if (mwst) {
   });
   console.log(`+ Steuersatz 19 % MwSt angelegt (${mwst.id})`);
 }
+
+// Kundenportal (Etappe 3): Konfiguration einmal je Umgebung anlegen.
+const portalId = await portalKonfigurationBereit(stripe);
+console.log(`✓ Kundenportal-Konfiguration bereit (${portalId})`);
 
 console.log(`\nFertig (${modus}). Die Preise sind über ihre lookup_keys basis/profi/team auffindbar.`);

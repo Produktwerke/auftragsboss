@@ -30,8 +30,12 @@ export function aboSeite(args: {
   rechnungen?: RechnungsZeile[];
   /** Betrieb ist Stripe-Kunde? Steuert, ob das Rechnungs-Panel erscheint. */
   hatStripeKunde?: boolean;
+  /** Kundenportal erreichbar (Stripe eingerichtet + Stripe-Kunde)? Zeigt den Knopf „Abo verwalten". */
+  portalVerfuegbar?: boolean;
+  /** Vorgemerkte Kündigung zum Periodenende (aus Stripe); null = läuft weiter. */
+  gekuendigtZum?: Date | null;
 }): string {
-  const { handwerker: h, token, werbeUrl, abo, aboBuchbar, rechnungen = [], hatStripeKunde } = args;
+  const { handwerker: h, token, werbeUrl, abo, aboBuchbar, rechnungen = [], hatStripeKunde, portalVerfuegbar, gekuendigtZum } = args;
   const datumDE = (d: Date) => d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
   const euro = (n: number) => n.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
   const teilenText = empfehlungsText(h.firma || "Ein Kollege", werbeUrl);
@@ -50,6 +54,15 @@ export function aboSeite(args: {
   if (abo && abo.status === "AKTIV") {
     const tarifName =
       abo.tarif === "INDIVIDUELL" ? "Individuell" : abo.tarif.charAt(0) + abo.tarif.slice(1).toLowerCase();
+    const kuendigung = gekuendigtZum
+      ? `<p class="abo-hinweis">Gekündigt zum <b>${datumDE(gekuendigtZum)}</b>. Bis dahin kannst du AuftragsBoss voll nutzen. Umentschieden? Im Portal lässt sich die Kündigung zurücknehmen.</p>`
+      : "";
+    const verwalten = portalVerfuegbar
+      ? `<div class="abo-aktionen">
+            <a class="btn" href="/abo/verwalten/${escapeHtml(token)}">Abo verwalten</a>
+            <span class="abo-erkl">Zahlungsart, Rechnungsadresse, Rechnungen und Kündigung</span>
+          </div>`
+      : "";
     aboPanel = `
       <div class="panel">
         <div class="panel-b abo-aktiv">
@@ -57,8 +70,9 @@ export function aboSeite(args: {
             <div class="abo-k">Dein Abo</div>
             <div class="abo-v">${escapeHtml(tarifName)} · ${abo.monatspreis.toLocaleString("de-DE")} € im Monat zzgl. MwSt.</div>
           </div>
-          <span class="badge ok">Aktiv</span>
+          ${gekuendigtZum ? `<span class="badge warn">Endet ${datumDE(gekuendigtZum)}</span>` : `<span class="badge ok">Aktiv</span>`}
         </div>
+        ${kuendigung || verwalten ? `<div class="panel-b abo-fuss">${kuendigung}${verwalten}</div>` : ""}
       </div>`;
   } else if (aboBuchbar) {
     aboPanel = `
@@ -201,6 +215,10 @@ window.linkKopieren = linkKopieren; window.perMailEinladen = perMailEinladen;
   .abo-aktiv{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
   .abo-k{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);margin-bottom:4px;}
   .abo-v{font-size:16px;font-weight:700;}
+  .abo-fuss{border-top:1px solid var(--line);padding-top:14px;}
+  .abo-hinweis{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.55;}
+  .abo-aktionen{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .abo-erkl{color:var(--faint);font-size:13px;}
   .tarife{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
   .tarif{position:relative;border:1px solid var(--line-2);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;background:var(--panel);}
   .tarif.beliebt{border-color:#e3b93c;box-shadow:0 0 0 1px #e3b93c;}

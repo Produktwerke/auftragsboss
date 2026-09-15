@@ -11,11 +11,13 @@ import { prisma } from "../pipeline.js";
 import { stripeKonfiguriert } from "../config.js";
 import {
   erzeugeAboCheckoutUrl,
+  erzeugePortalUrl,
+  ladeAboLaufzeit,
   ladeRechnungen,
   type BuchbarerTarif,
   type RechnungsZeile,
 } from "../betrieb/stripeCheckout.js";
-import { cockpitLink, registrierLink, werbeLink } from "./tokens.js";
+import { aboLink, cockpitLink, registrierLink, werbeLink } from "./tokens.js";
 import { werbeCodeBereit } from "../empfehlung.js";
 import { aboSeite } from "./aboSeite.js";
 
@@ -64,11 +66,20 @@ export async function aboRoutes(app: FastifyInstance): Promise<void> {
     // Rechnungshistorie aus Stripe (nur wenn der Betrieb dort Kunde ist).
     // Fehler sind nicht fatal — die Seite zeigt dann einfach keine Liste.
     let rechnungen: RechnungsZeile[] = [];
+    let gekuendigtZum: Date | null = null;
     if (abo?.stripeCustomerId && stripeKonfiguriert()) {
       try {
         rechnungen = await ladeRechnungen(abo.stripeCustomerId);
       } catch (err) {
         req.log.warn({ err }, "Stripe-Rechnungen konnten nicht geladen werden");
+      }
+      // Vorgemerkte Kündigung (Kundenportal) sichtbar machen; Fehler nicht fatal.
+      if (abo.stripeSubscriptionId && abo.status === "AKTIV") {
+        try {
+          gekuendigtZum = (await ladeAboLaufzeit(abo.stripeSubscriptionId)).gekuendigtZum;
+        } catch (err) {
+          req.log.warn({ err }, "Stripe-Abo-Laufzeit konnte nicht geladen werden");
+        }
       }
     }
 
@@ -81,8 +92,39 @@ export async function aboRoutes(app: FastifyInstance): Promise<void> {
         aboBuchbar: stripeKonfiguriert() && !handwerker.istTest,
         rechnungen,
         hatStripeKunde: Boolean(abo?.stripeCustomerId),
+        portalVerfuegbar: Boolean(abo?.stripeCustomerId) && stripeKonfiguriert(),
+        gekuendigtZum,
       }),
     );
+  });
+
+  // Kundenportal (Stripe Etappe 3): Zahlungsart, Rechnungsadresse, Rechnungen,
+  // Kündigung. Kurzlebige Stripe-Sitzung, zurück geht es auf "Abo & Abrechnung".
+  app.get<{ Params: { token: string } }>("/abo/verwalten/:token", async (req, reply) => {
+    if (!stripeKonfiguriert()) return reply.code(404).type("text/html").send(
+      seite("Noch nicht verfügbar", "Die Abo-Verwaltung ist gerade nicht eingerichtet. Melde dich einfach kurz per WhatsApp, wir kümmern uns."),
+    );
+    const handwerker = await prisma.handwerker.findUnique({ where: { einstellungenToken: req.params.token } });
+    if (!handwerker) return reply.code(404).type("text/html").send(
+      seite("Link ungültig", "Dieser Link gehört zu keinem Betrieb. Öffne dein Cockpit über den Link aus WhatsApp."),
+    );
+    const abo = await prisma.abo.findUnique({ where: { handwerkerId: handwerker.id } });
+    if (!abo?.stripeCustomerId) {
+      return reply.code(404).type("text/html").send(
+        seite("Kein Online-Abo", "Für diesen Betrieb gibt es noch kein online gebuchtes Abo, das sich hier verwalten ließe.",
+          { href: aboLink(req.params.token), label: "Zu Abo & Abrechnung" }),
+      );
+    }
+    try {
+      const url = await erzeugePortalUrl(abo.stripeCustomerId, aboLink(req.params.token));
+      return reply.redirect(url);
+    } catch (err) {
+      req.log.error({ err }, "Stripe-Kundenportal konnte nicht geöffnet werden");
+      return reply.code(502).type("text/html").send(
+        seite("Das hat nicht geklappt", "Die Abo-Verwaltung ist gerade nicht erreichbar. Bitte versuch es in ein paar Minuten noch einmal.",
+          { href: aboLink(req.params.token), label: "Zurück" }),
+      );
+    }
   });
 
   app.get<{ Params: { token: string }; Querystring: { tarif?: string } }>(

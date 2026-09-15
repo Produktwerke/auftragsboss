@@ -136,6 +136,18 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 15.09.2026 (4) — STRIPE ETAPPE 3, TEIL 1: KUNDENPORTAL (270 Tests, deployt):**
+> - `betrieb/stripeCheckout.ts`: `portalKonfigurationBereit()` legt je Stripe-Umgebung EINE Portal-Konfiguration an (Metadaten-Kennung
+>   `auftragsboss-portal-v1`; Rechnungen, Zahlungsart, Kundendaten inkl. USt-IdNr., Kündigung zum Periodenende mit Grund, Datenschutz-Link),
+>   `erzeugePortalUrl(customerId, rueckkehr)` (kurzlebige Sitzung, locale de), `ladeAboLaufzeit(subscriptionId)` (vorgemerkte Kündigung →
+>   `gekuendigtZum` aus `cancel_at`). `stripe-einrichten.ts` legt die Konfiguration mit an (auf dem Server in der Sandbox gelaufen).
+> - Route `GET /abo/verwalten/:einstellungenToken` → 302 ins Portal, zurück auf `/abo/:token`; 404 ohne Stripe-Konfig oder ohne Stripe-Kunde.
+>   `aboSeite`: Knopf „Abo verwalten" + Zeile „Endet dd.mm.yyyy" / Hinweis mit Rücknahme, wenn gekündigt (Test `aboSeite.test.ts`).
+> - Webhook: `customer.subscription.updated` mit `previous_attributes.cancel_at_period_end` → AdminLog STRIPE_KUENDIGUNG_VORGEMERKT /
+>   _ZURUECKGENOMMEN (Test). **Dirk muss das Ereignis im Stripe-Webhook-Endpunkt ergänzen** (Sandbox jetzt, Live später).
+> - ⏳ Abnahme (Dirk, Sandbox): Checkout mit Testkarte → „Abo verwalten" → kündigen → Seite zeigt „Endet …" → Kündigung zurücknehmen.
+>   Danach Teil 2 (Zahlungsausfall-UX) und Teil 3 (Live-Umstellung).
+
 > **Update 15.09.2026 (3) — KUNDENDOKUMENT SAUBER (Dirks Probeangebot ANG-2026-0019):** Bildunterschriften der Aufmaß-Anlage nennen nur noch
 >   Raum/Wand + Öffnungen mit Maß (`aufmassblatt.fotoBeschreibung`, Test); keine Besonderheiten, Bildrand-Öffnungen, VOB-Grauzone
 >   („bitte nachmessen") oder Fotoqualität mehr. Aufmaß-Erklärtext ohne „NICHT berücksichtigt", „(Tiefe nicht genannt)", „(wie genannt)".

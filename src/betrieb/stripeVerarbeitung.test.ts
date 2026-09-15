@@ -165,6 +165,33 @@ describe("Stripe: Ereignis-Verarbeitung", () => {
     expect(aufrufe.adminLogCreate).toHaveLength(1);
   });
 
+  it("Kundenportal: vorgemerkte Kündigung und Rücknahme landen im Admin-Protokoll, andere Abo-Änderungen nicht", async () => {
+    const abo = { handwerkerId: "hw1", stripeSubscriptionId: "sub_123" };
+    const { p, aufrufe } = fakePrisma({ abo, handwerker: { firma: "Maler Müller GmbH", name: "Müller" } });
+    const vorgemerkt = await verarbeiteStripeEvent(
+      p,
+      { type: "customer.subscription.updated", data: { object: { id: "sub_123", cancel_at_period_end: true, cancel_at: 1760400000 }, previous_attributes: { cancel_at_period_end: false } } },
+      vi.fn(async () => true),
+    );
+    expect(vorgemerkt.aktion).toBe("kuendigung-vorgemerkt");
+    const zurueck = await verarbeiteStripeEvent(
+      p,
+      { type: "customer.subscription.updated", data: { object: { id: "sub_123", cancel_at_period_end: false, cancel_at: null }, previous_attributes: { cancel_at_period_end: true } } },
+      vi.fn(async () => true),
+    );
+    expect(zurueck.aktion).toBe("kuendigung-zurueckgenommen");
+    const sonstige = await verarbeiteStripeEvent(
+      p,
+      { type: "customer.subscription.updated", data: { object: { id: "sub_123", cancel_at_period_end: false }, previous_attributes: { metadata: {} } } },
+      vi.fn(async () => true),
+    );
+    expect(sonstige.aktion).toBe("ignoriert");
+    expect(aufrufe.adminLogCreate).toHaveLength(2);
+    const erste = aufrufe.adminLogCreate[0] as { data: { aktion: string; detail: string } };
+    expect(erste.data.aktion).toBe("STRIPE_KUENDIGUNG_VORGEMERKT");
+    expect(erste.data.detail).toContain("Kundenportal");
+  });
+
   // Original-Buchung, auf die sich die Erstattungen beziehen (Netto 99 €).
   const origBuchung = { handwerkerId: "hw1", betrieb: "Maler Müller GmbH", betrag: 99, zeitraum: "2026-08" };
   const erstattungsEvent = (erstattetCent: number) => ({

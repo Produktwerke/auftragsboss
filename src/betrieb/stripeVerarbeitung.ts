@@ -125,7 +125,7 @@ export type StripeErgebnis = { aktion: string; detail?: string };
  */
 export async function verarbeiteStripeEvent(
   prisma: PrismaClient,
-  event: { type: string; data: { object: any } },
+  event: { type: string; data: { object: any; previous_attributes?: any } },
   melde: typeof meldeNeuenKunden = meldeNeuenKunden,
 ): Promise<StripeErgebnis> {
   switch (event.type) {
@@ -227,6 +227,32 @@ export async function verarbeiteStripeEvent(
         throw err;
       }
       return { aktion: "gebucht", detail: `${r.invoiceId} → ${r.zeitraum}` };
+    }
+
+    case "customer.subscription.updated": {
+      // Kundenportal (Etappe 3): Kündigung zum Periodenende vorgemerkt oder
+      // zurückgenommen. Nur reagieren, wenn sich genau dieses Feld geändert hat
+      // (previous_attributes), sonst kämen bei jeder Abo-Änderung Protokollzeilen.
+      const sub = event.data.object;
+      const vorher = event.data.previous_attributes;
+      if (!vorher || typeof vorher.cancel_at_period_end !== "boolean") {
+        return { aktion: "ignoriert", detail: "Abo-Änderung ohne Kündigungsbezug" };
+      }
+      const subId = idVon(sub) ?? idVon(sub?.id);
+      const abo = subId ? await prisma.abo.findFirst({ where: { stripeSubscriptionId: subId } }) : null;
+      if (!abo) return { aktion: "ignoriert", detail: `Kein Abo zu ${subId ?? "?"}` };
+      const hw = await prisma.handwerker.findUnique({ where: { id: abo.handwerkerId } });
+      const vorgemerkt = sub.cancel_at_period_end === true;
+      const ende = typeof sub.cancel_at === "number" ? new Date(sub.cancel_at * 1000).toLocaleDateString("de-DE") : "Periodenende";
+      await prisma.adminLog.create({
+        data: {
+          aktion: vorgemerkt ? "STRIPE_KUENDIGUNG_VORGEMERKT" : "STRIPE_KUENDIGUNG_ZURUECKGENOMMEN",
+          handwerkerId: abo.handwerkerId,
+          betrieb: hw ? hw.firma || hw.name : "(unbekannt)",
+          detail: vorgemerkt ? `Kündigung über das Kundenportal zum ${ende}` : "Kündigung über das Kundenportal zurückgenommen",
+        },
+      });
+      return { aktion: vorgemerkt ? "kuendigung-vorgemerkt" : "kuendigung-zurueckgenommen", detail: subId ?? undefined };
     }
 
     case "customer.subscription.deleted": {

@@ -568,10 +568,10 @@ export function betreiberDetail(args: {
 
   <div class="karte">
     <h2 style="margin-top:0;">Betrieb löschen</h2>
-    <p class="hinweis" style="margin-top:0;">Löscht Angebote, Vorgänge, Preisgedächtnis, Importe und Feedback endgültig (DSGVO). Die Nummer kann sich danach neu anmelden. Zur Sicherheit ${b.firma.trim() ? "den Firmennamen" : "die Handynummer (das Konto hat keinen Firmennamen)"} exakt eintippen.</p>
+    <p class="hinweis" style="margin-top:0;">Löscht Angebote, Vorgänge, Preisgedächtnis, Importe und Feedback endgültig (DSGVO). Die Nummer kann sich danach neu anmelden. Zur Sicherheit das Wort „löschen" eintippen.</p>
     <form class="zeile" data-post="${aktion("loeschen")}" data-ziel="${basis}/betriebe" data-frage="Wirklich ENDGÜLTIG löschen? Das kann nicht rückgängig gemacht werden.">
-      <label class="feld">${b.firma.trim() ? "Firmenname" : "Handynummer"} zur Bestätigung
-        <input name="bestaetigung" required placeholder="${escapeHtml(b.firma.trim() ? b.firma : "+" + b.whatsappNummer)}">
+      <label class="feld">Bestätigung
+        <input name="bestaetigung" required placeholder="löschen">
       </label>
       <button class="kn rot">Endgültig löschen</button>
       <div class="meldung"></div>

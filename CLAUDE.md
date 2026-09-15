@@ -139,8 +139,13 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 > **Update 15.09.2026 (10) — STRIPE LIVE:** Server-.env seit 15.09. 17:30 mit sk_live/whsec (Dirk eingetragen), Live-Webhook
 >   `auftragsboss-live` (we_1UFyFV…, API 2026-07-29.dahlia = SDK 22.5, 6 Ereignisse), `stripe-einrichten.ts` LIVE gelaufen:
 >   Produkte/Preise Basis 29/Profi 79/Team 149 netto (lookup_keys), Steuersatz 19 % (txr_1UFyNb…), Portal-Konfiguration
->   bpc_1UFyNc…. Sandbox bleibt für Tests (Dashboard-Umschalter). ⏳ Dirk: Dashboard-Einstellungen im Live-Modus (PayPal,
->   Smart Retries, Fehlzahlungs-Mails, Kündigung nach Wiederholungen, Rechnungsangaben) + echter Durchstich mit eigener Karte.
+>   bpc_1UFyNc… (= Standard-Portal, auch für Links in Stripe-Mails). Sandbox bleibt für Tests (Dashboard-Umschalter).
+>   ✅ Dirk 15.09.: Live-Dashboard (Karte/SEPA/PayPal/Apple/Google Pay/Link, Klarna aus; Fehlzahlungs-Mails; Abo nach Wiederholungen
+>   kündigen; USt-IdNr. + Fußzeile; Branding). ✅ ECHTER DURCHSTICH 15.09. 18:12: Basis 34,51 € → Webhooks, Abo AKTIV, Ledger,
+>   Rechnung 6XVLNGH8-0001; Kündigung+Erstattung im Dashboard → GEKUENDIGT, Korrektur −29 €. Dabei behoben: (a) Stripes Rechnungs-PDF
+>   bleibt nach Zahlung „fällig" → Abo-Seite zeigt zusätzlich „Zahlungsbeleg" (charge.receipt_url über invoicePayments, `ladeRechnungen`);
+>   (b) `charge.refunded` hat in API dahlia kein invoice-Feld → `rechnungZuZahlung(paymentIntent)` (injizierbar `sucheRechnung`).
+>   Betreiber-Cockpit: Konten ohne Firma anklickbar (anzeigeName), Löschen bestätigt man mit dem Wort „löschen".
 
 > **Update 15.09.2026 (9) — LEAD OHNE EINLADUNG BLIEB STUMM (behoben, deployt):** Vorfall: Nummer erst über das Website-Formular
 >   als Lead angelegt (Vorlage `test_starten` nicht genehmigt → keine Einladung), dann per QR-Code die Startnachricht geschrieben →

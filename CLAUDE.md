@@ -136,6 +136,19 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 15.09.2026 (11) — LEAD-ONBOARDING ETAPPE 2 (298 Tests, deployt, kein Schema-Umbau):** nach dem Sales-Frank-Brief.
+>   (a) Zustandsmodell `lead/status.ts`: EINGELADEN → ZUGESTELLT → GELESEN → ERKLAERT/WARTET_AUF_AUFTRAG → AKTIV, Seitenzweig
+>   EINLADUNG_FEHLGESCHLAGEN; getrieben von Metas Status-Callbacks (`value.statuses` im WhatsApp-Webhook, nur für Leads in frühen
+>   Zuständen, monoton, Race-sicher per updateMany), Events LEAD_ZUGESTELLT/LEAD_GELESEN/LEAD_EINLADUNG_FEHLGESCHLAGEN (+AdminLog).
+>   (b) Lead-Erinnerung `jobs/leadErinnerung.ts` (täglich 10:00) HINTER FLAG `FEATURE_LEAD_ERINNERUNG` (Standard aus): eingeladene Leads
+>   ohne Eingabe nach `LEAD_ERINNERUNG_TAGE` (2) einmalig Vorlage `LEAD_VORLAGE_ERINNERUNG` (lead_erinnerung, {{1}} Anrede, Knöpfe
+>   Ja/Erklären), max. 30 Tage nach Anlage, Event LEAD_ERINNERUNG. ⏳ Dirk: Vorlage bei Meta anlegen, dann Flag setzen.
+>   (c) Leads bekommen den Hinweis „14 Tage kostenlos testen" erst NACH dem ersten Angebot (Event TEST_HINWEIS, pipeline.ts).
+>   (d) Cockpit `/stasi/funnel` (Link „Zur Lead-Auswertung"): `lead/funnel.ts` berechneFunnel je Quelle Telefon/Website/Direkt
+>   (Leads → Einladung → zugestellt → gelesen → Knopf → erste Eingabe → erstes Angebot → Abo, Anteile; Zeitraum 30/90/alle) + Tabelle
+>   „Offene Leads zum Nachfassen"; Detailseite zeigt Quelle + Onboarding-Zustand. Webtest-Sammelkonto ausgenommen.
+>   Bewusst weiter verschoben: Sprache+Foto-Bündelfenster, Sales-Frank-API.
+
 > **Update 15.09.2026 (10) — STRIPE LIVE:** Server-.env seit 15.09. 17:30 mit sk_live/whsec (Dirk eingetragen), Live-Webhook
 >   `auftragsboss-live` (we_1UFyFV…, API 2026-07-29.dahlia = SDK 22.5, 6 Ereignisse), `stripe-einrichten.ts` LIVE gelaufen:
 >   Produkte/Preise Basis 29/Profi 79/Team 149 netto (lookup_keys), Steuersatz 19 % (txr_1UFyNb…), Portal-Konfiguration

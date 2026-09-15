@@ -168,8 +168,8 @@ ${rechnungsPanel}
       <div class="panel promo">
         <div class="promo-head">
           <span class="promo-badge">${EMPFEHLUNGS_PRAEMIE_EUR} € Prämie</span>
-          <h2>Empfehlen lohnt sich: ${EMPFEHLUNGS_PRAEMIE_EUR} € für jeden Kollegen</h2>
-          <p>Für jeden Kollegen, der über deinen Link Kunde wird, schreiben wir dir <b>${EMPFEHLUNGS_PRAEMIE_EUR} € auf deine nächsten Rechnungen gut</b>. Dein Kollege testet 14 Tage kostenlos. Schon ein paar Empfehlungen, und dein Abo ist für Monate bezahlt.</p>
+          <h2>Empfehlen lohnt sich: ${EMPFEHLUNGS_PRAEMIE_EUR} € Gutschrift für dich</h2>
+          <p>Wird ein Kollege über deinen Link Kunde, bekommst <b>du ${EMPFEHLUNGS_PRAEMIE_EUR} € auf deine nächsten Rechnungen gutgeschrieben</b>, bei jeder weiteren Empfehlung wieder. Dein Kollege testet 14 Tage kostenlos. Schon ein paar Empfehlungen, und dein Abo ist für Monate bezahlt.</p>
         </div>
         <div class="panel-b">
           <div class="field"><label>Dein persönlicher Empfehlungslink</label>

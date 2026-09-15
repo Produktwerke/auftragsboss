@@ -144,6 +144,8 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   übernommen und nur in den E-Mail-Notizen um Bestätigung gebeten → Prompt verlangt jetzt PFLICHT-`fehlendeInfos` + NACHFRAGEN, solange
 >   der Maler die Höhe nicht genannt hat; Fertigmeldung nennt offene Pflichtangaben als „Noch offen, bitte prüfen oder im Angebot ergänzen".
 >   Grundsatz bleibt: Word/PDF = Kundendokument, alles für den Handwerker nur in E-Mail und WhatsApp.
+> - ✅ **15.09. DRITTER LIVE-TEST DURCH DIRK BESTANDEN** (Direktangebot, Knöpfe, Opus 5/high). Nächste Themen: Preisfrage Basis-Tarif,
+>   Lead-Onboarding-Livetest + Etappe 2, Stripe Etappe 3, Chat-Auswertung (vorher Datenschutz), optional Wandfoto auf Opus 5.
 
 > **Update 15.09.2026 (2) — KOSTENPROBE-ERGEBNIS (5 echte Verläufe × 4 Konfigurationen, 20 KI-Aufrufe, 5,80 $):**
 > - Je Auswertung: Fable 5/high (heute) 0,47 $ · Fable 5/medium 0,35 $ · **Opus 5/high 0,19 $** · Opus 5/medium 0,15 $; Dauer 80/53/57/42 s.

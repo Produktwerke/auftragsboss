@@ -136,6 +136,12 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 15.09.2026 (10) — STRIPE LIVE:** Server-.env seit 15.09. 17:30 mit sk_live/whsec (Dirk eingetragen), Live-Webhook
+>   `auftragsboss-live` (we_1UFyFV…, API 2026-07-29.dahlia = SDK 22.5, 6 Ereignisse), `stripe-einrichten.ts` LIVE gelaufen:
+>   Produkte/Preise Basis 29/Profi 79/Team 149 netto (lookup_keys), Steuersatz 19 % (txr_1UFyNb…), Portal-Konfiguration
+>   bpc_1UFyNc…. Sandbox bleibt für Tests (Dashboard-Umschalter). ⏳ Dirk: Dashboard-Einstellungen im Live-Modus (PayPal,
+>   Smart Retries, Fehlzahlungs-Mails, Kündigung nach Wiederholungen, Rechnungsangaben) + echter Durchstich mit eigener Karte.
+
 > **Update 15.09.2026 (9) — LEAD OHNE EINLADUNG BLIEB STUMM (behoben, deployt):** Vorfall: Nummer erst über das Website-Formular
 >   als Lead angelegt (Vorlage `test_starten` nicht genehmigt → keine Einladung), dann per QR-Code die Startnachricht geschrieben →
 >   Pipeline hielt den Lead für „schon per Einladung begrüßt" und antwortete nicht. Jetzt: `schonEingeladen` = Event

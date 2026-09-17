@@ -133,6 +133,10 @@ export interface BetriebZeile {
   /** Lead-Onboarding (Etappe 2): Quelle TELEFON/WEBSITE (null = direkt) und Zustand. */
   leadQuelle?: string | null;
   onboardingStatus?: string | null;
+  /** AGB/AVV-Einbeziehung (17.09.2026). */
+  agbAkzeptiertAm?: Date | null;
+  agbVersion?: string | null;
+  agbQuelle?: string | null;
   /** Offenes Konto-Guthaben in Euro (Empfehlungsprämie, Kulanz), bei der nächsten Zahlung zu verrechnen. */
   guthabenEuro: number;
   angebote: number;
@@ -396,6 +400,7 @@ export function betreiberDetail(args: {
       <h1>${escapeHtml(anzeigeName(b))}</h1>
       <p class="unter">${escapeHtml(b.name)} · ${escapeHtml(b.gewerkTyp)}${b.ort ? " · " + escapeHtml(b.ort) : ""} · Mitglied seit ${datumDE(b.erstelltAm)}</p>
       ${b.leadQuelle ? `<p class="unter">Lead über ${escapeHtml(quelleLabel(b.leadQuelle))} · Onboarding: <b>${escapeHtml(zustandLabel(b.onboardingStatus ?? null))}</b></p>` : ""}
+      ${b.agbAkzeptiertAm ? `<p class="unter">AGB/AVV akzeptiert am ${datumDE(b.agbAkzeptiertAm)} (Version ${escapeHtml(b.agbVersion ?? "?")}, über ${escapeHtml(b.agbQuelle === "stripe" ? "Stripe-Checkout" : b.agbQuelle === "registrierung" ? "Registrierung" : b.agbQuelle ?? "?")})</p>` : b.istTest ? "" : `<p class="unter" style="color:#b7791f;">AGB/AVV noch nicht akzeptiert</p>`}
     </div>
     <div>${statusBadge(b)}</div>
   </div>

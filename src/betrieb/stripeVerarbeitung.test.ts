@@ -16,11 +16,14 @@ function fakePrisma(vorgaben: {
   buchungVorhanden?: unknown;
   korrekturen?: unknown[];
 } = {}) {
-  const aufrufe: Record<string, unknown[]> = {
+  const aufrufe: Record<string, unknown[]> = { hwUpdate: [],
     aboUpsert: [], aboUpdateMany: [], buchungCreate: [], adminLogCreate: [],
   };
   const p = {
-    handwerker: { findUnique: vi.fn(async () => vorgaben.handwerker ?? null) },
+    handwerker: {
+      findUnique: vi.fn(async () => vorgaben.handwerker ?? null),
+      update: vi.fn(async (a: unknown) => { aufrufe.hwUpdate.push(a); return {}; }),
+    },
     abo: {
       upsert: vi.fn(async (a: unknown) => { aufrufe.aboUpsert.push(a); return {}; }),
       findFirst: vi.fn(async () => vorgaben.abo ?? null),
@@ -48,6 +51,20 @@ describe("Stripe: pure Ausleser", () => {
     expect(tarifAusPreis(null)).toBe("INDIVIDUELL");
     expect(tarifLabel("BASIS")).toBe("Basis");
     expect(tarifLabel("INDIVIDUELL")).toBe("Individuell");
+  });
+
+  it("AGB-Häkchen im Checkout → Nachweis am Betrieb + Admin-Protokoll, ohne Häkchen nichts", async () => {
+    const basisSession = { client_reference_id: "hw1", subscription: "sub_agb", customer: "cus_agb", amount_subtotal: 2900, metadata: { tarif: "BASIS" } };
+    const ohneHaekchen = { type: "checkout.session.completed", data: { object: basisSession } };
+    const mitHaekchen = { type: "checkout.session.completed", data: { object: { ...basisSession, consent: { terms_of_service: "accepted" } } } };
+    const a = fakePrisma({ handwerker: { id: "hw1", firma: "Maler Müller GmbH", name: "M. Müller", agbAkzeptiertAm: null } });
+    await verarbeiteStripeEvent(a.p, mitHaekchen, vi.fn(async () => true));
+    expect((a.aufrufe.hwUpdate[0] as { data: { agbQuelle: string } }).data.agbQuelle).toBe("stripe");
+    expect(a.aufrufe.adminLogCreate.some((l) => (l as { data: { aktion: string } }).data.aktion === "AGB_AKZEPTIERT")).toBe(true);
+
+    const b = fakePrisma({ handwerker: { id: "hw1", firma: "Maler Müller GmbH", name: "M. Müller", agbAkzeptiertAm: null } });
+    await verarbeiteStripeEvent(b.p, ohneHaekchen, vi.fn(async () => true));
+    expect(b.aufrufe.hwUpdate).toHaveLength(0);
   });
 
   it("liesCheckout: Betriebszuordnung, Abo, Netto-Betrag", () => {

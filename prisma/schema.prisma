@@ -78,6 +78,10 @@ model Handwerker {
   optInAm          DateTime? // wann die WhatsApp-Einwilligung erteilt wurde
   optInQuelle      String? // wer sie eingeholt hat, z.B. "telefonat"
   onboardingStatus String? // "EINGELADEN" | "ERKLAERT" | "WARTET_AUF_AUFTRAG" | "AKTIV"
+  // AGB/AVV-Einbeziehung (17.09.2026): wann, welche Version, über welchen Weg ("registrierung" | "stripe")
+  agbAkzeptiertAm DateTime?
+  agbVersion      String?
+  agbQuelle       String?
 
   // Persönlicher, passwortloser Zugang zur Einstellungsseite. Nullable, damit
   // Bestandsdatensätze ohne Migration bestehen bleiben — der Token wird beim

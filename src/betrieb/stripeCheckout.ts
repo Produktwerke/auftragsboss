@@ -9,6 +9,7 @@ import Stripe from "stripe";
 import { stripeConfig } from "../config.js";
 import { basisUrl, cockpitLink } from "../web/tokens.js";
 import type { Handwerker } from "@prisma/client";
+import { stripeConsentFelder } from "./agb.js";
 
 export type BuchbarerTarif = "BASIS" | "PROFI" | "TEAM";
 const LOOKUP: Record<BuchbarerTarif, string> = { BASIS: "basis", PROFI: "profi", TEAM: "team" };
@@ -71,6 +72,8 @@ export async function erzeugeAboCheckoutUrl(
     tax_id_collection: { enabled: true },
     success_url: `${basisUrl()}/abo/danke?start=${encodeURIComponent(cockpitToken)}`,
     cancel_url: cockpitLink(cockpitToken),
+    // AGB-Häkchen im Bezahlfenster (nur wenn STRIPE_AGB_HAEKCHEN=1 und AGB_URL gesetzt).
+    ...stripeConsentFelder(),
   });
   if (!session.url) throw new Error("Stripe lieferte keine Checkout-URL.");
   return session.url;

@@ -19,6 +19,7 @@ import { istTarif, monatsZeitraum, TARIF_PRESETS, type Tarif } from "./abrechnun
 import { meldeNeuenKunden } from "./betreiberAlarm.js";
 import { nachAboAbschluss } from "./gutschrift.js";
 import { rechnungZuZahlung, stripeGutschreiben } from "./stripeCheckout.js";
+import { agbKonfig, checkoutAgbAkzeptiert } from "./agb.js";
 import { stripeKonfiguriert } from "../config.js";
 import { echteZahlungsHooks, type ZahlungsHooks } from "./zahlungsausfall.js";
 
@@ -176,6 +177,17 @@ export async function verarbeiteStripeEvent(
           detail: `${tarif} für ${monatspreis} €/Monat (netto), Abo ${s.subscriptionId}`,
         },
       });
+      // AGB-Häkchen im Checkout gesetzt? Dann Nachweis am Betrieb (nur beim ersten Mal).
+      if (checkoutAgbAkzeptiert(event.data.object) && !hw.agbAkzeptiertAm) {
+        const version = agbKonfig().version;
+        await prisma.handwerker.update({
+          where: { id: hw.id },
+          data: { agbAkzeptiertAm: new Date(), agbVersion: version, agbQuelle: "stripe" },
+        });
+        await prisma.adminLog.create({
+          data: { aktion: "AGB_AKZEPTIERT", handwerkerId: hw.id, betrieb: hw.firma || hw.name, detail: `AGB/AVV im Stripe-Checkout akzeptiert (Version ${version})` },
+        });
+      }
       // Die WhatsApp an den Betreiber — Fehler hier sind egal, die Buchung zählt.
       await melde(hw.firma || hw.name, tarifLabel(tarif), monatspreis);
       // Empfehlungsprogramm: Konto-Guthaben des neuen Kunden nach Stripe übertragen

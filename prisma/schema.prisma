@@ -146,6 +146,31 @@ model Mitarbeiter {
   @@index([handwerkerId])
 }
 
+// ── SalesFrank (KI-Telefonakquise, 17.09.2026) ─────────────────────────────
+// Ein Eintrag je ausgewertetem Gespräch: Nachweis der WhatsApp-Einwilligung
+// (Zusammenfassung + Beleg-Zitat) und Prüfliste für unklare Fälle. Absagen und
+// verworfene Anrufe behalten weder Nummer noch Transkript.
+model SalesFrankAnruf {
+  id              String    @id @default(cuid())
+  callId          String    @unique // SalesFrank call.id (Idempotenz)
+  nummer          String? // Handynummer für die Einladung (E.164 ohne +), nur bei offenen/eingeladenen Anrufen
+  nummerMaskiert  String
+  name            String
+  firma           String
+  anrede          String
+  einschaetzung   String // JA | NEIN | UNKLAR
+  status          String // EINGELADEN | PRUEFUNG | ABGELEHNT | SCHON_VORHANDEN | FEHLER | VERWORFEN
+  begruendung     String
+  zusammenfassung String
+  beleg           String // wörtliches Zitat der Zustimmung
+  transkript      String
+  handwerkerId    String? // angelegter Lead (kein FK: bleibt nach Löschung als Spur)
+  erstelltAm      DateTime  @default(now())
+  erledigtAm      DateTime?
+
+  @@index([status])
+}
+
 // ── Abrechnung (Betreiber-Cockpit Stufe 2) ─────────────────────────────────
 // Das aktuelle Abo eines Betriebs (genau eins). Abrechnung läuft heute manuell
 // (keine Stripe-Anbindung): Das Abo beschreibt den SOLL-Zustand (Tarif, Preis,

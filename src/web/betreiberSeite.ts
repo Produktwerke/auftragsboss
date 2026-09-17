@@ -250,7 +250,7 @@ export function betreiberListe(args: {
     "Kunden",
     `
   <h1>Kunden</h1>
-  <p class="unter">Alle Betriebe mit Nutzung, Abo und Status. <a href="${basis}/umsatz">Zur Umsatz-Übersicht</a> · <a href="${basis}/funnel">Zur Lead-Auswertung</a> · <a href="${basis}/chat">Zur Chat-Auswertung</a> · <a href="${basis === "/stasi" ? "/stasi/auswertung" : basis}">Zur Lern-Auswertung</a>${basis === "/stasi" ? ` · <a href="/stasi/abmelden">Abmelden</a>` : ""}</p>
+  <p class="unter">Alle Betriebe mit Nutzung, Abo und Status. <a href="${basis}/umsatz">Zur Umsatz-Übersicht</a> · <a href="${basis}/funnel">Zur Lead-Auswertung</a> · <a href="${basis}/chat">Zur Chat-Auswertung</a> · <a href="${basis}/salesfrank">SalesFrank</a> · <a href="${basis === "/stasi" ? "/stasi/auswertung" : basis}">Zur Lern-Auswertung</a>${basis === "/stasi" ? ` · <a href="/stasi/abmelden">Abmelden</a>` : ""}</p>
 
   <div class="kennz">
     <div class="kachel"><div class="wert">${kpis.kunden}</div><div class="lab">Kunden</div></div>
@@ -829,5 +829,72 @@ export function betreiberChat(args: { basis: string; k: ChatKennzahlen; tage: nu
     zeile("Nachfass-Hinweis nötig", zahl(k.wandfotos.nachfassenProzent, " %")),
   )}
   <p class="unter" style="margin-top:8px;">Stufe 2 (Auswertung pseudonymisierter Dialoge) ist bewusst nicht gebaut, bis Datenschutzerklärung und Auftragsverarbeitung sie benennen.</p>`,
+  );
+}
+
+// ── SalesFrank (KI-Telefonakquise, 17.09.2026) ───────────────────────────────
+export interface SalesFrankZeile {
+  id: string; callId: string; status: string; einschaetzung: string; name: string; firma: string; anrede: string;
+  nummerMaskiert: string; begruendung: string; zusammenfassung: string; beleg: string; transkript: string;
+  handwerkerId: string | null; erstelltAm: Date;
+}
+
+const SF_STATUS_LABEL: Record<string, [string, string]> = {
+  EINGELADEN: ["eingeladen", "b-aktiv"],
+  PRUEFUNG: ["zur Prüfung", "b-warn"],
+  FEHLER: ["Einladung fehlgeschlagen", "b-warn"],
+  ABGELEHNT: ["abgelehnt", "b-neutral"],
+  SCHON_VORHANDEN: ["schon im System", "b-neutral"],
+  VERWORFEN: ["verworfen", "b-neutral"],
+};
+
+export function betreiberSalesFrank(args: { basis: string; anrufe: SalesFrankZeile[]; offen: number; webhookUrl: string | null; vorlage: string; filter: string }): string {
+  const { basis, anrufe, offen, webhookUrl, vorlage, filter } = args;
+  const f = (wert: string, label: string) => (filter === wert ? `<b>${label}</b>` : `<a href="${basis}/salesfrank${wert ? `?filter=${wert}` : ""}">${label}</a>`);
+  const zeilen = anrufe
+    .map((a) => {
+      const [label, klasse] = SF_STATUS_LABEL[a.status] ?? [a.status, "b-neutral"];
+      const lead = a.handwerkerId ? ` · <a href="${basis}/betrieb/${a.handwerkerId}">zum Betrieb</a>` : "";
+      const aktionen =
+        a.status === "PRUEFUNG" || a.status === "FEHLER"
+          ? `<form class="inline" data-post="${basis}/salesfrank/${a.id}/einladen" data-frage="WhatsApp-Einladung senden? Nur, wenn der Beleg die Zustimmung wirklich zeigt!">
+               <input name="nummer" placeholder="Handynummer" value="" style="width:150px;"> <input name="anrede" placeholder="Anrede" value="${escapeHtml(a.anrede)}" style="width:150px;">
+               <button class="kn">Einladen</button><div class="meldung"></div></form>
+             <form class="inline" data-post="${basis}/salesfrank/${a.id}/verwerfen" data-frage="Anruf verwerfen? Nummer und Transkript werden gelöscht."><button class="kn" style="background:#8a9099;">Verwerfen</button><div class="meldung"></div></form>`
+          : "";
+      return `<tr>
+        <td>${datumDE(a.erstelltAm)}</td>
+        <td><b>${escapeHtml(a.firma || a.name || "?")}</b><br><span style="color:#8a9099;font-size:12.5px;">${escapeHtml(a.anrede)} · ${escapeHtml(a.nummerMaskiert)}</span></td>
+        <td><span class="badge ${klasse}">${escapeHtml(label)}</span>${lead}</td>
+        <td style="max-width:420px;">${escapeHtml(a.begruendung)}${a.beleg ? `<br><i style="color:#0b5cad;">„${escapeHtml(a.beleg)}"</i>` : ""}
+          ${a.zusammenfassung || a.transkript ? `<details style="margin-top:4px;"><summary style="cursor:pointer;color:#8a9099;font-size:12.5px;">Zusammenfassung${a.transkript ? " und Transkript" : ""}</summary><div style="white-space:pre-wrap;font-size:12.5px;color:#555;margin-top:4px;">${escapeHtml(a.zusammenfassung)}${a.transkript ? "\n\n" + escapeHtml(a.transkript) : ""}</div></details>` : ""}</td>
+        <td>${aktionen}</td>
+      </tr>`;
+    })
+    .join("");
+
+  return seite(
+    "SalesFrank",
+    `
+  <p class="zurueck"><a href="${basis}/betriebe">← Zur Kundenliste</a></p>
+  <h1>SalesFrank: Anrufe und Einladungen</h1>
+  <p class="unter">Jedes Gespräch wird von der KI bewertet. Klare Zustimmung zu WhatsApp → Einladung geht automatisch raus. Unklare Fälle landen hier zur Prüfung.${offen ? ` <b>${offen} offen.</b>` : ""}</p>
+  <p class="unter">Anzeigen: ${f("", "alle")} · ${f("offen", "nur offene")} · ${f("EINGELADEN", "eingeladen")} · ${f("ABGELEHNT", "abgelehnt")}</p>
+
+  <div class="tabellenrahmen">
+  <table class="liste">
+    <thead><tr><th>Datum</th><th>Betrieb</th><th>Status</th><th>Einschätzung</th><th>Aktion</th></tr></thead>
+    <tbody>${zeilen || `<tr><td colspan="5" style="text-align:center;color:#888;padding:20px;">Noch keine Anrufe von SalesFrank angekommen.</td></tr>`}</tbody>
+  </table>
+  </div>
+
+  <h2 style="margin-top:28px;">Einrichtung in SalesFrank</h2>
+  ${webhookUrl
+    ? `<p class="unter">Webhook-Adresse (Post-Call-Webhook, Methode POST, Inhalt JSON). Die Adresse enthält das Geheimnis, nicht weitergeben:</p>
+       <p><code style="user-select:all;word-break:break-all;">${escapeHtml(webhookUrl)}</code></p>
+       <p class="unter">JSON-Vorlage für den Webhook (in SalesFrank unter „Custom Payload" einfügen):</p>
+       <pre style="background:#f4f6f9;padding:12px;border-radius:8px;font-size:12.5px;overflow:auto;">${escapeHtml(vorlage)}</pre>`
+    : `<p class="unter" style="color:#b23;">SALESFRANK_WEBHOOK_SECRET fehlt in der .env, der Webhook ist aus.</p>`}
+`,
   );
 }

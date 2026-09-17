@@ -46,6 +46,9 @@ import { hatAdminSitzung } from "./adminAuth.js";
 import { legeLeadAnUndLadeEin } from "../lead/onboarding.js";
 import { WEBTEST_NUMMER } from "./webtest.js";
 import { berechneFunnel } from "../lead/funnel.js";
+import { betreiberSalesFrank } from "./betreiberSeite.js";
+import { ladeSalesFrankAnrufEin, verwerfeSalesFrankAnruf } from "../salesfrank/verarbeitung.js";
+import { salesfrankWebhookUrl, SALESFRANK_WEBHOOK_VORLAGE } from "../salesfrank/webhook.js";
 import { berechneChatKennzahlen, KENNZAHL_EVENT_TYPEN } from "../analytics/chatKennzahlen.js";
 import { erstelleDatenexport } from "../betrieb/datenexport.js";
 import { loescheBetrieb } from "../betrieb/loeschung.js";
@@ -568,6 +571,33 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
       aktuellerZeitraum: monatsZeitraum(),
     });
     return reply.type("text/html; charset=utf-8").send(html);
+  });
+
+  // ── SalesFrank (KI-Telefonakquise): Anrufliste, Prüfung, Einrichtung ──
+  for (const pfad of beide("/salesfrank")) app.get<{ Params: { token?: string }; Querystring: { filter?: string } }>(pfad, async (req, reply) => {
+    const z = zugang(req);
+    if (!z.ok) return reply.redirect("/stasi");
+    const filter = (req.query.filter ?? "").trim();
+    const where = filter === "offen" ? { status: { in: ["PRUEFUNG", "FEHLER"] } } : filter ? { status: filter } : {};
+    const [anrufe, offen] = await Promise.all([
+      prisma.salesFrankAnruf.findMany({ where, orderBy: { erstelltAm: "desc" }, take: 200 }),
+      prisma.salesFrankAnruf.count({ where: { status: { in: ["PRUEFUNG", "FEHLER"] } } }),
+    ]);
+    return reply.type("text/html; charset=utf-8").send(
+      betreiberSalesFrank({ basis: z.basis, anrufe, offen, webhookUrl: salesfrankWebhookUrl(process.env.BASE_URL ?? "https://api.auftragsboss.de"), vorlage: SALESFRANK_WEBHOOK_VORLAGE, filter }),
+    );
+  });
+  for (const pfad of beide("/salesfrank/:id/einladen")) app.post<{ Params: { token?: string; id: string }; Body: { nummer?: string; anrede?: string } }>(pfad, async (req, reply) => {
+    if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
+    const erg = await ladeSalesFrankAnrufEin(prisma, req.params.id, { nummer: req.body?.nummer, anrede: req.body?.anrede });
+    if (!erg.ok) return reply.code(400).send({ fehler: erg.fehler });
+    return reply.send({ ok: true, meldung: erg.meldung });
+  });
+  for (const pfad of beide("/salesfrank/:id/verwerfen")) app.post<{ Params: { token?: string; id: string } }>(pfad, async (req, reply) => {
+    if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
+    const erg = await verwerfeSalesFrankAnruf(prisma, req.params.id);
+    if (!erg.ok) return reply.code(400).send({ fehler: erg.fehler });
+    return reply.send({ ok: true, meldung: "Verworfen." });
   });
 
   // ── Lead-Auswertung (Etappe 2): Funnel je Quelle + offene Leads ──────

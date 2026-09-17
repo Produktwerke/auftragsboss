@@ -2,6 +2,7 @@ import { jsonInsSkript } from "./jsonInsSkript.js";
 import { EMPFEHLUNGS_PRAEMIE_EUR } from "../empfehlung.js";
 import { quelleLabel, zustandLabel } from "../lead/status.js";
 import type { FunnelErgebnis } from "../lead/funnel.js";
+import type { ChatKennzahlen } from "../analytics/chatKennzahlen.js";
 // Betreiber-Cockpit (Stufe 1): Kundenliste + Kundendetail mit Verwaltungs-
 // Aktionen (Kontakt ändern, blockieren, Gutschrift, löschen) und Usage-Zahlen.
 // Nur intern erreichbar über /admin/:ADMIN_TOKEN/betriebe (siehe betreiberRoutes.ts).
@@ -243,7 +244,7 @@ export function betreiberListe(args: {
     "Kunden",
     `
   <h1>Kunden</h1>
-  <p class="unter">Alle Betriebe mit Nutzung, Abo und Status. <a href="${basis}/umsatz">Zur Umsatz-Übersicht</a> · <a href="${basis}/funnel">Zur Lead-Auswertung</a> · <a href="${basis === "/stasi" ? "/stasi/auswertung" : basis}">Zur Lern-Auswertung</a>${basis === "/stasi" ? ` · <a href="/stasi/abmelden">Abmelden</a>` : ""}</p>
+  <p class="unter">Alle Betriebe mit Nutzung, Abo und Status. <a href="${basis}/umsatz">Zur Umsatz-Übersicht</a> · <a href="${basis}/funnel">Zur Lead-Auswertung</a> · <a href="${basis}/chat">Zur Chat-Auswertung</a> · <a href="${basis === "/stasi" ? "/stasi/auswertung" : basis}">Zur Lern-Auswertung</a>${basis === "/stasi" ? ` · <a href="/stasi/abmelden">Abmelden</a>` : ""}</p>
 
   <div class="kennz">
     <div class="kachel"><div class="wert">${kpis.kunden}</div><div class="lab">Kunden</div></div>
@@ -732,5 +733,87 @@ export function betreiberFunnel(args: { basis: string; ergebnis: FunnelErgebnis;
     <tbody>${offene || `<tr><td colspan="5" style="text-align:center;color:#888;padding:20px;">Keine offenen Leads.</td></tr>`}</tbody>
   </table>
   </div>`,
+  );
+}
+
+/** Chat-Auswertung Stufe 1 (17.09.2026): Kennzahlen aus Ereignissen, ohne Dialoginhalte. */
+export function betreiberChat(args: { basis: string; k: ChatKennzahlen; tage: number; nurEchte: boolean }): string {
+  const { basis, k, tage, nurEchte } = args;
+  const link = (t: number, echte: boolean, label: string, aktiv: boolean) =>
+    aktiv ? `<b>${label}</b>` : `<a href="${basis}/chat?tage=${t}${echte ? "&echte=1" : ""}">${label}</a>`;
+  const zahl = (n: number | null, einheit = "") => (n === null ? "–" : `${String(n).replace(".", ",")}${einheit}`);
+  const kachel = (wert: string, lab: string) => `<div class="kachel"><div class="wert">${wert}</div><div class="lab">${lab}</div></div>`;
+  const zeile = (lab: string, wert: string) => `<tr><td>${lab}</td><td style="text-align:right;">${wert}</td></tr>`;
+  const tabelle = (zeilen: string) => `<div class="tabellenrahmen"><table class="liste"><tbody>${zeilen}</tbody></table></div>`;
+  const verteilung = (r: Record<string, number>) =>
+    Object.entries(r).sort((a, b) => b[1] - a[1]).map(([w, n]) => `${escapeHtml(w)}: ${n}`).join(" · ") || "–";
+
+  return seite(
+    "Chat-Auswertung",
+    `
+  <p class="zurueck"><a href="${basis}/betriebe">← Zur Kundenliste</a></p>
+  <h1>Chat-Auswertung</h1>
+  <p class="unter">Wie läuft der Dialog zwischen Maler und AuftragsBoss? Nur Zähler und Zeiten aus der Ereignistabelle, kein Nachrichteninhalt.
+    Zeitraum: ${link(7, nurEchte, "7 Tage", tage === 7)} · ${link(30, nurEchte, "30 Tage", tage === 30)} · ${link(90, nurEchte, "90 Tage", tage === 90)}
+    &nbsp;|&nbsp; ${link(tage, false, "alle Betriebe", !nurEchte)} · ${link(tage, true, "nur echte Betriebe", nurEchte)}</p>
+
+  <div class="kennz">
+    ${kachel(String(k.nachrichten.gesamt), "Nachrichten empfangen")}
+    ${kachel(String(k.vorgaenge.gesamt), "Vorgänge begonnen")}
+    ${kachel(String(k.vorgaenge.mitAngebot), "davon mit Angebot")}
+    ${kachel(zahl(k.zeitBisAngebot.medianMin, " min"), "Zeit bis Angebot (Median)")}
+    ${kachel(zahl(k.rueckfragen.quoteProzent, " %"), "Vorgänge mit Rückfrage")}
+    ${kachel(zahl(k.fassungen.quoteProzent, " %"), "Angebote mit Korrektur")}
+  </div>
+
+  <h2>Eingaben</h2>
+  ${tabelle(
+    zeile("Sprachnachrichten", String(k.nachrichten.sprache)) +
+    zeile("Fotos", String(k.nachrichten.foto)) +
+    zeile("Textnachrichten", String(k.nachrichten.text)) +
+    zeile("Knopfklicks", String(k.nachrichten.knopf)) +
+    zeile("Abgewiesen (Konto pausiert)", String(k.nachrichten.blockiert)),
+  )}
+
+  <h2>Vorgänge</h2>
+  ${tabelle(
+    zeile("Begonnen", String(k.vorgaenge.gesamt)) +
+    zeile("Mit Angebot abgeschlossen", String(k.vorgaenge.mitAngebot)) +
+    zeile("Ohne Angebot beendet (Abbruch oder Zeitablauf)", String(k.vorgaenge.abgebrochen)) +
+    zeile("Noch offen", String(k.vorgaenge.offen)) +
+    zeile("Mit KI-Fehlversuchen (Selbstheilung)", String(k.vorgaenge.mitFehlversuchen)) +
+    zeile("Auswertung überholt (neue Eingabe kam dazwischen)", String(k.vorgaenge.ueberholt)),
+  )}
+
+  <h2>Zeit bis zum Angebot</h2>
+  ${tabelle(
+    zeile("Ausgewertete Vorgänge", String(k.zeitBisAngebot.anzahl)) +
+    zeile("Median", zahl(k.zeitBisAngebot.medianMin, " min")) +
+    zeile("90 % der Vorgänge unter", zahl(k.zeitBisAngebot.p90Min, " min")),
+  )}
+  <p class="unter" style="margin-top:8px;">Gemessen vom ersten Eingang bis zur Erstellung des Angebots, inklusive Wartezeit auf weitere Eingaben und Rückfragen.</p>
+
+  <h2>Rückfragen und Korrekturen</h2>
+  ${tabelle(
+    zeile("Rückfragen gestellt", String(k.rueckfragen.anzahl)) +
+    zeile("Vorgänge mit mindestens einer Rückfrage", `${k.rueckfragen.vorgaengeMitRueckfrage} (${zahl(k.rueckfragen.quoteProzent, " %")})`) +
+    zeile("Höchste Rückfrage-Runde", String(k.rueckfragen.maxRunde)) +
+    zeile("Angebote (Erstfassungen)", String(k.fassungen.angebote)) +
+    zeile("Angebote mit neuer Fassung nach Korrektur", `${k.fassungen.mitKorrektur} (${zahl(k.fassungen.quoteProzent, " %")})`) +
+    zeile("Fassungen je Angebot im Schnitt", zahl(k.fassungen.schnittFassungen)) +
+    zeile(`Knopf „Nächster Raum"`, String(k.knoepfe.raumWeiter)) +
+    zeile(`Knopf „Angebot korrigieren"`, String(k.knoepfe.korrigieren)),
+  )}
+
+  <h2>Links und Wandfotos</h2>
+  ${tabelle(
+    zeile("Links geöffnet", String(k.links.gesamt)) +
+    zeile("Nach Ziel", verteilung(k.links.jeZiel)) +
+    zeile("Nach Gerät", verteilung(k.links.jeGeraet)) +
+    zeile("Wandfotos ausgewertet", String(k.wandfotos.anzahl)) +
+    zeile("Wand komplett im Bild", zahl(k.wandfotos.komplettProzent, " %")) +
+    zeile("Nachfass-Hinweis nötig", zahl(k.wandfotos.nachfassenProzent, " %")),
+  )}
+  <p class="unter" style="margin-top:8px;">Stufe 2 (Auswertung pseudonymisierter Dialoge) ist bewusst nicht gebaut, bis Datenschutzerklärung und Auftragsverarbeitung sie benennen.</p>`,
   );
 }

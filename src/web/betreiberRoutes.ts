@@ -24,6 +24,7 @@ import {
   betreiberDetail,
   betreiberUmsatz,
   betreiberFunnel,
+  betreiberChat,
   istInaktiv,
   type BetriebZeile,
   type BetriebsFilter,
@@ -47,6 +48,7 @@ import { hatAdminSitzung } from "./adminAuth.js";
 import { legeLeadAnUndLadeEin } from "../lead/onboarding.js";
 import { WEBTEST_NUMMER } from "./webtest.js";
 import { berechneFunnel } from "../lead/funnel.js";
+import { berechneChatKennzahlen, KENNZAHL_EVENT_TYPEN } from "../analytics/chatKennzahlen.js";
 import { featureConfig } from "../config.js";
 import type { FastifyRequest } from "fastify";
 
@@ -596,6 +598,39 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
       aboBetriebe: new Set(abos.map((a) => a.handwerkerId)),
     });
     return reply.type("text/html; charset=utf-8").send(betreiberFunnel({ basis: z.basis, ergebnis, tage, erinnerungAktiv: featureConfig().FEATURE_LEAD_ERINNERUNG }));
+  });
+
+
+  // ── Chat-Auswertung Stufe 1: Kennzahlen ohne Dialoginhalte ──────────
+  for (const pfad of beide("/chat")) app.get<{ Params: { token?: string }; Querystring: { tage?: string; echte?: string } }>(pfad, async (req, reply) => {
+    const z = zugang(req);
+    if (!z.ok) return z.basis === "/stasi" ? reply.redirect("/stasi") : reply.code(404).type("text/html").send(nichtGefunden());
+    const tageRoh = Number(req.query.tage ?? "30");
+    const tage = [7, 30, 90].includes(tageRoh) ? tageRoh : 30;
+    const nurEchte = req.query.echte === "1";
+    const seit = new Date(Date.now() - tage * 86_400_000);
+
+    const [events, vorgaenge, testKonten, webtest] = await Promise.all([
+      prisma.event.findMany({
+        where: { typ: { in: [...KENNZAHL_EVENT_TYPEN] }, erstelltAm: { gte: seit } },
+        select: { typ: true, handwerkerId: true, dataJson: true, erstelltAm: true },
+      }),
+      prisma.vorgang.findMany({
+        where: { begonnenAm: { gte: seit } },
+        select: { handwerkerId: true, status: true, runde: true, begonnenAm: true, letzteAktivitaet: true, dokumentId: true, fehlversuche: true },
+      }),
+      nurEchte ? prisma.handwerker.findMany({ where: { istTest: true }, select: { id: true } }) : Promise.resolve([]),
+      prisma.handwerker.findUnique({ where: { whatsappNummer: WEBTEST_NUMMER }, select: { id: true } }),
+    ]);
+    const dokIds = vorgaenge.map((v) => v.dokumentId).filter((d): d is string => !!d);
+    const dokumente = await prisma.dokument.findMany({
+      where: { OR: [{ erstelltAm: { gte: seit } }, { id: { in: dokIds } }] },
+      select: { id: true, handwerkerId: true, nummer: true, version: true, erstelltAm: true },
+    });
+    const ausgeschlossen = new Set<string>(testKonten.map((t) => t.id));
+    if (webtest) ausgeschlossen.add(webtest.id);
+    const k = berechneChatKennzahlen({ events, vorgaenge, dokumente, ausgeschlossen });
+    return reply.type("text/html; charset=utf-8").send(betreiberChat({ basis: z.basis, k, tage, nurEchte }));
   });
 
 

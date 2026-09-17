@@ -160,6 +160,8 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     // Zustellstatus unserer Nachrichten (sent/delivered/read/failed): treibt das
     // Lead-Zustandsmodell (eingeladen → zugestellt → gelesen), sonst ohne Wirkung.
     for (const st of changes.flatMap((c) => c.value?.statuses ?? [])) {
+      // PII-frei: nur der Status (sent/delivered/read/failed) und ggf. der Meta-Fehlercode.
+      app.log.info({ status: st.status, fehler: st.errors?.[0]?.code ?? undefined }, "WhatsApp-Status");
       verarbeiteNachrichtStatus(prisma, st)
         .then((neu) => {
           if (neu) app.log.info({ status: st.status, zustand: neu }, "Lead-Zustand aktualisiert");

@@ -136,6 +136,16 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 17.09.2026 — CHAT-AUSWERTUNG STUFE 1 (304 Tests, deployt):** `analytics/chatKennzahlen.ts` berechneChatKennzahlen (rein,
+>   getestet) aus Events NACHRICHT_EMPFANGEN/-BLOCKIERT, AUSWERTUNG_UEBERHOLT, RUECKFRAGE, ANGEBOT_KNOPF, LINK_GEOEFFNET, WANDFOTO
+>   + Vorgang-Metadaten (status, runde, begonnenAm, dokumentId, fehlversuche) + Dokument (nummer, version, erstelltAm). KEIN Inhalt
+>   (kein nachrichtenJson/Transkript). Cockpit `/stasi/chat?tage=7|30|90&echte=1` (Link „Zur Chat-Auswertung"): Eingaben je Kanal,
+>   Vorgänge (mit Angebot/Abbruch/offen/Fehlversuche/überholt), Zeit bis Angebot (Median/P90), Rückfragen, Fassungen je Angebot,
+>   Knöpfe, Links je Ziel/Gerät, Wandfoto-Quoten. Webtest-Sammelkonto immer ausgeschlossen, Test-Konten optional.
+>   STUFE 2 (pseudonymisierte Dialog-Stichprobe) BEWUSST NICHT GEBAUT: erst wenn Datenschutzerklärung 6.4 + AVV sie benennen
+>   (Textvorschlag an Dirk 17.09.). 17.09. außerdem: Meta-Vorlagen alle genehmigt, Probelauf ok; Gutschrift-Storno per negativem
+>   Betrag (GUTSCHRIFT_STORNO); WhatsApp-Status PII-frei im Log.
+
 > **FEIERABEND-STAND 15.09.2026 (abf4497 + Flag):** Alles deployt (298 Tests). Server-.env: FEATURE_LEAD_ERINNERUNG=1 (Job aktiv, wartet auf
 >   Vorlage). ⏳ META-GENEHMIGUNG (Konto „AuftragsBoss", WABA 1680177866376806): `test_starten`, `test_endet_bald`, `test_abgelaufen`,
 >   `lead_erinnerung` ✅ ALLE GENEHMIGT 17.09.2026 (Status per Graph-API abfragbar: /1680177866376806/message_templates).

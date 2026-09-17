@@ -48,6 +48,14 @@ import { effektivePreisliste, einstellungenTokenBereit } from "./betrieb/betrieb
 import { findeBetriebZuNummer, absenderWhere } from "./betrieb/mitarbeiter.js";
 import { istAboEndePause, loeschDatum, datumDE as vertragsDatum } from "./betrieb/vertragsende.js";
 import { aboLink } from "./web/tokens.js";
+import { agbGateAktiv, agbGateText, agbKonfig, gateEntscheidung, KNOPF_AGB } from "./betrieb/agb.js";
+
+// Eingaben, die auf die AGB-Zustimmung warten (je Nummer die letzte, 60 Minuten).
+// Nach dem Klick auf „Kostenlos testen" wird sie nachverarbeitet, der Betrieb muss
+// seine Sprachnachricht nicht noch einmal schicken.
+type NachrichtArgs = Parameters<typeof verarbeiteNachricht>[0];
+const wartendAufAgb = new Map<string, { args: NachrichtArgs; zeit: number }>();
+const WARTEND_MAX_MS = 60 * 60_000;
 import { willFeedback, extrahiereFeedback, FEEDBACK_FENSTER_MINUTEN } from "./feedback.js";
 import { werbeCodeBereit, EMPFEHLUNG_AB_ANGEBOT, EMPFEHLUNGS_PRAEMIE_EUR } from "./empfehlung.js";
 import { starteTestFuerNeueNummer, testNachrichtBlockiert, testStartAusText } from "./direkttest.js";
@@ -187,6 +195,37 @@ export async function verarbeiteNachricht(args: {
       vonNummer,
       "🤔 Das Format kann ich nicht lesen. Schick mir bitte eine Sprachnachricht, einen Text oder ein Foto (als Bild, nicht als Video).",
     );
+    return;
+  }
+
+  // AGB-Zustimmung beim Start (17.09.2026): vor der ersten Verarbeitung von Inhalten
+  // muss der Betrieb einmalig die AGB inkl. Auftragsverarbeitung akzeptieren.
+  const textJa = !!text && /^\s*(ja|ok|okay|einverstanden|akzeptiere|akzeptiert)\s*[.!]?\s*$/i.test(text) && wartendAufAgb.has(vonNummer);
+  const gate = gateEntscheidung({ aktiv: agbGateAktiv(), istMitarbeiter: !!mitarbeiter, akzeptiertAm: handwerker.agbAkzeptiertAm, knopfPayload: textJa ? KNOPF_AGB : knopfPayload });
+  if (gate === "AKZEPTIEREN") {
+    const version = agbKonfig().version;
+    await prisma.handwerker.update({ where: { id: handwerker.id }, data: { agbAkzeptiertAm: new Date(), agbVersion: version, agbQuelle: "whatsapp" } });
+    await prisma.adminLog.create({
+      data: { aktion: "AGB_AKZEPTIERT", handwerkerId: handwerker.id, betrieb: handwerker.firma || handwerker.name || `+${vonNummer}`, detail: `AGB inkl. AVV per WhatsApp-Knopf akzeptiert (Version ${version}, Nummer +${vonNummer})` },
+    });
+    await spurEvent(prisma, "AGB_AKZEPTIERT", { handwerkerId: handwerker.id, data: { quelle: "whatsapp", version, istTest: handwerker.istTest } });
+    const wartend = wartendAufAgb.get(vonNummer);
+    wartendAufAgb.delete(vonNummer);
+    if (wartend && Date.now() - wartend.zeit <= WARTEND_MAX_MS) {
+      await sendeWhatsAppText(vonNummer, "✅ Danke! Deine Nachricht von eben verarbeite ich jetzt.");
+      await verarbeiteNachricht(wartend.args);
+    } else {
+      await sendeWhatsAppText(vonNummer, "✅ Danke! Jetzt einfach eine Sprachnachricht schicken: Kunde, Adresse und was gemacht werden soll. 🎙️");
+    }
+    return;
+  }
+  if (gate === "FRAGEN") {
+    wartendAufAgb.set(vonNummer, { args, zeit: Date.now() });
+    if (wartendAufAgb.size > 2000) wartendAufAgb.delete(wartendAufAgb.keys().next().value!);
+    const g = agbGateText(handwerker.istTest);
+    const ok = await sendeWhatsAppKnoepfe(vonNummer, g.text, [g.knopf]);
+    if (!ok) await sendeWhatsAppText(vonNummer, g.text + "\n\nAntworte einfach mit ja, um zu akzeptieren.");
+    await spurEvent(prisma, "AGB_GEFRAGT", { handwerkerId: handwerker.id, data: { kanal } });
     return;
   }
 

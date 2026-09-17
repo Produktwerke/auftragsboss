@@ -53,3 +53,56 @@ export function checkoutAgbAkzeptiert(session: unknown): boolean {
   const s = session as { consent?: { terms_of_service?: string | null } | null } | null | undefined;
   return s?.consent?.terms_of_service === "accepted";
 }
+
+// ── AGB-Zustimmung beim Start des kostenlosen Tests (17.09.2026, Rechts-KI) ──
+//
+// Bevor AuftragsBoss die erste Sprachnachricht, das erste Foto oder den ersten
+// Text eines Betriebs verarbeitet (und damit Endkundendaten im Auftrag), muss
+// der Betrieb einmalig die AGB einschließlich der darin enthaltenen Vereinbarung
+// zur Auftragsverarbeitung akzeptieren. Das passiert im WhatsApp-Dialog mit
+// einem Knopf; gespeichert werden Zeitpunkt, Nummer und AGB-Version. Danach
+// bleibt es beim Prinzip „kein Login, einfach WhatsApp".
+//
+//   AGB_GATE=1                       Zustimmungspflicht an (Standard aus, bis agb.html live ist)
+//   DATENSCHUTZ_URL=…                Standard https://auftragsboss.de/datenschutz.html
+//
+// „Kurz erklären" (Lead-Knopf) geht ohne Zustimmung, dabei werden keine Daten verarbeitet.
+export const KNOPF_AGB = "AGB_AKZEPTIEREN";
+export const KNOPF_AGB_ERKLAEREN_AUSNAHME = "LEAD_ERKLAEREN";
+
+export function agbGateAktiv(env: NodeJS.ProcessEnv = process.env): boolean {
+  const k = agbKonfig(env);
+  return /^(1|true|ja)$/i.test(env.AGB_GATE?.trim() ?? "") && !!k.url;
+}
+
+export function datenschutzUrl(env: NodeJS.ProcessEnv = process.env): string {
+  return env.DATENSCHUTZ_URL?.trim() || "https://auftragsboss.de/datenschutz.html";
+}
+
+/** Text der Zustimmungsnachricht (WhatsApp, mit einem Knopf). */
+export function agbGateText(istTest: boolean, env: NodeJS.ProcessEnv = process.env): { text: string; knopf: { id: string; titel: string } } {
+  const k = agbKonfig(env);
+  const titel = istTest ? "Kostenlos testen" : "Akzeptieren";
+  return {
+    knopf: { id: KNOPF_AGB, titel },
+    text:
+      `📄 Einmalig, bevor es losgeht: Mit Tipp auf „${titel}" handelst du als Unternehmer und akzeptierst unsere Allgemeinen Geschäftsbedingungen einschließlich der darin enthaltenen Vereinbarung zur Auftragsverarbeitung (Art. 28 DSGVO).\n\n` +
+      `AGB: ${k.url}\nDatenschutz: ${datenschutzUrl(env)}\n\n` +
+      `Danach ${istTest ? "startet dein kostenloser Test und " : ""}du schickst einfach deine Sprachnachricht.`,
+  };
+}
+
+export type GateEntscheidung = "DURCH" | "AKZEPTIEREN" | "FRAGEN";
+
+/**
+ * Was passiert mit einer eingehenden Nachricht? Rein, testbar.
+ *   DURCH        verarbeiten wie bisher (Gate aus, schon akzeptiert, Mitarbeiter, „Kurz erklären")
+ *   AKZEPTIEREN  Knopf „Kostenlos testen" gedrückt → Zustimmung speichern, dann weiter
+ *   FRAGEN       Zustimmung fehlt → Zustimmungsnachricht schicken, Eingabe merken
+ */
+export function gateEntscheidung(args: { aktiv: boolean; istMitarbeiter: boolean; akzeptiertAm: Date | null; knopfPayload?: string }): GateEntscheidung {
+  if (!args.aktiv || args.istMitarbeiter || args.akzeptiertAm) return "DURCH";
+  if (args.knopfPayload === KNOPF_AGB) return "AKZEPTIEREN";
+  if (args.knopfPayload === KNOPF_AGB_ERKLAEREN_AUSNAHME) return "DURCH";
+  return "FRAGEN";
+}

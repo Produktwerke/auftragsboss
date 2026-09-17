@@ -136,6 +136,34 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 17.09.2026 (2) — AGB-PAKET IN VIER TEILEN (321 Tests, deployt, db push: Handwerker.agb*, Vorgang.absenderNummer, Modell Mitarbeiter):**
+>   (1) DATENEXPORT `betrieb/datenexport.ts` + eigener ZIP-Schreiber `betrieb/zip.ts` (ohne Abhängigkeit): `/export/:einstellungenToken`
+>   (Kunden-Cockpit „Meine Daten (ZIP)", Einstellungen „Dein Konto") und `/stasi/betrieb/:id/export.zip`; Inhalt LIESMICH, betrieb.json,
+>   angebote.json/.csv, positionen.csv, kunden.csv, gewaehrleistung.json, pdf/ (aktuelle Fassung, nicht im Test), fotos/; Event EXPORT_ZIP.
+>   (2) VERTRAGSENDE `betrieb/vertragsende.ts` + `jobs/vertragsende.ts` (05:30): Abo GEKUENDIGT+gekuendigtAm → Tag 30 PAUSE (blockiert,
+>   Grund „ABO_ENDE: …", Pipeline antwortet mit Reaktivierungslink aboLink, Mail), Tag 83 VORWARNUNG (Mail, Event VERTRAGSENDE_VORWARNUNG),
+>   Tag 90 LÖSCHUNG (frühestens 7 Tage nach Vorwarnung) über `betrieb/loeschung.ts` (gemeinsame DSGVO-Kaskade für Betreiber-Cockpit,
+>   Selbstlöschung, Job). Neues Abo (Stripe-Checkout oder Betreiber „Abo anlegen") hebt die Pause auf (hebeAboEndePauseAuf).
+>   (3) MITARBEITER-NUMMERN `betrieb/mitarbeiter.ts`: Modell Mitarbeiter (whatsappNummer unique, gehört einem Betrieb), Grenzen
+>   Basis 0 / Profi 2 / Team 14 zusätzliche (= Preisseite 1/3/15), Test 0; Pipeline findet Betrieb über Inhaber- ODER Mitarbeiter-Nummer,
+>   antwortet dem Absender, Vorgänge je Absender getrennt (absenderWhere in holeOffenenVorgang/holeNachtragsVorgang, Vorgang.absenderNummer),
+>   Timeout-Job antwortet dem Absender, Zugangs-Schleuse akzeptiert alle Nummern des Betriebs (erlaubteNummern). Mitarbeiter müssen selbst
+>   zuerst schreiben (keine Vorlage nötig). Betreiber-Detailseite listet sie.
+>   (4) SELBSTVERWALTUNG Einstellungen: Abschnitte „Mitarbeiter-Nummern" (POST/DELETE /api/einstellungen/:token/mitarbeiter[/:id]) und
+>   „Dein Konto" (Export, Abo-Link, Konto löschen mit Wort „löschen" → POST /api/einstellungen/:token/loeschen, gesperrt bei aktivem
+>   Stripe-Abo, danach /geloescht). Inhaber-Nummer ändern weiterhin nur über den Betreiber.
+>   Offen: zahlende Kunden haben KEINE technische Angebots-Kontingentgrenze (AGB als Fair-Use oder bauen).
+
+> **Update 17.09.2026 (3) — AGB-ZUSTIMMUNG BEIM TESTSTART (Rechts-KI: AVV muss VOR der ersten Verarbeitung von Endkundendaten stehen;
+>   Dirk integriert den AVV in die AGB, ein Vertragswerk):** `betrieb/agb.ts` gateEntscheidung/agbGateText, Pipeline vor Lead-Knöpfen:
+>   Gate an bei `AGB_GATE=1` + `AGB_URL` (Standard aus, bis agb.html live). Fehlt `agbAkzeptiertAm` beim Inhaber (Mitarbeiter ausgenommen,
+>   „Kurz erklären" ausgenommen), wird die Eingabe 60 Min im RAM gemerkt und eine Knopfnachricht geschickt („Kostenlos testen" bzw.
+>   „Akzeptieren", Links AGB + Datenschutz, Unternehmer-Hinweis); Knopf AGB_AKZEPTIEREN oder Text „ja" → agbAkzeptiertAm/agbVersion/
+>   agbQuelle=whatsapp, AdminLog + Event AGB_AKZEPTIERT, dann Nachverarbeitung der gemerkten Nachricht. Kein Kontingent-Verbrauch vorher.
+>   Registrierungs-Kontrollkästchen damit NICHT mehr nötig; Stripe-Häkchen bleibt optionaler zweiter Gürtel. Website-Formular nennt AGB.
+>   SCHARFSCHALTEN: agb.html bei IONOS → .env AGB_URL, AGB_VERSION, AGB_GATE=1 (+ STRIPE_AGB_HAEKCHEN=1) → pm2 restart. Bestehende
+>   Betriebe (auch Dirk) bekommen die Frage dann einmal. Offen: Browser-Demo (Webtest) ohne Zustimmungsschritt, index.html hochladen.
+
 > **Update 17.09.2026 — CHAT-AUSWERTUNG STUFE 1 (304 Tests, deployt):** `analytics/chatKennzahlen.ts` berechneChatKennzahlen (rein,
 >   getestet) aus Events NACHRICHT_EMPFANGEN/-BLOCKIERT, AUSWERTUNG_UEBERHOLT, RUECKFRAGE, ANGEBOT_KNOPF, LINK_GEOEFFNET, WANDFOTO
 >   + Vorgang-Metadaten (status, runde, begonnenAm, dokumentId, fehlversuche) + Dokument (nummer, version, erstelltAm). KEIN Inhalt

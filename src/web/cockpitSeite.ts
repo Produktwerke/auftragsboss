@@ -28,6 +28,8 @@ export interface Kennzahlen {
   anzahl: number;
   offen: number; // Angebote mit offenen Preisen
   volumen: number; // Summe der vollständigen Brutto-Beträge
+  /** Monatskontingent (zahlende Betriebe): genutzte Erstfassungen und Grenze. */
+  kontingent?: { genutzt: number; limit: number; tarif: string } | null;
 }
 
 export function cockpitSeite(args: {
@@ -106,6 +108,7 @@ ${zahlungHinweis}
         <div class="stat"><div class="k"><span class="dot ok"></span>Versandbereit</div><div class="v num">${versandbereit}</div><div class="m">vollständig kalkuliert</div></div>
         <div class="stat"><div class="k"><span class="dot warn"></span>Mit offenen Preisen</div><div class="v num">${kennzahlen.offen}</div><div class="m">noch zu ergänzen</div></div>
         <div class="stat"><div class="k"><span class="dot"></span>Angebotsvolumen</div><div class="v num">${euroVoll(kennzahlen.volumen)}</div><div class="m">Summe fertiger Angebote</div></div>
+        ${kennzahlen.kontingent ? `<div class="stat"><div class="k"><span class="dot ${kennzahlen.kontingent.genutzt >= kennzahlen.kontingent.limit ? "warn" : ""}"></span>Diesen Monat</div><div class="v num">${kennzahlen.kontingent.genutzt} / ${kennzahlen.kontingent.limit}</div><div class="m">Angebote im Tarif ${escapeHtml(kennzahlen.kontingent.tarif.charAt(0) + kennzahlen.kontingent.tarif.slice(1).toLowerCase())}</div></div>` : ""}
       </div>
 
       <div class="panel" id="angebote">

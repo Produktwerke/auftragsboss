@@ -154,6 +154,12 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   Stripe-Abo, danach /geloescht). Inhaber-Nummer ändern weiterhin nur über den Betreiber.
 >   Offen: zahlende Kunden haben KEINE technische Angebots-Kontingentgrenze (AGB als Fair-Use oder bauen).
 
+> **Update 17.09.2026 (4) — MONATSKONTINGENT ALS HARTE GRENZE (Dirk, 328 Tests, deployt):** `betrieb/kontingent.ts`: Basis 50 / Profi 120 /
+>   Team 300 (Individuell 300, ohne Abo wie Basis), gezählt werden Dokument.version=1 im Kalendermonat. Pipeline: vor einem NEUEN Auftrag
+>   (kein offener Vorgang, kein Nachtrag) → bei erschöpftem Kontingent Abweisung mit Datum des Monatsersten + Tarifwechsel-Link (aboLink),
+>   Event KONTINGENT_ERREICHT, keine Transkription/KI-Kosten. Nach jeder Erstfassung mit ≤ 5 Rest: WhatsApp-Warnung „Noch N Angebote …".
+>   Kunden-Cockpit: Kachel „Diesen Monat n / Limit". Test-Konten unverändert (direkttest.ts). AGB-Prompt entsprechend aktualisiert.
+
 > **Update 17.09.2026 (3) — AGB-ZUSTIMMUNG BEIM TESTSTART (Rechts-KI: AVV muss VOR der ersten Verarbeitung von Endkundendaten stehen;
 >   Dirk integriert den AVV in die AGB, ein Vertragswerk):** `betrieb/agb.ts` gateEntscheidung/agbGateText, Pipeline vor Lead-Knöpfen:
 >   Gate an bei `AGB_GATE=1` + `AGB_URL` (Standard aus, bis agb.html live). Fehlt `agbAkzeptiertAm` beim Inhaber (Mitarbeiter ausgenommen,

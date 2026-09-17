@@ -49,6 +49,7 @@ import { findeBetriebZuNummer, absenderWhere } from "./betrieb/mitarbeiter.js";
 import { istAboEndePause, loeschDatum, datumDE as vertragsDatum } from "./betrieb/vertragsende.js";
 import { aboLink } from "./web/tokens.js";
 import { agbGateAktiv, agbGateText, agbKonfig, gateEntscheidung, KNOPF_AGB } from "./betrieb/agb.js";
+import { ladeKontingent, kontingentErschoepftText, kontingentHinweisText } from "./betrieb/kontingent.js";
 
 // Eingaben, die auf die AGB-Zustimmung warten (je Nummer die letzte, 60 Minuten).
 // Nach dem Klick auf „Kostenlos testen" wird sie nachverarbeitet, der Betrieb muss
@@ -402,6 +403,22 @@ export async function verarbeiteNachricht(args: {
     // Den Vorgang laden wir hier einmal und nutzen ihn unten weiter.
     let vorgang = await holeOffenenVorgang(prisma, handwerker.id, absenderWhere(vonNummer, vonNummer === handwerker.whatsappNummer));
     const imDialog = !!vorgang;
+
+    // Monatskontingent (harte Grenze, 17.09.2026): Ein NEUER Auftrag (kein offener
+    // Dialog, kein Nachtrag) wird abgewiesen, wenn die Erstfassungen dieses Monats
+    // das Tarif-Kontingent erreicht haben. Vor Transkription und KI, also ohne Kosten.
+    if (!vorgang && !handwerker.istTest) {
+      const nachtrag = await holeNachtragsVorgang(prisma, handwerker.id, absenderWhere(vonNummer, vonNummer === handwerker.whatsappNummer));
+      if (!nachtrag) {
+        const stand = await ladeKontingent(prisma, handwerker.id);
+        if (stand.erschoepft) {
+          const token = await einstellungenTokenBereit(prisma, handwerker);
+          await sendeWhatsAppText(vonNummer, kontingentErschoepftText(stand, aboLink(token)));
+          await spurEvent(prisma, "KONTINGENT_ERREICHT", { handwerkerId: handwerker.id, data: { tarif: stand.tarif, limit: stand.limit, genutzt: stand.genutzt } });
+          return;
+        }
+      }
+    }
     if (mediaId) {
       // Sprachnachricht sofort kurz bestätigen — Transkription + KI brauchen ein
       // paar Sekunden; so weiß der Absender, dass im Hintergrund schon gearbeitet
@@ -1206,6 +1223,13 @@ export async function erstelleDokument(args: {
       istTest: handwerker.istTest,
     },
   });
+
+  // Kontingent-Hinweis bei den letzten 5 Angeboten des Monats (nur zahlende Betriebe, nur Erstfassungen).
+  if (!handwerker.istTest && !istNachtrag && version === 1) {
+    const stand = await ladeKontingent(prisma, handwerkerId);
+    const hinweis = kontingentHinweisText(stand);
+    if (hinweis) await sendeWhatsAppText(vonNummer, hinweis);
+  }
 
   // Nach dem 3. Angebot einmalig zum Weiterempfehlen einladen (nur Erstfassungen;
   // Test-Konten sind hier ausgenommen).

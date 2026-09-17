@@ -23,6 +23,7 @@ import { effektivePreisliste, einstellungenTokenBereit } from "../betrieb/betrie
 import { erstelleDatenexport } from "../betrieb/datenexport.js";
 import { erlaubteNummern, fuegeMitarbeiterHinzu, entferneMitarbeiter, erlaubteMitarbeiter, tarifLabelFuerNummern } from "../betrieb/mitarbeiter.js";
 import { loescheBetrieb } from "../betrieb/loeschung.js";
+import { ladeKontingent } from "../betrieb/kontingent.js";
 import { bearbeitenLink, einstellungenLink, cockpitLink, werbeLink } from "./tokens.js";
 import { werbeCodeBereit, empfehlungsEinladungMail } from "../empfehlung.js";
 import { ladeLogo } from "../betrieb/logo.js";
@@ -775,10 +776,12 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       vollstaendig: d.anzahlOffen === 0, bearbeitenToken: d.bearbeitenToken, version: d.version,
       versendetAm: d.versendetAm,
     }));
+    const stand = handwerker.istTest ? null : await ladeKontingent(prisma, handwerker.id);
     const kennzahlen = {
       anzahl: dokumente.length,
       offen: dokumente.filter((d) => d.anzahlOffen > 0).length,
       volumen: dokumente.reduce((s, d) => s + (d.anzahlOffen === 0 ? d.brutto : 0), 0),
+      kontingent: stand ? { genutzt: stand.genutzt, limit: stand.limit, tarif: stand.tarif } : null,
     };
     // Wer den Einstellungs-/Cockpit-Link hat, ist nachweislich der Betrieb:
     // Gerät als vertraut markieren, damit Angebote von hier aus ohne Schleuse

@@ -445,7 +445,7 @@ export function betreiberDetail(args: {
     <h2 style="margin-top:0;">Gutschrift (Euro)</h2>
     <form class="zeile" data-post="${aktion("gutschrift")}">
       <label class="feld">Betrag in €
-        <input name="betrag" type="number" min="1" max="1000" step="0.01" value="100" required>
+        <input name="betrag" type="number" min="-1000" max="1000" step="0.01" value="100" required>
       </label>
       <label class="feld">Grund (z.B. „Kulanz" oder „Empfehlung Malermeister Krause")
         <input name="grund" required minlength="3">
@@ -453,7 +453,7 @@ export function betreiberDetail(args: {
       <button class="kn">Gutschreiben</button>
       <div class="meldung"></div>
     </form>
-    <p class="hinweis">Stripe-Kunden: verrechnet sich automatisch mit den nächsten Rechnungen. Sonst als Konto-Guthaben vermerkt, das du bei der nächsten Zahlung unten verrechnest. Empfehlungen aktivierst du im Abschnitt „Geworbene Kollegen", die Prämie von ${EMPFEHLUNGS_PRAEMIE_EUR} € geht dann automatisch raus.</p>
+    <p class="hinweis">Stripe-Kunden: verrechnet sich automatisch mit den nächsten Rechnungen. Sonst als Konto-Guthaben vermerkt, das du bei der nächsten Zahlung unten verrechnest. Empfehlungen aktivierst du im Abschnitt „Geworbene Kollegen", die Prämie von ${EMPFEHLUNGS_PRAEMIE_EUR} € geht dann automatisch raus. Ein negativer Betrag (z. B. -100) nimmt eine Gutschrift wieder zurück.</p>
   </div>
 
   <div class="karte">

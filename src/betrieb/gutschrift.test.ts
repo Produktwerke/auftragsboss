@@ -39,6 +39,32 @@ function fakePrisma(vorgaben: { abo?: unknown; empfehlung?: any; offene?: any[];
   return { p: p as unknown as PrismaClient, aufrufe, guthaben: () => guthaben };
 }
 
+describe("Gutschrift zurücknehmen (negativer Betrag)", () => {
+  it("Konto-Guthaben: zieht ab, nie unter null, protokolliert GUTSCHRIFT_STORNO", async () => {
+    const { p, aufrufe, guthaben } = fakePrisma({ guthaben: 200 });
+    const erg = await schreibeGut(p, werber, -100, "Storno Test", null);
+    expect(erg.weg).toBe("konto");
+    expect(guthaben()).toBe(100);
+    expect((aufrufe.adminLog[0] as { data: { aktion: string; detail: string } }).data.aktion).toBe("GUTSCHRIFT_STORNO");
+    await expect(schreibeGut(p, werber, -150, "zu viel", null)).rejects.toThrow("Nicht genug");
+    expect(guthaben()).toBe(100);
+  });
+
+  it("Stripe-Kunde: belastet den Stripe-Saldo und bucht die Gegenzeile im Ledger", async () => {
+    const stripe = vi.fn(async () => {});
+    const { p, aufrufe } = fakePrisma({ abo: { stripeCustomerId: "cus_1" } });
+    const erg = await schreibeGut(p, werber, -100, "Storno Test", stripe);
+    expect(erg.weg).toBe("stripe");
+    expect(stripe).toHaveBeenCalledWith("cus_1", -100, "Storno Test");
+    expect((aufrufe.buchung[0] as { data: { typ: string; betrag: number } }).data).toMatchObject({ typ: "GUTSCHRIFT", betrag: 100 });
+  });
+
+  it("0 € wird abgelehnt", async () => {
+    const { p } = fakePrisma();
+    await expect(schreibeGut(p, werber, 0, "nichts", null)).rejects.toThrow();
+  });
+});
+
 describe("Gutschrift (Empfehlungsprämie 100 €)", () => {
   it("Stripe-Kunde: Guthaben beim Stripe-Kunden + negative GUTSCHRIFT-Zeile im Ledger", async () => {
     const stripe = vi.fn(async () => {});

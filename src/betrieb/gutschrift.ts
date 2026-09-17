@@ -33,23 +33,37 @@ export async function schreibeGut(
   grund: string,
   stripeGutschreiben: StripeGutschreiber | null,
 ): Promise<{ weg: "stripe" | "konto" }> {
+  // Negativer Betrag = Rücknahme (Storno) einer Gutschrift (17.09.2026, Dirk: Test-Gutschrift
+  // wieder loswerden). Konto-Guthaben fällt dabei nie unter null; in Stripe wird der
+  // Saldo entsprechend belastet (offene Gutschrift verringert sich).
   const betrag = rund2(euro);
-  if (!(betrag > 0)) throw new Error("Gutschrift muss größer als 0 sein");
+  if (!(betrag !== 0 && Number.isFinite(betrag))) throw new Error("Gutschrift darf nicht 0 sein");
+  const storno = betrag < 0;
+  const abs = Math.abs(betrag);
   const name = betrieb.firma || betrieb.name;
+  const aktion = storno ? "GUTSCHRIFT_STORNO" : "GUTSCHRIFT";
   const abo = await prisma.abo.findUnique({ where: { handwerkerId: betrieb.id } });
   if (abo?.stripeCustomerId && stripeGutschreiben) {
     await stripeGutschreiben(abo.stripeCustomerId, betrag, grund);
     await prisma.buchung.create({
-      data: { handwerkerId: betrieb.id, betrieb: name, typ: "GUTSCHRIFT", betrag: -betrag, zeitraum: monatsZeitraum(), notiz: `Gutschrift in Stripe: ${grund}` },
+      data: { handwerkerId: betrieb.id, betrieb: name, typ: "GUTSCHRIFT", betrag: -betrag, zeitraum: monatsZeitraum(), notiz: `${storno ? "Gutschrift zurückgenommen" : "Gutschrift"} in Stripe: ${grund}` },
     });
     await prisma.adminLog.create({
-      data: { aktion: "GUTSCHRIFT", handwerkerId: betrieb.id, betrieb: name, detail: `${betrag} € auf die kommenden Stripe-Rechnungen: ${grund}` },
+      data: { aktion, handwerkerId: betrieb.id, betrieb: name, detail: `${abs} € ${storno ? "von den kommenden Stripe-Rechnungen zurückgenommen" : "auf die kommenden Stripe-Rechnungen"}: ${grund}` },
     });
     return { weg: "stripe" };
   }
-  await prisma.handwerker.update({ where: { id: betrieb.id }, data: { guthabenEuro: { increment: betrag } } });
+  if (storno) {
+    const erg = await prisma.handwerker.updateMany({
+      where: { id: betrieb.id, guthabenEuro: { gte: abs } },
+      data: { guthabenEuro: { decrement: abs } },
+    });
+    if (erg.count === 0) throw new Error("Nicht genug Konto-Guthaben für diese Rücknahme.");
+  } else {
+    await prisma.handwerker.update({ where: { id: betrieb.id }, data: { guthabenEuro: { increment: abs } } });
+  }
   await prisma.adminLog.create({
-    data: { aktion: "GUTSCHRIFT", handwerkerId: betrieb.id, betrieb: name, detail: `${betrag} € Konto-Guthaben (bei der nächsten Zahlung verrechnen): ${grund}` },
+    data: { aktion, handwerkerId: betrieb.id, betrieb: name, detail: `${abs} € Konto-Guthaben ${storno ? "zurückgenommen" : "(bei der nächsten Zahlung verrechnen)"}: ${grund}` },
   });
   return { weg: "konto" };
 }

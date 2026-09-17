@@ -381,14 +381,20 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
 
       const betrag = Math.round(Number(req.body.betrag) * 100) / 100;
       const grund = (req.body.grund ?? "").trim();
-      if (!Number.isFinite(betrag) || betrag < 1 || betrag > 1000) return reply.code(400).send({ fehler: "Betrag: 1 bis 1000 €" });
+      if (!Number.isFinite(betrag) || Math.abs(betrag) < 1 || Math.abs(betrag) > 1000) return reply.code(400).send({ fehler: "Betrag: 1 bis 1000 € (negativ = Gutschrift zurücknehmen)" });
       if (grund.length < 3) return reply.code(400).send({ fehler: "Bitte einen Grund angeben." });
 
-      const { weg } = await schreibeGut(prisma, h, betrag, grund, stripeKonfiguriert() ? stripeGutschreiben : null);
-      return reply.send({
-        ok: true,
-        meldung: weg === "stripe" ? `${betrag} € in Stripe gutgeschrieben, wird mit den nächsten Rechnungen verrechnet.` : `${betrag} € als Konto-Guthaben vermerkt, bei der nächsten Zahlung verrechnen.`,
-      });
+      let weg: "stripe" | "konto";
+      try {
+        ({ weg } = await schreibeGut(prisma, h, betrag, grund, stripeKonfiguriert() ? stripeGutschreiben : null));
+      } catch (err) {
+        return reply.code(400).send({ fehler: err instanceof Error ? err.message : "Gutschrift fehlgeschlagen" });
+      }
+      const abs = Math.abs(betrag);
+      const meldung = betrag < 0
+        ? (weg === "stripe" ? `${abs} € Gutschrift in Stripe zurückgenommen.` : `${abs} € Konto-Guthaben zurückgenommen.`)
+        : (weg === "stripe" ? `${abs} € in Stripe gutgeschrieben, wird mit den nächsten Rechnungen verrechnet.` : `${abs} € als Konto-Guthaben vermerkt, bei der nächsten Zahlung verrechnen.`);
+      return reply.send({ ok: true, meldung });
     },
   );
 

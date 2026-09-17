@@ -47,6 +47,7 @@ describe("AGB-Zustimmung beim Teststart (Gate)", () => {
   it("Zustimmungstext nennt AGB, AVV, Links und Knopf (max. 20 Zeichen)", () => {
     const g = agbGateText(true, { AGB_URL: "https://auftragsboss.de/agb.html" });
     expect(g.text).toContain("Auftragsverarbeitung");
+    expect(g.text).toContain("berechtigt");
     expect(g.text).toContain("https://auftragsboss.de/agb.html");
     expect(g.text).toContain("https://auftragsboss.de/datenschutz.html");
     expect(g.knopf.titel.length).toBeLessThanOrEqual(20);

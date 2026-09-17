@@ -240,6 +240,7 @@ export function einstellungenSeite(args: {
                 <a class="btn" href="/export/${escapeHtml(token)}">Meine Daten (ZIP)</a>
                 <a class="btn" href="/abo/${escapeHtml(token)}">Abo &amp; Abrechnung</a>
               </div>
+              <p class="hint" style="margin:-4px 0 14px;">Das Export-Paket ist eine ZIP-Datei mit deinen Stammdaten und Einstellungen (JSON), allen Angeboten und Protokollen mit Positionen (JSON und CSV, UTF-8 mit Semikolon, direkt in Excel zu öffnen), deinen Endkunden (CSV), den Gewährleistungsfristen (JSON), den PDFs der jeweils aktuellen Fassung und den Belegfotos. Eine Beschreibung aller Dateien liegt als LIESMICH.txt bei. Zugangs-Tokens und Passwörter sind nicht enthalten.</p>
               <div class="field"><label for="loeschBestaetigung">Konto endgültig löschen: tippe zur Bestätigung das Wort „löschen"</label><input id="loeschBestaetigung" placeholder="löschen" autocomplete="off"></div>
               <div style="display:flex;align-items:center;gap:12px;">
                 <button class="btn" type="button" id="kontoLoeschen" style="background:#c0392b;color:#fff;border-color:#c0392b;">Konto löschen</button>

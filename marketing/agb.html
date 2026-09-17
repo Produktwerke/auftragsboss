@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AGB · AuftragsBoss</title>
+<meta name="description" content="Allgemeine Geschäftsbedingungen für AuftragsBoss einschließlich Vereinbarung zur Auftragsverarbeitung gemäß Art. 28 DSGVO. Stand 17. September 2026, Version 2026-09-17.">
+<link rel="icon" type="image/png" href="auftragsboss-logo.png">
+<style>
+  @font-face{font-family:'Inter';font-weight:400;font-display:swap;src:url('fonts/inter-latin-400-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:700;font-display:swap;src:url('fonts/inter-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:800;font-display:swap;src:url('fonts/inter-latin-800-normal.woff2') format('woff2');}
+  :root{--bg:#0E0F12;--ink:#ECEDEA;--muted:#969CA6;--signal:#FFC426;--hair:#23272E;--card:#14161A;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.65;
+       font-family:'Inter',"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+       -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:780px;margin:0 auto;padding:0 22px 90px;}
+  header{display:flex;align-items:center;gap:11px;padding:22px 0;border-bottom:1px solid var(--hair);}
+  header img{width:32px;height:32px;border-radius:7px;display:block;}
+  header .brand{font-weight:800;font-size:19px;letter-spacing:.01em;}
+  header .brand b{color:var(--signal);}
+  h1{font-size:30px;margin:34px 0 6px;font-weight:800;text-wrap:balance;}
+  .sub{color:var(--muted);margin:0 0 20px;font-size:15px;}
+  h2{font-size:17px;margin:34px 0 8px;color:var(--ink);font-weight:700;scroll-margin-top:16px;}
+  h2.part{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--signal);margin:52px 0 4px;padding-top:22px;border-top:1px solid var(--hair);}
+  h3{font-size:14px;margin:18px 0 4px;color:var(--ink);font-weight:700;}
+  p,li{color:var(--muted);margin:8px 0;}
+  ul{margin:8px 0;padding-left:20px;}
+  ol.abs{margin:8px 0;padding-left:26px;}
+  ol.abs li{padding-left:4px;margin:7px 0;}
+  ol.abs li::marker{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums;}
+  address{font-style:normal;color:var(--ink);margin:4px 0;line-height:1.7;}
+  a{color:var(--signal);word-break:break-word;}
+  .box{background:var(--card);border:1px solid var(--hair);border-radius:10px;padding:16px 18px;margin:16px 0;}
+  .toc{background:var(--card);border:1px solid var(--hair);border-radius:10px;padding:14px 20px;margin:18px 0 8px;}
+  .toc .t{font-weight:700;color:var(--ink);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin:10px 0 6px;}
+  .toc .t:first-child{margin-top:0;}
+  .toc ol,.toc ul{margin:0;padding-left:0;list-style:none;}
+  .toc li{margin:3px 0;font-size:14px;}
+  .toc a{color:var(--muted);text-decoration:none;}
+  .toc a:hover{color:var(--signal);}
+  .toc .zwei{columns:2;column-gap:28px;}
+  @media (max-width:640px){.toc .zwei{columns:1;}}
+  .hebung{background:rgba(255,196,38,.06);border:1px solid #33301c;border-left:3px solid var(--signal);
+          border-radius:8px;padding:12px 16px;margin:12px 0;}
+  .hebung p{color:var(--ink);margin:4px 0;}
+  .tab-scroll{overflow-x:auto;margin:12px 0;}
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:520px;}
+  th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--hair);}
+  th{color:var(--ink);font-weight:700;background:var(--card);}
+  td{color:var(--muted);font-variant-numeric:tabular-nums;}
+  td.first{color:var(--ink);font-weight:700;}
+  .stand{color:#6B7079;font-size:13px;margin-top:26px;}
+  .back{display:inline-block;margin-top:12px;color:var(--muted);text-decoration:none;font-size:14px;}
+  .back:hover{color:var(--ink);}
+  .druck{display:inline-block;margin:0 0 0 14px;color:var(--muted);text-decoration:none;font-size:14px;}
+  .druck:hover{color:var(--ink);}
+  @media print{
+    :root{--bg:#fff;--ink:#111;--muted:#333;--signal:#8a6500;--hair:#ccc;--card:#f4f4f4;}
+    body{background:#fff;}
+    .wrap{max-width:none;padding:0;}
+    .back,.druck,.toc{display:none;}
+    h2{page-break-after:avoid;}
+    table{min-width:0;}
+    a{color:inherit;text-decoration:none;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="auftragsboss-logo.png" alt="AuftragsBoss Logo">
+    <span class="brand">AUFTRAGS<b>BOSS</b></span>
+  </header>
+
+  <h1>Allgemeine Geschäftsbedingungen für AuftragsBoss</h1>
+  <p class="sub">einschließlich Vereinbarung zur Auftragsverarbeitung gemäß Art. 28 DSGVO (nachfolgend „AGB“)<br>Stand: 17. September 2026 · Version 2026-09-17</p>
+
+  <div class="hebung">
+    <p><b>Wichtiger Anwendungsbereich:</b> Diese Bedingungen gelten ausschließlich gegenüber Unternehmern. Teil B dieses Dokuments ist zugleich der Auftragsverarbeitungsvertrag nach Art. 28 DSGVO. Die Annahme des Gesamtvertrags muss bereits vor der ersten Verarbeitung von Endkundendaten im kostenlosen Test erfolgen.</p>
+  </div>
+
+  <div class="box">
+    <strong>Anbieter</strong>
+    <address>
+      DAG Deutsche Automotive GmbH<br>
+      Augsburger Straße 746, 70329 Stuttgart, Deutschland<br>
+      Geschäftsführer: Dirk Beer<br>
+      Amtsgericht Stuttgart, HRB 736071<br>
+      USt-IdNr.: DE275851108<br>
+      E-Mail: <a href="mailto:kontakt@auftragsboss.de">kontakt@auftragsboss.de</a>
+    </address>
+  </div>
+
+  <p>Diese AGB können jederzeit unter <a href="https://auftragsboss.de/agb.html">auftragsboss.de/agb.html</a> abgerufen, gespeichert und ausgedruckt werden. Ergänzend gilt die <a href="datenschutz.html">Datenschutzerklärung</a>.</p>
+
+  <div class="toc">
+    <div class="t">Inhalt</div>
+    <ol>
+        <li><a href="#svertragsstruktur-und-rangfolge">Vertragsstruktur und Rangfolge</a></li>
+    </ol>
+    <div class="t">Teil a · Allgemeine Vertragsbedingungen</div>
+    <ol class="zwei">
+        <li><a href="#p1">§ 1 Anbieter, Geltungsbereich und Unternehmereigenschaft</a></li>
+        <li><a href="#p2">§ 2 Begriffsbestimmungen</a></li>
+        <li><a href="#p3">§ 3 Einbeziehung der Bedingungen, kostenloser Test und Vertragsschluss</a></li>
+        <li><a href="#p4">§ 4 Leistungsgegenstand und Funktionsweise</a></li>
+        <li><a href="#p5">§ 5 KI-Ergebnisse, Preise, Aufmaß und Prüfpflicht des Kunden</a></li>
+        <li><a href="#p6">§ 6 WhatsApp und sonstige Drittanbieter</a></li>
+        <li><a href="#p7">§ 7 Nutzer, Telefonnummern und Zugänge</a></li>
+        <li><a href="#p8">§ 8 Technische Nutzungsvoraussetzungen</a></li>
+        <li><a href="#p9">§ 9 Kostenloser Test</a></li>
+        <li><a href="#p10">§ 10 Tarife, Preise und Nutzungsgrenzen</a></li>
+        <li><a href="#p11">§ 11 Abrechnung, Zahlungsabwicklung und Zahlungsverzug</a></li>
+        <li><a href="#p12">§ 12 Aufrechnung und Zurückbehaltungsrechte</a></li>
+        <li><a href="#p13">§ 13 Vertragslaufzeit, Kündigung und Beendigung</a></li>
+        <li><a href="#p14">§ 14 Lesezugriff, Reaktivierung und Löschung nach Vertragsende</a></li>
+        <li><a href="#p15">§ 15 Datenexport und Anbieterwechsel nach dem Data Act</a></li>
+        <li><a href="#p16">§ 16 Keine Archivierungsleistung und eigene Datensicherung</a></li>
+        <li><a href="#p17">§ 17 Preisänderungen</a></li>
+        <li><a href="#p18">§ 18 Empfehlungsprogramm und Gutschriften</a></li>
+        <li><a href="#p19">§ 19 Pflichten des Kunden und zulässige Nutzung</a></li>
+        <li><a href="#p20">§ 20 Mängel, Störungsmeldung und Nacherfüllung</a></li>
+        <li><a href="#p21">§ 21 Sperrung und Missbrauch</a></li>
+        <li><a href="#p22">§ 22 Verfügbarkeit, Wartung, höhere Gewalt und externe Störungen</a></li>
+        <li><a href="#p23">§ 23 Änderungen des Dienstes</a></li>
+        <li><a href="#p24">§ 24 Rechte an Eingaben, Dokumenten, Software und KI-Ergebnissen</a></li>
+        <li><a href="#p25">§ 25 Vertraulichkeit</a></li>
+        <li><a href="#p26">§ 26 Freistellung bei kundenverschuldeten Rechtsverletzungen</a></li>
+        <li><a href="#p27">§ 27 Datenschutz</a></li>
+        <li><a href="#p28">§ 28 Datensicherung und Datenverlust</a></li>
+        <li><a href="#p29">§ 29 Haftung</a></li>
+        <li><a href="#p30">§ 30 Verjährung</a></li>
+        <li><a href="#p31">§ 31 Keine Garantien durch Vertrieb oder sonstige Personen</a></li>
+        <li><a href="#p32">§ 32 Referenzkundennennung</a></li>
+        <li><a href="#p33">§ 33 Vertragsübertragung</a></li>
+        <li><a href="#p34">§ 34 Änderungen dieses Vertragswerks</a></li>
+        <li><a href="#p35">§ 35 Schlussbestimmungen</a></li>
+    </ol>
+    <div class="t">Teil b · Vereinbarung zur Auftragsverarbeitung gemäß Art. 28 DSGVO</div>
+    <ol class="zwei">
+        <li><a href="#p36">§ 36 Gegenstand, Geltungsbereich und Vorrang</a></li>
+        <li><a href="#p37">§ 37 Rollen der Parteien</a></li>
+        <li><a href="#p38">§ 38 Dokumentierte Weisungen</a></li>
+        <li><a href="#p39">§ 39 Pflichten des Verantwortlichen</a></li>
+        <li><a href="#p40">§ 40 Vertraulichkeit und Zugriff</a></li>
+        <li><a href="#p41">§ 41 Sicherheit der Verarbeitung</a></li>
+        <li><a href="#p42">§ 42 Unterstützung bei Betroffenenrechten und Datenschutzpflichten</a></li>
+        <li><a href="#p43">§ 43 Verletzungen des Schutzes personenbezogener Daten</a></li>
+        <li><a href="#p44">§ 44 Unterauftragsverarbeiter</a></li>
+        <li><a href="#p45">§ 45 Drittlandübermittlungen</a></li>
+        <li><a href="#p46">§ 46 Kontrollen und Nachweise</a></li>
+        <li><a href="#p47">§ 47 Löschung, Rückgabe und Vertragsende</a></li>
+        <li><a href="#p48">§ 48 Qualitätssicherung und anonymisierte Produktverbesserung</a></li>
+        <li><a href="#p49">§ 49 Verarbeitung zu eigenen Zwecken des Auftragsverarbeiters</a></li>
+        <li><a href="#p50">§ 50 Haftung und Dauer des Auftragsverarbeitungsverhältnisses</a></li>
+    </ol>
+    <div class="t">Anlagen</div>
+    <ol>
+        <li><a href="#anl1">Anlage 1 · Gegenstand und Details der Auftragsverarbeitung</a></li>
+        <li><a href="#anl2">Anlage 2 · Technische und Organisatorische Massnahmen</a></li>
+        <li><a href="#anl3">Anlage 3 · Genehmigte Unterauftragsverarbeiter</a></li>
+    </ol>
+  </div>
+
+  <h2 class="part" id="svertragsstruktur-und-rangfolge">Vertragsstruktur und Rangfolge</h2>
+  <ol class="abs">
+    <li value="1">Dieses Dokument bildet ein einheitliches Vertragswerk. Teil A enthält die allgemeinen Vertragsbedingungen für die Nutzung von AuftragsBoss. Teil B enthält die Vereinbarung zur Auftragsverarbeitung gemäß Art. 28 DSGVO einschließlich ihrer Anlagen.</li>
+    <li value="2">Im Fall eines Widerspruchs zwischen Teil A und Teil B gehen für Fragen der Verarbeitung personenbezogener Daten im Auftrag die Bestimmungen des Teils B vor.</li>
+    <li value="3">Individuelle Vereinbarungen zwischen Anbieter und Kunde haben Vorrang. Zwingende gesetzliche Vorschriften bleiben unberührt.</li>
+  </ol>
+
+  <h2 class="part" id="steil-a-allgemeine-vertragsbedingungen">Teil a · Allgemeine Vertragsbedingungen</h2>
+
+  <h2 id="p1">§ 1 Anbieter, Geltungsbereich und Unternehmereigenschaft</h2>
+  <ol class="abs">
+    <li value="1">Anbieter des Dienstes „AuftragsBoss“ ist die DAG Deutsche Automotive GmbH, Augsburger Straße 746, 70329 Stuttgart, Deutschland, vertreten durch den Geschäftsführer Dirk Beer, eingetragen im Handelsregister des Amtsgerichts Stuttgart unter HRB 736071, USt-IdNr. DE275851108. Kontakt: kontakt@auftragsboss.de.</li>
+    <li value="2">Diese Allgemeinen Geschäftsbedingungen gelten für sämtliche Vertragsverhältnisse über AuftragsBoss zwischen dem Anbieter und Unternehmern im Sinne des § 14 BGB, juristischen Personen des öffentlichen Rechts und öffentlich-rechtlichen Sondervermögen.</li>
+    <li value="3">Verbraucher im Sinne des § 13 BGB sind von der Nutzung ausgeschlossen. Der Kunde bestätigt bei Annahme dieser Bedingungen, dass er den Dienst ausschließlich in Ausübung seiner gewerblichen oder selbstständigen beruflichen Tätigkeit nutzt.</li>
+    <li value="4">Abweichende, entgegenstehende oder ergänzende Geschäftsbedingungen des Kunden werden nicht Vertragsbestandteil, auch wenn der Anbieter ihnen nicht ausdrücklich widerspricht. Sie gelten nur, wenn der Anbieter ihrer Geltung ausdrücklich in Textform zugestimmt hat.</li>
+    <li value="5">Der Vertrag wird in deutscher Sprache geschlossen.</li>
+  </ol>
+
+  <h2 id="p2">§ 2 Begriffsbestimmungen</h2>
+  <ol class="abs">
+    <li value="1">„AuftragsBoss“ bezeichnet den vom Anbieter betriebenen KI-gestützten Dienst einschließlich der Kommunikation über WhatsApp, des Web-Editors, des Kunden-Cockpits, der Exportfunktionen und sonstiger bereitgestellter Funktionen.</li>
+    <li value="2">„Kunde“ bezeichnet den Unternehmer oder Betrieb, in dessen Namen AuftragsBoss genutzt wird. Wird der kostenlose Test durch eine natürliche Person für einen Betrieb aktiviert, ist dieser Betrieb Vertragspartner, sofern die handelnde Person in dessen Namen handelt.</li>
+    <li value="3">„Nutzer“ bezeichnet natürliche Personen, die im Auftrag des Kunden AuftragsBoss verwenden, insbesondere Inhaber, Geschäftsführer und Mitarbeiter.</li>
+    <li value="4">„Eingaben“ bezeichnet insbesondere Sprach-, Text- und Bildnachrichten, Fotos, Dokumente, Kundenangaben, Objektinformationen, Maße, Preise und sonstige vom Kunden oder seinen Nutzern übermittelte Informationen.</li>
+    <li value="5">„KI-Ergebnisse“ bezeichnet automatisch oder teilweise automatisiert erzeugte Texte, Angebote, Arbeitsprotokolle, Mengenangaben, Flächenschätzungen, Berechnungen und sonstige Ausgaben.</li>
+    <li value="6">„Endkundendaten“ bezeichnet personenbezogene Daten von Kunden, Interessenten oder sonstigen Personen, die der Kunde im Zusammenhang mit seinen eigenen Aufträgen über AuftragsBoss verarbeiten lässt.</li>
+  </ol>
+
+  <h2 id="p3">§ 3 Einbeziehung der Bedingungen, kostenloser Test und Vertragsschluss</h2>
+  <ol class="abs">
+    <li value="1">Die Nutzung von AuftragsBoss setzt die Annahme dieses gesamten Vertragswerks einschließlich Teil B voraus, bevor erstmals Endkundendaten verarbeitet werden.</li>
+    <li value="2">Beim Start des kostenlosen Tests werden dem Nutzer diese Bedingungen und die Datenschutzerklärung in speicherbarer Form zugänglich gemacht. Der Test darf erst nach einer ausdrücklichen bestätigenden Handlung, beispielsweise durch Betätigung einer Schaltfläche „Kostenlos testen“, aktiviert werden.</li>
+    <li value="3">Mit der Aktivierung bestätigt der Nutzer zugleich, dass er als Unternehmer oder für einen Unternehmer handelt und zur Abgabe der Erklärung im Namen des Kunden berechtigt ist.</li>
+    <li value="4">Der kostenlose Nutzungsvertrag kommt mit der erfolgreichen Aktivierung des Tests zustande.</li>
+    <li value="5">Ein kostenpflichtiges Abonnement kommt zustande, wenn der Kunde nach der Registrierung einen Tarif auswählt und den vorgesehenen Zahlungsvorgang, derzeit über Stripe Checkout, erfolgreich abschließt.</li>
+    <li value="6">Wurde dieselbe Fassung dieses Vertragswerks bereits beim Start des kostenlosen Tests wirksam angenommen, ist für den späteren Abschluss eines kostenpflichtigen Abonnements kein gesonderter Abschluss des Auftragsverarbeitungsvertrags erforderlich.</li>
+    <li value="7">Der Anbieter dokumentiert die Annahme in geeigneter Weise, insbesondere anhand der Telefonnummer oder Kundenkennung, des Zeitpunkts und der akzeptierten Dokumentversion.</li>
+  </ol>
+
+  <h2 id="p4">§ 4 Leistungsgegenstand und Funktionsweise</h2>
+  <ol class="abs">
+    <li value="1">AuftragsBoss ist ein KI-gestützter Softwaredienst, der Handwerksbetriebe insbesondere bei der Erstellung und Bearbeitung von Angeboten und Arbeitsprotokollen unterstützt.</li>
+    <li value="2">Der Kunde kann Eingaben insbesondere über WhatsApp als Sprachnachrichten, Textnachrichten und Bilder übermitteln. AuftragsBoss kann diese Eingaben transkribieren, strukturieren, mit KI-Systemen analysieren, zu Dokumententwürfen zusammenführen und bei fehlenden Angaben Rückfragen erzeugen.</li>
+    <li value="3">AuftragsBoss kann Fotos von Räumen, Wänden, Fenstern, Türen und sonstigen Objekten auswerten, um Flächen und Abmessungen zu schätzen. Solche Werte sind keine fachgerechten Aufmaße.</li>
+    <li value="4">Nach der Verarbeitung stellt AuftragsBoss dem Kunden einen Link zum Web-Editor bereit. Dort kann der Kunde Inhalte, Positionen, Mengen, Preise, Texte, Kundendaten, Logo und Briefkopf prüfen und ändern.</li>
+    <li value="5">Soweit im gebuchten Tarif vorgesehen, kann der Kunde fertige Dokumente als PDF und Word-Datei exportieren. Zusätzlich kann der Anbieter fertige Dokumente an die vom Kunden hinterlegte E-Mail-Adresse senden.</li>
+    <li value="6">AuftragsBoss versendet Angebote nicht selbst an Endkunden des Kunden. Der Kunde entscheidet eigenverantwortlich über die endgültige Fassung und den Versand. Der Kunde bleibt alleiniger Vertragspartner seines Endkunden.</li>
+    <li value="7">AuftragsBoss kann Erinnerungsfunktionen, insbesondere im Zusammenhang mit vom Kunden hinterlegten oder bestätigten Gewährleistungsfristen, bereitstellen. Der Anbieter schuldet keine eigenständige rechtliche Berechnung oder Prüfung einer Gewährleistungsfrist.</li>
+    <li value="8">Der konkrete Funktionsumfang ergibt sich ergänzend aus der jeweils aktuellen Leistungsbeschreibung des gebuchten Tarifs.</li>
+  </ol>
+
+  <h2 id="p5">§ 5 KI-Ergebnisse, Preise, Aufmaß und Prüfpflicht des Kunden</h2>
+  <ol class="abs">
+    <li value="1">Sämtliche KI-Ergebnisse stellen Entwürfe und Arbeitshilfen dar. Der Kunde ist verpflichtet, jedes Ergebnis vor seiner Verwendung fachlich, rechnerisch, wirtschaftlich und rechtlich zu prüfen.</li>
+    <li value="2">Der Kunde muss insbesondere Kunden- und Adressdaten, Leistungsbeschreibungen, Maße, Mengen, Flächenberechnungen, Materialangaben, Preise, Steuerangaben, Zahlungsbedingungen und sonstige vertragsrelevante Inhalte prüfen.</li>
+    <li value="3">KI-Systeme können fehlerhafte, unvollständige, missverständliche oder sachlich unzutreffende Ergebnisse erzeugen. Ein sprachlich plausibles oder professionell formuliertes Ergebnis bedeutet nicht, dass es sachlich richtig ist.</li>
+    <li value="4">Aus Bildern ermittelte Maße, Flächen, Fensterflächen, Türflächen oder sonstige Größen sind Schätzwerte und ersetzen kein fachgerechtes Aufmaß.</li>
+    <li value="5">AuftragsBoss erfindet keine fehlenden Preise. Preise werden nur aus ausdrücklich mitgeteilten, vom Kunden hinterlegten oder sonst vom Kunden freigegebenen Preisangaben übernommen. Fehlen Preise, können sie als offen oder unvollständig gekennzeichnet werden.</li>
+    <li value="6">Der Kunde trägt allein die Verantwortung für seine Preisgestaltung, Kalkulation und Wirtschaftlichkeit.</li>
+    <li value="7">Hinweise auf steuerliche Regelungen, insbesondere auf § 35a EStG, stellen keine Steuerberatung dar. Der Kunde hat zu prüfen, ob ein entsprechender Hinweis im konkreten Fall zutreffend ist.</li>
+  </ol>
+
+  <h2 id="p6">§ 6 WhatsApp und sonstige Drittanbieter</h2>
+  <ol class="abs">
+    <li value="1">Wesentliche Funktionen von AuftragsBoss beruhen auf Diensten Dritter. Hierzu gehören insbesondere WhatsApp beziehungsweise Meta, KI-Anbieter wie OpenAI und Anthropic, Hostinganbieter und Zahlungsdienstleister.</li>
+    <li value="2">Ohne einen kompatiblen WhatsApp-Zugang können wesentliche Funktionen von AuftragsBoss nicht genutzt werden. Der Kunde nimmt zur Kenntnis, dass WhatsApp-Nachrichten über die technische Infrastruktur von Meta übermittelt werden.</li>
+    <li value="3">Änderungen, Einschränkungen oder Ausfälle solcher Drittanbieterdienste können die Nutzbarkeit von AuftragsBoss beeinträchtigen.</li>
+    <li value="4">Der Anbieter darf eingesetzte Dienstleister, KI-Modelle, technische Schnittstellen und technische Konfigurationen ändern, soweit der vertraglich vereinbarte Kernnutzen nicht wesentlich beeinträchtigt wird und datenschutzrechtliche Vorgaben, insbesondere Teil B, eingehalten werden.</li>
+    <li value="5">Der Anbieter darf Funktionen kurzfristig ändern, einschränken oder vorübergehend deaktivieren, wenn dies aufgrund gesetzlicher oder behördlicher Anforderungen, Anforderungen eines Plattformbetreibers, Sicherheitsrisiken, Datenschutzanforderungen, Änderungen bei KI-Anbietern oder vergleichbarer zwingender Gründe erforderlich ist.</li>
+  </ol>
+
+  <h2 id="p7">§ 7 Nutzer, Telefonnummern und Zugänge</h2>
+  <ol class="abs">
+    <li value="1">Je nach gebuchtem Tarif können eine oder mehrere Telefonnummern beziehungsweise Nutzer einem Kundenkonto zugeordnet werden.</li>
+    <li value="2">Der Kunde ist dafür verantwortlich, dass ausschließlich von ihm autorisierte Personen auf sein AuftragsBoss-Konto zugreifen.</li>
+    <li value="3">Der Kunde ist für Handlungen und Unterlassungen seiner Nutzer im Zusammenhang mit AuftragsBoss wie für eigene Handlungen verantwortlich.</li>
+    <li value="4">Der Kunde hat seine Nutzer über die für sie relevanten Pflichten aus diesem Vertragswerk zu informieren und auf deren Einhaltung hinzuwirken.</li>
+    <li value="5">Persönliche oder geheime Zugriffslinks, Gerätebindungen und sonstige Authentifizierungsmerkmale dürfen nicht unberechtigt an Dritte weitergegeben werden.</li>
+    <li value="6">Der Kunde kann zugeordnete Telefonnummern beziehungsweise Nutzer im Kunden-Cockpit hinzufügen oder entfernen, soweit der gebuchte Tarif dies vorsieht.</li>
+    <li value="7">Scheidet ein Nutzer aus dem Betrieb aus oder entfällt dessen Berechtigung, ist der Kunde verpflichtet, den Zugang zeitnah im Kunden-Cockpit zu entfernen.</li>
+    <li value="8">Verdachtsfälle einer missbräuchlichen Nutzung sind dem Anbieter unverzüglich mitzuteilen.</li>
+  </ol>
+
+  <h2 id="p8">§ 8 Technische Nutzungsvoraussetzungen</h2>
+  <ol class="abs">
+    <li value="1">Der Kunde ist selbst dafür verantwortlich, die technischen Voraussetzungen für die Nutzung von AuftragsBoss bereitzuhalten.</li>
+    <li value="2">Hierzu gehören insbesondere ein kompatibles Endgerät, ein funktionsfähiger Internetzugang, ein funktionsfähiger WhatsApp-Zugang, ein aktueller Webbrowser, ein funktionsfähiges E-Mail-Konto und gegebenenfalls geeignete Software zum Öffnen von PDF- und Word-Dateien.</li>
+    <li value="3">Ausfälle, Störungen oder Fehlfunktionen innerhalb der technischen Umgebung des Kunden stellen keinen Mangel von AuftragsBoss dar.</li>
+    <li value="4">Der Kunde ist selbst dafür verantwortlich, seine Endgeräte angemessen gegen unberechtigten Zugriff, Schadsoftware und sonstige Sicherheitsrisiken zu schützen.</li>
+  </ol>
+
+  <h2 id="p9">§ 9 Kostenloser Test</h2>
+  <ol class="abs">
+    <li value="1">Neue deutsche Mobilfunknummern können AuftragsBoss grundsätzlich 14 Tage kostenlos testen, ohne Zahlungsdaten zu hinterlegen.</li>
+    <li value="2">Der Test beginnt mit der Aktivierung nach § 3.</li>
+    <li value="3">Der kostenlose Test ist derzeit auf höchstens zehn eigenständige Angebote und höchstens 60 Nachrichten je Telefonnummer begrenzt. Nachträge zum selben Angebot können als Bestandteil dieses Angebots behandelt werden.</li>
+    <li value="4">Der Anbieter kann die systemweite Testkapazität aus technischen und wirtschaftlichen Gründen begrenzen, insbesondere durch ein tägliches Gesamtkontingent oder einen technischen Mindestabstand zwischen Nachrichten. Ein Anspruch auf eine bestimmte Testkapazität besteht nicht.</li>
+    <li value="5">Im kostenlosen Test besteht kein Anspruch auf PDF- oder Word-Download. Der Anbieter kann den Web-Editor bereitstellen.</li>
+    <li value="6">Der Anbieter kann den kostenlosen Test bei Kapazitätsengpässen, Missbrauchsverdacht, technischen Problemen oder aus sonstigen sachlichen Gründen vorübergehend oder dauerhaft einschränken oder beenden.</li>
+    <li value="7">Nach Ablauf des Tests werden weitere Eingaben nicht mehr verarbeitet, sofern der Kunde keinen kostenpflichtigen Tarif bucht.</li>
+    <li value="8">Testdaten können bis zu 90 Tage nach Testende für eine spätere Registrierung oder Reaktivierung vorgehalten werden. Der Kunde kann eine frühere Löschung verlangen. Wandfotos ohne zugehöriges Angebot werden unabhängig davon grundsätzlich spätestens nach 30 Tagen gelöscht.</li>
+    <li value="9">Für die Haftung während einer ausschließlich kostenlosen Testnutzung gilt § 29 mit der Maßgabe, dass die Haftungsobergrenze bei leichter Fahrlässigkeit höchstens 348 Euro je Testverhältnis beträgt.</li>
+  </ol>
+
+  <h2 id="p10">§ 10 Tarife, Preise und Nutzungsgrenzen</h2>
+  <div class="tab-scroll"><table>
+    <thead><tr><th>Tarif</th><th>Preis netto/Monat</th><th>Angebote je Kalendermonat (harte Grenze)</th><th>Telefonnummern</th></tr></thead>
+    <tbody>
+      <tr><td class="first">Basis</td><td>29 €</td><td>50</td><td>1</td></tr>
+      <tr><td class="first">Profi</td><td>79 €</td><td>120</td><td>bis zu 3</td></tr>
+      <tr><td class="first">Team</td><td>149 €</td><td>300</td><td>bis zu 15</td></tr>
+    </tbody>
+  </table></div>
+  <ol class="abs">
+    <li value="1">Alle Preise verstehen sich zuzüglich der gesetzlichen Umsatzsteuer.</li>
+    <li value="2">Die für den jeweiligen Tarif angegebene Zahl eigenständiger Angebote ist eine harte Nutzungsgrenze je Kalendermonat. Im Tarif Basis können höchstens 50, im Tarif Profi höchstens 120 und im Tarif Team höchstens 300 eigenständige Angebote je Kalendermonat neu erstellt werden.</li>
+    <li value="3">Als eigenständiges Angebot gilt die erstmalige Neuanlage eines Angebots für einen Auftrag beziehungsweise ein Projekt. Änderungen, Ergänzungen und Nachträge zu einem bereits angelegten Angebot zählen nicht als weiteres eigenständiges Angebot, solange sie demselben Auftrag beziehungsweise Projekt zugeordnet sind.</li>
+    <li value="4">Ist die Nutzungsgrenze des gebuchten Tarifs erreicht, verarbeitet AuftragsBoss bis zum Beginn des nächsten Kalendermonats keine Eingaben zur Erstellung eines weiteren eigenständigen Angebots. Stattdessen kann dem Kunden ein Wechsel in einen Tarif mit höherer Nutzungsgrenze beziehungsweise beim höchsten Standardtarif eine individuelle Erweiterung angeboten werden. Bereits angelegte Angebote bleiben im Rahmen der sonstigen Vertragsbedingungen zugänglich und können weiter bearbeitet oder ergänzt werden.</li>
+    <li value="5">Nach einem wirksam vollzogenen Tarifwechsel gilt ab dem vom Anbieter bestätigten Zeitpunkt die Nutzungsgrenze des neuen Tarifs. Individuelle Tarife, zusätzliche Kontingente und Sonderkonditionen können gesondert vereinbart werden.</li>
+  </ol>
+
+  <h2 id="p11">§ 11 Abrechnung, Zahlungsabwicklung und Zahlungsverzug</h2>
+  <ol class="abs">
+    <li value="1">Die Abrechnung erfolgt grundsätzlich monatlich im Voraus.</li>
+    <li value="2">Die Zahlungsabwicklung erfolgt über einen eingebundenen Zahlungsdienstleister, derzeit Stripe. Die konkret verfügbaren Zahlungsarten werden im Checkout angezeigt.</li>
+    <li value="3">Bei SEPA-Lastschrift kann der Zugang bereits vor endgültiger Einlösung der Lastschrift freigeschaltet werden.</li>
+    <li value="4">Schlägt eine Zahlung fehl, kann der Zahlungsdienstleister weitere Einzugsversuche durchführen. Der Kunde ist verpflichtet, eine gültige Zahlungsmethode bereitzuhalten.</li>
+    <li value="5">Während üblicher automatisierter Wiederholungsversuche kann der Zugang zunächst bestehen bleiben. Bleibt eine fällige Forderung unbezahlt, kann der Anbieter den Zugang nach angemessener Mitteilung sperren oder das Abonnement beenden.</li>
+    <li value="6">Im Verzugsfall gelten die gesetzlichen Verzugszinsen. Bei Entgeltforderungen, an denen kein Verbraucher beteiligt ist, beträgt der gesetzliche Verzugszinssatz neun Prozentpunkte über dem Basiszinssatz. Zusätzlich kann die gesetzliche Verzugspauschale von 40 Euro verlangt werden, soweit ihre Voraussetzungen vorliegen.</li>
+    <li value="7">Die Geltendmachung eines weitergehenden nachgewiesenen Verzugsschadens bleibt unberührt.</li>
+  </ol>
+
+  <h2 id="p12">§ 12 Aufrechnung und Zurückbehaltungsrechte</h2>
+  <ol class="abs">
+    <li value="1">Der Kunde kann gegen Forderungen des Anbieters nur mit Gegenforderungen aufrechnen, die unbestritten, rechtskräftig festgestellt oder entscheidungsreif sind.</li>
+    <li value="2">Ein Zurückbehaltungsrecht kann der Kunde nur geltend machen, soweit es auf demselben Vertragsverhältnis beruht.</li>
+    <li value="3">Zwingende gesetzliche Rechte des Kunden bleiben unberührt.</li>
+  </ol>
+
+  <h2 id="p13">§ 13 Vertragslaufzeit, Kündigung und Beendigung</h2>
+  <ol class="abs">
+    <li value="1">Ein kostenpflichtiges Abonnement hat eine Laufzeit von einem Monat und verlängert sich jeweils um einen weiteren Monat, wenn es nicht zum Ende des laufenden Abrechnungszeitraums gekündigt wird.</li>
+    <li value="2">Der Kunde kann jederzeit zum Ende des laufenden Abrechnungszeitraums über das Kundenportal kündigen. Der Anbieter kann zusätzlich eine Kündigung in Textform, insbesondere per E-Mail an kontakt@auftragsboss.de, ermöglichen.</li>
+    <li value="3">Eine im Kundenportal vorgemerkte Kündigung kann bis zum Ende des laufenden Vertragszeitraums zurückgenommen werden.</li>
+    <li value="4">Der Anbieter kann den Vertrag ordentlich mit einer Frist von vier Wochen zum Ende eines Abrechnungszeitraums kündigen.</li>
+    <li value="5">Das Recht beider Parteien zur außerordentlichen Kündigung aus wichtigem Grund bleibt unberührt.</li>
+  </ol>
+
+  <h2 id="p14">§ 14 Lesezugriff, Reaktivierung und Löschung nach Vertragsende</h2>
+  <ol class="abs">
+    <li value="1">Nach Beendigung eines kostenpflichtigen Vertrags erhält der Kunde grundsätzlich für weitere 30 Kalendertage Lesezugriff auf die im Kunden-Cockpit vorhandenen Daten und Dokumente.</li>
+    <li value="2">Während des Lesezugriffs können vorhandene Dokumente eingesehen und heruntergeladen werden. Eine Erstellung neuer Angebote oder sonstige aktive Nutzung des Dienstes ist nicht geschuldet.</li>
+    <li value="3">Der Anbieter hält die vorhandenen operativen Kundendaten für insgesamt bis zu 90 Tage nach Vertragsende vor, um insbesondere eine kurzfristige Reaktivierung und die Erfüllung von Export- und Wechselrechten zu ermöglichen.</li>
+    <li value="4">Schließt der Kunde innerhalb dieses Zeitraums erneut einen kostenpflichtigen Vertrag ab, können die noch vorhandenen Daten wieder verfügbar gemacht werden.</li>
+    <li value="5">Der Kunde kann jederzeit die frühere Löschung seiner im Auftrag verarbeiteten Daten verlangen, soweit keine gesetzliche Aufbewahrungspflicht oder sonstige zwingende Rechtsgrundlage entgegensteht.</li>
+    <li value="6">Nach Ablauf von 90 Tagen werden die operativen Kundendaten gelöscht, soweit keine gesetzlichen Aufbewahrungspflichten, zwingenden Wechsel- oder Abrufrechte oder Erfordernisse der Rechtsverteidigung entgegenstehen.</li>
+    <li value="7">Daten in routinemäßigen Sicherungskopien dürfen bis zur regulären Überschreibung im Sicherungszyklus weiter gespeichert bleiben, sofern sie nicht produktiv genutzt und ausschließlich zu Sicherungs- und Wiederherstellungszwecken vorgehalten werden.</li>
+    <li value="8">Gesetzlich aufzubewahrende Vertrags-, Rechnungs-, Steuer- und Buchhaltungsdaten bleiben von dieser Löschung unberührt.</li>
+  </ol>
+
+  <h2 id="p15">§ 15 Datenexport und Anbieterwechsel nach dem Data Act</h2>
+  <ol class="abs">
+    <li value="1">Soweit AuftragsBoss als Datenverarbeitungsdienst im Sinne der Verordnung (EU) 2023/2854 (Data Act) einzustufen ist, gelten ergänzend die zwingenden gesetzlichen Wechsel- und Portabilitätsrechte.</li>
+    <li value="2">Der Kunde kann einen Wechsel zu einem anderen Anbieter von Datenverarbeitungsdiensten oder die Übertragung seiner exportierbaren Daten auf eine eigene IKT-Infrastruktur verlangen. Für die Einleitung des Wechsels gilt keine gesonderte Kündigungsfrist über die Restlaufzeit des laufenden monatlichen Vertragszeitraums hinaus.</li>
+    <li value="3">Der Anbieter unterstützt den Kunden und von ihm autorisierte Dritte angemessen beim Wechsel und stellt exportierbare Daten ohne unangemessene Verzögerung innerhalb der gesetzlich vorgeschriebenen Übergangsfrist bereit. Soweit die gesetzlichen Voraussetzungen vorliegen, kann die Übergangsfrist nach Maßgabe des Data Act verlängert werden.</li>
+    <li value="4">Nach Abschluss der Übergangsphase bleiben die exportierbaren Daten für mindestens weitere 30 Kalendertage abrufbar. Die in § 14 vorgesehene 90-tägige Aufbewahrungsfrist gilt ergänzend, soweit sie zu einer längeren Abrufmöglichkeit führt.</li>
+    <li value="5">AuftragsBoss erhebt derzeit keine gesonderten Wechselentgelte. Ab dem 12. Januar 2027 werden keine Wechselentgelte erhoben, soweit der Data Act dies untersagt.</li>
+    <li value="6">Die während eines Wechselvollzugs übertragbaren Datenkategorien sind abschließend: Unternehmens- und Kontoeinstellungen des Kunden, soweit sie nicht der Sicherheit oder Authentifizierung dienen; vom Kunden gespeicherte Endkunden-, Projekt- und Objektdaten; strukturierte Angebotsdaten einschließlich Positionen, Mengen, Preise, Texte und Status; strukturierte Arbeitsprotokolle; vom Kunden hochgeladene und noch gespeicherte Dateien und Bilder, soweit sie einem Kundenprojekt zugeordnet und technisch exportierbar sind; gespeicherte Nachrichten- und Eingabeinhalte, soweit sie dem Kunden zugeordnet und rechtlich exportierbar sind; erzeugte PDF- und Word-Dokumente; sonstige vom Kunden unmittelbar eingegebene oder für ihn erzeugte fachliche Daten, soweit sie technisch ohne Offenlegung geschützter interner Informationen exportiert werden können.</li>
+    <li value="7">Von den exportierbaren Datenkategorien sind abschließend ausgenommen: Quellcode und Softwarebestandteile des Anbieters; Systemprompts, interne KI-Anweisungen und interne Modellkonfigurationen; nicht kundenspezifische Vorlagen, Regeln und Klassifikationslogiken; Passwörter, Tokens, geheime Links, Gerätebindungsdaten und sonstige Authentifizierungs- oder Sicherheitsgeheimnisse; interne Sicherheits-, Betrugs-, Missbrauchs- und Auditdaten; interne Telemetrie, technische Betriebsdaten und Fehlerdiagnosen, soweit diese nicht erforderlich sind, um vom Kunden erzeugte Daten zu verstehen; anonymisierte oder über mehrere Kunden aggregierte Auswertungen; Geschäftsgeheimnisse des Anbieters oder Dritter; Daten Dritter, die der Anbieter rechtlich nicht übertragen darf.</li>
+    <li value="8">Der Export wird grundsätzlich als herunterladbares Paket bereitgestellt und kann insbesondere JSON- und CSV-Dateien sowie vorhandene PDF- und Word-Dokumente enthalten.</li>
+    <li value="9">Das aktuelle Online-Verzeichnis der verfügbaren Datenstrukturen, Formate, Exportmethoden sowie bekannter technischer Beschränkungen wird in den Einstellungen des Kunden-Cockpits im Bereich „Dein Konto“ sowie in der jedem Exportpaket beigefügten Beschreibung (LIESMICH.txt) bereitgestellt und aktuell gehalten.</li>
+    <li value="10">Die Informationen zu internationalen Zugriffsmöglichkeiten auf nicht personenbezogene Daten und zu den hierfür getroffenen Schutzmaßnahmen werden, soweit nach dem Data Act erforderlich, in der Datenschutzerklärung des Anbieters und in Anlage 3 dieses Vertragswerks bereitgestellt.</li>
+    <li value="11">Zwingende Rechte und Pflichten nach dem Data Act gehen entgegenstehenden Regelungen dieses Vertrags vor.</li>
+  </ol>
+
+  <h2 id="p16">§ 16 Keine Archivierungsleistung und eigene Datensicherung</h2>
+  <ol class="abs">
+    <li value="1">AuftragsBoss ist kein Dokumentenmanagement-, Langzeitarchivierungs- oder revisionssicheres Archivsystem.</li>
+    <li value="2">Der Anbieter schuldet insbesondere keine Archivierung nach handels-, steuer- oder sonstigen gesetzlichen Aufbewahrungsvorschriften und keine GoBD-konforme Archivierung.</li>
+    <li value="3">Der Kunde ist selbst dafür verantwortlich, Angebote, Arbeitsprotokolle und sonstige geschäftlich relevante Dokumente außerhalb von AuftragsBoss ordnungsgemäß zu speichern und aufzubewahren.</li>
+    <li value="4">Der Anbieter empfiehlt, endgültige Geschäftsdokumente zeitnah nach Erstellung außerhalb von AuftragsBoss zu sichern.</li>
+  </ol>
+
+  <h2 id="p17">§ 17 Preisänderungen</h2>
+  <ol class="abs">
+    <li value="1">Der bei Abschluss eines kostenpflichtigen Abonnements vereinbarte monatliche Preis ist für die ersten zwölf Monate ab Beginn des kostenpflichtigen Vertrags fest vereinbart.</li>
+    <li value="2">Der Anbieter kann den Preis erstmals mit Wirkung nach Ablauf dieser zwölf Monate ändern. Weitere Preisänderungen sind frühestens zwölf Monate nach dem Wirksamwerden der jeweils letzten Preisänderung zulässig.</li>
+    <li value="3">Eine Preisänderung kann insbesondere aufgrund veränderter Kosten für KI-Dienste, Hosting, Kommunikationsdienste, Zahlungsabwicklung, Personal, IT-Sicherheit, gesetzliche oder regulatorische Anforderungen sowie aufgrund einer allgemeinen Weiterentwicklung des Leistungsumfangs und der Marktbedingungen erfolgen. Preisänderungen dürfen nicht willkürlich erfolgen.</li>
+    <li value="4">Der Anbieter teilt dem Kunden eine Preisänderung mindestens sechs Wochen vor ihrem Inkrafttreten in Textform an die hinterlegte E-Mail-Adresse und/oder über einen deutlich sichtbaren Hinweis im Kunden-Cockpit mit. Die Mitteilung nennt den bisherigen Preis, den neuen Preis und den Zeitpunkt des Inkrafttretens.</li>
+    <li value="5">Der Kunde kann den Vertrag vor Inkrafttreten der Preisänderung zum Zeitpunkt des Wirksamwerdens der Preisänderung kündigen. Die Mitteilung weist auf dieses Kündigungsrecht hin.</li>
+    <li value="6">Erfolgt keine Kündigung, wird der Vertrag ab dem angekündigten Zeitpunkt zum neuen Preis fortgeführt. Der neue Preis bleibt anschließend wiederum mindestens zwölf Monate unverändert.</li>
+    <li value="7">Individuell vereinbarte Preisgarantien oder Sonderkonditionen bleiben unberührt.</li>
+  </ol>
+
+  <h2 id="p18">§ 18 Empfehlungsprogramm und Gutschriften</h2>
+  <ol class="abs">
+    <li value="1">Der Anbieter kann Kunden einen persönlichen Empfehlungslink zur Verfügung stellen.</li>
+    <li value="2">Wird ein über diesen Link empfohlener wirtschaftlich eigenständiger Neukunde zahlender Kunde, erhält der empfehlende Kunde nach Maßgabe der jeweils geltenden Programmbedingungen derzeit eine Gutschrift von 100 Euro.</li>
+    <li value="3">Jede erfolgreiche Empfehlung wird nur einmal berücksichtigt. Der empfohlene Kunde erhält den regulären kostenlosen Test, sofern nichts anderes vereinbart ist.</li>
+    <li value="4">Gutschriften werden ausschließlich mit zukünftigen Rechnungen verrechnet. Eine Barauszahlung oder Übertragung auf Dritte ist ausgeschlossen.</li>
+    <li value="5">Nicht verbrauchte Gutschriften verfallen bei endgültiger Beendigung des Vertragsverhältnisses.</li>
+    <li value="6">Der Anbieter darf Gutschriften bei Selbstempfehlungen, Scheingeschäften, Missbrauch, technischen Fehlern oder offensichtlich irrtümlicher Gewährung korrigieren oder zurücknehmen.</li>
+  </ol>
+
+  <h2 id="p19">§ 19 Pflichten des Kunden und zulässige Nutzung</h2>
+  <ol class="abs">
+    <li value="1">Der Kunde darf AuftragsBoss ausschließlich für rechtmäßige eigene betriebliche Zwecke nutzen.</li>
+    <li value="2">Der Kunde ist dafür verantwortlich, dass er ausreichende Rechte an übermittelten Daten, Fotos, Texten und sonstigen Inhalten besitzt und dass deren Verarbeitung rechtmäßig ist.</li>
+    <li value="3">Der Kunde darf personenbezogene Daten Dritter nur verarbeiten lassen, wenn hierfür eine ausreichende datenschutzrechtliche Rechtsgrundlage besteht. Die Erfüllung der Informationspflichten gegenüber Endkunden und sonstigen betroffenen Personen obliegt dem Kunden.</li>
+    <li value="4">Fotos sollen nur von Objekten und Bereichen übermittelt werden, deren Verarbeitung für den Auftrag erforderlich ist. Personen sollen nicht gezielt fotografiert oder unnötig übermittelt werden.</li>
+    <li value="5">Besondere Kategorien personenbezogener Daten im Sinne des Art. 9 DSGVO sollen nicht übermittelt werden, sofern dies nicht zwingend erforderlich, rechtlich zulässig und mit dem Anbieter abgestimmt ist.</li>
+    <li value="6">Unzulässig sind insbesondere Schadsoftware, Angriffe auf die Infrastruktur, die Umgehung technischer Schutzmaßnahmen, automatisierte Massennutzung außerhalb des vorgesehenen Funktionsumfangs, der Versuch des Zugriffs auf Daten anderer Kunden, rechtswidrige Inhalte sowie der Weiterverkauf oder die öffentliche Bereitstellung des Dienstes ohne Vereinbarung mit dem Anbieter.</li>
+  </ol>
+
+  <h2 id="p20">§ 20 Mängel, Störungsmeldung und Nacherfüllung</h2>
+  <ol class="abs">
+    <li value="1">Der Kunde ist verpflichtet, erkennbare technische Mängel und wesentliche Fehlfunktionen ohne unangemessene Verzögerung mitzuteilen und so zu beschreiben, dass sie vom Anbieter nachvollzogen werden können.</li>
+    <li value="2">Soweit möglich, soll die Mitteilung insbesondere die betroffene Funktion, den Zeitpunkt, den konkreten Ablauf, Fehlermeldungen und sonstige Informationen enthalten, die eine Reproduktion ermöglichen.</li>
+    <li value="3">Ein Mangel liegt insbesondere nicht vor, wenn die Beeinträchtigung durch Geräte, Internetzugang oder WhatsApp-Zugang des Kunden, fehlerhafte oder unvollständige Eingaben, unzulässige Nutzung, fehlende Mitwirkung oder sonstige Umstände aus der Sphäre des Kunden verursacht wird.</li>
+    <li value="4">Im Fall eines vom Anbieter zu vertretenden Mangels darf der Anbieter zunächst versuchen, den Fehler zu beheben, eine neue Version bereitzustellen oder eine zumutbare Umgehungsmöglichkeit aufzuzeigen.</li>
+    <li value="5">Unerhebliche Beeinträchtigungen begründen keine weitergehenden Ansprüche, soweit dies gesetzlich zulässig ist.</li>
+  </ol>
+
+  <h2 id="p21">§ 21 Sperrung und Missbrauch</h2>
+  <ol class="abs">
+    <li value="1">Der Anbieter darf einen Zugang vorübergehend ganz oder teilweise sperren, wenn konkrete Anhaltspunkte für Zahlungsverzug, Missbrauch, Sicherheitsrisiken, rechtswidrige Nutzung, erhebliche Überlastung, unerlaubte automatisierte Nutzung oder einen erheblichen Verstoß gegen dieses Vertragswerk bestehen.</li>
+    <li value="2">Soweit keine akute Gefahr entgegensteht, informiert der Anbieter den Kunden über die Sperrung und gibt ihm Gelegenheit, den Grund zu beseitigen oder Stellung zu nehmen.</li>
+    <li value="3">Die Sperrung ist auf den erforderlichen Umfang und Zeitraum zu beschränken.</li>
+    <li value="4">Das Recht zur außerordentlichen Kündigung aus wichtigem Grund bleibt unberührt.</li>
+  </ol>
+
+  <h2 id="p22">§ 22 Verfügbarkeit, Wartung, höhere Gewalt und externe Störungen</h2>
+  <ol class="abs">
+    <li value="1">Der Anbieter schuldet keine bestimmte prozentuale Verfügbarkeit. Wartung, Sicherheitsmaßnahmen, Updates und technische Änderungen können zu vorübergehenden Einschränkungen führen.</li>
+    <li value="2">Planbare größere Wartungsmaßnahmen werden, soweit wirtschaftlich und technisch angemessen, möglichst außerhalb typischer Hauptnutzungszeiten durchgeführt. Bei dringenden Sicherheitsmaßnahmen darf der Anbieter Wartungsarbeiten ohne vorherige Ankündigung durchführen.</li>
+    <li value="3">Der Anbieter haftet nicht für Verzögerungen oder Leistungsausfälle, soweit diese auf außergewöhnlichen Ereignissen außerhalb seines zumutbaren Einflussbereichs beruhen, insbesondere Naturkatastrophen, großflächigen Strom- oder Telekommunikationsausfällen, Ausfällen des Internets, behördlichen Maßnahmen, Krieg, Arbeitskämpfen oder außergewöhnlichen Cyberangriffen.</li>
+    <li value="4">Gleiches gilt grundsätzlich für nicht vom Anbieter beherrschbare erhebliche Störungen bei für AuftragsBoss wesentlichen Dienstleistern, insbesondere WhatsApp beziehungsweise Meta, OpenAI, Anthropic, Hostinganbietern und Zahlungsdienstleistern.</li>
+    <li value="5">Der Anbieter bleibt verpflichtet, wirtschaftlich angemessene Maßnahmen zur Wiederherstellung der Leistung zu ergreifen.</li>
+  </ol>
+
+  <h2 id="p23">§ 23 Änderungen des Dienstes</h2>
+  <ol class="abs">
+    <li value="1">Der Anbieter darf AuftragsBoss technisch und funktional weiterentwickeln und insbesondere Benutzeroberflächen, KI-Modelle, Unterauftragnehmer, Verarbeitungsabläufe, Exportfunktionen und technische Schnittstellen anpassen.</li>
+    <li value="2">Änderungen dürfen den vertraglich vereinbarten Kernnutzen nicht unangemessen beeinträchtigen.</li>
+    <li value="3">Wesentliche vorhersehbare nachteilige Änderungen werden dem Kunden grundsätzlich angemessen im Voraus mitgeteilt.</li>
+    <li value="4">Eine vorherige Mitteilung ist nicht erforderlich, wenn eine kurzfristige Änderung aus Sicherheits-, Rechts-, Datenschutz- oder zwingenden Drittanbietergründen erforderlich ist.</li>
+  </ol>
+
+  <h2 id="p24">§ 24 Rechte an Eingaben, Dokumenten, Software und KI-Ergebnissen</h2>
+  <ol class="abs">
+    <li value="1">Rechte des Kunden oder Dritter an vom Kunden übermittelten Inhalten bleiben unberührt.</li>
+    <li value="2">Der Kunde räumt dem Anbieter für die Dauer und den Zweck der Vertragserfüllung die erforderlichen einfachen Nutzungs- und Verarbeitungsrechte an seinen Eingaben ein. Dies umfasst die technisch erforderliche Weitergabe an genehmigte Unterauftragsverarbeiter nach Teil B.</li>
+    <li value="3">Der Anbieter macht gegenüber dem Kunden keine eigenen ausschließlichen Rechte an den für den Kunden erzeugten Angeboten, Arbeitsprotokollen und sonstigen KI-Ergebnissen geltend. Der Kunde darf diese im Rahmen seiner geschäftlichen Tätigkeit bearbeiten, vervielfältigen, speichern und weitergeben.</li>
+    <li value="4">Aufgrund der Funktionsweise generativer KI kann nicht ausgeschlossen werden, dass automatisch erzeugte Inhalte Ähnlichkeiten mit Inhalten Dritter aufweisen. Der Anbieter garantiert nicht, dass jedes KI-Ergebnis urheberrechtlich ausschließlich dem Kunden zugeordnet werden kann oder vollständig frei von Rechten Dritter ist.</li>
+    <li value="5">Der Kunde ist verpflichtet, bei erkennbar fremden Texten, Marken, Bildern oder sonstigen geschützten Inhalten vor einer weitergehenden Nutzung zu prüfen, ob ausreichende Rechte bestehen.</li>
+    <li value="6">Alle Rechte an der Software, Benutzeroberflächen, Marken, Logos, allgemeinen Vorlagen, Systemprompts, technischen Verfahren und sonstigen Bestandteilen von AuftragsBoss verbleiben beim Anbieter beziehungsweise den jeweiligen Rechteinhabern.</li>
+  </ol>
+
+  <h2 id="p25">§ 25 Vertraulichkeit</h2>
+  <ol class="abs">
+    <li value="1">Beide Parteien verpflichten sich, ihnen im Zusammenhang mit dem Vertragsverhältnis bekannt werdende nicht öffentliche Geschäfts- und Betriebsinformationen der jeweils anderen Partei vertraulich zu behandeln und nur für Zwecke des Vertrags zu verwenden.</li>
+    <li value="2">Die Verpflichtung gilt nicht für Informationen, die nachweislich allgemein bekannt sind oder werden, ohne dass dies auf einer Vertragsverletzung beruht, der empfangenden Partei bereits rechtmäßig bekannt waren, rechtmäßig von einem Dritten erlangt wurden oder aufgrund gesetzlicher oder behördlicher Verpflichtung offengelegt werden müssen.</li>
+    <li value="3">Geschäftsgeheimnisse im Sinne des Geschäftsgeheimnisgesetzes sind so lange vertraulich zu behandeln, wie die gesetzlichen Voraussetzungen hierfür bestehen. Sonstige vertrauliche Informationen sind für drei Jahre nach Vertragsende vertraulich zu behandeln.</li>
+    <li value="4">Datenschutzrechtliche Pflichten und die spezielleren Regelungen in Teil B bleiben unberührt.</li>
+  </ol>
+
+  <h2 id="p26">§ 26 Freistellung bei kundenverschuldeten Rechtsverletzungen</h2>
+  <ol class="abs">
+    <li value="1">Wird der Anbieter von einem Dritten aufgrund einer vom Kunden oder dessen Nutzern zu vertretenden rechtswidrigen Verwendung von AuftragsBoss in Anspruch genommen, stellt der Kunde den Anbieter von den daraus entstehenden berechtigten Ansprüchen frei.</li>
+    <li value="2">Dies gilt insbesondere bei unberechtigt übermittelten personenbezogenen Daten oder Fotos, Urheberrechts-, Marken- oder sonstigen Schutzrechtsverletzungen sowie sonstigen rechtswidrigen Eingaben des Kunden.</li>
+    <li value="3">Die Freistellung umfasst auch angemessene erforderliche Kosten der Rechtsverteidigung.</li>
+    <li value="4">Voraussetzung ist, dass der Anbieter den Kunden über die geltend gemachten Ansprüche informiert und ihm angemessene Gelegenheit zur Mitwirkung an der Verteidigung gibt.</li>
+    <li value="5">Die Freistellung gilt nicht, soweit der Kunde die betreffende Rechtsverletzung nicht zu vertreten hat.</li>
+  </ol>
+
+  <h2 id="p27">§ 27 Datenschutz</h2>
+  <ol class="abs">
+    <li value="1">Soweit der Anbieter Endkundendaten oder sonstige personenbezogene Daten im Auftrag des Kunden verarbeitet, gelten die Bestimmungen des Teils B dieses Vertragswerks.</li>
+    <li value="2">Für personenbezogene Daten des Kunden und seiner Nutzer, die der Anbieter insbesondere zur Vertragsverwaltung, Registrierung, Abrechnung, Kundenkommunikation, IT-Sicherheit, Betrugs- und Missbrauchsverhinderung oder Rechtsdurchsetzung zu eigenen Zwecken verarbeitet, handelt der Anbieter als eigener Verantwortlicher.</li>
+    <li value="3">Weitere Einzelheiten ergeben sich aus der Datenschutzerklärung des Anbieters.</li>
+    <li value="4">Stripe und sonstige Zahlungsdienstleister sind nicht Unterauftragsverarbeiter im Sinne des Teils B, soweit sie ausschließlich Vertrags-, Abrechnungs- und Zahlungsdaten des Kunden für die Zahlungsabwicklung verarbeiten.</li>
+  </ol>
+
+  <h2 id="p28">§ 28 Datensicherung und Datenverlust</h2>
+  <ol class="abs">
+    <li value="1">Der Anbieter trifft angemessene technische und organisatorische Maßnahmen zur Sicherung seiner Systeme und erstellt nach dem derzeitigen technischen Konzept regelmäßige verschlüsselte Sicherungen mit Wiederherstellungsprüfungen.</li>
+    <li value="2">Der Kunde bleibt dennoch dafür verantwortlich, für ihn wichtige Geschäftsdokumente außerhalb von AuftragsBoss zu sichern.</li>
+    <li value="3">Bei leicht fahrlässig verursachtem Datenverlust ist die Haftung des Anbieters, soweit gesetzlich zulässig, auf den typischen Wiederherstellungsaufwand beschränkt, der bei einer ordnungsgemäßen und dem Risiko angemessenen externen Sicherung durch den Kunden entstanden wäre.</li>
+    <li value="4">Zwingende gesetzliche Haftung bleibt unberührt.</li>
+  </ol>
+
+  <h2 id="p29">§ 29 Haftung</h2>
+  <ol class="abs">
+    <li value="1">Der Anbieter haftet unbeschränkt bei Vorsatz und grober Fahrlässigkeit, bei schuldhafter Verletzung von Leben, Körper oder Gesundheit, nach zwingendem Produkthaftungsrecht, bei ausdrücklich übernommenen Garantien im Umfang der Garantie, nach Art. 82 DSGVO soweit zwingend sowie in sonstigen Fällen zwingender gesetzlicher Haftung.</li>
+    <li value="2">Bei leicht fahrlässiger Verletzung einer wesentlichen Vertragspflicht haftet der Anbieter nur für den vertragstypischen und bei Vertragsschluss vorhersehbaren Schaden. Wesentliche Vertragspflichten sind solche Pflichten, deren Erfüllung die ordnungsgemäße Durchführung des Vertrags überhaupt erst ermöglicht und auf deren Einhaltung der Kunde regelmäßig vertrauen darf.</li>
+    <li value="3">Soweit gesetzlich zulässig, ist die Haftung nach Absatz 2 für alle Schadensfälle innerhalb eines Vertragsjahres der Höhe nach auf das Zwölffache des zum Zeitpunkt des Schadensereignisses vereinbarten monatlichen Nettoentgelts begrenzt. Eine zusätzliche Mindesthaftungssumme besteht nicht.</li>
+    <li value="4">Bei individuell vereinbarten Tarifen ist für die Berechnung das vereinbarte regelmäßige Monatsentgelt maßgeblich. Ist kein monatliches Entgelt vereinbart, wird ein wirtschaftlich entsprechendes Monatsentgelt zugrunde gelegt.</li>
+    <li value="5">Soweit gesetzlich zulässig, haftet der Anbieter bei leichter Fahrlässigkeit nicht für mittelbare Schäden und entgangenen Gewinn.</li>
+    <li value="6">Der Anbieter haftet nicht für Schäden, die darauf beruhen, dass der Kunde einen als Entwurf bereitgestellten KI-Inhalt ohne die nach § 5 erforderliche Prüfung verwendet hat, soweit der Fehler bei ordnungsgemäßer Prüfung erkennbar und der Schaden vermeidbar gewesen wäre.</li>
+    <li value="7">Die vorstehenden Haftungsbeschränkungen gelten auch zugunsten der gesetzlichen Vertreter, Mitarbeiter, Erfüllungsgehilfen und Unterauftragnehmer des Anbieters.</li>
+    <li value="8">Die gesetzlichen Regeln über Mitverschulden bleiben unberührt.</li>
+  </ol>
+
+  <h2 id="p30">§ 30 Verjährung</h2>
+  <ol class="abs">
+    <li value="1">Ansprüche des Kunden gegen den Anbieter aus dem Vertragsverhältnis verjähren, soweit gesetzlich zulässig, innerhalb eines Jahres ab dem gesetzlichen Beginn der Verjährung.</li>
+    <li value="2">Die Verkürzung gilt nicht für Ansprüche wegen Vorsatz oder grober Fahrlässigkeit, wegen Verletzung von Leben, Körper oder Gesundheit, nach dem Produkthaftungsgesetz, nach Art. 82 DSGVO soweit zwingend, aufgrund einer ausdrücklich übernommenen Garantie oder soweit eine Verkürzung gesetzlich unzulässig ist.</li>
+  </ol>
+
+  <h2 id="p31">§ 31 Keine Garantien durch Vertrieb oder sonstige Personen</h2>
+  <ol class="abs">
+    <li value="1">Beschreibungen, Aussagen, Präsentationen und Erläuterungen von Mitarbeitern, Vertriebspartnern oder sonstigen Personen stellen keine Garantie im Rechtssinne dar, sofern sie nicht ausdrücklich als Garantie bezeichnet werden.</li>
+    <li value="2">Die Übernahme einer Garantie oder Beschaffenheitsgarantie bedarf einer ausdrücklichen Bestätigung durch den Anbieter in Textform.</li>
+    <li value="3">Allgemeine Werbeaussagen begründen keine weitergehenden Garantien als die ausdrücklich vereinbarte Leistungsbeschreibung.</li>
+  </ol>
+
+  <h2 id="p32">§ 32 Referenzkundennennung</h2>
+  <ol class="abs">
+    <li value="1">Der Kunde räumt dem Anbieter das einfache, unentgeltliche Recht ein, seinen Firmennamen und sein Unternehmenslogo als Referenz für die Nutzung von AuftragsBoss auf der Website des Anbieters, in Präsentationen und sonstigen Vertriebsunterlagen zu verwenden.</li>
+    <li value="2">Der Kunde kann dieser Verwendung jederzeit in Textform mit Wirkung für die Zukunft widersprechen.</li>
+    <li value="3">Nach Eingang des Widerspruchs entfernt der Anbieter die Referenz innerhalb angemessener Zeit aus zukünftig verwendeten digitalen Materialien.</li>
+    <li value="4">Projektinhalte, Endkundendaten, konkrete Angebote, Umsätze oder sonstige weitergehende Informationen dürfen nicht allein auf Grundlage dieser Klausel veröffentlicht werden.</li>
+  </ol>
+
+  <h2 id="p33">§ 33 Vertragsübertragung</h2>
+  <ol class="abs">
+    <li value="1">Der Anbieter darf den Vertrag einschließlich der damit verbundenen Rechte und Pflichten auf ein verbundenes Unternehmen oder einen Erwerber des Geschäftsbereichs AuftragsBoss übertragen, sofern der neue Vertragspartner in die wesentlichen Verpflichtungen eintritt.</li>
+    <li value="2">Der Kunde wird über eine solche Übertragung rechtzeitig informiert. Zwingende Rechte des Kunden, insbesondere datenschutzrechtliche Rechte und ein gegebenenfalls bestehendes außerordentliches Kündigungsrecht aus wichtigem Grund, bleiben unberührt.</li>
+    <li value="3">Der Kunde darf Rechte und Pflichten aus diesem Vertrag nur mit vorheriger Zustimmung des Anbieters auf Dritte übertragen, soweit nicht zwingendes Recht etwas anderes bestimmt. Die Abtretung reiner Geldforderungen bleibt nach Maßgabe des zwingenden Rechts unberührt.</li>
+  </ol>
+
+  <h2 id="p34">§ 34 Änderungen dieses Vertragswerks</h2>
+  <ol class="abs">
+    <li value="1">Der Anbieter darf dieses Vertragswerk für bestehende Vertragsverhältnisse ändern, wenn hierfür ein sachlicher Grund besteht und das vertragliche Gleichgewicht nicht unangemessen zulasten des Kunden verändert wird.</li>
+    <li value="2">Sachliche Gründe können insbesondere Änderungen der Rechtslage, Rechtsprechung, technischen Abläufe, Sicherheitsanforderungen, eingesetzten Dienstleister oder des Funktionsumfangs sein.</li>
+    <li value="3">Änderungen wesentlicher Hauptleistungspflichten oder der Vergütung richten sich nach den hierfür gesondert vorgesehenen Regelungen und können nicht allein über diese Änderungsklausel vorgenommen werden.</li>
+    <li value="4">Änderungen werden grundsätzlich mindestens sechs Wochen vor dem vorgesehenen Inkrafttreten per E-Mail an die hinterlegte E-Mail-Adresse und/oder durch einen Hinweis im Kunden-Cockpit mitgeteilt.</li>
+    <li value="5">Der Kunde kann einer Änderung bis zum vorgesehenen Inkrafttreten widersprechen. Widerspricht der Kunde, wird der Vertrag grundsätzlich zu den bisherigen Bedingungen fortgeführt. Ist dem Anbieter die Fortführung aus rechtlichen, technischen oder wirtschaftlichen Gründen nicht zumutbar, kann er den Vertrag ordentlich zum nächstmöglichen Zeitpunkt kündigen.</li>
+    <li value="6">Änderungen von Teil B, die aufgrund zwingender datenschutzrechtlicher Vorgaben oder eines notwendigen Wechsels von Unterauftragsverarbeitern erforderlich sind, richten sich ergänzend nach den speziellen Regelungen in Teil B.</li>
+  </ol>
+
+  <h2 id="p35">§ 35 Schlussbestimmungen</h2>
+  <ol class="abs">
+    <li value="1">Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts.</li>
+    <li value="2">Erfüllungsort ist, soweit gesetzlich zulässig, der Sitz des Anbieters.</li>
+    <li value="3">Ist der Kunde Kaufmann, juristische Person des öffentlichen Rechts oder öffentlich-rechtliches Sondervermögen oder liegen sonst die gesetzlichen Voraussetzungen einer Gerichtsstandsvereinbarung vor, ist Stuttgart ausschließlicher Gerichtsstand. Der Anbieter bleibt berechtigt, den Kunden an einem anderen gesetzlich zuständigen Gerichtsstand zu verklagen.</li>
+    <li value="4">Rechtserhebliche Erklärungen können in Textform erfolgen, soweit gesetzlich keine strengere Form vorgeschrieben ist. Individuelle Vereinbarungen haben Vorrang.</li>
+    <li value="5">Sollten einzelne Bestimmungen dieses Vertragswerks ganz oder teilweise unwirksam sein oder werden, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt. An die Stelle unwirksamer Bestimmungen treten die gesetzlichen Vorschriften.</li>
+    <li value="6">Kontakt für rechtliche Mitteilungen, Datenschutz und Kündigungen ist kontakt@auftragsboss.de.</li>
+  </ol>
+
+  <h2 class="part" id="steil-b-vereinbarung-zur-auftragsverarbeitung-gem-ss-art-28-dsgvo">Teil b · Vereinbarung zur Auftragsverarbeitung gemäß Art. 28 DSGVO</h2>
+  <p>Dieser Teil B ist Bestandteil der Allgemeinen Geschäftsbedingungen für AuftragsBoss und bildet gemeinsam mit den Anlagen 1 bis 3 die Vereinbarung zur Auftragsverarbeitung zwischen dem Kunden als Verantwortlichem und der DAG Deutsche Automotive GmbH als Auftragsverarbeiter.</p>
+
+  <h2 id="p36">§ 36 Gegenstand, Geltungsbereich und Vorrang</h2>
+  <ol class="abs">
+    <li value="1">Teil B gilt, soweit der Anbieter personenbezogene Daten im Auftrag des Kunden verarbeitet.</li>
+    <li value="2">Er konkretisiert die datenschutzrechtlichen Rechte und Pflichten der Parteien im Zusammenhang mit AuftragsBoss.</li>
+    <li value="3">Gegenstand, Dauer, Art und Zweck der Verarbeitung sowie Datenarten und Kategorien betroffener Personen ergeben sich ergänzend aus Anlage 1.</li>
+    <li value="4">Bei Widersprüchen zwischen Teil A und Teil B gehen hinsichtlich der Auftragsverarbeitung die Bestimmungen des Teils B vor.</li>
+    <li value="5">Teil B tritt spätestens mit der erstmaligen Verarbeitung personenbezogener Daten im Auftrag des Kunden in Kraft und gilt bis zur vollständigen Löschung oder Rückgabe dieser Daten nach den Regelungen dieses Vertrags.</li>
+  </ol>
+
+  <h2 id="p37">§ 37 Rollen der Parteien</h2>
+  <ol class="abs">
+    <li value="1">Der Kunde ist Verantwortlicher im Sinne des Art. 4 Nr. 7 DSGVO für Endkundendaten und sonstige personenbezogene Daten, die er im Rahmen seiner eigenen Kunden-, Interessenten-, Auftrags- oder Projektbeziehungen in AuftragsBoss eingibt oder übermitteln lässt.</li>
+    <li value="2">Die DAG Deutsche Automotive GmbH verarbeitet diese Daten als Auftragsverarbeiter im Sinne des Art. 4 Nr. 8 DSGVO.</li>
+    <li value="3">Der Anbieter ist eigener Verantwortlicher für personenbezogene Daten des Kunden und seiner Nutzer, soweit diese für eigene Zwecke des Anbieters verarbeitet werden, insbesondere Vertragsverwaltung, Registrierung, Abrechnung, Kundenkommunikation, IT-Sicherheit, Missbrauchsverhinderung, Rechtsdurchsetzung und Erfüllung eigener gesetzlicher Pflichten.</li>
+    <li value="4">Die Verarbeitung nach Absatz 3 ist nicht Gegenstand dieser Vereinbarung zur Auftragsverarbeitung.</li>
+  </ol>
+
+  <h2 id="p38">§ 38 Dokumentierte Weisungen</h2>
+  <ol class="abs">
+    <li value="1">Der Auftragsverarbeiter verarbeitet personenbezogene Daten des Kunden ausschließlich auf dokumentierte Weisung des Kunden, soweit keine gesetzliche Verpflichtung zu einer anderweitigen Verarbeitung besteht.</li>
+    <li value="2">Die Annahme dieses Vertragswerks, die Nutzung der vereinbarten Funktionen und die in Anlage 1 beschriebenen Verarbeitungsvorgänge bilden die Grundweisung des Kunden.</li>
+    <li value="3">Weitere Weisungen können insbesondere durch Eingaben über WhatsApp, Einstellungen im Kunden-Cockpit, Funktionen im Web-Editor, Lösch- oder Exportfunktionen sowie Mitteilungen in Textform erteilt werden.</li>
+    <li value="4">Die in § 14 und Anlage 1 beschriebene Speicherung von Auftragsdaten bis zu 90 Tage nach Vertragsende wird ausdrücklich als Weisung des Kunden zur begrenzten Weiterverarbeitung für Lesezugriff, Export, Anbieterwechsel und Reaktivierung vereinbart. Der Kunde kann jederzeit eine frühere Löschung anweisen, soweit keine zwingenden gesetzlichen Pflichten entgegenstehen.</li>
+    <li value="5">Hält der Auftragsverarbeiter eine Weisung für datenschutzrechtlich unzulässig, informiert er den Kunden unverzüglich und darf die Durchführung der betreffenden Weisung bis zur Klärung aussetzen.</li>
+    <li value="6">Wird der Auftragsverarbeiter durch Unionsrecht oder deutsches Recht zu einer Verarbeitung verpflichtet, die nicht auf einer Weisung des Kunden beruht, informiert er den Kunden vor der Verarbeitung über diese rechtliche Verpflichtung, soweit das Gesetz eine solche Information nicht verbietet.</li>
+  </ol>
+
+  <h2 id="p39">§ 39 Pflichten des Verantwortlichen</h2>
+  <ol class="abs">
+    <li value="1">Der Kunde ist für die Rechtmäßigkeit der Erhebung, Übermittlung und Verarbeitung der personenbezogenen Daten verantwortlich.</li>
+    <li value="2">Der Kunde stellt insbesondere sicher, dass eine geeignete Rechtsgrundlage besteht, erforderliche Informationspflichten gegenüber betroffenen Personen erfüllt werden, nur erforderliche Daten verarbeitet werden und seine Weisungen rechtmäßig sind.</li>
+    <li value="3">Der Kunde soll keine besonderen Kategorien personenbezogener Daten nach Art. 9 DSGVO in AuftragsBoss verarbeiten, soweit dies nicht für den konkreten Auftrag erforderlich, rechtlich zulässig und mit dem Anbieter abgestimmt ist.</li>
+    <li value="4">Der Kunde informiert den Auftragsverarbeiter unverzüglich, wenn er Fehler oder Unregelmäßigkeiten bei der Auftragsverarbeitung feststellt.</li>
+  </ol>
+
+  <h2 id="p40">§ 40 Vertraulichkeit und Zugriff</h2>
+  <ol class="abs">
+    <li value="1">Der Auftragsverarbeiter stellt sicher, dass Personen, die Zugang zu im Auftrag verarbeiteten personenbezogenen Daten erhalten, zur Vertraulichkeit verpflichtet sind oder einer angemessenen gesetzlichen Verschwiegenheitspflicht unterliegen.</li>
+    <li value="2">Zugriffsrechte werden nach dem Erforderlichkeitsprinzip vergeben.</li>
+    <li value="3">Die Vertraulichkeitsverpflichtung besteht auch nach Beendigung der jeweiligen Tätigkeit fort.</li>
+  </ol>
+
+  <h2 id="p41">§ 41 Sicherheit der Verarbeitung</h2>
+  <ol class="abs">
+    <li value="1">Der Auftragsverarbeiter trifft unter Berücksichtigung des Stands der Technik, der Implementierungskosten, Art, Umfang, Umständen und Zwecken der Verarbeitung sowie des Risikos geeignete technische und organisatorische Maßnahmen gemäß Art. 32 DSGVO.</li>
+    <li value="2">Die zum Zeitpunkt des Vertragsschlusses vorgesehenen Maßnahmen sind in Anlage 2 beschrieben.</li>
+    <li value="3">Der Auftragsverarbeiter darf technische und organisatorische Maßnahmen weiterentwickeln und durch gleichwertige oder höhere Schutzmaßnahmen ersetzen. Das vereinbarte Sicherheitsniveau darf dadurch nicht unterschritten werden.</li>
+  </ol>
+
+  <h2 id="p42">§ 42 Unterstützung bei Betroffenenrechten und Datenschutzpflichten</h2>
+  <ol class="abs">
+    <li value="1">Der Auftragsverarbeiter unterstützt den Kunden unter Berücksichtigung der Art der Verarbeitung und der verfügbaren Informationen angemessen bei der Erfüllung seiner datenschutzrechtlichen Pflichten, insbesondere nach Art. 12 bis 22 sowie Art. 32 bis 36 DSGVO.</li>
+    <li value="2">Wendet sich eine betroffene Person unmittelbar an den Auftragsverarbeiter und betrifft ihr Anliegen Daten, die im Auftrag des Kunden verarbeitet werden, leitet der Auftragsverarbeiter die Anfrage grundsätzlich an den Kunden weiter.</li>
+    <li value="3">Der Auftragsverarbeiter beantwortet solche Anfragen nicht eigenständig, soweit hierzu keine Weisung des Kunden oder gesetzliche Verpflichtung besteht.</li>
+    <li value="4">Soweit Unterstützungsleistungen über den üblichen Leistungsumfang erheblich hinausgehen und die Ursache nicht vom Auftragsverarbeiter zu vertreten ist, kann hierfür nach vorheriger Abstimmung ein angemessenes Entgelt verlangt werden.</li>
+  </ol>
+
+  <h2 id="p43">§ 43 Verletzungen des Schutzes personenbezogener Daten</h2>
+  <ol class="abs">
+    <li value="1">Der Auftragsverarbeiter informiert den Kunden unverzüglich über Verletzungen des Schutzes personenbezogener Daten, die im Auftrag verarbeitete Daten betreffen und ihm bekannt werden.</li>
+    <li value="2">Die Mitteilung enthält, soweit verfügbar, eine Beschreibung der Art der Verletzung, die betroffenen Datenarten und Personengruppen, bekannte oder wahrscheinliche Folgen, getroffene oder vorgeschlagene Gegenmaßnahmen und einen Ansprechpartner.</li>
+    <li value="3">Können nicht alle Informationen gleichzeitig bereitgestellt werden, dürfen sie schrittweise ergänzt werden.</li>
+    <li value="4">Die Entscheidung über eine Meldung an eine Datenschutzaufsichtsbehörde oder betroffene Personen obliegt grundsätzlich dem Kunden als Verantwortlichem.</li>
+  </ol>
+
+  <h2 id="p44">§ 44 Unterauftragsverarbeiter</h2>
+  <ol class="abs">
+    <li value="1">Der Kunde erteilt dem Auftragsverarbeiter eine allgemeine schriftliche Genehmigung zum Einsatz der in Anlage 3 genannten Unterauftragsverarbeiter.</li>
+    <li value="2">Der Auftragsverarbeiter verpflichtet Unterauftragsverarbeiter vertraglich zu Datenschutzpflichten, die den Anforderungen des Art. 28 DSGVO entsprechen, soweit sie als Auftragsverarbeiter tätig werden.</li>
+    <li value="3">Der Auftragsverarbeiter bleibt dem Kunden gegenüber im gesetzlich vorgesehenen Umfang für die Erfüllung der datenschutzrechtlichen Pflichten seiner Unterauftragsverarbeiter verantwortlich.</li>
+    <li value="4">Der Auftragsverarbeiter informiert den Kunden über die beabsichtigte Hinzuziehung oder Ersetzung eines wesentlichen Unterauftragsverarbeiters, beispielsweise per E-Mail, im Kunden-Cockpit oder über eine dauerhaft abrufbare aktuelle Unterauftragsverarbeiterliste.</li>
+    <li value="5">Der Kunde kann aus berechtigten datenschutzrechtlichen Gründen innerhalb von 14 Tagen nach Mitteilung widersprechen.</li>
+    <li value="6">Können die Parteien einen berechtigten Widerspruch nicht angemessen lösen und kann der Auftragsverarbeiter den betreffenden Unterauftragsverarbeiter nicht ohne unverhältnismäßigen Aufwand ersetzen, kann jede Partei die von der Änderung betroffene Leistung zum Zeitpunkt des Einsatzes des neuen Unterauftragsverarbeiters kündigen.</li>
+  </ol>
+
+  <h2 id="p45">§ 45 Drittlandübermittlungen</h2>
+  <ol class="abs">
+    <li value="1">Personenbezogene Daten dürfen außerhalb des Europäischen Wirtschaftsraums nur verarbeitet werden, wenn die Voraussetzungen der Art. 44 ff. DSGVO erfüllt sind.</li>
+    <li value="2">Der Auftragsverarbeiter darf hierzu insbesondere einen Angemessenheitsbeschluss der Europäischen Kommission, eine gültige Teilnahme des Empfängers am EU-US Data Privacy Framework, Standardvertragsklauseln der Europäischen Kommission oder einen anderen gesetzlich zugelassenen Übermittlungsmechanismus nutzen.</li>
+    <li value="3">Soweit Standardvertragsklauseln erforderlich sind, stellt der Auftragsverarbeiter sicher, dass diese mit dem jeweiligen Empfänger wirksam vereinbart werden. Soweit erforderlich, werden ergänzende technische, organisatorische oder vertragliche Maßnahmen getroffen.</li>
+    <li value="4">Fällt ein bisher verwendeter Übermittlungsmechanismus weg, darf der Auftragsverarbeiter auf einen anderen gesetzlich zulässigen Mechanismus umstellen und informiert den Kunden, soweit dies für die Auftragsverarbeitung wesentlich ist.</li>
+  </ol>
+
+  <h2 id="p46">§ 46 Kontrollen und Nachweise</h2>
+  <ol class="abs">
+    <li value="1">Der Auftragsverarbeiter stellt dem Kunden die zur Erfüllung seiner Nachweispflichten erforderlichen Informationen in angemessenem Umfang zur Verfügung.</li>
+    <li value="2">Der Auftragsverarbeiter darf hierfür insbesondere Sicherheitsdokumentationen, Zertifizierungen, Auditberichte oder vergleichbare Nachweise bereitstellen.</li>
+    <li value="3">Reichen diese Nachweise im konkreten Fall nicht aus, kann der Kunde nach angemessener Vorankündigung eine weitergehende Prüfung verlangen. Vor-Ort-Prüfungen sind auf das datenschutzrechtlich erforderliche Maß zu beschränken und während üblicher Geschäftszeiten durchzuführen.</li>
+    <li value="4">Betriebs- und Geschäftsgeheimnisse sowie Daten anderer Kunden dürfen hierbei nicht offengelegt werden.</li>
+    <li value="5">Unverhältnismäßig häufige oder aufwendige Prüfungen können nach vorheriger Abstimmung kostenpflichtig sein, soweit sie nicht aufgrund eines vom Auftragsverarbeiter zu vertretenden Datenschutzvorfalls erforderlich werden.</li>
+  </ol>
+
+  <h2 id="p47">§ 47 Löschung, Rückgabe und Vertragsende</h2>
+  <ol class="abs">
+    <li value="1">Der Kunde kann während der Vertragslaufzeit die Löschung von Auftragsdaten im Rahmen der verfügbaren Funktionen oder durch Weisung an den Auftragsverarbeiter verlangen.</li>
+    <li value="2">Nach Vertragsende gelten zunächst die dokumentierten Weisungen in § 14 und § 38 Absatz 4. Der Auftragsverarbeiter hält die Daten danach höchstens bis zum Ablauf der dort vorgesehenen Fristen vor, sofern der Kunde keine frühere Löschung verlangt.</li>
+    <li value="3">Spätestens nach Ablauf der vereinbarten Aufbewahrungsfrist löscht der Auftragsverarbeiter die personenbezogenen Daten und vorhandenen produktiv nutzbaren Kopien, soweit keine gesetzliche Aufbewahrungspflicht entgegensteht.</li>
+    <li value="4">Daten in Sicherungskopien dürfen bis zu ihrer turnusmäßigen Überschreibung gespeichert bleiben, sofern sie gegen produktive Nutzung gesperrt sind, ausschließlich zu Sicherungszwecken verwendet werden und im regulären Sicherungszyklus gelöscht werden.</li>
+    <li value="5">Server-Logdaten werden grundsätzlich nach sieben Tagen gelöscht, soweit keine sicherheitsbedingte längere Speicherung erforderlich ist.</li>
+    <li value="6">Wand- und Objektfotos, die keinem fortbestehenden Angebot oder Projekt zugeordnet sind, werden grundsätzlich spätestens nach 30 Tagen gelöscht.</li>
+    <li value="7">Zwingende gesetzliche Wechsel- und Abrufrechte nach dem Data Act bleiben unberührt.</li>
+  </ol>
+
+  <h2 id="p48">§ 48 Qualitätssicherung und anonymisierte Produktverbesserung</h2>
+  <ol class="abs">
+    <li value="1">Der Kunde weist den Auftragsverarbeiter an, in begrenztem Umfang Nachrichtenverläufe und Verarbeitungsvorgänge auszuwerten, soweit dies erforderlich ist, um Fehlinterpretationen, ungeeignete Rückfragen, Verarbeitungsabbrüche, wiederkehrende Bedienprobleme sowie technische oder funktionale Fehler des Dienstes zu erkennen und zu beheben.</li>
+    <li value="2">Diese Auswertung erfolgt ausschließlich auf kontrollierten Systemen des Auftragsverarbeiters beziehungsweise seines Hosting-Unterauftragsverarbeiters. Inhalte dieser Auswertung werden nicht zu diesem Zweck an externe KI-Anbieter übermittelt.</li>
+    <li value="3">Vor einer manuellen inhaltlichen Auswertung sind unmittelbar identifizierende Angaben soweit technisch möglich automatisiert zu entfernen oder durch Platzhalter zu ersetzen. Dies betrifft insbesondere Namen, Telefonnummern, E-Mail-Adressen, konkrete Anschriften, Kundennummern und vergleichbare direkte Identifikatoren.</li>
+    <li value="4">Es dürfen nur solche Ausschnitte ausgewählt werden, die für die in Absatz 1 genannten Zwecke erforderlich sind. Eine Analyse zur Bewertung einzelner Kundenbetriebe, Endkunden oder Beschäftigten sowie die Erstellung personenbezogener Profile zu Marketing-, Bonitäts-, Leistungs- oder Verhaltenszwecken ist ausgeschlossen.</li>
+    <li value="5">Für eigene allgemeine Produktentwicklung, statistische Auswertung oder Entwicklung neuer Funktionen darf der Auftragsverarbeiter Erkenntnisse aus solchen Auswertungen nur verwenden, wenn sie zuvor so anonymisiert oder aggregiert wurden, dass eine betroffene natürliche Person mit vernünftigerweise verfügbaren Mitteln nicht mehr identifiziert werden kann.</li>
+    <li value="6">Die bloße Pseudonymisierung oder Ersetzung direkter Identifikatoren gilt nicht als ausreichende Anonymisierung, wenn eine Reidentifizierung anhand anderer Inhalte weiterhin vernünftigerweise möglich ist.</li>
+    <li value="7">Nicht anonymisierte oder lediglich pseudonymisierte Auswertungsausschnitte werden spätestens 30 Tage nach Abschluss der jeweiligen Auswertung gelöscht.</li>
+    <li value="8">Der Kunde kann der zusätzlichen Stichprobenauswertung jederzeit für die Zukunft per E-Mail an kontakt@auftragsboss.de widersprechen. Die Kernfunktionen von AuftragsBoss bleiben hiervon unberührt. Bereits vollständig anonymisierte Erkenntnisse müssen nicht gelöscht werden.</li>
+  </ol>
+
+  <h2 id="p49">§ 49 Verarbeitung zu eigenen Zwecken des Auftragsverarbeiters</h2>
+  <ol class="abs">
+    <li value="1">Eine Verarbeitung der im Auftrag erhaltenen personenbezogenen Endkundendaten für eigene Werbezwecke, eigene Kundenakquise, Weiterverkauf von Daten oder Training eigener oder fremder generativer KI-Modelle ist nicht Bestandteil der Weisung des Kunden und ausgeschlossen.</li>
+    <li value="2">Möchte der Auftragsverarbeiter zukünftig personenbezogene Daten für einen eigenen, nicht vom Auftrag umfassten Zweck verarbeiten, bedarf dies einer gesonderten datenschutzrechtlichen Prüfung und einer hierfür bestehenden Rechtsgrundlage. Eine Änderung dieses Vertrags allein ersetzt eine erforderliche Rechtsgrundlage nicht.</li>
+    <li value="3">Die Verwendung tatsächlich anonymisierter oder aggregierter Informationen ohne Personenbezug bleibt nach Maßgabe des geltenden Rechts zulässig.</li>
+  </ol>
+
+  <h2 id="p50">§ 50 Haftung und Dauer des Auftragsverarbeitungsverhältnisses</h2>
+  <ol class="abs">
+    <li value="1">Für die Haftung im Zusammenhang mit der Auftragsverarbeitung gilt Art. 82 DSGVO sowie ergänzend § 29, soweit eine Haftungsbegrenzung gesetzlich zulässig ist.</li>
+    <li value="2">Diese Vereinbarung zur Auftragsverarbeitung gilt für die gesamte Dauer, in der personenbezogene Daten im Auftrag des Kunden verarbeitet oder aufgrund dokumentierter Weisung nach Vertragsende vorgehalten werden.</li>
+    <li value="3">Verpflichtungen, die ihrer Natur nach über das Vertragsende hinaus fortbestehen, insbesondere Vertraulichkeit und Löschung, bleiben bestehen.</li>
+  </ol>
+
+  <h2 class="part" id="anl1">Anlage 1 · Gegenstand und Details der Auftragsverarbeitung</h2>
+  <h3>1. Gegenstand und Zweck</h3>
+  <ul>
+    <li>Bereitstellung des KI-gestützten Dienstes AuftragsBoss zur Verarbeitung von Sprach-, Text- und Bildeingaben und zur Erstellung, Bearbeitung, Speicherung und Ausgabe betrieblicher Dokumente, insbesondere Angebote und Arbeitsprotokolle.</li>
+    <li>Bereitstellung des Web-Editors und Kunden-Cockpits, technische Kommunikation mit dem Kunden, Erinnerungsfunktionen, Support, Fehlerbehebung, Systemsicherheit und weisungsgebundene Qualitätssicherung.</li>
+    <li>Zeitlich begrenzte Speicherung nach Vertrags- oder Testende für Lesezugriff, Datenexport, Anbieterwechsel und Reaktivierung gemäß Teil A.</li>
+  </ul>
+  <h3>2. Dauer</h3>
+  <p>Die Verarbeitung erfolgt ab der erstmaligen Verarbeitung personenbezogener Daten im Auftrag des Kunden für die Dauer des Vertragsverhältnisses und anschließend bis zur vertragsgemäßen Löschung oder Rückgabe. Die dokumentierte Nachlaufphase beträgt grundsätzlich höchstens 90 Tage nach Vertrags- beziehungsweise Testende, vorbehaltlich zwingender gesetzlicher Aufbewahrungs-, Wechsel- oder Abrufpflichten und der regulären Überschreibung von Sicherungskopien.</p>
+  <h3>3. Art der Verarbeitung</h3>
+  <ul>
+    <li>Entgegennahme und Übermittlung von Daten</li>
+    <li>Speicherung und Hosting</li>
+    <li>Transkription von Sprachnachrichten</li>
+    <li>Strukturierung und KI-gestützte Inhaltsanalyse</li>
+    <li>Bildanalyse und Schätzung von Flächen oder Abmessungen</li>
+    <li>Erstellung und Änderung von Dokumententwürfen</li>
+    <li>Bereitstellung im Web-Editor und Kunden-Cockpit</li>
+    <li>Export und E-Mail-Bereitstellung an den Kunden</li>
+    <li>Sicherung und Wiederherstellung</li>
+    <li>Löschung und Einschränkung</li>
+    <li>technische Fehleranalyse und Support</li>
+    <li>weisungsgebundene Qualitätssicherung und Anonymisierung</li>
+  </ul>
+  <h3>4. Kategorien personenbezogener Daten</h3>
+  <ul>
+    <li>Vor- und Nachname</li>
+    <li>Anschrift, Objekt- und Baustellenadresse</li>
+    <li>Telefonnummer und E-Mail-Adresse</li>
+    <li>interne Kundennummern</li>
+    <li>Projekt- und Auftragsangaben</li>
+    <li>Leistungsbeschreibungen</li>
+    <li>Nachrichteninhalte und Kommunikationsmetadaten</li>
+    <li>Sprachaufnahmen und Transkripte</li>
+    <li>Fotos von Räumen, Wänden und Objekten</li>
+    <li>Maß-, Mengen- und Flächenangaben</li>
+    <li>Angebots-, Preis- und Kalkulationsangaben</li>
+    <li>Arbeits- und Leistungsprotokolle</li>
+    <li>sonstige vom Kunden für den jeweiligen Auftrag übermittelte personenbezogene Informationen</li>
+  </ul>
+  <p>Besondere Kategorien personenbezogener Daten nach Art. 9 DSGVO sind nicht planmäßiger Bestandteil der Verarbeitung.</p>
+  <h3>5. Kategorien betroffener Personen</h3>
+  <ul>
+    <li>Endkunden und Interessenten des Kunden</li>
+    <li>Ansprechpartner beim Endkunden</li>
+    <li>Eigentümer, Mieter und sonstige Objektbeteiligte</li>
+    <li>Beschäftigte oder Beauftragte des Endkunden, soweit sie in Auftragsdaten vorkommen</li>
+    <li>sonstige Personen, deren Daten im Zusammenhang mit einem vom Kunden bearbeiteten Auftrag zulässigerweise verarbeitet werden</li>
+  </ul>
+  <h3>6. Rechte und Pflichten des Verantwortlichen</h3>
+  <p>Der Kunde behält die Kontrolle über Zwecke und wesentliche Mittel der Verarbeitung und kann im Rahmen der vereinbarten Funktionen Weisungen zu Verarbeitung, Berichtigung, Export, Einschränkung und Löschung erteilen. Er bleibt für Rechtsgrundlagen, Informationspflichten und die materielle Rechtmäßigkeit der übermittelten Daten verantwortlich.</p>
+
+  <h2 class="part" id="anl2">Anlage 2 · Technische und Organisatorische Massnahmen</h2>
+  <p>Die nachfolgenden Maßnahmen beschreiben das derzeitige Sicherheitskonzept. Der Anbieter darf sie weiterentwickeln, sofern das Schutzniveau nicht abgesenkt wird.</p>
+  <h3>1. Vertraulichkeit und Zugriffsschutz</h3>
+  <ul>
+    <li>TLS-Verschlüsselung für die Übertragung zwischen Endgeräten, Webanwendung und Servern, soweit technisch unterstützt.</li>
+    <li>Zugriff auf den Web-Editor über persönliche beziehungsweise geheime Links in Verbindung mit Telefonnummer und Gerätebindung, soweit im jeweiligen Zugriffspfad technisch vorgesehen.</li>
+    <li>Administrative Betreiberzugänge sind passwortgeschützt und auf hierzu berechtigte Personen beschränkt. Der Zugriff auf Produktivdaten ist derzeit auf die hierfür berechtigte Geschäftsführung beschränkt.</li>
+    <li>Zugriffsrechte werden nach dem Erforderlichkeitsprinzip vergeben.</li>
+    <li>Telefonnummern und vergleichbare Identifikatoren werden in technischen Logs soweit technisch sinnvoll maskiert oder reduziert.</li>
+  </ul>
+  <h3>2. Integrität</h3>
+  <ul>
+    <li>Signaturprüfung eingehender Webhooks, soweit der jeweilige Dienst dies unterstützt.</li>
+    <li>Protokollierung sicherheitsrelevanter Betreiberaktionen.</li>
+    <li>Kontrollierte Änderung und Bereitstellung der Anwendungssoftware.</li>
+    <li>Trennung von Anwendungslogik, Datenbank, Dateiablage und Sicherung entsprechend der eingesetzten Infrastruktur.</li>
+  </ul>
+  <h3>3. Verfügbarkeit und Wiederherstellung</h3>
+  <ul>
+    <li>Regelmäßige, nach dem derzeitigen Konzept tägliche verschlüsselte Sicherungen relevanter Produktivdaten.</li>
+    <li>Regelmäßige Wiederherstellungsproben.</li>
+    <li>Überwachung wesentlicher Verarbeitungsfehler und Alarmierung des Betreibers.</li>
+    <li>Automatische Wiederholungsmechanismen bei bestimmten vorübergehenden Verarbeitungsfehlern.</li>
+  </ul>
+  <h3>4. Datenminimierung und Speicherbegrenzung</h3>
+  <ul>
+    <li>Server-Logdaten werden grundsätzlich nach sieben Tagen gelöscht, sofern keine längere Speicherung zur Untersuchung eines Sicherheitsvorfalls erforderlich ist.</li>
+    <li>Wand- und Objektfotos ohne fortbestehende Zuordnung zu einem Angebot oder Projekt werden grundsätzlich spätestens nach 30 Tagen gelöscht.</li>
+    <li>Nicht anonymisierte oder nur pseudonymisierte Stichprobenauszüge für Qualitätssicherung werden spätestens 30 Tage nach Abschluss der Auswertung gelöscht.</li>
+    <li>Operative Auftragsdaten werden nach Vertragsende entsprechend den dokumentierten Weisungen höchstens 90 Tage vorgehalten, sofern keine frühere Löschung angewiesen wird oder zwingendes Recht entgegensteht.</li>
+  </ul>
+  <h3>5. Trennung und Mandantenbezug</h3>
+  <ul>
+    <li>Kundendaten werden logisch dem jeweiligen Kundenkonto beziehungsweise der jeweiligen Telefonnummer oder Kundenkennung zugeordnet.</li>
+    <li>Zugriffe über Web-Editor und Kunden-Cockpit werden auf den jeweils autorisierten Kundenkontext beschränkt.</li>
+    <li>Sicherungsdaten werden ausschließlich für Sicherungs- und Wiederherstellungszwecke verwendet.</li>
+  </ul>
+  <h3>6. Qualitätssicherung</h3>
+  <ul>
+    <li>Vor manueller Stichprobenauswertung werden direkte Identifikatoren soweit technisch möglich automatisiert entfernt oder ersetzt.</li>
+    <li>Der Zugriff auf Auswertungsausschnitte ist auf hierfür berechtigte Personen beschränkt.</li>
+    <li>Eine betriebs- oder endkundenbezogene Profilbildung zu eigenen Zwecken ist ausgeschlossen.</li>
+    <li>Für eigene allgemeine Produktverbesserung werden nur tatsächlich anonymisierte oder aggregierte Erkenntnisse verwendet.</li>
+  </ul>
+
+  <h2 class="part" id="anl3">Anlage 3 · Genehmigte Unterauftragsverarbeiter</h2>
+  <p>Die nachfolgende Liste gilt für die Verarbeitung von Endkundendaten im Auftrag des Kunden. Zahlungsdienstleister wie Stripe sind nicht Bestandteil dieser Liste, soweit sie ausschließlich Vertrags-, Rechnungs- und Zahlungsdaten des AuftragsBoss-Kunden für die Zahlungsabwicklung verarbeiten.</p>
+  <div class="tab-scroll"><table>
+    <thead><tr><th>Unterauftragsverarbeiter</th><th>Dienst / Zweck</th><th>Betroffene Daten</th><th>Verarbeitungsort / Drittlandmechanismus</th></tr></thead>
+    <tbody>
+      <tr><td class="first">Meta Platforms Ireland Limited, Irland</td><td>WhatsApp Business Cloud API; Empfang und Versand von Nachrichten, Medien und Zustellinformationen</td><td>Telefonnummern, Nachrichteninhalte, Mediendateien, Kommunikations- und Zustellmetadaten</td><td>EU/EWR und gegebenenfalls weitere Verarbeitungsorte. Drittlandübermittlungen nur nach Maßgabe von Art. 44 ff. DSGVO, insbesondere Angemessenheitsbeschluss, EU-US Data Privacy Framework soweit anwendbar oder Standardvertragsklauseln.</td></tr>
+      <tr><td class="first">OpenAI Ireland Ltd., Irland, einschließlich eingesetzter verbundener Unternehmen und Unterauftragsverarbeiter nach dem OpenAI DPA</td><td>Transkription von Sprachnachrichten und gegebenenfalls weitere vereinbarte KI-Verarbeitung</td><td>Audioinhalte, Transkripte und darin enthaltene personenbezogene Daten</td><td>EU/EWR und gegebenenfalls Drittländer. Übermittlungen nach dem jeweils geltenden OpenAI DPA auf Grundlage zulässiger Mechanismen nach Art. 44 ff. DSGVO. Produktivdaten werden nicht freiwillig für Modelltraining freigegeben.</td></tr>
+      <tr><td class="first">Anthropic, PBC, USA, einschließlich Unterauftragsverarbeiter nach dem Anthropic DPA</td><td>Strukturierung von Texteingaben, Erzeugung von Dokumentinhalten und Auswertung von Objektfotos mit Claude</td><td>Textinhalte, Bildinhalte und darin enthaltene personenbezogene Daten</td><td>USA und gegebenenfalls weitere Verarbeitungsorte. Übermittlung auf Grundlage des in den kommerziellen Bedingungen eingebundenen DPA einschließlich Standardvertragsklauseln beziehungsweise anderer zulässiger Mechanismen. Produktivdaten werden nicht freiwillig für Modelltraining freigegeben.</td></tr>
+      <tr><td class="first">IONOS SE, Deutschland</td><td>Anwendungsserver, Datenbank, Dateiablage, Object Storage, verschlüsselte Backups und technische E-Mail-Infrastruktur, soweit eingesetzt</td><td>Sämtliche für den Betrieb von AuftragsBoss erforderlichen Auftragsdaten</td><td>Deutschland beziehungsweise vereinbarte EU/EWR-Rechenzentren. Drittlandübermittlung ist nach dem derzeitigen Hostingkonzept nicht vorgesehen, soweit die konkret gebuchten Dienste in der EU/EWR-Region betrieben werden.</td></tr>
+    </tbody>
+  </table></div>
+  <ol class="abs">
+    <li value="1">Der Anbieter kann die Liste nach Maßgabe von § 44 ändern und informiert den Kunden über wesentliche Änderungen.</li>
+    <li value="2">Die jeweils aktuellen vertraglichen und technischen Transfermechanismen der Unterauftragsverarbeiter können sich ändern. Der Anbieter stellt sicher, dass bei einer Drittlandübermittlung ein zulässiger Mechanismus besteht.</li>
+    <li value="3">Soweit ein Unterauftragsverarbeiter eigene Unterauftragsverarbeiter einsetzt, richtet sich deren Einsatz nach den jeweiligen DPA-Bedingungen und den gesetzlichen Anforderungen.</li>
+  </ol>
+
+  <p class="stand">Stand: 17. September 2026 · Version 2026-09-17</p>
+  <a class="back" href="index.html">← Zurück zur Startseite</a><a class="druck" href="#" onclick="window.print();return false;">Drucken / als PDF speichern</a>
+</div>
+</body>
+</html>

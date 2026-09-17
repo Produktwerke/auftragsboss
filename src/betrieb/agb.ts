@@ -86,7 +86,7 @@ export function agbGateText(istTest: boolean, env: NodeJS.ProcessEnv = process.e
   return {
     knopf: { id: KNOPF_AGB, titel },
     text:
-      `📄 Einmalig, bevor es losgeht: Mit Tipp auf „${titel}" handelst du als Unternehmer und akzeptierst unsere Allgemeinen Geschäftsbedingungen einschließlich der darin enthaltenen Vereinbarung zur Auftragsverarbeitung (Art. 28 DSGVO).\n\n` +
+      `📄 Einmalig, bevor es losgeht: Mit Tipp auf „${titel}" handelst du als Unternehmer, bist berechtigt, das für deinen Betrieb zu erklären, und akzeptierst unsere Allgemeinen Geschäftsbedingungen einschließlich der darin enthaltenen Vereinbarung zur Auftragsverarbeitung (Art. 28 DSGVO).\n\n` +
       `AGB: ${k.url}\nDatenschutz: ${datenschutzUrl(env)}\n\n` +
       `Danach ${istTest ? "startet dein kostenloser Test und " : ""}du schickst einfach deine Sprachnachricht.`,
   };

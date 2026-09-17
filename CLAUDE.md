@@ -154,6 +154,16 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   Stripe-Abo, danach /geloescht). Inhaber-Nummer ändern weiterhin nur über den Betreiber.
 >   Offen: zahlende Kunden haben KEINE technische Angebots-Kontingentgrenze (AGB als Fair-Use oder bauen).
 
+> **FEIERABEND-STAND 17.09.2026 (f48cdd7, 328 Tests, alles deployt):** Meta-Vorlagen alle genehmigt, Testphase-Erinnerungen abgenommen,
+>   Lead-Erinnerung scharf. Chat-Auswertung Stufe 1 live (/stasi/chat). Datenschutzerklärung 6.4 ergänzt + live. AGB-Paket komplett gebaut:
+>   Datenexport ZIP, Vertragsende 30/83/90, Mitarbeiter-Nummern, Selbstverwaltung, Kontingent harte Grenze, AGB-Gate + Stripe-Häkchen
+>   (beide AUS, weil agb.html fehlt). index.html mit AGB-Satz bei IONOS live (Link agb.html noch 404).
+>   NÄCHSTE SCHRITTE, sobald Dirk die AGB (inkl. AVV, 3 Anlagen) von der Rechts-KI hat: (1) agb.html im Stil von datenschutz.html bauen,
+>   Dirk lädt zu IONOS; (2) Zustimmungs-Häkchen in die Browser-Demo (testSeite/webtest) oder Demo abschalten; (3) Stripe-Dashboard:
+>   Nutzungsbedingungen-URL eintragen; (4) Server-.env AGB_URL, AGB_VERSION, AGB_GATE=1, STRIPE_AGB_HAEKCHEN=1 + pm2 restart;
+>   (5) Dirk testet: neue Nummer → Zustimmungsfrage → „Kostenlos testen" → Verarbeitung → Cockpit „AGB akzeptiert am …".
+>   Danach: Stufe 2 Chat-Auswertung (AVV steht dann in den AGB), optional Wandfoto-Erkennung auf Opus 5. Routine 07.10. / ~10.10.
+
 > **Update 17.09.2026 (4) — MONATSKONTINGENT ALS HARTE GRENZE (Dirk, 328 Tests, deployt):** `betrieb/kontingent.ts`: Basis 50 / Profi 120 /
 >   Team 300 (Individuell 300, ohne Abo wie Basis), gezählt werden Dokument.version=1 im Kalendermonat. Pipeline: vor einem NEUEN Auftrag
 >   (kein offener Vorgang, kein Nachtrag) → bei erschöpftem Kontingent Abweisung mit Datum des Monatsersten + Tarifwechsel-Link (aboLink),

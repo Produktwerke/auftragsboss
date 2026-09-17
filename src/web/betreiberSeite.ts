@@ -429,6 +429,7 @@ export function betreiberDetail(args: {
     <p style="display:flex;gap:10px;flex-wrap:wrap;margin:0;">
       <a class="kn" style="display:inline-block;text-decoration:none;background:#0b5cad;color:#fff;border-radius:8px;padding:9px 16px;font-size:14px;font-weight:600;" href="${aktion("als-kunde")}" target="_blank" rel="noopener">Kunden-Cockpit öffnen</a>
       <a class="kn" style="display:inline-block;text-decoration:none;background:#5a616b;color:#fff;border-radius:8px;padding:9px 16px;font-size:14px;font-weight:600;" href="${aktion("als-kunde")}?ziel=einstellungen" target="_blank" rel="noopener">Einstellungen öffnen</a>
+      <a class="kn" style="display:inline-block;text-decoration:none;background:#2f7d4f;color:#fff;border-radius:8px;padding:9px 16px;font-size:14px;font-weight:600;" href="${aktion("export.zip")}">Datenexport (ZIP)</a>
     </p>
   </div>
 

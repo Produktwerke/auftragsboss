@@ -20,6 +20,7 @@ import { adminSeite } from "./adminSeite.js";
 import { einladungSeite } from "./einladungSeite.js";
 import { dokumentZuDaten, editorZuPositionen, type EditorPosition } from "./dokumentDaten.js";
 import { effektivePreisliste, einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
+import { erstelleDatenexport } from "../betrieb/datenexport.js";
 import { bearbeitenLink, einstellungenLink, cockpitLink, werbeLink } from "./tokens.js";
 import { werbeCodeBereit, empfehlungsEinladungMail } from "../empfehlung.js";
 import { ladeLogo } from "../betrieb/logo.js";
@@ -840,6 +841,24 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
   );
 
   // ── Einstellungsseite (passwortloser Zugang per Token) ─
+  // ── Datenexport (Data Act / DSGVO Art. 20): ZIP mit allen Daten des Betriebs ──
+  app.get<{ Params: { token: string } }>("/export/:token", async (req, reply) => {
+    const handwerker = await prisma.handwerker.findUnique({ where: { einstellungenToken: req.params.token } });
+    if (!handwerker || handwerker.whatsappNummer === WEBTEST_NUMMER) return reply.code(404).type("text/html").send(nichtGefunden());
+    if (!darfZugreifen(req, handwerker.id, handwerker.istTest)) {
+      return reply.type("text/html; charset=utf-8").send(schleuseSeite({ token: req.params.token }));
+    }
+    const e = await erstelleDatenexport(prisma, handwerker);
+    await spurEvent(prisma, "EXPORT_ZIP", {
+      handwerkerId: handwerker.id,
+      data: { dokumente: e.anzahlDokumente, pdf: e.anzahlPdf, fotos: e.anzahlFotos, bytes: e.zip.length, geraet: geraetAusUA(req.headers["user-agent"]) },
+    });
+    return reply
+      .type("application/zip")
+      .header("Content-Disposition", `attachment; filename="${e.dateiname}"`)
+      .send(e.zip);
+  });
+
   app.get<{ Params: { token: string } }>("/einstellungen/:token", async (req, reply) => {
     const handwerker = await prisma.handwerker.findUnique({
       where: { einstellungenToken: req.params.token },

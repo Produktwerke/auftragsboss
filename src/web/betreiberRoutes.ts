@@ -49,6 +49,7 @@ import { legeLeadAnUndLadeEin } from "../lead/onboarding.js";
 import { WEBTEST_NUMMER } from "./webtest.js";
 import { berechneFunnel } from "../lead/funnel.js";
 import { berechneChatKennzahlen, KENNZAHL_EVENT_TYPEN } from "../analytics/chatKennzahlen.js";
+import { erstelleDatenexport } from "../betrieb/datenexport.js";
 import { featureConfig } from "../config.js";
 import type { FastifyRequest } from "fastify";
 
@@ -636,6 +637,16 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
     return reply.type("text/html; charset=utf-8").send(betreiberChat({ basis: z.basis, k, tage, nurEchte }));
   });
 
+
+  // ── Datenexport eines Betriebs (Support-Fall, Data Act) ──────────────
+  for (const pfad of beide("/betrieb/:id/export.zip")) app.get<{ Params: { token?: string; id: string } }>(pfad, async (req, reply) => {
+    if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
+    const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
+    if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
+    const e = await erstelleDatenexport(prisma, h);
+    await protokolliere(h.id, h.firma || h.name, "DATENEXPORT", `ZIP erstellt: ${e.anzahlDokumente} Dokumente, ${e.anzahlPdf} PDFs, ${e.anzahlFotos} Fotos`);
+    return reply.type("application/zip").header("Content-Disposition", `attachment; filename="${e.dateiname}"`).send(e.zip);
+  });
 
   // ── Löschen (DSGVO-Kaskade) ───────────────────────────
   for (const pfad of beide("/betrieb/:id/loeschen")) app.post<{ Params: { token?: string; id: string }; Body: { bestaetigung?: string } }>(

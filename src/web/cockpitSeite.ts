@@ -88,10 +88,16 @@ export function cockpitSeite(args: {
           <h1 class="greet">${begruessung()}${anrede ? ", " + anrede : ""}</h1>
           <p class="sub">Hier sind deine Angebote im Überblick.</p>
         </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a class="btn" href="/export/${escapeHtml(token)}" title="Alle deine Angebote, Kunden und Einstellungen als ZIP (JSON, CSV, PDF, Fotos)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          Meine Daten (ZIP)
+        </a>
         <a class="btn prim" href="${escapeHtml(importLink(token))}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
           Angebot importieren
         </a>
+        </div>
       </div>
 
 ${zahlungHinweis}

@@ -21,6 +21,8 @@ import { einladungSeite } from "./einladungSeite.js";
 import { dokumentZuDaten, editorZuPositionen, type EditorPosition } from "./dokumentDaten.js";
 import { effektivePreisliste, einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
 import { erstelleDatenexport } from "../betrieb/datenexport.js";
+import { erlaubteNummern, fuegeMitarbeiterHinzu, entferneMitarbeiter, erlaubteMitarbeiter, tarifLabelFuerNummern } from "../betrieb/mitarbeiter.js";
+import { loescheBetrieb } from "../betrieb/loeschung.js";
 import { bearbeitenLink, einstellungenLink, cockpitLink, werbeLink } from "./tokens.js";
 import { werbeCodeBereit, empfehlungsEinladungMail } from "../empfehlung.js";
 import { ladeLogo } from "../betrieb/logo.js";
@@ -235,7 +237,8 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       });
       if (!handwerker) return reply.code(404).send({ fehler: "nicht gefunden" });
 
-      if (!nummerPasst(req.body?.nummer ?? "", handwerker.whatsappNummer)) {
+      const erlaubt = await erlaubteNummern(prisma, handwerker.id, handwerker.whatsappNummer);
+      if (!erlaubt.some((n) => nummerPasst(req.body?.nummer ?? "", n))) {
         merkeFehlversuch(req.params.token);
         return reply.code(401).send({ fehler: "Diese Nummer passt nicht zum Betrieb." });
       }
@@ -892,6 +895,11 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
     // Einstellungs-Token-Halter = nachweislich der Betrieb → Gerät vertrauen.
     setzeGeraetevertrauen(reply, handwerker.id);
 
+    // Mitarbeiter-Nummern und Tarifgrenze (17.09.2026)
+    const aboStand = await prisma.abo.findUnique({ where: { handwerkerId: handwerker.id } });
+    const mitarbeiterListe = await prisma.mitarbeiter.findMany({ where: { handwerkerId: handwerker.id }, orderBy: { erstelltAm: "asc" }, select: { id: true, name: true, whatsappNummer: true } });
+    const mitarbeiterFrei = Math.max(0, erlaubteMitarbeiter(aboStand, handwerker.istTest) - mitarbeiterListe.length);
+
     return reply.type("text/html; charset=utf-8").send(
       einstellungenSeite({
         handwerker,
@@ -900,6 +908,9 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
         akzent,
         dokumente: uebersicht,
         token: req.params.token,
+        mitarbeiter: mitarbeiterListe,
+        mitarbeiterFrei,
+        mitarbeiterHinweis: tarifLabelFuerNummern(aboStand, handwerker.istTest),
       }),
     );
   });
@@ -1019,6 +1030,58 @@ export async function editorRoutes(app: FastifyInstance): Promise<void> {
       });
       return reply.send({ ok: true });
     },
+  );
+
+  // ── Mitarbeiter-Nummern (Einstellungen) ─────────────────────────────
+  app.post<{ Params: { token: string }; Body: { name?: string; nummer?: string } }>(
+    "/api/einstellungen/:token/mitarbeiter",
+    { config: { rateLimit: { max: 30, timeWindow: "1 hour" } } },
+    async (req, reply) => {
+      const handwerker = await prisma.handwerker.findUnique({ where: { einstellungenToken: req.params.token } });
+      if (!handwerker || handwerker.whatsappNummer === WEBTEST_NUMMER) return reply.code(404).send({ fehler: "nicht gefunden" });
+      const abo = await prisma.abo.findUnique({ where: { handwerkerId: handwerker.id } });
+      const e = await fuegeMitarbeiterHinzu(prisma, handwerker, abo, { name: String(req.body?.name ?? ""), nummer: String(req.body?.nummer ?? "") });
+      if (!e.ok) return reply.code(400).send({ fehler: e.fehler });
+      await spurEvent(prisma, "MITARBEITER_HINZU", { handwerkerId: handwerker.id });
+      return reply.send({ ok: true, id: e.mitarbeiter.id });
+    },
+  );
+  app.delete<{ Params: { token: string; id: string } }>("/api/einstellungen/:token/mitarbeiter/:id", async (req, reply) => {
+    const handwerker = await prisma.handwerker.findUnique({ where: { einstellungenToken: req.params.token } });
+    if (!handwerker) return reply.code(404).send({ fehler: "nicht gefunden" });
+    const ok = await entferneMitarbeiter(prisma, handwerker, req.params.id);
+    if (!ok) return reply.code(404).send({ fehler: "nicht gefunden" });
+    await spurEvent(prisma, "MITARBEITER_ENTFERNT", { handwerkerId: handwerker.id });
+    return reply.send({ ok: true });
+  });
+
+  // ── Konto selbst löschen (DSGVO, Einstellungen) ─────────────────────
+  app.post<{ Params: { token: string }; Body: { bestaetigung?: string } }>(
+    "/api/einstellungen/:token/loeschen",
+    { config: { rateLimit: { max: 5, timeWindow: "1 hour" } } },
+    async (req, reply) => {
+      const handwerker = await prisma.handwerker.findUnique({ where: { einstellungenToken: req.params.token } });
+      if (!handwerker || handwerker.whatsappNummer === WEBTEST_NUMMER) return reply.code(404).send({ fehler: "nicht gefunden" });
+      const wort = String(req.body?.bestaetigung ?? "").trim().toLowerCase();
+      if (wort !== "löschen" && wort !== "loeschen") return reply.code(400).send({ fehler: `Zur Bestätigung bitte „löschen" eintippen.` });
+      const abo = await prisma.abo.findUnique({ where: { handwerkerId: handwerker.id } });
+      if (abo?.status === "AKTIV" && abo.stripeSubscriptionId) {
+        return reply.code(400).send({ fehler: `Dein Abo läuft noch. Bitte kündige es zuerst unter „Abo & Abrechnung", danach kannst du dein Konto löschen.` });
+      }
+      await spurEvent(prisma, "KONTO_SELBST_GELOESCHT", { data: { istTest: handwerker.istTest } });
+      await loescheBetrieb(prisma, handwerker, "Selbstlöschung in den Einstellungen");
+      return reply.send({ ok: true });
+    },
+  );
+  app.get("/geloescht", async (_req, reply) =>
+    reply.type("text/html; charset=utf-8").send(
+      `<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Konto gelöscht · AuftragsBoss</title>
+      <body style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:520px;margin:60px auto;padding:0 20px;color:#333;text-align:center;line-height:1.6;">
+      <h1 style="color:#0b5cad;font-size:22px;">Dein Konto ist gelöscht</h1>
+      <p>Alle Angebote, Kundendaten, Fotos und Einstellungen sind entfernt. Danke, dass du AuftragsBoss ausprobiert hast.</p>
+      <p style="color:#666;font-size:14px;">Wenn du zurückkommen willst: Schreib einfach wieder an +49 174 9364823.</p>
+      </body></html>`,
+    ),
   );
 
   // Der alte Token-Weg /admin/<ADMIN_TOKEN> für die Lern-Auswertung ist

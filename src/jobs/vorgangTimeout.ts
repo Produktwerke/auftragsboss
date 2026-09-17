@@ -35,7 +35,7 @@ async function schliesseAbgelaufeneVorgaenge(): Promise<void> {
 
   for (const vorgang of still) {
     const nachrichten = nachrichtenLesen(vorgang);
-    const nummer = vorgang.handwerker.whatsappNummer;
+    const nummer = vorgang.absenderNummer ?? vorgang.handwerker.whatsappNummer;
 
     // 4. Leerer Vorgang (nur begonnen, nie diktiert): einfach verwerfen
     if (!nachrichten.some((n) => n.rolle === "handwerker")) {

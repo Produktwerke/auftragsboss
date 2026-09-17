@@ -38,8 +38,15 @@ export function einstellungenSeite(args: {
   akzent: string;
   dokumente: DokUebersicht[];
   token: string;
+  /** Mitarbeiter-Nummern (17.09.2026) */
+  mitarbeiter?: Array<{ id: string; name: string; whatsappNummer: string }>;
+  mitarbeiterFrei?: number;
+  mitarbeiterHinweis?: string;
 }): string {
   const { handwerker: h, vorgabe, logoDataUrl, akzent, token } = args;
+  const mitarbeiter = args.mitarbeiter ?? [];
+  const mitarbeiterFrei = args.mitarbeiterFrei ?? 0;
+  const mitarbeiterHinweis = args.mitarbeiterHinweis ?? "";
   const v = vorgabe.betrieb;
 
   const feld = (wert: string | null, platzhalter: string) => ({ wert: wert ?? "", ph: platzhalter });
@@ -199,6 +206,46 @@ export function einstellungenSeite(args: {
                 <button class="btn prim" id="feedbackSenden">Absenden</button>
                 <span class="statusmsg" id="feedbackStatus"></span>
               </div>
+            </div>
+          </div>
+
+
+          <div class="section" id="mitarbeiterSection">
+            <div class="section-h"><h2>Mitarbeiter-Nummern</h2><p>Weitere Handynummern deines Betriebs, die AuftragsBoss wie du nutzen dürfen. Angebote landen bei dir im Cockpit, Antworten gehen an die Nummer, die gerade schreibt. ${escapeHtml(mitarbeiterHinweis)}</p></div>
+            <div class="section-b">
+              <div id="mitarbeiterListe">
+                ${mitarbeiter.length === 0 ? `<p class="hint" id="mitarbeiterLeer">Noch keine weiteren Nummern.</p>` : ""}
+                ${mitarbeiter.map((m) => `<div class="mitarbeiter-zeile" data-id="${escapeHtml(m.id)}" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line,#e5e7eb);">
+                  <span style="flex:1;"><b>${escapeHtml(m.name)}</b> <span style="color:var(--muted);">+${escapeHtml(m.whatsappNummer)}</span></span>
+                  <button class="btn" type="button" data-entfernen="${escapeHtml(m.id)}">Entfernen</button>
+                </div>`).join("")}
+              </div>
+              ${mitarbeiterFrei > 0 ? `
+              <div class="grid2" style="margin-top:12px;">
+                <div class="field"><label for="maName">Name</label><input id="maName" placeholder="z. B. Ali"></div>
+                <div class="field"><label for="maNummer">Handynummer</label><input id="maNummer" placeholder="z. B. 0176 1234567" inputmode="tel"></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <button class="btn prim" type="button" id="maHinzu">Nummer hinzufügen</button>
+                <span class="statusmsg" id="maStatus"></span>
+              </div>
+              <p class="hint" style="margin-top:8px;">Danach schickt der Mitarbeiter einfach eine erste Nachricht an +49 174 9364823, dann geht es los.</p>` : `<span class="statusmsg" id="maStatus"></span>`}
+            </div>
+          </div>
+
+          <div class="section" id="kontoSection">
+            <div class="section-h"><h2>Dein Konto</h2><p>Deine Daten gehören dir. Hier bekommst du alles als Datei, verwaltest dein Abo oder löschst dein Konto.</p></div>
+            <div class="section-b">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+                <a class="btn" href="/export/${escapeHtml(token)}">Meine Daten (ZIP)</a>
+                <a class="btn" href="/abo/${escapeHtml(token)}">Abo &amp; Abrechnung</a>
+              </div>
+              <div class="field"><label for="loeschBestaetigung">Konto endgültig löschen: tippe zur Bestätigung das Wort „löschen"</label><input id="loeschBestaetigung" placeholder="löschen" autocomplete="off"></div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <button class="btn" type="button" id="kontoLoeschen" style="background:#c0392b;color:#fff;border-color:#c0392b;">Konto löschen</button>
+                <span class="statusmsg" id="loeschStatus"></span>
+              </div>
+              <p class="hint" style="margin-top:8px;">Löscht Angebote, Protokolle, Kundendaten, Fotos, Einstellungen und Mitarbeiter-Nummern sofort und endgültig. Ein laufendes Abo kündigst du vorher unter „Abo &amp; Abrechnung".</p>
             </div>
           </div>
 
@@ -445,6 +492,46 @@ document.getElementById("feedbackSenden").addEventListener("click", async () => 
     setStatus("feedbackStatus","✓ Danke für dein Feedback!","var(--ok)");
   } catch(e){ setStatus("feedbackStatus","Senden fehlgeschlagen","#c0392b"); }
 });
+
+// Mitarbeiter-Nummern hinzufügen / entfernen
+var maHinzu = document.getElementById("maHinzu");
+if (maHinzu) {
+  maHinzu.addEventListener("click", async () => {
+    var name = document.getElementById("maName").value.trim();
+    var nummer = document.getElementById("maNummer").value.trim();
+    setStatus("maStatus", "Wird gespeichert …", "var(--muted)");
+    try {
+      var r = await fetch("/api/einstellungen/" + TOKEN + "/mitarbeiter", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name, nummer: nummer }) });
+      var j = await r.json().catch(function () { return {}; });
+      if (!r.ok) { setStatus("maStatus", j.fehler || "Fehler", "#c0392b"); return; }
+      window.location.reload();
+    } catch (e) { setStatus("maStatus", "Speichern fehlgeschlagen", "#c0392b"); }
+  });
+}
+document.querySelectorAll("[data-entfernen]").forEach(function (b) {
+  b.addEventListener("click", async function () {
+    if (!confirm("Diese Nummer entfernen? Der Mitarbeiter kann AuftragsBoss dann nicht mehr für deinen Betrieb nutzen.")) return;
+    var r = await fetch("/api/einstellungen/" + TOKEN + "/mitarbeiter/" + b.getAttribute("data-entfernen"), { method: "DELETE" });
+    if (r.ok) window.location.reload(); else setStatus("maStatus", "Entfernen fehlgeschlagen", "#c0392b");
+  });
+});
+
+// Konto löschen (Selbstlöschung, DSGVO)
+var kontoLoeschen = document.getElementById("kontoLoeschen");
+if (kontoLoeschen) {
+  kontoLoeschen.addEventListener("click", async () => {
+    var w = document.getElementById("loeschBestaetigung").value.trim().toLowerCase();
+    if (w !== "löschen" && w !== "loeschen") { setStatus("loeschStatus", "Bitte das Wort löschen eintippen", "var(--warn)"); return; }
+    if (!confirm("Wirklich ENDGÜLTIG löschen? Alle Angebote, Kundendaten und Einstellungen sind danach weg. Das kann nicht rückgängig gemacht werden.")) return;
+    setStatus("loeschStatus", "Wird gelöscht …", "var(--muted)");
+    try {
+      var r = await fetch("/api/einstellungen/" + TOKEN + "/loeschen", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bestaetigung: w }) });
+      var j = await r.json().catch(function () { return {}; });
+      if (!r.ok) { setStatus("loeschStatus", j.fehler || "Fehler", "#c0392b"); return; }
+      window.location.href = "/geloescht";
+    } catch (e) { setStatus("loeschStatus", "Löschen fehlgeschlagen", "#c0392b"); }
+  });
+}
 
 // Live-Vorschau (Handy) per Tipp auf die Kopfleiste auf-/zuklappen.
 var pvHead = document.getElementById("pvHead");

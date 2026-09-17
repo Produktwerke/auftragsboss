@@ -12,9 +12,7 @@
 //
 // Schutz: /stasi-Login-Cookie (adminAuth.ts), sonst 404. Jede schreibende
 // Aktion landet im AdminLog (Nachvollziehbarkeit).
-import { loescheFotosVonBetrieb } from "../betrieb/fotoAblage.js";
 import type { FastifyInstance } from "fastify";
-import { unlink } from "node:fs/promises";
 import { prisma } from "../pipeline.js";
 import { schreibeGut, verrechneGuthaben, aktiviereEmpfehlung } from "../betrieb/gutschrift.js";
 import { stripeGutschreiben, ladeStripeGuthaben } from "../betrieb/stripeCheckout.js";
@@ -50,6 +48,8 @@ import { WEBTEST_NUMMER } from "./webtest.js";
 import { berechneFunnel } from "../lead/funnel.js";
 import { berechneChatKennzahlen, KENNZAHL_EVENT_TYPEN } from "../analytics/chatKennzahlen.js";
 import { erstelleDatenexport } from "../betrieb/datenexport.js";
+import { loescheBetrieb } from "../betrieb/loeschung.js";
+import { hebeAboEndePauseAuf } from "../betrieb/vertragsende.js";
 import { featureConfig } from "../config.js";
 import type { FastifyRequest } from "fastify";
 
@@ -249,6 +249,7 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
         agbAkzeptiertAm: h.agbAkzeptiertAm,
         agbVersion: h.agbVersion,
         agbQuelle: h.agbQuelle,
+        mitarbeiter: await prisma.mitarbeiter.findMany({ where: { handwerkerId: h.id }, orderBy: { erstelltAm: "asc" }, select: { name: true, whatsappNummer: true, letzteAktivitaet: true } }),
         blockiertGrund: h.blockiertGrund,
         blockiertAm: h.blockiertAm,
         erstelltAm: h.erstelltAm,
@@ -460,6 +461,7 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
         create: { handwerkerId: h.id, tarif, monatspreis, status: "AKTIV" },
         update: { tarif, monatspreis, status: "AKTIV", gekuendigtAm: null },
       });
+      await hebeAboEndePauseAuf(prisma, h);
       const detail = vorher
         ? `${vorher.tarif} ${vorher.monatspreis} € → ${tarif} ${monatspreis} €${vorher.status === "GEKUENDIGT" ? " (reaktiviert)" : ""}`
         : `Abo angelegt: ${tarif}, ${monatspreis} €/Monat`;
@@ -663,31 +665,8 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
         return reply.code(400).send({ fehler: `Zur Bestätigung bitte „löschen" eintippen.` });
       }
 
-      // Alles Fachliche in EINER Transaktion; Events (PII-frei) bleiben für
-      // Produktmetriken, AdminLog bleibt als Nachweis (mit Firma im Klartext).
-      await prisma.$transaction([
-        prisma.gewaehrleistung.deleteMany({ where: { dokument: { handwerkerId: h.id } } }),
-        prisma.dokument.deleteMany({ where: { handwerkerId: h.id } }),
-        prisma.vorgang.deleteMany({ where: { handwerkerId: h.id } }),
-        prisma.feedback.deleteMany({ where: { handwerkerId: h.id } }),
-        prisma.empfehlung.deleteMany({ where: { werberId: h.id } }),
-        prisma.preisgedaechtnis.deleteMany({ where: { handwerkerId: h.id } }),
-        prisma.importDokument.deleteMany({ where: { handwerkerId: h.id } }), // Positionen kaskadieren
-        prisma.foto.deleteMany({ where: { handwerkerId: h.id } }),
-        prisma.handwerker.delete({ where: { id: h.id } }),
-      ]);
-
-      // Foto-Ordner und Logo-Datei aufräumen (best effort — DB-Löschung ist da schon durch).
-      loescheFotosVonBetrieb(h.id);
-      if (h.logoDatei) {
-        try {
-          await unlink(h.logoDatei);
-        } catch {
-          /* Datei fehlt schon oder Pfad ungültig — egal */
-        }
-      }
-
-      await protokolliere(h.id, h.firma, "GELOESCHT", `Betrieb ${h.firma} (+${h.whatsappNummer}) mit allen Daten gelöscht`);
+      // DSGVO-Kaskade (gemeinsamer Weg mit Selbstlöschung und Vertragsende-Job).
+      await loescheBetrieb(prisma, h, "Betreiber-Cockpit");
       return reply.send({ ok: true, meldung: "Betrieb gelöscht." });
     },
   );

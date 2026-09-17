@@ -45,6 +45,9 @@ import { dokumentMail, logoAnhang } from "./email/templates.js";
 import { sendeMail, WORD_MIME } from "./email/send.js";
 import { bearbeitenLink, einstellungenLink, registrierLink, erzeugeToken, erzeugeKurzToken, kundenLink, werbeLink } from "./web/tokens.js";
 import { effektivePreisliste, einstellungenTokenBereit } from "./betrieb/betriebsdaten.js";
+import { findeBetriebZuNummer, absenderWhere } from "./betrieb/mitarbeiter.js";
+import { istAboEndePause, loeschDatum, datumDE as vertragsDatum } from "./betrieb/vertragsende.js";
+import { aboLink } from "./web/tokens.js";
 import { willFeedback, extrahiereFeedback, FEEDBACK_FENSTER_MINUTEN } from "./feedback.js";
 import { werbeCodeBereit, EMPFEHLUNG_AB_ANGEBOT, EMPFEHLUNGS_PRAEMIE_EUR } from "./empfehlung.js";
 import { starteTestFuerNeueNummer, testNachrichtBlockiert, testStartAusText } from "./direkttest.js";
@@ -131,7 +134,13 @@ export async function verarbeiteNachricht(args: {
   const kanal = mediaId ? "sprache" : bildMediaId ? "foto" : knopfPayload ? "knopf" : "text";
 
   // 1. Absender kennen wir? (Kein Login — die Nummer IST die Identität)
-  let handwerker = await prisma.handwerker.findUnique({ where: { whatsappNummer: vonNummer } });
+  // Inhaber-Nummer oder eine Mitarbeiter-Nummer des Betriebs (17.09.2026).
+  const zuordnung = await findeBetriebZuNummer(prisma, vonNummer);
+  let handwerker = zuordnung?.handwerker ?? null;
+  const mitarbeiter = zuordnung?.mitarbeiter ?? null;
+  if (mitarbeiter) {
+    prisma.mitarbeiter.update({ where: { id: mitarbeiter.id }, data: { letzteAktivitaet: new Date() } }).catch(() => {});
+  }
 
   // Knopf-Klick von einer unbekannten Nummer: kann regulär nicht vorkommen
   // (Knöpfe bekommen nur angelegte Leads) — still ignorieren, KEIN Test-Konto
@@ -153,7 +162,18 @@ export async function verarbeiteNachricht(args: {
   // Blockierte Konten (Betreiber-Cockpit): freundlicher Hinweis, sonst nichts —
   // keine Transkription, keine KI, kein Kontingent-Verbrauch.
   if (handwerker.blockiert) {
-    await spurEvent(prisma, "NACHRICHT_BLOCKIERT", { handwerkerId: handwerker.id, data: { kanal } });
+    await spurEvent(prisma, "NACHRICHT_BLOCKIERT", { handwerkerId: handwerker.id, data: { kanal, aboEnde: istAboEndePause(handwerker.blockiertGrund) } });
+    if (istAboEndePause(handwerker.blockiertGrund)) {
+      // Vertragsende-Pause: Reaktivierungslink statt Kontaktadresse.
+      const abo = await prisma.abo.findUnique({ where: { handwerkerId: handwerker.id } });
+      const token = await einstellungenTokenBereit(prisma, handwerker);
+      const bis = abo?.gekuendigtAm ? ` Deine Angebote bleiben noch bis zum ${vertragsDatum(loeschDatum(abo.gekuendigtAm))} gespeichert.` : "";
+      await sendeWhatsAppText(
+        vonNummer,
+        `⏸️ Dein AuftragsBoss-Abo ist beendet, deshalb ist dein Zugang pausiert.${bis}\n\nWenn du weitermachen willst, wähle hier einfach wieder einen Tarif, dann geht es sofort weiter:\n${aboLink(token)}`,
+      );
+      return;
+    }
     await sendeWhatsAppText(
       vonNummer,
       "⏸️ Dein AuftragsBoss-Konto ist gerade pausiert. Melde dich bitte kurz bei uns, dann klären wir das: kontakt@auftragsboss.de",
@@ -317,6 +337,7 @@ export async function verarbeiteNachricht(args: {
   const istErsterAuftrag = (await prisma.dokument.count({ where: { handwerkerId: handwerker.id } })) === 0;
   if (
     !handwerker.istTest &&
+    !mitarbeiter &&
     istErsterAuftrag &&
     !(await prisma.vorgang.findFirst({ where: { handwerkerId: handwerker.id } }))
   ) {
@@ -340,7 +361,7 @@ export async function verarbeiteNachricht(args: {
     // Nachricht eine Antwort darin, keine neue Bestellung — die Eingangsbestätigung
     // fällt dann neutraler aus ("arbeite weiter" statt "erstelle dein Angebot").
     // Den Vorgang laden wir hier einmal und nutzen ihn unten weiter.
-    let vorgang = await holeOffenenVorgang(prisma, handwerker.id);
+    let vorgang = await holeOffenenVorgang(prisma, handwerker.id, absenderWhere(vonNummer, vonNummer === handwerker.whatsappNummer));
     const imDialog = !!vorgang;
     if (mediaId) {
       // Sprachnachricht sofort kurz bestätigen — Transkription + KI brauchen ein
@@ -394,7 +415,7 @@ export async function verarbeiteNachricht(args: {
       }
       // Für die Raumzuordnung zählt auch ein eben abgeschlossener Vorgang (Nachtrag):
       // sonst fehlen Raumname und Raumhöhe beim ersten nachgereichten Foto.
-      if (!vorgang) vorgang = await holeNachtragsVorgang(prisma, handwerker.id);
+      if (!vorgang) vorgang = await holeNachtragsVorgang(prisma, handwerker.id, absenderWhere(vonNummer, vonNummer === handwerker.whatsappNummer));
       const zuordnung = ordneFotoZu(vorgang, bildText);
       const analyse = bereinigeAnalyse(await analysiereWandfoto(
         bild,
@@ -429,7 +450,7 @@ export async function verarbeiteNachricht(args: {
     // Kein offener Dialog? Dann prüfen, ob es ein Nachtrag zum eben erstellten
     // Dokument ist ("ach, die Fenster auch noch…"). Den offenen Vorgang haben wir
     // oben für die Eingangsbestätigung schon geladen.
-    if (!vorgang) vorgang = await holeNachtragsVorgang(prisma, handwerker.id);
+    if (!vorgang) vorgang = await holeNachtragsVorgang(prisma, handwerker.id, absenderWhere(vonNummer, vonNummer === handwerker.whatsappNummer));
 
     // Proaktiver Feedback-Reply per Sprache/Foto: Warten wir nach dem Nudge auf
     // Feedback, ist kein Dialog offen und die Nachricht KURZ (kein Diktat), als
@@ -476,7 +497,7 @@ export async function verarbeiteNachricht(args: {
     // 3. Vorgang anlegen oder fortführen. Auch ein "mach ich später" gehört in
     //    den Verlauf — die KI liest daraus die Absicht ab.
     if (!vorgang) {
-      vorgang = await prisma.vorgang.create({ data: { handwerkerId: handwerker.id } });
+      vorgang = await prisma.vorgang.create({ data: { handwerkerId: handwerker.id, absenderNummer: vonNummer } });
     }
     // Textnachricht kurz bestätigen (Sprache und Foto sind oben schon bestätigt).
     if (!mediaId && !bildMediaId) await sendeWhatsAppText(vonNummer, floskel("text", vonNummer));
@@ -690,7 +711,7 @@ function aufmassHinweise(aufmass: ReturnType<typeof berechneAufmass>): string[] 
  * nächste Eingabe sicher als neue Fassung DESSELBEN Angebots landet.
  */
 async function verarbeiteAngebotsKnopf(handwerker: Handwerker, vonNummer: string, knopf: string): Promise<void> {
-  const vorgang = (await holeOffenenVorgang(prisma, handwerker.id)) ?? (await holeNachtragsVorgang(prisma, handwerker.id));
+  const vorgang = (await holeOffenenVorgang(prisma, handwerker.id, absenderWhere(vonNummer, vonNummer === handwerker.whatsappNummer))) ?? (await holeNachtragsVorgang(prisma, handwerker.id, absenderWhere(vonNummer, vonNummer === handwerker.whatsappNummer)));
   await spurEvent(prisma, "ANGEBOT_KNOPF", {
     handwerkerId: handwerker.id,
     data: { knopf: knopf === KNOPF_RAUM_WEITER ? "raum_weiter" : "korrigieren", offen: !!vorgang },
@@ -754,8 +775,8 @@ async function verarbeiteWandfoto(args: {
 }): Promise<void> {
   const { handwerker, vonNummer, bild, analyse, bildText, zuordnung } = args;
   let vorgang = args.vorgang;
-  if (!vorgang) vorgang = await holeNachtragsVorgang(prisma, handwerker.id);
-  if (!vorgang) vorgang = await prisma.vorgang.create({ data: { handwerkerId: handwerker.id } });
+  if (!vorgang) vorgang = await holeNachtragsVorgang(prisma, handwerker.id, absenderWhere(vonNummer, vonNummer === handwerker.whatsappNummer));
+  if (!vorgang) vorgang = await prisma.vorgang.create({ data: { handwerkerId: handwerker.id, absenderNummer: vonNummer } });
 
   // Wandzähler je Raum: „Wand 3" ist die dritte Wand DIESES Raums, nicht das dritte Foto insgesamt.
   const raumName = zuordnung.raumName;

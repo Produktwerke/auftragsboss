@@ -20,6 +20,7 @@ import { meldeNeuenKunden } from "./betreiberAlarm.js";
 import { nachAboAbschluss } from "./gutschrift.js";
 import { rechnungZuZahlung, stripeGutschreiben } from "./stripeCheckout.js";
 import { agbKonfig, checkoutAgbAkzeptiert } from "./agb.js";
+import { hebeAboEndePauseAuf } from "./vertragsende.js";
 import { stripeKonfiguriert } from "../config.js";
 import { echteZahlungsHooks, type ZahlungsHooks } from "./zahlungsausfall.js";
 
@@ -177,6 +178,8 @@ export async function verarbeiteStripeEvent(
           detail: `${tarif} für ${monatspreis} €/Monat (netto), Abo ${s.subscriptionId}`,
         },
       });
+      // Vertragsende-Pause (30 Tage nach Abo-Ende) aufheben, falls gesetzt.
+      await hebeAboEndePauseAuf(prisma, hw);
       // AGB-Häkchen im Checkout gesetzt? Dann Nachweis am Betrieb (nur beim ersten Mal).
       if (checkoutAgbAkzeptiert(event.data.object) && !hw.agbAkzeptiertAm) {
         const version = agbKonfig().version;

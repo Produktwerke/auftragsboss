@@ -137,6 +137,8 @@ export interface BetriebZeile {
   agbAkzeptiertAm?: Date | null;
   agbVersion?: string | null;
   agbQuelle?: string | null;
+  /** Mitarbeiter-Nummern des Betriebs (nur Detailseite). */
+  mitarbeiter?: Array<{ name: string; whatsappNummer: string; letzteAktivitaet: Date | null }>;
   /** Offenes Konto-Guthaben in Euro (Empfehlungsprämie, Kulanz), bei der nächsten Zahlung zu verrechnen. */
   guthabenEuro: number;
   angebote: number;
@@ -446,6 +448,12 @@ export function betreiberDetail(args: {
       <div class="meldung"></div>
     </form>
     <p class="hinweis">Neues Handy mit neuer Nummer: Hier die neue Nummer eintragen — Angebote, Einstellungen und Preisgedächtnis bleiben erhalten.</p>
+  </div>
+
+  <div class="karte">
+    <h2 style="margin-top:0;">Mitarbeiter-Nummern</h2>
+    <p class="hinweis" style="margin-top:0;">Weitere Nummern, die für diesen Betrieb diktieren dürfen. Der Betrieb verwaltet sie selbst in seinen Einstellungen.</p>
+    ${(b.mitarbeiter ?? []).length === 0 ? `<p style="color:#888;margin:0;">Keine.</p>` : `<ul style="margin:0;padding-left:18px;">${(b.mitarbeiter ?? []).map((m) => `<li><b>${escapeHtml(m.name)}</b> +${escapeHtml(m.whatsappNummer)}${m.letzteAktivitaet ? ` · zuletzt ${datumDE(m.letzteAktivitaet)}` : ""}</li>`).join("")}</ul>`}
   </div>
 
   <div class="karte">

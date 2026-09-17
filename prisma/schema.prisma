@@ -129,6 +129,21 @@ model Handwerker {
   importDokumente  ImportDokument[]
   fotos            Foto[]
   abo              Abo?
+  mitarbeiter      Mitarbeiter[]
+}
+
+// Mitarbeiter-Nummern eines Betriebs (17.09.2026): weitere WhatsApp-Nummern, die
+// für den Betrieb diktieren dürfen (Profi bis 3, Team bis 15 Nummern inkl. Inhaber).
+model Mitarbeiter {
+  id             String     @id @default(cuid())
+  handwerkerId   String
+  handwerker     Handwerker @relation(fields: [handwerkerId], references: [id], onDelete: Cascade)
+  whatsappNummer String     @unique // E.164 ohne +, eindeutig im ganzen System
+  name           String
+  erstelltAm       DateTime  @default(now())
+  letzteAktivitaet DateTime?
+
+  @@index([handwerkerId])
 }
 
 // ── Abrechnung (Betreiber-Cockpit Stufe 2) ─────────────────────────────────
@@ -234,6 +249,8 @@ model Vorgang {
   handwerker   Handwerker @relation(fields: [handwerkerId], references: [id])
 
   status String @default("OFFEN") // "OFFEN" | "ABGESCHLOSSEN"
+  // Wer diktiert (Inhaber- oder Mitarbeiter-Nummer); null = Altbestand (Inhaber).
+  absenderNummer String?
   runde  Int    @default(0) // Anzahl bereits gestellter Rückfrage-Runden
 
   // Wurde in diesem Vorgang die Zusammenfassung "das habe ich verstanden" schon

@@ -117,9 +117,11 @@ export function alsDialog(vorgang: Vorgang): DialogNachricht[] {
 export async function holeOffenenVorgang(
   prisma: PrismaClient,
   handwerkerId: string,
+  /** Zusätzliche Bedingung, z. B. Absender-Nummer (Mitarbeiter diktieren getrennt). */
+  zusatz: Record<string, unknown> = {},
 ): Promise<Vorgang | null> {
   const offen = await prisma.vorgang.findFirst({
-    where: { handwerkerId, status: "OFFEN" },
+    where: { handwerkerId, status: "OFFEN", ...zusatz },
     orderBy: { letzteAktivitaet: "desc" },
   });
   if (!offen) return null;
@@ -139,11 +141,13 @@ export async function holeOffenenVorgang(
 export async function holeNachtragsVorgang(
   prisma: PrismaClient,
   handwerkerId: string,
+  zusatz: Record<string, unknown> = {},
 ): Promise<Vorgang | null> {
   const grenze = new Date(Date.now() - NACHTRAG_MINUTEN * 60_000);
   const letzter = await prisma.vorgang.findFirst({
     where: {
       handwerkerId,
+      ...zusatz,
       status: "ABGESCHLOSSEN",
       dokumentId: { not: null },
       letzteAktivitaet: { gte: grenze },

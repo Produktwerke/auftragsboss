@@ -16,6 +16,7 @@ import { starteVorgangTimeoutJob } from "./jobs/vorgangTimeout.js";
 import { starteFotoWaisenJob } from "./jobs/fotoWaisen.js";
 import { starteTestphaseErinnerungsJob } from "./jobs/testphaseErinnerung.js";
 import { starteLeadErinnerungsJob } from "./jobs/leadErinnerung.js";
+import { starteVertragsendeJob } from "./jobs/vertragsende.js";
 import { prisma } from "./pipeline.js";
 
 // Boot-Gate (Nach-Audit 10.09., D-04): Ohne vollständige Zugangsdaten startet
@@ -115,6 +116,7 @@ starteVorgangTimeoutJob();
 starteFotoWaisenJob();
 starteTestphaseErinnerungsJob();
 starteLeadErinnerungsJob();
+starteVertragsendeJob();
 
 const { PORT, HOST } = serverConfig();
 

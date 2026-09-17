@@ -138,7 +138,8 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 > **FEIERABEND-STAND 15.09.2026 (abf4497 + Flag):** Alles deployt (298 Tests). Server-.env: FEATURE_LEAD_ERINNERUNG=1 (Job aktiv, wartet auf
 >   Vorlage). ⏳ META-GENEHMIGUNG (Konto „AuftragsBoss", WABA 1680177866376806): `test_starten`, `test_endet_bald`, `test_abgelaufen`,
->   `lead_erinnerung` alle PENDING (Status per Graph-API abfragbar: /1680177866376806/message_templates). NACH GENEHMIGUNG:
+>   `lead_erinnerung` ✅ ALLE GENEHMIGT 17.09.2026 (Status per Graph-API abfragbar: /1680177866376806/message_templates).
+>   17.09.: Probelauf Testphase-Erinnerungen an Dirk gesendet (2/2). Lead-Erinnerung scharf. NOCH OFFEN:
 >   (1) Probelauf Testphase-Erinnerungen `npx tsx src/testphase-erinnerung-jetzt.ts <Dirks Nummer>` auf dem Server, (2) Website-Test-Start
 >   am PC durchspielen (Formular → WhatsApp „Ja, los geht's"), (3) Lead-Erinnerung läuft dann automatisch (täglich 10:00).
 >   STRIPE ist komplett live und verifiziert (Durchstich mit Kündigung + Erstattung). NÄCHSTE THEMEN: Chat-Auswertung in 2 Stufen

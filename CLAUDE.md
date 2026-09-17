@@ -154,6 +154,18 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   Stripe-Abo, danach /geloescht). Inhaber-Nummer ändern weiterhin nur über den Betreiber.
 >   Offen: zahlende Kunden haben KEINE technische Angebots-Kontingentgrenze (AGB als Fair-Use oder bauen).
 
+> **Update 17.09.2026 (5) — AGB-SEITE GEBAUT (f8d3fea, 328 Tests, deployt):** `marketing/agb.html` aus dem Rechts-KI-Dokument
+>   „AuftragsBoss_AGB_inkl_AVV_final_2026-09-17.docx" (Teil A § 1–35, Teil B AVV § 36–50, Anlagen 1–3), Stil datenschutz.html, Version
+>   2026-09-17, Druck/PDF-Knopf. Generator im Scratchpad (agb/bauen.cjs aus Word-Dump). Gegen den Code geprüft, angepasst: Kontingent
+>   „je Kalendermonat" statt Abrechnungsmonat (kontingent.ts zählt Kalendermonat), Telefonnummern konkret 1/3/15, § 15 Abs. 9 Export-
+>   Verzeichnis = Einstellungen „Dein Konto" + LIESMICH.txt (Hinweistext in einstellungenSeite.ts ergänzt), § 15 Abs. 10 Data-Act-Info
+>   → Datenschutzerklärung/Anlage 3; interne Einbeziehungs-Empfehlung am Ende weggelassen. agb.ts: Gate-Text nennt Vertretungs-
+>   berechtigung (§ 3 Abs. 3). Stimmig mit Code: Test 14 Tage / 10 Angebote / 60 Nachrichten / nur DE-Nummern / kein PDF im Test,
+>   Vertragsende 30/90, Word+PDF, Gewährleistungs-Erinnerung, OpenAI+Anthropic+Meta+IONOS, Logs 7 Tage (pm2-logrotate; Caddy schreibt
+>   keine Access-Logs; rsyslog 4 Wochen = Sicherheitslogs). OFFEN (nicht gebaut, Dirk entscheidet): § 9 Abs. 8 verspricht Löschung von
+>   Testkonten 90 Tage nach Testende, es gibt keinen Job dafür (vertragsende.ts überspringt istTest; würde auch stumme Leads treffen).
+>   Dirk lädt agb.html zu IONOS; danach Scharfschalten (AGB_VERSION=2026-09-17). Vorschau-Port der Landingpage jetzt 3031 (3030 = Screenpipe).
+
 > **FEIERABEND-STAND 17.09.2026 (f48cdd7, 328 Tests, alles deployt):** Meta-Vorlagen alle genehmigt, Testphase-Erinnerungen abgenommen,
 >   Lead-Erinnerung scharf. Chat-Auswertung Stufe 1 live (/stasi/chat). Datenschutzerklärung 6.4 ergänzt + live. AGB-Paket komplett gebaut:
 >   Datenexport ZIP, Vertragsende 30/83/90, Mitarbeiter-Nummern, Selbstverwaltung, Kontingent harte Grenze, AGB-Gate + Stripe-Häkchen

@@ -53,8 +53,9 @@ export function testSeite(): string {
   <p class="hinweis-ki">🔒 KI-gestützter Dienst: Deine Aufnahme wird verarbeitet, um ein
     Beispiel-Angebot zu erstellen (Transkription über OpenAI, Strukturierung über Anthropic).
     Das Audio bleibt nur im Arbeitsspeicher und wird nicht dauerhaft gespeichert. Bitte nutze
-    zum Testen erfundene Beispieldaten.
-    <a href="https://auftragsboss.de/datenschutz.html" target="_blank" rel="noopener">Datenschutz</a></p>
+    zum Testen erfundene Beispieldaten. Mit dem Start der Aufnahme akzeptierst du unsere
+    <a href="https://auftragsboss.de/agb.html" target="_blank" rel="noopener">AGB</a> (inkl. Auftragsverarbeitung); es gilt unsere
+    <a href="https://auftragsboss.de/datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a>.</p>
 
 <script>
   var knopf = document.getElementById('knopf');

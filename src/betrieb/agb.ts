@@ -79,16 +79,27 @@ export function datenschutzUrl(env: NodeJS.ProcessEnv = process.env): string {
   return env.DATENSCHUTZ_URL?.trim() || "https://auftragsboss.de/datenschutz.html";
 }
 
-/** Text der Zustimmungsnachricht (WhatsApp, mit einem Knopf). */
-export function agbGateText(istTest: boolean, env: NodeJS.ProcessEnv = process.env): { text: string; knopf: { id: string; titel: string } } {
+/**
+ * Text der Zustimmungsnachricht (WhatsApp, mit einem Knopf).
+ * eingabeWartet: Der Betrieb hat schon eine Sprach-/Text-/Fotonachricht geschickt,
+ * die nach dem Knopf sofort verarbeitet wird (sonst kam er über einen Lead-Knopf).
+ */
+export function agbGateText(istTest: boolean, eingabeWartet = false, env: NodeJS.ProcessEnv = process.env): { text: string; knopf: { id: string; titel: string } } {
   const k = agbKonfig(env);
   const titel = istTest ? "Kostenlos testen" : "Akzeptieren";
+  const danach = istTest
+    ? eingabeWartet
+      ? "Danach startet dein kostenloser Test und ich mache aus deiner Nachricht von eben sofort dein erstes Angebot."
+      : "Danach startet dein kostenloser Test. Schick dann einfach eine Sprachnachricht mit dem Auftrag (Kunde, Adresse, was gemacht werden soll), und AuftragsBoss macht daraus dein Angebot."
+    : eingabeWartet
+      ? "Danach verarbeite ich deine Nachricht von eben sofort."
+      : "Danach schickst du einfach eine Sprachnachricht mit dem Auftrag, und AuftragsBoss macht daraus dein Angebot.";
   return {
     knopf: { id: KNOPF_AGB, titel },
     text:
       `📄 Einmalig, bevor es losgeht: Mit Tipp auf „${titel}" handelst du als Unternehmer, bist berechtigt, das für deinen Betrieb zu erklären, und akzeptierst unsere Allgemeinen Geschäftsbedingungen einschließlich der darin enthaltenen Vereinbarung zur Auftragsverarbeitung (Art. 28 DSGVO).\n\n` +
       `AGB: ${k.url}\nDatenschutz: ${datenschutzUrl(env)}\n\n` +
-      `Danach ${istTest ? "startet dein kostenloser Test und " : ""}du schickst einfach deine Sprachnachricht.`,
+      danach,
   };
 }
 

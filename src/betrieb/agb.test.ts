@@ -45,13 +45,17 @@ describe("AGB-Zustimmung beim Teststart (Gate)", () => {
   });
 
   it("Zustimmungstext nennt AGB, AVV, Links und Knopf (max. 20 Zeichen)", () => {
-    const g = agbGateText(true, { AGB_URL: "https://auftragsboss.de/agb.html" });
+    const g = agbGateText(true, false, { AGB_URL: "https://auftragsboss.de/agb.html" });
+    expect(g.text).toContain("Schick dann einfach eine Sprachnachricht");
+    expect(agbGateText(true, true, { AGB_URL: "https://x/agb" }).text).toContain("deiner Nachricht von eben");
+    expect(agbGateText(false, false, { AGB_URL: "https://x/agb" }).text).toContain("Danach schickst du einfach");
+    expect(agbGateText(false, true, { AGB_URL: "https://x/agb" }).text).toContain("Danach verarbeite ich deine Nachricht von eben");
     expect(g.text).toContain("Auftragsverarbeitung");
     expect(g.text).toContain("berechtigt");
     expect(g.text).toContain("https://auftragsboss.de/agb.html");
     expect(g.text).toContain("https://auftragsboss.de/datenschutz.html");
     expect(g.knopf.titel.length).toBeLessThanOrEqual(20);
     expect(g.knopf.id).toBe(KNOPF_AGB);
-    expect(agbGateText(false, { AGB_URL: "https://x/agb" }).knopf.titel).toBe("Akzeptieren");
+    expect(agbGateText(false, false, { AGB_URL: "https://x/agb" }).knopf.titel).toBe("Akzeptieren");
   });
 });

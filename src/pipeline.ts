@@ -223,7 +223,7 @@ export async function verarbeiteNachricht(args: {
   if (gate === "FRAGEN") {
     wartendAufAgb.set(vonNummer, { args, zeit: Date.now() });
     if (wartendAufAgb.size > 2000) wartendAufAgb.delete(wartendAufAgb.keys().next().value!);
-    const g = agbGateText(handwerker.istTest);
+    const g = agbGateText(handwerker.istTest, kanal !== "knopf");
     const ok = await sendeWhatsAppKnoepfe(vonNummer, g.text, [g.knopf]);
     if (!ok) await sendeWhatsAppText(vonNummer, g.text + "\n\nAntworte einfach mit ja, um zu akzeptieren.");
     await spurEvent(prisma, "AGB_GEFRAGT", { handwerkerId: handwerker.id, data: { kanal } });

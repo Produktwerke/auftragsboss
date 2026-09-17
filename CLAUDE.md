@@ -154,6 +154,14 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   Stripe-Abo, danach /geloescht). Inhaber-Nummer ändern weiterhin nur über den Betreiber.
 >   Offen: zahlende Kunden haben KEINE technische Angebots-Kontingentgrenze (AGB als Fair-Use oder bauen).
 
+> **Update 17.09.2026 (6) — AGB SCHARF (b2369af, deployt):** agb.html bei IONOS live (Dirk lädt die Fassung mit weicherem § 9 Abs. 8
+>   noch einmal hoch: Testdaten ohne feste 90-Tage-Frist, Löschung auf Verlangen; Dirk: Kalendermonat bleibt). Server-.env (Sicherung
+>   .env.bak-agb-20260917): AGB_URL, AGB_VERSION=2026-09-17, AGB_GATE=1, STRIPE_AGB_HAEKCHEN=1, pm2 restart --update-env. WhatsApp-Gate
+>   damit LIVE (jede Nummer ohne agbAkzeptiertAm bekommt einmal die Knopffrage, auch Bestandskunden). Stripe: Dirk hat Nutzungsbedingungen-
+>   und Datenschutz-URL im Dashboard hinterlegt; Probe auf dem Server (scratch, gelöscht): Checkout-Sitzung mit
+>   consent_collection.terms_of_service=required angelegt und sofort verfallen → Häkchen funktioniert. Browser-Demo /testen: Satz
+>   „Mit dem Start der Aufnahme akzeptierst du unsere AGB" (kein Kästchen, anonym, kein Konto). OFFEN: Dirks Test mit neuer Nummer.
+
 > **Update 17.09.2026 (5) — AGB-SEITE GEBAUT (f8d3fea, 328 Tests, deployt):** `marketing/agb.html` aus dem Rechts-KI-Dokument
 >   „AuftragsBoss_AGB_inkl_AVV_final_2026-09-17.docx" (Teil A § 1–35, Teil B AVV § 36–50, Anlagen 1–3), Stil datenschutz.html, Version
 >   2026-09-17, Druck/PDF-Knopf. Generator im Scratchpad (agb/bauen.cjs aus Word-Dump). Gegen den Code geprüft, angepasst: Kontingent

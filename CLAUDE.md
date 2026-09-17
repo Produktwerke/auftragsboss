@@ -154,6 +154,25 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   Stripe-Abo, danach /geloescht). Inhaber-Nummer ändern weiterhin nur über den Betreiber.
 >   Offen: zahlende Kunden haben KEINE technische Angebots-Kontingentgrenze (AGB als Fair-Use oder bauen).
 
+> **Update 17.09.2026 (7) — SALESFRANK-ANBINDUNG (KI-Telefonakquise salesfrank.ai; 5131688, 340 Tests, deployt, db push: Modell
+>   SalesFrankAnruf):** Dirk hat ein SalesFrank-Konto (500 € Guthaben). Ablauf: SalesFrank ruft die Outscraper-Leads an, schickt nach
+>   jedem Gespräch einen Post-Call-Webhook (frei definierbares JSON mit {{call.id}}, {{call.summary}}, {{call.transcript}}, {{lead.phone}}…)
+>   → `POST /webhook/salesfrank/<SALESFRANK_WEBHOOK_SECRET>` (`salesfrank/webhook.ts`, keine Signatur bei SalesFrank, Geheimnis im Pfad,
+>   Log maskiert es als [token], antwortet sofort 200, Verarbeitung im Hintergrund) → `salesfrank/verarbeitung.ts`: Body tolerant lesen,
+>   Idempotenz über call.id, `salesfrank/auswertung.ts` lässt Claude (ANGEBOT_MODELL, ohne Thinking) das Transkript bewerten (interesse,
+>   whatsappZustimmung JA/NEIN/UNKLAR, anrede, im Gespräch genannte handynummer, Beleg-Zitat). NUR Ja+Ja mit Beleg + Handynummer → Einladung
+>   automatisch wie „Telefon-Lead einladen" (legeLeadAnUndLadeEin, optInQuelle `salesfrank:<callId>`, leadQuelle TELEFON). Sonst PRUEFUNG
+>   (auch bei Festnetz ohne genannte Handynummer), Nein → ABGELEHNT ohne Nummer/Transkript, bekannte Nummer → SCHON_VORHANDEN, Vorlage
+>   fehlgeschlagen → FEHLER. AdminLog SALESFRANK_<STATUS>. Cockpit `/stasi/salesfrank` (Link in Kundenliste): Liste mit Beleg, Zusammen-
+>   fassung, Transkript (Details), bei PRUEFUNG/FEHLER Formular Handynummer+Anrede „Einladen" (optInQuelle …:manuell) und „Verwerfen"
+>   (löscht Nummer+Transkript); unten Webhook-Adresse (aus BASE_URL + Secret) und JSON-Vorlage `SALESFRANK_WEBHOOK_VORLAGE`.
+>   Server-.env: SALESFRANK_WEBHOOK_SECRET per `openssl rand -hex 24` gesetzt (nie im Chat, Dirk liest die Adresse im Cockpit). Live-Probe
+>   mit Nein-Transkript (callId probe-nein-1): ABGELEHNT in 3 s, falsches Geheimnis 404. Lead-CSV für SalesFrank (Gruppe A, 250 Betriebe,
+>   E.164, custom vars firma/ort/plz/bewertungen/note/website/handy/rang/typ) in `_Claude/Angebotsblitz/Leads/SalesFrank_Import_A_Telefon_
+>   2026-09-17.csv` (Generator scratchpad sf/csv.cjs aus „BW - Maler_2026-09-11_Claude.xlsx", Blatt „A Nur Telefon"); Anleitung inkl.
+>   Gesprächsleitfaden-Vorschlag in `_Claude/Angebotsblitz/SalesFrank-Einrichtung.md`. Offen: Dirk richtet Assistent + Webhook in SalesFrank
+>   ein, Feldnamen der Custom-Variablen im Webhook unbestätigt (Parser ist tolerant; Pflicht nur call.id + transcript/summary + lead.phone).
+
 > **Update 17.09.2026 (6) — AGB SCHARF (b2369af, deployt):** agb.html bei IONOS live (Dirk lädt die Fassung mit weicherem § 9 Abs. 8
 >   noch einmal hoch: Testdaten ohne feste 90-Tage-Frist, Löschung auf Verlangen; Dirk: Kalendermonat bleibt). Server-.env (Sicherung
 >   .env.bak-agb-20260917): AGB_URL, AGB_VERSION=2026-09-17, AGB_GATE=1, STRIPE_AGB_HAEKCHEN=1, pm2 restart --update-env. WhatsApp-Gate

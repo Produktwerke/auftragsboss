@@ -1434,6 +1434,14 @@ die Dropbox-Kopie ist gelöscht. Vorlage ohne Werte: `.env.example`.
 - Optional (Dirk): in den Konsolen von Anthropic/OpenAI prüfen, ob es neben `auftragsboss-server`
   noch einen zweiten Schlüssel gab, der nur lokal genutzt wurde, und den sperren.
 - Lokale Prisma-CLI-Befehle brauchen weiterhin `$env:DATABASE_URL="file:./dev.db"`.
+- **Regel seit 22.09.2026 (Dirk):** Server-Skripte, die über die App-Konfiguration Geheimnisse nutzen
+  und damit bei Meta, Stripe oder anderen Diensten etwas VERÄNDERN (Vorlagen anlegen/löschen, Stripe-Objekte,
+  Nachrichten senden), nur nach ausdrücklicher Freigabe von Dirk im Einzelfall. Lesende Abfragen (Vorlagen-
+  status, Proben ohne Buchung, Prüfstände) bleiben erlaubt. Hintergrund: Der Wächter blockiert `grep` auf die
+  Konfigurationsdatei, ein Skript über `whatsappConfig()` kommt aber an dieselben Werte; der Meta-Token lässt
+  sich nicht auf „nur senden" beschränken (Anwendungsfall koppelt messaging + management fest an jeden Token).
+  Wächter blockiert außerdem `su` per ssh → Skripte laufen als root im App-Ordner (nur wenn sie keine Dateien
+  schreiben; pm2-Logs direkt aus `/home/auftragsboss/.pm2/logs/*.log` lesen).
 
 Weiter gültig: Optional `ADMIN_EMAIL`/`ADMIN_PASSWORT_HASH` für /stasi, `HOST` (Standard localhost)
 und `GRAPH_API_VERSION` (Standard v23.0). Dirks ursprüngliche Claude-Organisation war nur wegen

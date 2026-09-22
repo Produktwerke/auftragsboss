@@ -154,6 +154,23 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   Stripe-Abo, danach /geloescht). Inhaber-Nummer ändern weiterhin nur über den Betreiber.
 >   Offen: zahlende Kunden haben KEINE technische Angebots-Kontingentgrenze (AGB als Fair-Use oder bauen).
 
+> **FEIERABEND-STAND 22.09.2026 (02902b0, 343 Tests, alles deployt, SALESFRANK-KAMPAGNE LÄUFT):**
+>   SalesFrank komplett eingerichtet: deutsche Nummer gekauft (Twilio-Bundle 19.09. genehmigt), Assistentin „Anna von AuftragsBoss"
+>   (Stimme Sara Wagner, Leitfaden v5 nach drei Telefontests eingefroren, liegt in `_Claude/Angebotsblitz/SalesFrank-Einrichtung.md`
+>   Abschnitt 2; Absatz „Hinweise aus den Tests" NICHT in den Prompt), 250 Leads Gruppe A importiert, Zeitplan Mo–Fr 8–12/13–17,
+>   manuell 3 Versuche (sofort/22 h/3 Tage), Optionen: Mailbox besprechen AUS, Audio aufzeichnen AUS (§ 201 StGB), Tageslimit 30 Min
+>   (= Mengenbremse, keine Einstellung für parallele Anrufe), Max. 5 Min. Webhook: bei Anna unter Call-to-Action → „Aktionen nach dem
+>   Anruf", Body = Cockpit-JSON-Vorlage (Standard-Payload hat KEIN Transkript), Testanruf-Knopf löst die Aktion NICHT aus.
+>   Ende-zu-Ende bestanden (echter Anruf → Webhook mit Transkript → Bewertung → Einladung von Hand → WhatsApp angekommen).
+>   Erste Welle 15:00–15:20 unbeabsichtigt ~80 Anrufe (Limit stand auf 100 Min): 0 automatische Einladungen, viel Mailbox/Abbruch;
+>   deshalb gebaut: gespraechsart MAILBOX/ABBRUCH/RUECKRUF → Status KEIN_GESPRAECH ohne Nummer, SalesFrank-Ergebnis MACHINE/voicemail
+>   ohne KI übersprungen, Cockpit-Knopf „Mailbox und Abbrüche aufräumen" (Dirk hat aufgeräumt). Assistent seit 15:35 gestartet.
+>   Wächter blockiert jetzt `su` per ssh: pm2-Logs direkt aus /home/auftragsboss/.pm2/logs/*.log lesen; Read-Tool außerhalb der
+>   Arbeitsordner gesperrt, Bash-sed nutzen.
+>   NÄCHSTE SCHRITTE: 23.09. nachmittags Log + Cockpit prüfen (Quote „bis zur WhatsApp-Frage", Abbruchstellen, erste automatische
+>   Einladung ansehen), ggf. Startnachricht/Tempo anpassen; erste echte Prüffälle mit Dirk durchgehen. Danach Chat-Auswertung Stufe 2.
+>   Routine: 03.10. ist als Feiertag in SalesFrank einzutragen (Dirk), 07.10. Vorfallsarchiv löschen, ~10.10. Patch-Tag.
+
 > **Update 17.09.2026 (7) — SALESFRANK-ANBINDUNG (KI-Telefonakquise salesfrank.ai; 5131688, 340 Tests, deployt, db push: Modell
 >   SalesFrankAnruf):** Dirk hat ein SalesFrank-Konto (500 € Guthaben). Ablauf: SalesFrank ruft die Outscraper-Leads an, schickt nach
 >   jedem Gespräch einen Post-Call-Webhook (frei definierbares JSON mit {{call.id}}, {{call.summary}}, {{call.transcript}}, {{lead.phone}}…)

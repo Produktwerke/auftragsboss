@@ -8,27 +8,64 @@
   <meta name="supported-color-schemes" content="light">
   <title>*|MC:SUBJECT|*</title>
   <!--
-    AuftragsBoss: Mailchimp-Vorlage „normale E-Mail" (22.09.2026).
-    In Mailchimp: Kampagne → Design → „Code your own" → „Paste in code" → diesen Code einfügen.
+    AuftragsBoss: Mailchimp-Vorlage „normale E-Mail" (22.09.2026, Fassung Dirk nach Import in Mailchimp).
+    In Mailchimp: Email templates → Import HTML (je Mail eine Datei aus diesem Ordner).
     Bereiche mit mc:edit lassen sich im Mailchimp-Editor ohne Code bearbeiten (Text, Signatur, Fußzeile).
-    Merge-Felder: *|FIRMA|*, *|ORT|* (Spalten aus dem Import), *|UNSUB|* (Abmeldelink),
-    *|LIST:ADDRESSLINE|* (Adresse der Zielgruppe, in Mailchimp auf DAG Deutsche Automotive GmbH,
-    Augsburger Straße 746, 70329 Stuttgart setzen).
-    Platzhalter SALESFRANK-NUMMER in der Signatur ersetzen.
+    Merge-Felder: *|Company|* (Firma aus dem Import), *|UNSUB|* (Abmeldelink).
+    Telefon in der Signatur = SalesFrank-Nummer (Rückrufe landen bei Anna).
   -->
-  <style>
-    body { margin: 0; padding: 0; background: #ffffff; -webkit-text-size-adjust: 100%; }
-    table { border-collapse: collapse; }
-    .text { font-family: Calibri, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.5; color: #1f2328; }
-    .text p { margin: 0 0 16px 0; }
-    .text a { color: #0563c1; text-decoration: underline; }
-    .sig { font-family: Calibri, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.45; color: #4b5563; }
-    .sig a { color: #4b5563; text-decoration: none; }
-    .marke { font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; letter-spacing: 0.08em; color: #1f2328; }
-    .foot { font-family: Calibri, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.5; color: #8a9099; }
-    .foot a { color: #8a9099; text-decoration: underline; }
-  </style>
-</head>
+
+<style type="text/css">
+		body{
+			margin:0;
+			padding:0;
+			background:#ffffff;
+			-webkit-text-size-adjust:100%;
+		}
+		table{
+			border-collapse:collapse;
+		}
+		.text{
+			font-family:Calibri, "Segoe UI", Helvetica, Arial, sans-serif;
+			font-size:16px;
+			line-height:1.5;
+			color:#1f2328;
+		}
+		.text p{
+			margin:0 0 16px 0;
+		}
+		.text a{
+			color:#0563c1;
+			text-decoration:underline;
+		}
+		.sig{
+			font-family:Calibri, "Segoe UI", Helvetica, Arial, sans-serif;
+			font-size:14px;
+			line-height:1.45;
+			color:#4b5563;
+		}
+		.sig a{
+			color:#4b5563;
+			text-decoration:none;
+		}
+		.marke{
+			font-family:Arial, Helvetica, sans-serif;
+			font-size:15px;
+			font-weight:bold;
+			letter-spacing:0.08em;
+			color:#1f2328;
+		}
+		.foot{
+			font-family:Calibri, "Segoe UI", Helvetica, Arial, sans-serif;
+			font-size:12px;
+			line-height:1.5;
+			color:#8a9099;
+		}
+		.foot a{
+			color:#8a9099;
+			text-decoration:underline;
+		}
+</style></head>
 <body style="margin:0; padding:0; background:#ffffff;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff">
     <tr>
@@ -43,7 +80,7 @@
               <p>Sie kommen vom Kundentermin und sprechen zum Beispiel ein: „Wohnzimmer vier mal fünf Meter, zwei sechzig hoch, Wände und Decke streichen, zwei Fenster."</p>
               <p>Zwei Minuten später bekommen Sie daraus einen sauber gegliederten Angebotsentwurf mit einzelnen Positionen und Mengen.</p>
               <p>Keine App, kein Login, nichts zu installieren. Es läuft einfach über WhatsApp.</p>
-              <p>Wäre das für *|FIRMA|* grundsätzlich interessant?</p>
+              <p>Wäre das für Sie grundsätzlich interessant?</p>
               <p>Viele Grüße<br>Dirk</p>
             </td>
           </tr>
@@ -63,7 +100,7 @@
                 <b style="color:#1f2328;">Dirk Beer</b><br>
                 AuftragsBoss · Eine Marke der DAG Deutsche Automotive GmbH<br>
                 Augsburger Straße 746 · 70329 Stuttgart<br>
-                Tel. <a href="tel:+49SALESFRANK-NUMMER" style="color:#4b5563; text-decoration:none;">+49 SALESFRANK-NUMMER</a>
+                Tel. <a href="tel:+4971193965443" style="color:#4b5563; text-decoration:none;">0711 / 939 654 43</a>
                 · <a href="mailto:dirk@auftragsboss.de" style="color:#4b5563; text-decoration:none;">dirk@auftragsboss.de</a>
                 · <a href="https://auftragsboss.de" style="color:#4b5563; text-decoration:none;">auftragsboss.de</a>
               </div>
@@ -73,9 +110,9 @@
           <!-- Fußzeile (Pflicht: Abmeldelink und Anschrift) -->
           <tr>
             <td class="foot" mc:edit="fusszeile" style="padding-top: 28px; font-family: Calibri, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.5; color: #8a9099;">
-              Sie erhalten diese E-Mail, weil *|FIRMA|* in *|ORT|* öffentlich als Malerbetrieb gelistet ist.
+              Sie erhalten diese E-Mail, weil *|Company|* öffentlich als Malerbetrieb gelistet ist.<br>
               Keine weitere E-Mail von mir? Ein Klick genügt: <a href="*|UNSUB|*" style="color:#8a9099;">abmelden</a>.<br>
-              *|LIST:ADDRESSLINE|* · HRB 736071 · <a href="https://auftragsboss.de/datenschutz.html" style="color:#8a9099;">Datenschutz</a>
+              DAG Deutsche Automotive GmbH, Augsburger Straße 746, 70329 Stuttgart · HRB 736071 · <a href="https://auftragsboss.de/datenschutz.html" style="color:#8a9099;">Datenschutz</a>
             </td>
           </tr>
 

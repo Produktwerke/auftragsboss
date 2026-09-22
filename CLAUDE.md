@@ -154,7 +154,10 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   Stripe-Abo, danach /geloescht). Inhaber-Nummer ändern weiterhin nur über den Betreiber.
 >   Offen: zahlende Kunden haben KEINE technische Angebots-Kontingentgrenze (AGB als Fair-Use oder bauen).
 
-> **FEIERABEND-STAND 22.09.2026 (02902b0, 343 Tests, alles deployt, SALESFRANK-KAMPAGNE LÄUFT):**
+> **FEIERABEND-STAND 22.09.2026 (96f0b0b, 345 Tests, alles deployt, SALESFRANK-KAMPAGNE LÄUFT):**
+>   Nachtrag abends: Namensabfrage aus dem Leitfaden gestrichen (v6; Buchstabieren scheiterte, zwei Interessenten Babace/Innen.Art
+>   lädt Dirk von Hand ein), SalesFrank-Einladungen IMMER mit neutraler Anrede „zusammen" (NEUTRALE_ANREDE in verarbeitung.ts);
+>   bei einem Transkript „Antwort nicht lesbar" (Claude-JSON nicht parsebar) → 23.09. prüfen.
 >   SalesFrank komplett eingerichtet: deutsche Nummer gekauft (Twilio-Bundle 19.09. genehmigt), Assistentin „Anna von AuftragsBoss"
 >   (Stimme Sara Wagner, Leitfaden v5 nach drei Telefontests eingefroren, liegt in `_Claude/Angebotsblitz/SalesFrank-Einrichtung.md`
 >   Abschnitt 2; Absatz „Hinweise aus den Tests" NICHT in den Prompt), 250 Leads Gruppe A importiert, Zeitplan Mo–Fr 8–12/13–17,

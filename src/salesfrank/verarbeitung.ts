@@ -49,7 +49,13 @@ export function liesPayload(body: unknown): AnrufPayload | null {
   };
 }
 
-export type AnrufStatus = "EINGELADEN" | "PRUEFUNG" | "ABGELEHNT" | "SCHON_VORHANDEN" | "FEHLER" | "VERWORFEN";
+export type AnrufStatus = "EINGELADEN" | "PRUEFUNG" | "ABGELEHNT" | "KEIN_GESPRAECH" | "SCHON_VORHANDEN" | "FEHLER" | "VERWORFEN";
+
+/** SalesFrank-Ergebnisse, bei denen kein Mensch dran war: gar nicht erst bewerten (keine KI-Kosten, kein Eintrag). */
+export const OHNE_GESPRAECH = /machine|voicemail|mailbox|no[_ -]?answer|busy|failed|unreach|not[_ -]?reached|canceled|cancelled/i;
+
+/** Begründungen früherer Prüffälle, die in Wahrheit kein Gespräch waren (Aufräumen). */
+export const KEIN_GESPRAECH_MUSTER = /anrufbeantworter|mailbox|voicemail|ansage|brach\s|bricht\s|abgebrochen|endet direkt|rückruf|zurückrufen|nicht passt|passt gerade|keine zeit|nur mit dem firmennamen|nicht lesbar|unverständlich|vermittlungsdienst|goodbye|falsch gewählte|nach der begrüßung|nach der einstiegsfrage|nur nachgefragt|nur mit „genau|fragmente/i;
 
 export interface VerarbeitungsErgebnis {
   aktion: "ignoriert" | "doppelt" | "kein-gespraech" | AnrufStatus;
@@ -68,6 +74,7 @@ export async function verarbeiteSalesFrankAnruf(
   if (!p.callId) return { aktion: "ignoriert", detail: "ohne call.id" };
   if (await prisma.salesFrankAnruf.findUnique({ where: { callId: p.callId } })) return { aktion: "doppelt", detail: p.callId };
   if (!p.transkript && !p.zusammenfassung) return { aktion: "kein-gespraech", detail: p.ergebnis || "ohne Inhalt" };
+  if (OHNE_GESPRAECH.test(p.ergebnis)) return { aktion: "kein-gespraech", detail: p.ergebnis };
 
   const e: Einschaetzung = await bewerte({ transkript: p.transkript, zusammenfassung: p.zusammenfassung, ergebnis: p.ergebnis, name: p.name, firma: p.firma });
   const entscheidung = entscheide(e);
@@ -79,7 +86,7 @@ export async function verarbeiteSalesFrankAnruf(
     name: p.name,
     firma: p.firma,
     anrede,
-    einschaetzung: entscheidung === "EINLADEN" ? "JA" : entscheidung === "ABLEHNEN" ? "NEIN" : "UNKLAR",
+    einschaetzung: entscheidung === "EINLADEN" ? "JA" : entscheidung === "ABLEHNEN" ? "NEIN" : entscheidung === "KEIN_GESPRAECH" ? e.gespraechsart : "UNKLAR",
     begruendung: e.begruendung,
     zusammenfassung: p.zusammenfassung,
     beleg: e.beleg,
@@ -91,8 +98,8 @@ export async function verarbeiteSalesFrankAnruf(
   let nummerSpeichern: string | null = nummer;
   let transkript = p.transkript;
 
-  if (entscheidung === "ABLEHNEN") {
-    status = "ABGELEHNT";
+  if (entscheidung === "ABLEHNEN" || entscheidung === "KEIN_GESPRAECH") {
+    status = entscheidung === "ABLEHNEN" ? "ABGELEHNT" : "KEIN_GESPRAECH";
     detail = e.begruendung;
     nummerSpeichern = null;
     transkript = "";
@@ -149,6 +156,19 @@ export async function ladeSalesFrankAnrufEin(
   await prisma.salesFrankAnruf.update({ where: { id }, data: { status: "EINGELADEN", nummer, anrede, handwerkerId: erg.handwerker.id, erledigtAm: new Date() } });
   await prisma.adminLog.create({ data: { aktion: "SALESFRANK_EINGELADEN", handwerkerId: erg.handwerker.id, betrieb: a.firma || a.name || null, detail: `Von Hand nach Prüfung eingeladen (Anruf ${a.callId})` } });
   return { ok: true, meldung: `Einladung an ${maskiereNummer(nummer)} gesendet.` };
+}
+
+/** Prüffälle, die laut Begründung kein Gespräch waren (Mailbox, Abbruch, Rückrufwunsch), auf KEIN_GESPRAECH setzen. */
+export async function raeumeSalesFrankPruefungAuf(prisma: PrismaClient): Promise<number> {
+  const offen = await prisma.salesFrankAnruf.findMany({ where: { status: "PRUEFUNG" }, select: { id: true, begruendung: true, beleg: true } });
+  let n = 0;
+  for (const a of offen) {
+    if (a.beleg.trim() || !KEIN_GESPRAECH_MUSTER.test(a.begruendung)) continue;
+    await prisma.salesFrankAnruf.update({ where: { id: a.id }, data: { status: "KEIN_GESPRAECH", nummer: null, transkript: "", erledigtAm: new Date() } });
+    n++;
+  }
+  if (n) await prisma.adminLog.create({ data: { aktion: "SALESFRANK_AUFGERAEUMT", handwerkerId: null, betrieb: null, detail: `${n} Prüffälle ohne Gespräch (Mailbox, Abbruch, Rückruf) geschlossen` } });
+  return n;
 }
 
 /** Betreiber verwirft einen Anruf: Nummer und Transkript werden entfernt, der Eintrag bleibt als Spur. */

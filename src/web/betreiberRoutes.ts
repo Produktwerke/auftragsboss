@@ -47,7 +47,7 @@ import { legeLeadAnUndLadeEin } from "../lead/onboarding.js";
 import { WEBTEST_NUMMER } from "./webtest.js";
 import { berechneFunnel } from "../lead/funnel.js";
 import { betreiberSalesFrank } from "./betreiberSeite.js";
-import { ladeSalesFrankAnrufEin, verwerfeSalesFrankAnruf } from "../salesfrank/verarbeitung.js";
+import { ladeSalesFrankAnrufEin, verwerfeSalesFrankAnruf, raeumeSalesFrankPruefungAuf } from "../salesfrank/verarbeitung.js";
 import { salesfrankWebhookUrl, SALESFRANK_WEBHOOK_VORLAGE } from "../salesfrank/webhook.js";
 import { berechneChatKennzahlen, KENNZAHL_EVENT_TYPEN } from "../analytics/chatKennzahlen.js";
 import { erstelleDatenexport } from "../betrieb/datenexport.js";
@@ -586,6 +586,11 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
     return reply.type("text/html; charset=utf-8").send(
       betreiberSalesFrank({ basis: z.basis, anrufe, offen, webhookUrl: salesfrankWebhookUrl(process.env.BASE_URL ?? "https://api.auftragsboss.de"), vorlage: SALESFRANK_WEBHOOK_VORLAGE, filter }),
     );
+  });
+  for (const pfad of beide("/salesfrank/aufraeumen")) app.post<{ Params: { token?: string } }>(pfad, async (req, reply) => {
+    if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
+    const n = await raeumeSalesFrankPruefungAuf(prisma);
+    return reply.send({ ok: true, meldung: n ? `${n} Prüffälle als „kein Gespräch" geschlossen.` : "Nichts aufzuräumen." });
   });
   for (const pfad of beide("/salesfrank/:id/einladen")) app.post<{ Params: { token?: string; id: string }; Body: { nummer?: string; anrede?: string } }>(pfad, async (req, reply) => {
     if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });

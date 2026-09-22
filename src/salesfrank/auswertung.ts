@@ -32,16 +32,26 @@ export interface Einschaetzung {
   /** Wörtliches Zitat aus dem Transkript, das die Zustimmung belegt. */
   beleg: string;
   begruendung: string;
+  /** Kam überhaupt ein Gespräch zustande? Mailbox/Abbruch/Rückrufwunsch sind kein Prüffall. */
+  gespraechsart: Gespraechsart;
 }
 
-export type Entscheidung = "EINLADEN" | "PRUEFUNG" | "ABLEHNEN";
+export type Gespraechsart = "GESPRAECH" | "MAILBOX" | "ABBRUCH" | "RUECKRUF";
+
+export type Entscheidung = "EINLADEN" | "PRUEFUNG" | "ABLEHNEN" | "KEIN_GESPRAECH";
 
 /** Rein, testbar: nur klares Ja + Ja lädt automatisch ein; ein Nein beendet; Rest zur Prüfung. */
 export function entscheide(e: Einschaetzung): Entscheidung {
-  if (e.interesse === "NEIN" || e.whatsappZustimmung === "NEIN") return "ABLEHNEN";
   if (e.interesse === "JA" && e.whatsappZustimmung === "JA" && e.beleg.trim().length > 0) return "EINLADEN";
+  if (e.interesse === "NEIN" || e.whatsappZustimmung === "NEIN") return e.gespraechsart === "GESPRAECH" ? "ABLEHNEN" : "KEIN_GESPRAECH";
+  if (e.gespraechsart !== "GESPRAECH") return "KEIN_GESPRAECH";
   return "PRUEFUNG";
 }
+
+const gespraechsart = (v: unknown): Gespraechsart => {
+  const s = String(v ?? "").trim().toUpperCase();
+  return s === "MAILBOX" || s === "ABBRUCH" || s === "RUECKRUF" ? s : "GESPRAECH";
+};
 
 const urteil = (v: unknown): Urteil => {
   const s = String(v ?? "").trim().toUpperCase();
@@ -50,7 +60,7 @@ const urteil = (v: unknown): Urteil => {
 
 /** Tolerantes Auslesen der Modellantwort (JSON, notfalls aus umgebendem Text). */
 export function parseEinschaetzung(text: string, fallbackAnrede: string): Einschaetzung {
-  const leer: Einschaetzung = { interesse: "UNKLAR", whatsappZustimmung: "UNKLAR", anrede: fallbackAnrede, handynummer: null, beleg: "", begruendung: "Antwort nicht lesbar" };
+  const leer: Einschaetzung = { interesse: "UNKLAR", whatsappZustimmung: "UNKLAR", anrede: fallbackAnrede, handynummer: null, beleg: "", begruendung: "Antwort nicht lesbar", gespraechsart: "GESPRAECH" };
   const m = text.match(/\{[\s\S]*\}/);
   if (!m) return leer;
   try {
@@ -63,6 +73,7 @@ export function parseEinschaetzung(text: string, fallbackAnrede: string): Einsch
       handynummer: ziffern.length >= 8 ? ziffern : null,
       beleg: String(j.beleg ?? "").trim(),
       begruendung: String(j.begruendung ?? "").trim(),
+      gespraechsart: gespraechsart(j.gespraechsart),
     };
   } catch {
     return leer;
@@ -78,8 +89,9 @@ Beurteile streng und nur anhand dessen, was der ANGERUFENE tatsächlich gesagt h
 4. handynummer: Nur, wenn der Angerufene im Gespräch eine (andere) Handynummer für WhatsApp genannt hat, als Ziffern. Sonst null.
 5. beleg: Das wörtliche Zitat des Angerufenen, das die Zustimmung zu WhatsApp belegt. Leer, wenn es keins gibt.
 6. begruendung: Ein Satz.
+7. gespraechsart: MAILBOX, wenn nur ein Anrufbeantworter, eine Mailbox oder eine Netzansage erreicht wurde. ABBRUCH, wenn der Angerufene nach wenigen Worten aufgelegt hat oder das Gespräch abbrach, bevor AuftragsBoss vorgestellt wurde (auch „passt gerade nicht", falsche Nummer, nicht zuständig ohne Weiterleitung, unverständlich). RUECKRUF, wenn der Angerufene um einen Anruf zu einem anderen Zeitpunkt gebeten hat. GESPRAECH nur, wenn AuftragsBoss tatsächlich vorgestellt wurde und der Angerufene inhaltlich reagiert hat.
 
-Antworte NUR mit JSON: {"interesse":"JA|NEIN|UNKLAR","whatsappZustimmung":"JA|NEIN|UNKLAR","anrede":"…","handynummer":"…"|null,"beleg":"…","begruendung":"…"}`;
+Antworte NUR mit JSON: {"interesse":"JA|NEIN|UNKLAR","whatsappZustimmung":"JA|NEIN|UNKLAR","anrede":"…","handynummer":"…"|null,"beleg":"…","begruendung":"…","gespraechsart":"GESPRAECH|MAILBOX|ABBRUCH|RUECKRUF"}`;
 
 export type Bewerter = (g: Gespraech) => Promise<Einschaetzung>;
 

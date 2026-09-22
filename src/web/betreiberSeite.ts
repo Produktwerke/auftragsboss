@@ -844,6 +844,7 @@ const SF_STATUS_LABEL: Record<string, [string, string]> = {
   PRUEFUNG: ["zur Prüfung", "b-warn"],
   FEHLER: ["Einladung fehlgeschlagen", "b-warn"],
   ABGELEHNT: ["abgelehnt", "b-neutral"],
+  KEIN_GESPRAECH: ["kein Gespräch", "b-neutral"],
   SCHON_VORHANDEN: ["schon im System", "b-neutral"],
   VERWORFEN: ["verworfen", "b-neutral"],
 };
@@ -879,7 +880,8 @@ export function betreiberSalesFrank(args: { basis: string; anrufe: SalesFrankZei
   <p class="zurueck"><a href="${basis}/betriebe">← Zur Kundenliste</a></p>
   <h1>SalesFrank: Anrufe und Einladungen</h1>
   <p class="unter">Jedes Gespräch wird von der KI bewertet. Klare Zustimmung zu WhatsApp → Einladung geht automatisch raus. Unklare Fälle landen hier zur Prüfung.${offen ? ` <b>${offen} offen.</b>` : ""}</p>
-  <p class="unter">Anzeigen: ${f("", "alle")} · ${f("offen", "nur offene")} · ${f("EINGELADEN", "eingeladen")} · ${f("ABGELEHNT", "abgelehnt")}</p>
+  <p class="unter">Anzeigen: ${f("", "alle")} · ${f("offen", "nur offene")} · ${f("EINGELADEN", "eingeladen")} · ${f("ABGELEHNT", "abgelehnt")} · ${f("KEIN_GESPRAECH", "kein Gespräch")}</p>
+  ${offen ? `<form class="inline" data-post="${basis}/salesfrank/aufraeumen" data-frage="Alle Prüffälle schließen, die laut Begründung kein Gespräch waren (Mailbox, Abbruch, Rückrufwunsch)? Nummern werden dabei entfernt."><button class="kn" style="background:#8a9099;">Mailbox und Abbrüche aufräumen</button><div class="meldung"></div></form>` : ""}
 
   <div class="tabellenrahmen">
   <table class="liste">

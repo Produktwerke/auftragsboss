@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import type { PrismaClient } from "@prisma/client";
 import { entscheide, parseEinschaetzung, type Einschaetzung } from "./auswertung.js";
-import { liesPayload, verarbeiteSalesFrankAnruf, ladeSalesFrankAnrufEin, verwerfeSalesFrankAnruf } from "./verarbeitung.js";
+import { liesPayload, verarbeiteSalesFrankAnruf, ladeSalesFrankAnrufEin, verwerfeSalesFrankAnruf, raeumeSalesFrankPruefungAuf, OHNE_GESPRAECH } from "./verarbeitung.js";
 import { salesfrankWebhookUrl } from "./webhook.js";
 import type { LeadSender } from "../lead/onboarding.js";
 
-const ja: Einschaetzung = { interesse: "JA", whatsappZustimmung: "JA", anrede: "Herr Müller", handynummer: null, beleg: "Ja, schicken Sie mir das per WhatsApp.", begruendung: "klare Zustimmung" };
+const ja: Einschaetzung = { interesse: "JA", whatsappZustimmung: "JA", anrede: "Herr Müller", handynummer: null, beleg: "Ja, schicken Sie mir das per WhatsApp.", begruendung: "klare Zustimmung", gespraechsart: "GESPRAECH" };
 
 function fakePrisma(v: { vorhanden?: unknown; anruf?: unknown; anrufe?: Record<string, unknown> } = {}) {
   const aufrufe: Record<string, unknown[]> = { anrufCreate: [], anrufUpdate: [], hwCreate: [], adminLog: [], events: [] };
@@ -46,6 +46,38 @@ describe("SalesFrank: Entscheidung und Antwort-Parser", () => {
     expect(entscheide({ ...ja, interesse: "UNKLAR" })).toBe("PRUEFUNG");
     expect(entscheide({ ...ja, whatsappZustimmung: "NEIN" })).toBe("ABLEHNEN");
     expect(entscheide({ ...ja, interesse: "NEIN", whatsappZustimmung: "UNKLAR" })).toBe("ABLEHNEN");
+    // Mailbox, Abbruch, Rückrufwunsch: kein Prüffall, kein Nein
+    expect(entscheide({ ...ja, interesse: "UNKLAR", whatsappZustimmung: "UNKLAR", beleg: "", gespraechsart: "MAILBOX" })).toBe("KEIN_GESPRAECH");
+    expect(entscheide({ ...ja, interesse: "NEIN", whatsappZustimmung: "UNKLAR", gespraechsart: "ABBRUCH" })).toBe("KEIN_GESPRAECH");
+    expect(entscheide({ ...ja, interesse: "UNKLAR", whatsappZustimmung: "UNKLAR", beleg: "", gespraechsart: "RUECKRUF" })).toBe("KEIN_GESPRAECH");
+    expect(entscheide({ ...ja, gespraechsart: "RUECKRUF" })).toBe("EINLADEN");
+  });
+  it("SalesFrank-Ergebnis ohne Mensch wird ohne KI übersprungen", async () => {
+    expect(OHNE_GESPRAECH.test("no_answer / MACHINE")).toBe(true);
+    expect(OHNE_GESPRAECH.test("answered / interested")).toBe(false);
+    const { p, aufrufe } = fakePrisma();
+    let bewertet = false;
+    const erg = await verarbeiteSalesFrankAnruf(p, payload({ ergebnis: "answered / MACHINE / voicemail" }), { bewerte: async () => { bewertet = true; return ja; } });
+    expect(erg.aktion).toBe("kein-gespraech");
+    expect(bewertet).toBe(false);
+    expect(aufrufe.anrufCreate.length).toBe(0);
+  });
+  it("Mailbox laut KI → KEIN_GESPRAECH ohne Nummer und Transkript", async () => {
+    const { p, aufrufe } = fakePrisma();
+    const erg = await verarbeiteSalesFrankAnruf(p, payload(), { bewerte: async () => ({ ...ja, interesse: "UNKLAR", whatsappZustimmung: "UNKLAR", beleg: "", gespraechsart: "MAILBOX" }) });
+    expect(erg.aktion).toBe("KEIN_GESPRAECH");
+    expect(aufrufe.anrufCreate[0]).toMatchObject({ status: "KEIN_GESPRAECH", nummer: null, transkript: "", einschaetzung: "MAILBOX" });
+  });
+  it("Aufräumen schließt nur Prüffälle ohne Beleg mit Mailbox-/Abbruch-Begründung", async () => {
+    const { p, aufrufe } = fakePrisma();
+    (p as unknown as { salesFrankAnruf: { findMany: unknown } }).salesFrankAnruf.findMany = async () => [
+      { id: "a", begruendung: "Es wurde nur ein Anrufbeantworter erreicht.", beleg: "" },
+      { id: "b", begruendung: "Der Angerufene bestätigte nur seine Zuständigkeit.", beleg: "" },
+      { id: "c", begruendung: "Das Gespräch brach nach der Begrüßung ab.", beleg: "ja gerne" },
+    ];
+    expect(await raeumeSalesFrankPruefungAuf(p)).toBe(1);
+    expect(aufrufe.anrufUpdate.length).toBe(1);
+    expect(aufrufe.anrufUpdate[0]).toMatchObject({ where: { id: "a" }, data: { status: "KEIN_GESPRAECH", nummer: null } });
   });
   it("liest JSON auch aus umgebendem Text, unbekannte Werte werden UNKLAR", () => {
     const e = parseEinschaetzung(`Hier: {"interesse":"ja","whatsappZustimmung":"vielleicht","anrede":"Frau Kurz","handynummer":"0151 22 33 44 5","beleg":"ja gerne","begruendung":"ok"} fertig`, "Firma");

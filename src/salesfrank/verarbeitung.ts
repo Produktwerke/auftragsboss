@@ -65,6 +65,16 @@ export interface VerarbeitungsErgebnis {
 
 const istHandy = (nummer: string) => /^49(15|16|17)\d{7,}$/.test(nummer);
 
+/**
+ * Neutrale Anrede aus dem Firmennamen (22.09.2026, Dirk: Namen am Telefon zu erfragen
+ * scheitert oft). Lange Google-Maps-Namen werden am ersten Trenner gekürzt:
+ * „Maler & Trockenbau Jobst GmbH: Malermeisterbetrieb Weingarten" → „Maler & Trockenbau Jobst GmbH".
+ */
+export function anredeAusFirma(firma: string): string {
+  const kurz = firma.split(/\s*[:|(]\s*|\s+[-–•]\s+/)[0]!.trim();
+  return (kurz.length > 45 ? kurz.slice(0, 45).replace(/\s+\S*$/, "") : kurz).trim();
+}
+
 export async function verarbeiteSalesFrankAnruf(
   prisma: PrismaClient,
   p: AnrufPayload,
@@ -78,7 +88,7 @@ export async function verarbeiteSalesFrankAnruf(
 
   const e: Einschaetzung = await bewerte({ transkript: p.transkript, zusammenfassung: p.zusammenfassung, ergebnis: p.ergebnis, name: p.name, firma: p.firma });
   const entscheidung = entscheide(e);
-  const anrede = (p.anrede || e.anrede || p.firma || p.name).trim();
+  const anrede = (p.anrede || e.anrede || anredeAusFirma(p.firma) || p.name).trim();
   const nummer = normalisiereHandy(e.handynummer ?? p.telefon) ?? normalisiereHandy(p.telefon);
   const basis = {
     callId: p.callId,

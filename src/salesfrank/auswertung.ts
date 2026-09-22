@@ -85,7 +85,7 @@ const SYSTEM = `Du wertest das Transkript eines Verkaufstelefonats aus. Ein KI-T
 Beurteile streng und nur anhand dessen, was der ANGERUFENE tatsächlich gesagt hat:
 1. interesse: JA, wenn der Angerufene AuftragsBoss ausprobieren möchte. NEIN bei Absage, kein Interesse, Auflegen, falscher Ansprechpartner ohne Weiterleitung. Sonst UNKLAR.
 2. whatsappZustimmung: JA nur, wenn der Angerufene AUSDRÜCKLICH zugestimmt hat, eine WhatsApp-Nachricht zu bekommen (z. B. „ja, schicken Sie mir das per WhatsApp", „ja gerne", „können Sie machen" als Antwort auf genau diese Frage). Ein allgemeines Interesse ist KEINE Zustimmung. NEIN, wenn er WhatsApp ablehnt. Wurde die Frage nicht gestellt oder nicht klar beantwortet: UNKLAR.
-3. anrede: Wie die Einladung beginnen soll, z. B. „Herr Müller" oder „Frau Schmidt". Nur, wenn der Name im Gespräch klar wird. Sonst leer lassen.
+3. anrede: Wie die Einladung beginnen soll, z. B. „Herr Müller" oder „Frau Schmidt". NUR, wenn der Angerufene seinen Nachnamen deutlich genannt oder buchstabiert und ggf. bestätigt hat. Bei Unsicherheit, mehreren Varianten oder unklarer Schreibweise leer lassen (dann wird der Firmenname verwendet). Nie raten.
 4. handynummer: Nur, wenn der Angerufene im Gespräch eine (andere) Handynummer für WhatsApp genannt hat, als Ziffern. Sonst null.
 5. beleg: Das wörtliche Zitat des Angerufenen, das die Zustimmung zu WhatsApp belegt. Leer, wenn es keins gibt.
 6. begruendung: Ein Satz.

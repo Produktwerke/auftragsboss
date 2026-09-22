@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import type { PrismaClient } from "@prisma/client";
 import { entscheide, parseEinschaetzung, type Einschaetzung } from "./auswertung.js";
-import { liesPayload, verarbeiteSalesFrankAnruf, ladeSalesFrankAnrufEin, verwerfeSalesFrankAnruf, raeumeSalesFrankPruefungAuf, OHNE_GESPRAECH } from "./verarbeitung.js";
+import { liesPayload, verarbeiteSalesFrankAnruf, ladeSalesFrankAnrufEin, verwerfeSalesFrankAnruf, raeumeSalesFrankPruefungAuf, OHNE_GESPRAECH, anredeAusFirma } from "./verarbeitung.js";
 import { salesfrankWebhookUrl } from "./webhook.js";
 import type { LeadSender } from "../lead/onboarding.js";
 
@@ -86,6 +86,24 @@ describe("SalesFrank: Entscheidung und Antwort-Parser", () => {
     expect(e.anrede).toBe("Frau Kurz");
     expect(e.handynummer).toBe("01512233445");
     expect(parseEinschaetzung("kein json", "Firma X")).toMatchObject({ interesse: "UNKLAR", anrede: "Firma X" });
+  });
+});
+
+describe("SalesFrank: neutrale Anrede aus dem Firmennamen", () => {
+  it("kürzt an Doppelpunkt, Strich, Klammer und Pipe; sonst unverändert", () => {
+    expect(anredeAusFirma("Maler & Trockenbau Jobst GmbH: Malermeisterbetrieb Weingarten")).toBe("Maler & Trockenbau Jobst GmbH");
+    expect(anredeAusFirma("Wandmanufaktur | Thomas Beideck")).toBe("Wandmanufaktur");
+    expect(anredeAusFirma("FischerStuck (Büro & Rechnungsadresse)")).toBe("FischerStuck");
+    expect(anredeAusFirma("Belis Art - Farbe Putz Boden")).toBe("Belis Art");
+    expect(anredeAusFirma("Malermeister Effectus")).toBe("Malermeister Effectus");
+    expect(anredeAusFirma("")).toBe("");
+  });
+  it("ohne erkannten Namen geht die Einladung mit dem gekürzten Firmennamen raus", async () => {
+    const { p, aufrufe } = fakePrisma();
+    const { sender, gesendet } = fakeSender();
+    await verarbeiteSalesFrankAnruf(p, payload({ firma: "Maler Daief GmbH: Fassaden & Innen" }), { bewerte: async () => ({ ...ja, anrede: "" }), sender });
+    expect(aufrufe.hwCreate[0]).toMatchObject({ name: "Maler Daief GmbH" });
+    expect(gesendet[0]?.[2]).toEqual(["Maler Daief GmbH"]);
   });
 });
 

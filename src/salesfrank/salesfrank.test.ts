@@ -98,12 +98,12 @@ describe("SalesFrank: neutrale Anrede aus dem Firmennamen", () => {
     expect(anredeAusFirma("Malermeister Effectus")).toBe("Malermeister Effectus");
     expect(anredeAusFirma("")).toBe("");
   });
-  it("ohne erkannten Namen geht die Einladung mit dem gekürzten Firmennamen raus", async () => {
+  it("die Einladung ist immer neutral, auch wenn ein Name gefallen ist", async () => {
     const { p, aufrufe } = fakePrisma();
     const { sender, gesendet } = fakeSender();
-    await verarbeiteSalesFrankAnruf(p, payload({ firma: "Maler Daief GmbH: Fassaden & Innen" }), { bewerte: async () => ({ ...ja, anrede: "" }), sender });
-    expect(aufrufe.hwCreate[0]).toMatchObject({ name: "Maler Daief GmbH" });
-    expect(gesendet[0]?.[2]).toEqual(["Maler Daief GmbH"]);
+    await verarbeiteSalesFrankAnruf(p, payload({ firma: "Maler Daief GmbH: Fassaden & Innen" }), { bewerte: async () => ({ ...ja, anrede: "Herr Daief" }), sender });
+    expect(aufrufe.hwCreate[0]).toMatchObject({ name: "zusammen", firma: "Maler Daief GmbH: Fassaden & Innen" });
+    expect(gesendet[0]?.[2]).toEqual(["zusammen"]);
   });
 });
 
@@ -128,8 +128,8 @@ describe("SalesFrank: Anruf verarbeiten", () => {
     const { sender, gesendet } = fakeSender();
     const erg = await verarbeiteSalesFrankAnruf(p, payload(), { bewerte: async () => ja, sender });
     expect(erg.aktion).toBe("EINGELADEN");
-    expect(aufrufe.hwCreate[0]).toMatchObject({ whatsappNummer: "491761234567", name: "Herr Müller", firma: "Maler Müller GmbH", optInQuelle: "salesfrank:c1", leadQuelle: "TELEFON" });
-    expect(gesendet[0]?.[2]).toEqual(["Herr Müller"]);
+    expect(aufrufe.hwCreate[0]).toMatchObject({ whatsappNummer: "491761234567", name: "zusammen", firma: "Maler Müller GmbH", optInQuelle: "salesfrank:c1", leadQuelle: "TELEFON" });
+    expect(gesendet[0]?.[2]).toEqual(["zusammen"]); // Vorlage: „Hallo zusammen, danke für das nette Telefonat eben!"
     expect(aufrufe.anrufCreate[0]).toMatchObject({ callId: "c1", status: "EINGELADEN", einschaetzung: "JA", nummer: "491761234567", handwerkerId: "hw1", beleg: ja.beleg });
     expect(aufrufe.adminLog[0]).toMatchObject({ aktion: "SALESFRANK_EINGELADEN" });
   });

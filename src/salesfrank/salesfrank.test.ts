@@ -98,6 +98,20 @@ describe("SalesFrank: neutrale Anrede aus dem Firmennamen", () => {
     expect(anredeAusFirma("Malermeister Effectus")).toBe("Malermeister Effectus");
     expect(anredeAusFirma("")).toBe("");
   });
+  it("mit genehmigter neutraler Vorlage (LEAD_VORLAGE_NEUTRAL) geht die Einladung ohne Platzhalter raus", async () => {
+    process.env.LEAD_VORLAGE_NEUTRAL = "angebot_ausprobieren_neutral";
+    try {
+      const { p, aufrufe } = fakePrisma();
+      const { sender, gesendet } = fakeSender();
+      const erg = await verarbeiteSalesFrankAnruf(p, payload(), { bewerte: async () => ja, sender });
+      expect(erg.aktion).toBe("EINGELADEN");
+      expect(gesendet[0]?.[1]).toBe("angebot_ausprobieren_neutral");
+      expect(gesendet[0]?.[2]).toEqual([]);
+      expect(aufrufe.hwCreate[0]).toMatchObject({ name: "" });
+    } finally {
+      delete process.env.LEAD_VORLAGE_NEUTRAL;
+    }
+  });
   it("die Einladung ist immer neutral, auch wenn ein Name gefallen ist", async () => {
     const { p, aufrufe } = fakePrisma();
     const { sender, gesendet } = fakeSender();

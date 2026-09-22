@@ -30,6 +30,15 @@ export function leadVorlagenName(): string {
   return process.env.LEAD_VORLAGE?.trim() || "angebot_ausprobieren";
 }
 
+/**
+ * Einladungs-Vorlage OHNE Anrede-Platzhalter („Hallo, danke für das nette Telefonat eben! …"),
+ * für SalesFrank-Leads (22.09.2026, Dirk: Namen am Telefon zu erfragen scheitert, „Hallo zusammen"
+ * gefällt nicht). Leer, solange Meta die Vorlage nicht genehmigt hat → dann alte Vorlage mit „zusammen".
+ */
+export function leadVorlageNeutralName(env: NodeJS.ProcessEnv = process.env): string {
+  return env.LEAD_VORLAGE_NEUTRAL?.trim() || "";
+}
+
 /** Vorlage für Interessenten, die auf der Website ihre Nummer eintragen (15.09.2026). */
 export function testVorlagenName(): string {
   return process.env.TEST_VORLAGE?.trim() || "test_starten";
@@ -88,13 +97,15 @@ export async function legeLeadAnUndLadeEin(
     leadQuelle?: string;
     /** Abweichende Meta-Vorlage, z.B. test_starten für Website-Interessenten. */
     vorlage?: string;
+    /** Vorlage ohne {{1}}: keine Anrede senden, Anrede darf leer sein. */
+    ohneAnrede?: boolean;
   },
   sender: LeadSender = echterSender,
 ): Promise<{ handwerker: Handwerker } | { fehler: string }> {
   const nummer = normalisiereHandy(args.nummer);
   if (!nummer) return { fehler: "Bitte eine gültige Handynummer angeben (z. B. 0176 1234567)." };
   const anrede = args.anrede.trim();
-  if (anrede.length < 2) return { fehler: "Bitte die Anrede angeben (z. B. Herr Müller), sie steht in der Nachricht." };
+  if (!args.ohneAnrede && anrede.length < 2) return { fehler: "Bitte die Anrede angeben (z. B. Herr Müller), sie steht in der Nachricht." };
 
   const vorhanden = await prisma.handwerker.findUnique({ where: { whatsappNummer: nummer } });
   if (vorhanden) {
@@ -119,7 +130,7 @@ export async function legeLeadAnUndLadeEin(
     data: { quelle: handwerker.optInQuelle },
   });
 
-  const ok = await sender.vorlage(nummer, args.vorlage ?? leadVorlagenName(), [anrede], [KNOPF_JA, KNOPF_ERKLAEREN]);
+  const ok = await sender.vorlage(nummer, args.vorlage ?? leadVorlagenName(), args.ohneAnrede ? [] : [anrede], [KNOPF_JA, KNOPF_ERKLAEREN]);
   if (!ok) {
     // Lead bleibt angelegt (Opt-in ist dokumentiert) — der Betreiber sieht den
     // Fehler und kann es erneut versuchen (z. B. Vorlage noch nicht genehmigt).

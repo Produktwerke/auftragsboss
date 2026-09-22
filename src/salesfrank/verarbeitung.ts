@@ -5,7 +5,7 @@
 // Nummer und ohne Transkript (Datenminimierung).
 import type { PrismaClient } from "@prisma/client";
 import { normalisiereHandy } from "../config.js";
-import { legeLeadAnUndLadeEin, type LeadSender } from "../lead/onboarding.js";
+import { legeLeadAnUndLadeEin, leadVorlageNeutralName, type LeadSender } from "../lead/onboarding.js";
 import { maskiereNummer } from "../whatsapp/maskierung.js";
 import { bewerteGespraech, entscheide, type Bewerter, type Einschaetzung } from "./auswertung.js";
 
@@ -72,6 +72,12 @@ const istHandy = (nummer: string) => /^49(15|16|17)\d{7,}$/.test(nummer);
  */
 export const NEUTRALE_ANREDE = "zusammen";
 
+/** Einladungsparameter: neutrale Vorlage ohne Platzhalter, sobald sie bei Meta genehmigt und per .env gesetzt ist. */
+export function einladungsVorlage(env: NodeJS.ProcessEnv = process.env): { vorlage?: string; ohneAnrede: boolean; anrede: string } {
+  const neutral = leadVorlageNeutralName(env);
+  return neutral ? { vorlage: neutral, ohneAnrede: true, anrede: "" } : { ohneAnrede: false, anrede: NEUTRALE_ANREDE };
+}
+
 /** Firmenname am ersten Trenner gekürzt (für Anzeige): „Maler Jobst GmbH: Weingarten" → „Maler Jobst GmbH". */
 export function anredeAusFirma(firma: string): string {
   const kurz = firma.split(/\s*[:|(]\s*|\s+[-–•]\s+/)[0]!.trim();
@@ -91,7 +97,8 @@ export async function verarbeiteSalesFrankAnruf(
 
   const e: Einschaetzung = await bewerte({ transkript: p.transkript, zusammenfassung: p.zusammenfassung, ergebnis: p.ergebnis, name: p.name, firma: p.firma });
   const entscheidung = entscheide(e);
-  const anrede = NEUTRALE_ANREDE;
+  const ev = einladungsVorlage();
+  const anrede = ev.anrede;
   const nummer = normalisiereHandy(e.handynummer ?? p.telefon) ?? normalisiereHandy(p.telefon);
   const basis = {
     callId: p.callId,
@@ -130,7 +137,7 @@ export async function verarbeiteSalesFrankAnruf(
       status = "PRUEFUNG";
       detail = `Zustimmung erkannt, aber keine Handynummer (${nummer ? maskiereNummer(nummer) : "keine Nummer"}). Bitte Handynummer erfragen und dann einladen.`;
     } else {
-      const erg = await legeLeadAnUndLadeEin(prisma, { nummer, anrede, firma: p.firma, optInQuelle: `salesfrank:${p.callId}`, leadQuelle: "TELEFON" }, deps.sender);
+      const erg = await legeLeadAnUndLadeEin(prisma, { nummer, anrede, firma: p.firma, optInQuelle: `salesfrank:${p.callId}`, leadQuelle: "TELEFON", vorlage: ev.vorlage, ohneAnrede: ev.ohneAnrede }, deps.sender);
       if ("handwerker" in erg) {
         status = "EINGELADEN";
         handwerkerId = erg.handwerker.id;
@@ -163,8 +170,9 @@ export async function ladeSalesFrankAnrufEin(
   if (a.status !== "PRUEFUNG" && a.status !== "FEHLER") return { ok: false, fehler: `Anruf ist schon ${a.status.toLowerCase()}` };
   const nummer = normalisiereHandy(args.nummer || a.nummer || "");
   if (!nummer || !istHandy(nummer)) return { ok: false, fehler: "Bitte eine gültige Handynummer angeben." };
-  const anrede = (args.anrede || a.anrede).trim();
-  const erg = await legeLeadAnUndLadeEin(prisma, { nummer, anrede, firma: a.firma, optInQuelle: `salesfrank:${a.callId}:manuell`, leadQuelle: "TELEFON" }, sender);
+  const ev = einladungsVorlage();
+  const anrede = ev.ohneAnrede ? "" : (args.anrede || a.anrede || NEUTRALE_ANREDE).trim();
+  const erg = await legeLeadAnUndLadeEin(prisma, { nummer, anrede, firma: a.firma, optInQuelle: `salesfrank:${a.callId}:manuell`, leadQuelle: "TELEFON", vorlage: ev.vorlage, ohneAnrede: ev.ohneAnrede }, sender);
   if ("fehler" in erg) return { ok: false, fehler: erg.fehler };
   await prisma.salesFrankAnruf.update({ where: { id }, data: { status: "EINGELADEN", nummer, anrede, handwerkerId: erg.handwerker.id, erledigtAm: new Date() } });
   await prisma.adminLog.create({ data: { aktion: "SALESFRANK_EINGELADEN", handwerkerId: erg.handwerker.id, betrieb: a.firma || a.name || null, detail: `Von Hand nach Prüfung eingeladen (Anruf ${a.callId})` } });

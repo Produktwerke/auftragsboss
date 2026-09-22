@@ -136,6 +136,20 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 22.09.2026 (3) — SALESFRANK-PRÜFUNG + BEWERTUNG MIT FESTEM ANTWORTFORMAT (98dbc90, 347 Tests, deployt 17:05, lokal 3 Commits vor GitHub, Push nur mit Dirks Freigabe):**
+>   Log 22.09.: 107 Webhooks (102 in der Welle 15:00–15:30, danach bis 16:40 nur 3 → Tageslimit 30 Min vermutlich verbraucht, Dirk prüft in
+>   SalesFrank), 0 automatische Einladungen, 42 abgelehnt, 46 Prüfung (alle von Dirk erledigt), 19 ohne Inhalt, keine Fehler. Von Hand eingeladen:
+>   Babace (gelesen), Innen.Art (Erklärung angesehen). BEFUND: Babace war ein klares Ja mit bestätigter Handynummer, die Bewertung lieferte
+>   trotzdem „Antwort nicht lesbar" (3× bei ~70 Bewertungen; Ursache: freier Text + JSON-Suche). BEHOBEN: `salesfrank/auswertung.ts` nutzt
+>   `EinschaetzungSchema` + `messages.parse` mit `output_config` (wie Angebot/Wandfoto), `einschaetzungAusFormular`; fehlt das Formular
+>   (refusal/abgeschnitten) → `console.warn` „SalesFrank-Bewertung ohne auswertbares Formular" mit Rohtext + Text-Parser als Notfallweg.
+>   `verarbeitung.ts`: „nicht lesbar" aus `KEIN_GESPRAECH_MUSTER` gestrichen und beim Aufräumen übersprungen (der Knopf hatte solche Fälle
+>   geschlossen und Nummer + Transkript gelöscht). Probe nach dem Deploy: Mailbox-Transkript per fetch aus der Cockpit-Seite an den Webhook
+>   (callId probe-format-1, Festnetz, kann nichts senden) → „kein Gespräch" mit sauberer Begründung. Leitfaden-Beobachtung: Anna stellte in
+>   mindestens zwei Gesprächen mit zuhörendem Angerufenen („Genau", „verstanden") die WhatsApp-Frage nicht. Wächter V2.2.1 blockiert per ssh
+>   `chown` und `npx tsx` auf dem Server (Logs lesen, scp, Deploy-Skript gehen); Cockpit-Login macht Dirk selbst im Claude-Browser.
+>   NÄCHSTES: 23.09. Log + Cockpit (erste automatische Einladung, Log auf „ohne auswertbares Formular"), Leitfaden schärfen.
+
 > **Update 17.09.2026 (2) — AGB-PAKET IN VIER TEILEN (321 Tests, deployt, db push: Handwerker.agb*, Vorgang.absenderNummer, Modell Mitarbeiter):**
 >   (1) DATENEXPORT `betrieb/datenexport.ts` + eigener ZIP-Schreiber `betrieb/zip.ts` (ohne Abhängigkeit): `/export/:einstellungenToken`
 >   (Kunden-Cockpit „Meine Daten (ZIP)", Einstellungen „Dein Konto") und `/stasi/betrieb/:id/export.zip`; Inhalt LIESMICH, betrieb.json,

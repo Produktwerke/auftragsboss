@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="de" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>Passt das zu Ihrem Betrieb?</title>
+  <!--
+    AuftragsBoss Mail 4 (Tag 12) · Betreff: Passt das zu Ihrem Betrieb?
+    Erzeugt aus mailchimp-vorlage.html + mailchimp-texte.html (scripts/leads/mailchimp-vorlagen.cjs).
+    In Mailchimp: Kampagne → Design → „Code your own" → „Paste in code" → diesen Code einfügen.
+    Bereiche mit mc:edit lassen sich im Mailchimp-Editor ohne Code bearbeiten (Text, Signatur, Fußzeile).
+    Merge-Felder: *|FIRMA|*, *|ORT|* (Spalten aus dem Import), *|UNSUB|* (Abmeldelink),
+    *|LIST:ADDRESSLINE|* (Adresse der Zielgruppe, in Mailchimp auf DAG Deutsche Automotive GmbH,
+    Augsburger Straße 746, 70329 Stuttgart setzen).
+    Platzhalter SALESFRANK-NUMMER in der Signatur ersetzen.
+  -->
+  <style>
+    body { margin: 0; padding: 0; background: #ffffff; -webkit-text-size-adjust: 100%; }
+    table { border-collapse: collapse; }
+    .text { font-family: Calibri, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.5; color: #1f2328; }
+    .text p { margin: 0 0 16px 0; }
+    .text a { color: #0563c1; text-decoration: underline; }
+    .sig { font-family: Calibri, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.45; color: #4b5563; }
+    .sig a { color: #4b5563; text-decoration: none; }
+    .marke { font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; letter-spacing: 0.08em; color: #1f2328; }
+    .foot { font-family: Calibri, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.5; color: #8a9099; }
+    .foot a { color: #8a9099; text-decoration: underline; }
+  </style>
+</head>
+<body style="margin:0; padding:0; background:#ffffff;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff">
+    <tr>
+      <td align="left" style="padding: 18px 20px 28px 20px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="max-width: 640px; width: 100%;">
+
+          <!-- Text der Mail: pro Kampagne austauschen (Texte in mailchimp-texte.html) -->
+          <tr>
+            <td class="text" mc:edit="text" style="font-family: Calibri, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.5; color: #1f2328;">
+              <p>Hallo,</p>
+              <p>eine letzte Frage:</p>
+              <p>Ist das Thema für *|FIRMA|* grundsätzlich interessant, oder soll ich es dabei belassen?</p>
+              <p>Ein kurzes „Nein" reicht natürlich auch. Dann melde ich mich dazu nicht mehr.</p>
+              <p>Viele Grüße<br>Dirk</p>
+            </td>
+          </tr>
+
+          <!-- Signatur -->
+          <tr>
+            <td mc:edit="signatur" style="padding-top: 10px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td valign="middle" style="padding: 0 10px 0 0;">
+                    <img src="https://auftragsboss.de/auftragsboss-favicon-180.png" width="40" height="40" alt="AuftragsBoss" style="display:block; width:40px; height:40px; border:0;">
+                  </td>
+                  <td valign="middle" class="marke" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; letter-spacing: 0.08em; color: #1f2328;">AUFTRAGSBOSS</td>
+                </tr>
+              </table>
+              <div class="sig" style="font-family: Calibri, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.45; color: #4b5563; padding-top: 8px;">
+                <b style="color:#1f2328;">Dirk Beer</b><br>
+                AuftragsBoss · Eine Marke der DAG Deutsche Automotive GmbH<br>
+                Augsburger Straße 746 · 70329 Stuttgart<br>
+                Tel. <a href="tel:+49SALESFRANK-NUMMER" style="color:#4b5563; text-decoration:none;">+49 SALESFRANK-NUMMER</a>
+                · <a href="mailto:dirk@auftragsboss.de" style="color:#4b5563; text-decoration:none;">dirk@auftragsboss.de</a>
+                · <a href="https://auftragsboss.de" style="color:#4b5563; text-decoration:none;">auftragsboss.de</a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Fußzeile (Pflicht: Abmeldelink und Anschrift) -->
+          <tr>
+            <td class="foot" mc:edit="fusszeile" style="padding-top: 28px; font-family: Calibri, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.5; color: #8a9099;">
+              Sie erhalten diese E-Mail, weil *|FIRMA|* in *|ORT|* öffentlich als Malerbetrieb gelistet ist.
+              Keine weitere E-Mail von mir? Ein Klick genügt: <a href="*|UNSUB|*" style="color:#8a9099;">abmelden</a>.<br>
+              *|LIST:ADDRESSLINE|* · HRB 736071 · <a href="https://auftragsboss.de/datenschutz.html" style="color:#8a9099;">Datenschutz</a>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

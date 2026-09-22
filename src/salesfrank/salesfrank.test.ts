@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import type { PrismaClient } from "@prisma/client";
-import { entscheide, parseEinschaetzung, type Einschaetzung } from "./auswertung.js";
+import { entscheide, parseEinschaetzung, einschaetzungAusFormular, EinschaetzungSchema, ANTWORT_NICHT_LESBAR, type Einschaetzung } from "./auswertung.js";
 import { liesPayload, verarbeiteSalesFrankAnruf, ladeSalesFrankAnrufEin, verwerfeSalesFrankAnruf, raeumeSalesFrankPruefungAuf, OHNE_GESPRAECH, anredeAusFirma } from "./verarbeitung.js";
 import { salesfrankWebhookUrl } from "./webhook.js";
 import type { LeadSender } from "../lead/onboarding.js";
@@ -68,18 +68,32 @@ describe("SalesFrank: Entscheidung und Antwort-Parser", () => {
     expect(erg.aktion).toBe("KEIN_GESPRAECH");
     expect(aufrufe.anrufCreate[0]).toMatchObject({ status: "KEIN_GESPRAECH", nummer: null, transkript: "", einschaetzung: "MAILBOX" });
   });
-  it("Aufräumen schließt nur Prüffälle ohne Beleg mit Mailbox-/Abbruch-Begründung", async () => {
+  it("Aufräumen schließt nur Prüffälle ohne Beleg mit Mailbox-/Abbruch-Begründung, nie unlesbare Antworten", async () => {
     const { p, aufrufe } = fakePrisma();
     (p as unknown as { salesFrankAnruf: { findMany: unknown } }).salesFrankAnruf.findMany = async () => [
       { id: "a", begruendung: "Es wurde nur ein Anrufbeantworter erreicht.", beleg: "" },
       { id: "b", begruendung: "Der Angerufene bestätigte nur seine Zuständigkeit.", beleg: "" },
       { id: "c", begruendung: "Das Gespräch brach nach der Begrüßung ab.", beleg: "ja gerne" },
+      // 22.09.2026: Hinter „Antwort nicht lesbar" steckte ein klares Ja mit Handynummer. Bleibt offen, Transkript bleibt erhalten.
+      { id: "d", begruendung: ANTWORT_NICHT_LESBAR, beleg: "" },
     ];
     expect(await raeumeSalesFrankPruefungAuf(p)).toBe(1);
     expect(aufrufe.anrufUpdate.length).toBe(1);
     expect(aufrufe.anrufUpdate[0]).toMatchObject({ where: { id: "a" }, data: { status: "KEIN_GESPRAECH", nummer: null } });
   });
-  it("liest JSON auch aus umgebendem Text, unbekannte Werte werden UNKLAR", () => {
+  it("festes Antwortformat: Formular wird 1:1 übernommen, Handynummer als Ziffern, leere Anrede → Firma", () => {
+    const formular = EinschaetzungSchema.parse({
+      interesse: "JA", whatsappZustimmung: "JA", anrede: "", handynummer: "0176 2553 5305",
+      beleg: "Ja, null eins sieben sechs zwei fünf fünf drei fünf drei null fünf.", begruendung: "Klares Ja auf die WhatsApp-Frage, Nummer bestätigt.", gespraechsart: "GESPRAECH",
+    });
+    const e = einschaetzungAusFormular(formular, "Babace");
+    expect(e).toMatchObject({ interesse: "JA", whatsappZustimmung: "JA", anrede: "Babace", handynummer: "017625535305", gespraechsart: "GESPRAECH" });
+    expect(entscheide(e)).toBe("EINLADEN");
+    // Das Schema lässt keine anderen Werte zu (deshalb kann „nicht lesbar" nicht mehr durch Formatfehler entstehen).
+    expect(() => EinschaetzungSchema.parse({ ...formular, interesse: "vielleicht" })).toThrow();
+    expect(() => EinschaetzungSchema.parse({ ...formular, beleg: undefined })).toThrow();
+  });
+  it("Notfallweg liest JSON auch aus umgebendem Text, unbekannte Werte werden UNKLAR", () => {
     const e = parseEinschaetzung(`Hier: {"interesse":"ja","whatsappZustimmung":"vielleicht","anrede":"Frau Kurz","handynummer":"0151 22 33 44 5","beleg":"ja gerne","begruendung":"ok"} fertig`, "Firma");
     expect(e.interesse).toBe("JA");
     expect(e.whatsappZustimmung).toBe("UNKLAR");

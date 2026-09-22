@@ -7,7 +7,7 @@ import type { PrismaClient } from "@prisma/client";
 import { normalisiereHandy } from "../config.js";
 import { legeLeadAnUndLadeEin, leadVorlageNeutralName, type LeadSender } from "../lead/onboarding.js";
 import { maskiereNummer } from "../whatsapp/maskierung.js";
-import { bewerteGespraech, entscheide, type Bewerter, type Einschaetzung } from "./auswertung.js";
+import { ANTWORT_NICHT_LESBAR, bewerteGespraech, entscheide, type Bewerter, type Einschaetzung } from "./auswertung.js";
 
 export interface AnrufPayload {
   callId: string;
@@ -54,8 +54,12 @@ export type AnrufStatus = "EINGELADEN" | "PRUEFUNG" | "ABGELEHNT" | "KEIN_GESPRA
 /** SalesFrank-Ergebnisse, bei denen kein Mensch dran war: gar nicht erst bewerten (keine KI-Kosten, kein Eintrag). */
 export const OHNE_GESPRAECH = /machine|voicemail|mailbox|no[_ -]?answer|busy|failed|unreach|not[_ -]?reached|canceled|cancelled/i;
 
-/** Begründungen früherer Prüffälle, die in Wahrheit kein Gespräch waren (Aufräumen). */
-export const KEIN_GESPRAECH_MUSTER = /anrufbeantworter|mailbox|voicemail|ansage|brach\s|bricht\s|abgebrochen|endet direkt|rückruf|zurückrufen|nicht passt|passt gerade|keine zeit|nur mit dem firmennamen|nicht lesbar|unverständlich|vermittlungsdienst|goodbye|falsch gewählte|nach der begrüßung|nach der einstiegsfrage|nur nachgefragt|nur mit „genau|fragmente/i;
+/**
+ * Begründungen früherer Prüffälle, die in Wahrheit kein Gespräch waren (Aufräumen).
+ * „Antwort nicht lesbar" gehört bewusst NICHT dazu: das ist ein Fehler der Bewertung, kein Urteil
+ * über das Gespräch (22.09.2026: ein klares Ja mit Handynummer stand dahinter).
+ */
+export const KEIN_GESPRAECH_MUSTER = /anrufbeantworter|mailbox|voicemail|ansage|brach\s|bricht\s|abgebrochen|endet direkt|rückruf|zurückrufen|nicht passt|passt gerade|keine zeit|nur mit dem firmennamen|unverständlich|vermittlungsdienst|goodbye|falsch gewählte|nach der begrüßung|nach der einstiegsfrage|nur nachgefragt|nur mit „genau|fragmente/i;
 
 export interface VerarbeitungsErgebnis {
   aktion: "ignoriert" | "doppelt" | "kein-gespraech" | AnrufStatus;
@@ -184,7 +188,7 @@ export async function raeumeSalesFrankPruefungAuf(prisma: PrismaClient): Promise
   const offen = await prisma.salesFrankAnruf.findMany({ where: { status: "PRUEFUNG" }, select: { id: true, begruendung: true, beleg: true } });
   let n = 0;
   for (const a of offen) {
-    if (a.beleg.trim() || !KEIN_GESPRAECH_MUSTER.test(a.begruendung)) continue;
+    if (a.beleg.trim() || a.begruendung.trim() === ANTWORT_NICHT_LESBAR || !KEIN_GESPRAECH_MUSTER.test(a.begruendung)) continue;
     await prisma.salesFrankAnruf.update({ where: { id: a.id }, data: { status: "KEIN_GESPRAECH", nummer: null, transkript: "", erledigtAm: new Date() } });
     n++;
   }

@@ -156,8 +156,10 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   BW-PLZ-Filter; Listen abwechselnd nach „Eignung ohne Telefon"), `impressum-leser.cjs` (liest E-Mail von Startseite/Impressum, 307 von 400).
 >   Ergebnis in `marketing/Leads/` (NEU in .gitignore, personenbezogen) + OneDrive Leads: `Email_Maler_BW_2026-09-22.csv` (250 mit Adresse,
 >   14 mit Hinweis „Domain weicht ab"), `Dialogpost_Maler_BW_2026-09-22.csv` (250 Anschriften), `…_mit_Adressen.csv` (alle 400), Bericht.
->   Gruppen C/D vom 11.09. sind hinfällig. OFFEN: E-Mail-Serie bauen (Vorschlag in AuftragsBoss: Import, 4 Stufen, ≤ 50/Tag, Abmeldelink,
->   Klick-Link je Lead bis ins Website-Formular, Cockpit; VORHER SPF/DKIM/DMARC prüfen), 4 Texte abstimmen; Dialogpost-Anschreiben.
+>   Gruppen C/D vom 11.09. sind hinfällig. E-MAIL-SERIE: Dirk legt sie in MAILCHIMP an (kein Eigenbau; `scripts/leads/mailchimp-export.cjs`
+>   erzeugt bei Bedarf die Komma-CSV), vier Texte in Dirks Endfassung in `_Claude/Angebotsblitz/E-Mail-Serie-Maler_2026-09-22.md` (Sie-Form,
+>   Tag 0/3/7/12, Absender Dirk, Merge-Felder FIRMA/ORT). Vor dem Start: Postfach dirk@auftragsboss.de (IONOS), Domain in Mailchimp
+>   verifizieren, Beispiel-PDF prüfen. OFFEN: Dialogpost-Anschreiben; Ergebnisse der Welle in einigen Tagen ansehen.
 
 > **Update 17.09.2026 (2) — AGB-PAKET IN VIER TEILEN (321 Tests, deployt, db push: Handwerker.agb*, Vorgang.absenderNummer, Modell Mitarbeiter):**
 >   (1) DATENEXPORT `betrieb/datenexport.ts` + eigener ZIP-Schreiber `betrieb/zip.ts` (ohne Abhängigkeit): `/export/:einstellungenToken`

@@ -150,6 +150,15 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   `chown` und `npx tsx` auf dem Server (Logs lesen, scp, Deploy-Skript gehen); Cockpit-Login macht Dirk selbst im Claude-Browser.
 >   NÄCHSTES: 23.09. Log + Cockpit (erste automatische Einladung, Log auf „ohne auswertbares Formular"), Leitfaden schärfen.
 
+> **Update 22.09.2026 (4) — LEAD-LISTEN FÜR E-MAIL-WELLE UND DIALOGPOST (Dirk: rechtliches Risiko § 7 UWG bewusst akzeptiert, Absender „Dirk"):**
+>   Outscraper-Tabelle (3.000 Maler BW) hat KEINE E-Mail-Spalte und 165 Betriebe außerhalb BW. Skripte in `scripts/leads/`: `leads-export.ps1`
+>   (Excel-COM → CSV), `leads-analyse.cjs` (Vergleich Claude/ChatGPT-Bewertung: Top-250-Überlappung 133, Spearman 0,74; Sperrliste = SalesFrank-A;
+>   BW-PLZ-Filter; Listen abwechselnd nach „Eignung ohne Telefon"), `impressum-leser.cjs` (liest E-Mail von Startseite/Impressum, 307 von 400).
+>   Ergebnis in `marketing/Leads/` (NEU in .gitignore, personenbezogen) + OneDrive Leads: `Email_Maler_BW_2026-09-22.csv` (250 mit Adresse,
+>   14 mit Hinweis „Domain weicht ab"), `Dialogpost_Maler_BW_2026-09-22.csv` (250 Anschriften), `…_mit_Adressen.csv` (alle 400), Bericht.
+>   Gruppen C/D vom 11.09. sind hinfällig. OFFEN: E-Mail-Serie bauen (Vorschlag in AuftragsBoss: Import, 4 Stufen, ≤ 50/Tag, Abmeldelink,
+>   Klick-Link je Lead bis ins Website-Formular, Cockpit; VORHER SPF/DKIM/DMARC prüfen), 4 Texte abstimmen; Dialogpost-Anschreiben.
+
 > **Update 17.09.2026 (2) — AGB-PAKET IN VIER TEILEN (321 Tests, deployt, db push: Handwerker.agb*, Vorgang.absenderNummer, Modell Mitarbeiter):**
 >   (1) DATENEXPORT `betrieb/datenexport.ts` + eigener ZIP-Schreiber `betrieb/zip.ts` (ohne Abhängigkeit): `/export/:einstellungenToken`
 >   (Kunden-Cockpit „Meine Daten (ZIP)", Einstellungen „Dein Konto") und `/stasi/betrieb/:id/export.zip`; Inhalt LIESMICH, betrieb.json,

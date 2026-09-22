@@ -43,6 +43,8 @@ Thumbs.db
 # Geschäftsunterlagen von Dirk (leben im OneDrive-Ordner, kein Repo-Inhalt)
 *.xlsx
 *.docx
+# Lead-Listen (personenbezogene Daten, nie ins Repo): Arbeitskopien für Auswertungen
+marketing/Leads/
 Datenschutz/
 Logo und CI/
 Telefonnummer/

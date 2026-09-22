@@ -29,8 +29,9 @@ const obj = (v: unknown): Record<string, unknown> => (v && typeof v === "object"
  * naheliegende Varianten (flach, custom_variables, andere Feldnamen).
  */
 export function liesPayload(body: unknown): AnrufPayload | null {
-  const b = obj(body);
-  const call = obj(b.call);
+  // Manche Anbieter packen alles in „data"; sonst der Body selbst.
+  const b = { ...obj(obj(body).data), ...obj(body) };
+  const call = { ...obj(b.call), ...obj(b.call_data) };
   const lead = obj(b.lead);
   const vars = { ...obj(b.variables), ...obj(lead.custom_variables), ...obj(lead.custom), ...obj(b.custom_variables) };
   const callId = s(call.id) || s(b.call_id) || s(b.callId) || s(b.id);

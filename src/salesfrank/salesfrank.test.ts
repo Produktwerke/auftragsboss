@@ -62,6 +62,7 @@ describe("SalesFrank: Webhook-Body lesen", () => {
     const p = liesPayload({ event: "call.completed", call: { id: "abc", outcome: "answered", result: "interested", summary: "S", transcript: "T" }, lead: { name: "N", phone: "+49123", company: "F", custom_variables: { anrede: "Herr N" } } });
     expect(p).toMatchObject({ callId: "abc", telefon: "+49123", firma: "F", anrede: "Herr N", zusammenfassung: "S", transkript: "T", ergebnis: "answered / interested" });
     expect(liesPayload({ call_id: "x", phone_number: "+49", first_name: "A", company_name: "B" })).toMatchObject({ callId: "x", firma: "B" });
+    expect(liesPayload({ data: { call: { id: "d1", transcript: "T" }, lead: { phone: "+49" } } })).toMatchObject({ callId: "d1", transkript: "T" });
     expect(liesPayload({})).toBeNull();
     expect(liesPayload("quatsch")).toBeNull();
   });

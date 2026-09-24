@@ -144,8 +144,13 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   dem Webhook). Der Fehlschlag war im Cockpit unsichtbar (status.ts vermerkte „failed" nur für EINGELADEN). GEBAUT: `lead/status.ts` schreibt
 >   jede „failed"-Statusmeldung an einen bekannten Betrieb ins Admin-Protokoll (`WHATSAPP_NICHT_ZUSTELLBAR`, `metaFehlerText`, Lead-Zustand) +
 >   Event NACHRICHT_FEHLGESCHLAGEN; Kundenliste-Warnsignal „📵 WhatsApp nicht zugestellt" (Admin-Protokoll 7 Tage); `lead/onboarding.ts`
->   wartet `KNOPF_ANTWORT_WARTEZEIT_MS` (2 s) vor der Antwort auf einen Knopfdruck. OFFEN (Stufe 2, braucht Dirks Freigabe + Meta): Vorlagen
->   `lead_erklaerung`/`lead_aufforderung` als Rückfallweg, wenn die freie Antwort scheitert. Schwarz: Dirk/Anna rufen an (Erinnerung sonst 26.09. 10:00).
+>   wartet `KNOPF_ANTWORT_WARTEZEIT_MS` (2 s) vor der Antwort auf einen Knopfdruck. STUFE 2 GEBAUT (417f0bb, 354 Tests, deployt 12:38, Dirks
+>   Freigabe): Rückfall-Vorlagen `lead_erklaerung` (Erklärung + Knopf „Angebot ausprobieren") und `lead_aufforderung`, Texte in
+>   `lead/onboarding.ts` (`VORLAGE_*_TEXT`, beginnen mit „Entschuldige, meine erste Antwort ist unterwegs technisch hängen geblieben"),
+>   `sendeLeadVorlage`; status.ts schickt sie bei failed 131047 automatisch (ERKLAERT → Erklärung, WARTET_AUF_AUFTRAG → Aufforderung,
+>   höchstens 1×/30 Min); Cockpit-Detailseite Karte „Lead erneut anschreiben (Vorlage)" (POST `/stasi/betrieb/:id/lead-vorlage`, Body art).
+>   ANLEGEN BEI META durch Dirk (Wächter sperrt npx tsx per ssh): `su - auftragsboss -c 'cd ~/app && npx tsx src/lead-vorlagen-anlegen.ts'`
+>   (idempotent; `… status` zeigt den Genehmigungsstand). Nach Genehmigung: Schwarz über den Cockpit-Knopf „Erklärung senden" anschreiben.
 >   Nebenbefund: `test_starten`-Fehler im error.log stammt vom 15.09. (vor Genehmigung), kein aktuelles Problem. Cockpit-Login im Claude-Browser
 >   läuft nach Abmelden ab, Dirk meldet sich bei Bedarf neu an.
 

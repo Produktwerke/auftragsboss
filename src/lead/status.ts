@@ -13,6 +13,7 @@
 // onboarding.ts und die Pipeline; spätere Status-Callbacks ändern nichts mehr.
 import type { PrismaClient } from "@prisma/client";
 import { spurEvent } from "../analytics/event.js";
+import { sendeLeadVorlage, type LeadSender } from "./onboarding.js";
 
 export type MetaStatus = "sent" | "delivered" | "read" | "failed" | string;
 
@@ -68,7 +69,18 @@ export function metaFehlerText(code: number | null | undefined, titel?: string |
  * und als Event, egal in welchem Zustand: vorher war z. B. eine gescheiterte
  * Antwort auf einen Knopfdruck nirgends sichtbar (Malerbetrieb Schwarz, 131047).
  */
-export async function verarbeiteNachrichtStatus(prisma: PrismaClient, meldung: MetaStatusMeldung): Promise<string | null> {
+/** Zustände, in denen unsere einzige freie Nachricht die Antwort auf den Knopfdruck war → Vorlage als Ersatz. */
+const ERSATZ_VORLAGE_JE_ZUSTAND: Record<string, "erklaerung" | "aufforderung"> = {
+  ERKLAERT: "erklaerung",
+  WARTET_AUF_AUFTRAG: "aufforderung",
+};
+const ERSATZ_SPERRE_MS = 30 * 60 * 1000;
+
+export async function verarbeiteNachrichtStatus(
+  prisma: PrismaClient,
+  meldung: MetaStatusMeldung,
+  deps: { sender?: Pick<LeadSender, "vorlage"> } = {},
+): Promise<string | null> {
   const nummer = (meldung.recipient_id ?? "").replace(/\D/g, "");
   if (!nummer || !meldung.status) return null;
   const h = await prisma.handwerker.findUnique({
@@ -90,6 +102,20 @@ export async function verarbeiteNachrichtStatus(prisma: PrismaClient, meldung: M
         detail: `WhatsApp-Nachricht nicht zugestellt (${metaFehlerText(fehler?.code, fehler?.title)})${h.onboardingStatus ? `; Lead-Zustand: ${zustandLabel(h.onboardingStatus)}` : ""}`,
       },
     });
+
+    // Rückfallweg (24.09.2026): War es unsere Antwort auf einen Knopfdruck (131047, Lead in
+    // ERKLAERT/WARTET_AUF_AUFTRAG), geht derselbe Inhalt als Vorlage raus. Höchstens einmal je
+    // 30 Minuten, damit eine abgewiesene Vorlage keine Schleife auslöst.
+    const art = h.leadQuelle && h.onboardingStatus ? ERSATZ_VORLAGE_JE_ZUSTAND[h.onboardingStatus] : undefined;
+    if (fehler?.code === 131047 && art) {
+      const kuerzlich = await prisma.event.findFirst({
+        where: { handwerkerId: h.id, typ: "LEAD_VORLAGE_GESENDET", erstelltAm: { gte: new Date(Date.now() - ERSATZ_SPERRE_MS) } },
+        select: { id: true },
+      });
+      if (!kuerzlich) {
+        await sendeLeadVorlage(prisma, { id: h.id, whatsappNummer: nummer, firma: h.firma, name: h.name }, art, "automatisch nach Meta 131047", deps.sender);
+      }
+    }
   }
   if (!neu) return null;
 

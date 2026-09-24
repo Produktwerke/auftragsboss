@@ -43,7 +43,7 @@ import { direkttestConfig } from "../config.js";
 import { einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
 import { cockpitLink, einstellungenLink } from "./tokens.js";
 import { hatAdminSitzung } from "./adminAuth.js";
-import { legeLeadAnUndLadeEin } from "../lead/onboarding.js";
+import { legeLeadAnUndLadeEin, sendeLeadVorlage } from "../lead/onboarding.js";
 import { WEBTEST_NUMMER } from "./webtest.js";
 import { berechneFunnel } from "../lead/funnel.js";
 import { betreiberSalesFrank } from "./betreiberSeite.js";
@@ -366,6 +366,24 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
     await protokolliere(h.id, h.firma, "ENTSPERRT", h.blockiertGrund ? `war blockiert wegen: ${h.blockiertGrund}` : "Konto wieder frei");
     return reply.send({ ok: true, meldung: "Konto entsperrt." });
   });
+
+  // Lead per Meta-Vorlage erneut anschreiben (24.09.2026): Erklärung oder Aufforderung,
+  // wenn unsere freie Antwort auf den Knopfdruck von Meta abgewiesen wurde (131047).
+  for (const pfad of beide("/betrieb/:id/lead-vorlage")) app.post<{ Params: { token?: string; id: string }; Body: { art?: string } }>(
+    pfad,
+    async (req, reply) => {
+      if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
+      const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
+      if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
+      if (!h.leadQuelle) return reply.code(400).send({ fehler: "Kein Lead: die Vorlagen sind nur für eingeladene Betriebe gedacht." });
+      const art = req.body.art === "aufforderung" ? "aufforderung" : req.body.art === "erklaerung" ? "erklaerung" : null;
+      if (!art) return reply.code(400).send({ fehler: "Unbekannte Vorlage." });
+      const ok = await sendeLeadVorlage(prisma, h, art, "vom Betreiber ausgelöst");
+      return ok
+        ? reply.send({ ok: true, meldung: `${art === "erklaerung" ? "Erklärung" : "Aufforderung"} per Vorlage gesendet.` })
+        : reply.code(502).send({ fehler: "Meta hat die Vorlage nicht angenommen. Ist sie genehmigt? Details im Admin-Protokoll." });
+    },
+  );
 
   // ── Telefon-Lead einladen (Akquise mit dokumentiertem WhatsApp-Opt-in) ─
   for (const pfad of beide("/lead-einladen")) app.post<{

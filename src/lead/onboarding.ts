@@ -51,7 +51,7 @@ export function testVorlagenName(): string {
 // Baustelle. So ist klar, dass ab hier die KI spricht, nicht der Anrufer von eben.
 const VORSTELLUNG = "👋 Hallo, ich bin AuftragsBoss, deine KI für Malerangebote.";
 
-const AUFFORDERUNG =
+export const AUFFORDERUNG =
   VORSTELLUNG +
   "\n\nDenk an einen echten Auftrag, den du gerade auf dem Tisch hast.\n\n" +
   "Schick mir einfach eine Sprachnachricht und erzähl mir, was gemacht werden soll. " +
@@ -59,7 +59,7 @@ const AUFFORDERUNG =
 
 // Ausführlicher seit 13.09.2026 (Dirks Sprachnotizen): Ziel, die drei Eingabewege
 // und was danach passiert. Bleibt unter den 1024 Zeichen einer Knopfnachricht.
-const ERKLAERUNG =
+export const ERKLAERUNG =
   VORSTELLUNG +
   "\n\nSo funktioniert es:\n\n" +
   "1️⃣ Du erzählst mir per Sprachnachricht, was beim Kunden gemacht werden soll: Kunde, Adresse, Raum, Maße, Arbeiten. " +
@@ -81,6 +81,55 @@ const echterSender: LeadSender = {
   text: sendeWhatsAppText,
   knoepfe: sendeWhatsAppKnoepfe,
 };
+
+// ── Vorlagen als Rückfallweg (24.09.2026) ────────────────────────────────
+// Meta wies eine freie Antwort auf einen Knopfdruck mit 131047 ab (Malerbetrieb
+// Schwarz). Vorlagen dürfen jederzeit zugestellt werden. Beide beginnen mit einer
+// kurzen Entschuldigung, weil sie nur nach einem Fehlschlag oder auf Knopfdruck des
+// Betreibers rausgehen. Anlegen bei Meta: `npx tsx src/lead-vorlagen-anlegen.ts`.
+export type LeadVorlageArt = "erklaerung" | "aufforderung";
+
+export function vorlageErklaerungName(env: NodeJS.ProcessEnv = process.env): string {
+  return env.LEAD_VORLAGE_ERKLAERUNG?.trim() || "lead_erklaerung";
+}
+export function vorlageAufforderungName(env: NodeJS.ProcessEnv = process.env): string {
+  return env.LEAD_VORLAGE_AUFFORDERUNG?.trim() || "lead_aufforderung";
+}
+const ENTSCHULDIGUNG = "Entschuldige, meine erste Antwort ist unterwegs technisch hängen geblieben. Hier noch einmal:\n\n";
+/** Texte der Meta-Vorlagen (Body, ohne Platzhalter). Höchstens 1024 Zeichen (Meta-Grenze, Test). */
+export const VORLAGE_ERKLAERUNG_TEXT = ENTSCHULDIGUNG + ERKLAERUNG;
+export const VORLAGE_AUFFORDERUNG_TEXT = ENTSCHULDIGUNG + AUFFORDERUNG;
+export const VORLAGEN_FUSSZEILE = "KI-gestützter Dienst der DAG Deutsche Automotive GmbH";
+export const VORLAGE_ERKLAERUNG_KNOPF = "Angebot ausprobieren";
+
+/**
+ * Erklärung oder Aufforderung als Meta-Vorlage an einen Lead senden (Rückfallweg nach
+ * 131047 oder vom Betreiber ausgelöst). Schreibt Event + Admin-Protokoll, damit im
+ * Cockpit steht, was rausging. Gibt zurück, ob Meta den Versand angenommen hat.
+ */
+export async function sendeLeadVorlage(
+  prisma: PrismaClient,
+  handwerker: Pick<Handwerker, "id" | "whatsappNummer" | "firma" | "name">,
+  art: LeadVorlageArt,
+  grund: string,
+  sender: Pick<LeadSender, "vorlage"> = echterSender,
+): Promise<boolean> {
+  const vorlage = art === "erklaerung" ? vorlageErklaerungName() : vorlageAufforderungName();
+  const knoepfe = art === "erklaerung" ? [KNOPF_AUSPROBIEREN] : [];
+  const ok = await sender.vorlage(handwerker.whatsappNummer, vorlage, [], knoepfe);
+  await spurEvent(prisma, "LEAD_VORLAGE_GESENDET", { handwerkerId: handwerker.id, data: { art, ok, grund } });
+  await prisma.adminLog.create({
+    data: {
+      aktion: ok ? "LEAD_VORLAGE_GESENDET" : "LEAD_VORLAGE_FEHLGESCHLAGEN",
+      handwerkerId: handwerker.id,
+      betrieb: handwerker.firma || handwerker.name || `+${handwerker.whatsappNummer}`,
+      detail: ok
+        ? `${art === "erklaerung" ? "Erklärung" : "Aufforderung"} per Vorlage ${vorlage} gesendet (${grund})`
+        : `Vorlage ${vorlage} nicht angenommen (${grund}). Ist sie bei Meta genehmigt?`,
+    },
+  });
+  return ok;
+}
 
 /**
  * Lead anlegen und die Einladungs-Vorlage senden (aus dem Betreiber-Cockpit).

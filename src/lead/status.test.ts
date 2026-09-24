@@ -2,18 +2,26 @@ import { describe, it, expect, vi } from "vitest";
 import { naechsterZustand, verarbeiteNachrichtStatus, zustandLabel } from "./status.js";
 import type { PrismaClient } from "@prisma/client";
 
-function fakePrisma(h: { leadQuelle: string | null; onboardingStatus: string | null } | null, updateCount = 1) {
+function fakePrisma(h: { leadQuelle: string | null; onboardingStatus: string | null } | null, updateCount = 1, kuerzlichVorlage = false) {
   const aufrufe: Record<string, unknown[]> = { updateMany: [], events: [], adminLog: [] };
   const p = {
     handwerker: {
       findUnique: vi.fn(async () => (h ? { id: "hw1", firma: "", name: "Herr Müller", ...h } : null)),
       updateMany: vi.fn(async (a: unknown) => { aufrufe.updateMany.push(a); return { count: updateCount }; }),
     },
-    event: { create: vi.fn(async (a: unknown) => { aufrufe.events.push(a); return {}; }) },
+    event: {
+      create: vi.fn(async (a: unknown) => { aufrufe.events.push(a); return {}; }),
+      findFirst: vi.fn(async () => (kuerzlichVorlage ? { id: "ev-alt" } : null)),
+    },
     adminLog: { create: vi.fn(async (a: unknown) => { aufrufe.adminLog.push(a); return {}; }) },
   };
   return { p: p as unknown as PrismaClient, aufrufe };
 }
+const fakeVorlage = () => {
+  const gesendet: unknown[][] = [];
+  const sender = { vorlage: vi.fn(async (...args: unknown[]) => { gesendet.push(args); return true; }) as never };
+  return { sender, gesendet };
+};
 
 describe("Lead-Zustände aus Meta-Status", () => {
   it("delivered/read/failed wandern monoton, spätere Zustände bleiben unberührt", () => {
@@ -52,9 +60,10 @@ describe("Lead-Zustände aus Meta-Status", () => {
     expect(race.aufrufe.events).toHaveLength(0);
   });
 
-  it("abgewiesene Antwort an einen Lead nach Knopfdruck: Zustand bleibt, Admin-Protokoll und Event (24.09.2026, Malerbetrieb Schwarz)", async () => {
+  it("abgewiesene Antwort an einen Lead nach Knopfdruck: Zustand bleibt, Admin-Protokoll, Event und Ersatz per Vorlage (24.09.2026, Malerbetrieb Schwarz)", async () => {
     const { p, aufrufe } = fakePrisma({ leadQuelle: "TELEFON", onboardingStatus: "ERKLAERT" });
-    const neu = await verarbeiteNachrichtStatus(p, { recipient_id: "4917612345678", status: "failed", errors: [{ code: 131047, title: "Re-engagement message" }] });
+    const { sender, gesendet } = fakeVorlage();
+    const neu = await verarbeiteNachrichtStatus(p, { recipient_id: "4917612345678", status: "failed", errors: [{ code: 131047, title: "Re-engagement message" }] }, { sender });
     expect(neu).toBeNull();
     expect(aufrufe.updateMany).toHaveLength(0);
     const log = (aufrufe.adminLog[0] as { data: { aktion: string; detail: string } }).data;
@@ -65,6 +74,29 @@ describe("Lead-Zustände aus Meta-Status", () => {
     const ev = (aufrufe.events[0] as { data: { typ: string; dataJson: string } }).data;
     expect(ev.typ).toBe("NACHRICHT_FEHLGESCHLAGEN");
     expect(JSON.parse(ev.dataJson).code).toBe(131047);
+    // Ersatz: Erklärung als Vorlage mit dem Ausprobieren-Knopf, protokolliert
+    expect(gesendet).toHaveLength(1);
+    expect(gesendet[0]).toEqual(["4917612345678", "lead_erklaerung", [], ["LEAD_AUSPROBIEREN"]]);
+    expect((aufrufe.adminLog[1] as { data: { aktion: string; detail: string } }).data.aktion).toBe("LEAD_VORLAGE_GESENDET");
+    expect((aufrufe.adminLog[1] as { data: { aktion: string; detail: string } }).data.detail).toContain("automatisch nach Meta 131047");
+  });
+
+  it("Ersatz-Vorlage: nach Ja die Aufforderung ohne Knopf; nicht bei anderen Fehlercodes; höchstens einmal je 30 Minuten", async () => {
+    const ja = fakePrisma({ leadQuelle: "TELEFON", onboardingStatus: "WARTET_AUF_AUFTRAG" });
+    const s1 = fakeVorlage();
+    await verarbeiteNachrichtStatus(ja.p, { recipient_id: "4917612345678", status: "failed", errors: [{ code: 131047 }] }, { sender: s1.sender });
+    expect(s1.gesendet[0]).toEqual(["4917612345678", "lead_aufforderung", [], []]);
+
+    const anderer = fakePrisma({ leadQuelle: "TELEFON", onboardingStatus: "ERKLAERT" });
+    const s2 = fakeVorlage();
+    await verarbeiteNachrichtStatus(anderer.p, { recipient_id: "4917612345678", status: "failed", errors: [{ code: 131026 }] }, { sender: s2.sender });
+    expect(s2.gesendet).toHaveLength(0);
+
+    const sperre = fakePrisma({ leadQuelle: "TELEFON", onboardingStatus: "ERKLAERT" }, 1, true);
+    const s3 = fakeVorlage();
+    await verarbeiteNachrichtStatus(sperre.p, { recipient_id: "4917612345678", status: "failed", errors: [{ code: 131047 }] }, { sender: s3.sender });
+    expect(s3.gesendet).toHaveLength(0);
+    expect(sperre.aufrufe.adminLog).toHaveLength(1); // nur „nicht zugestellt", kein Vorlagen-Eintrag
   });
 
   it("abgewiesene Nachricht an einen normalen Betrieb (kein Lead) landet ebenfalls im Admin-Protokoll", async () => {

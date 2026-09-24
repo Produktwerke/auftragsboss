@@ -432,6 +432,15 @@ export function betreiberDetail(args: {
     <div class="kachel"><div class="wert">${euroDE(kiKosten.centGesamt / 100)}</div><div class="lab">KI-Kosten gesamt</div></div>
   </div>
 
+  ${b.leadQuelle ? `<div class="karte">
+    <h2 style="margin-top:0;">Lead erneut anschreiben (Vorlage)</h2>
+    <p class="hinweis" style="margin-top:0;">Wenn Meta unsere Antwort auf einen Knopfdruck abgewiesen hat (Warnsignal „nicht zugestellt"), geht derselbe Inhalt hier als genehmigte Vorlage raus, mit kurzer Entschuldigung vorweg.</p>
+    <p style="display:flex;gap:10px;flex-wrap:wrap;margin:0;">
+      <form class="inline" data-post="${aktion("lead-vorlage")}"><input type="hidden" name="art" value="erklaerung"><button class="kn">Erklärung senden</button><div class="meldung"></div></form>
+      <form class="inline" data-post="${aktion("lead-vorlage")}"><input type="hidden" name="art" value="aufforderung"><button class="kn" style="background:#5a616b;">Aufforderung zur Sprachnachricht senden</button><div class="meldung"></div></form>
+    </p>
+  </div>` : ""}
+
   <div class="karte">
     <h2 style="margin-top:0;">Als Kunde ansehen</h2>
     <p class="hinweis" style="margin-top:0;">Öffnet die echten Kundenseiten in einem neuen Tab — Änderungen dort wirken wie vom Kunden selbst.</p>

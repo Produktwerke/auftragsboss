@@ -6,6 +6,9 @@ import {
   legeLeadAnUndLadeEin,
   markiereLeadAktiv,
   verarbeiteOnboardingKnopf,
+  sendeLeadVorlage,
+  VORLAGE_ERKLAERUNG_TEXT,
+  VORLAGE_AUFFORDERUNG_TEXT,
   type LeadSender,
 } from "./onboarding.js";
 import { extrahiereEingabe } from "../whatsapp/webhook.js";
@@ -13,7 +16,7 @@ import { baueVorlagenNachricht, baueKnopfNachricht } from "../whatsapp/send.js";
 import type { Handwerker, PrismaClient } from "@prisma/client";
 
 function fakePrisma(vorgaben: { vorhanden?: unknown } = {}) {
-  const aufrufe: Record<string, unknown[]> = { create: [], update: [], updateMany: [], events: [] };
+  const aufrufe: Record<string, unknown[]> = { create: [], update: [], updateMany: [], events: [], adminLog: [] };
   const p = {
     handwerker: {
       findUnique: vi.fn(async () => vorgaben.vorhanden ?? null),
@@ -25,6 +28,7 @@ function fakePrisma(vorgaben: { vorhanden?: unknown } = {}) {
       updateMany: vi.fn(async (a: unknown) => { aufrufe.updateMany.push(a); return { count: 1 }; }),
     },
     event: { create: vi.fn(async (a: unknown) => { aufrufe.events.push(a); return {}; }) },
+    adminLog: { create: vi.fn(async (a: { data: unknown }) => { aufrufe.adminLog.push(a.data); return {}; }) },
   };
   return { p: p as unknown as PrismaClient, aufrufe };
 }
@@ -134,6 +138,31 @@ describe("Lead-Onboarding: Knopf-Klicks", () => {
     await verarbeiteOnboardingKnopf(p, lead("EINGELADEN"), KNOPF_JA, sender, 120);
     expect(gesendet).toHaveLength(1);
     expect(Date.now() - start).toBeGreaterThanOrEqual(100);
+  });
+});
+
+describe("Lead-Onboarding: Rückfall-Vorlagen (24.09.2026)", () => {
+  it("Vorlagentexte passen in Metas 1024 Zeichen und beginnen mit der Entschuldigung", () => {
+    for (const t of [VORLAGE_ERKLAERUNG_TEXT, VORLAGE_AUFFORDERUNG_TEXT]) {
+      expect(t.length).toBeLessThanOrEqual(1024);
+      expect(t.startsWith("Entschuldige, meine erste Antwort")).toBe(true);
+      expect(t).not.toContain("\n\n\n"); // Meta mag keine Leerzeilen-Stapel
+    }
+    expect(VORLAGE_ERKLAERUNG_TEXT).toContain("Preise musst du nicht diktieren");
+    expect(VORLAGE_AUFFORDERUNG_TEXT).toContain("Sprachnachricht");
+  });
+
+  it("sendeLeadVorlage: Erklärung mit Knopf, Aufforderung ohne; Erfolg und Fehlschlag im Admin-Protokoll", async () => {
+    const { p, aufrufe } = fakePrisma();
+    const { sender, gesendet } = fakeSender();
+    expect(await sendeLeadVorlage(p, lead("ERKLAERT"), "erklaerung", "Test", sender)).toBe(true);
+    expect(gesendet[0].args).toEqual(["4917612345678", "lead_erklaerung", [], [KNOPF_AUSPROBIEREN]]);
+    expect(await sendeLeadVorlage(p, lead("WARTET_AUF_AUFTRAG"), "aufforderung", "Test", sender)).toBe(true);
+    expect(gesendet[1].args).toEqual(["4917612345678", "lead_aufforderung", [], []]);
+    (sender.vorlage as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
+    expect(await sendeLeadVorlage(p, lead("ERKLAERT"), "erklaerung", "Test", sender)).toBe(false);
+    const aktionen = aufrufe.adminLog.map((a) => (a as { aktion: string }).aktion);
+    expect(aktionen).toEqual(["LEAD_VORLAGE_GESENDET", "LEAD_VORLAGE_GESENDET", "LEAD_VORLAGE_FEHLGESCHLAGEN"]);
   });
 });
 

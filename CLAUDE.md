@@ -136,6 +136,19 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 24.09.2026 — EINLADUNGEN GEPRÜFT, ABGEWIESENE ANTWORTEN SICHTBAR (fec641d, 351 Tests, deployt 12:28; lokal 9 Commits vor GitHub, Push nur mit Dirks Freigabe):**
+>   Lead-Auswertung 24.09.: 11 Telefon-Leads, 11 Einladungen gesendet + zugestellt, 9 gelesen, 3 „Kurz erklären" (Schwarz, Innen.Art, Londi), 0 Eingaben.
+>   Log: 5 automatische Einladungen 23.09. (08:02–08:11), 1 am 24.09. 09:03; neues Bewertungsformat 0 Ausfälle; Meta-Status 23.09. 8 sent/6 delivered/
+>   5 read. BEFUND: 24.09. 10:53 drückte Malerbetrieb Schwarz „Kurz erklären", unsere Erklärung (interaktiv) wurde von Meta mit 131047 abgewiesen
+>   (24-h-Fenster), obwohl ein Knopfdruck das Fenster öffnet und derselbe Ablauf bei Innen.Art/Londi klappte (vermutlich Rennen: Antwort < 1 s nach
+>   dem Webhook). Der Fehlschlag war im Cockpit unsichtbar (status.ts vermerkte „failed" nur für EINGELADEN). GEBAUT: `lead/status.ts` schreibt
+>   jede „failed"-Statusmeldung an einen bekannten Betrieb ins Admin-Protokoll (`WHATSAPP_NICHT_ZUSTELLBAR`, `metaFehlerText`, Lead-Zustand) +
+>   Event NACHRICHT_FEHLGESCHLAGEN; Kundenliste-Warnsignal „📵 WhatsApp nicht zugestellt" (Admin-Protokoll 7 Tage); `lead/onboarding.ts`
+>   wartet `KNOPF_ANTWORT_WARTEZEIT_MS` (2 s) vor der Antwort auf einen Knopfdruck. OFFEN (Stufe 2, braucht Dirks Freigabe + Meta): Vorlagen
+>   `lead_erklaerung`/`lead_aufforderung` als Rückfallweg, wenn die freie Antwort scheitert. Schwarz: Dirk/Anna rufen an (Erinnerung sonst 26.09. 10:00).
+>   Nebenbefund: `test_starten`-Fehler im error.log stammt vom 15.09. (vor Genehmigung), kein aktuelles Problem. Cockpit-Login im Claude-Browser
+>   läuft nach Abmelden ab, Dirk meldet sich bei Bedarf neu an.
+
 > **Update 22.09.2026 (3) — SALESFRANK-PRÜFUNG + BEWERTUNG MIT FESTEM ANTWORTFORMAT (98dbc90, 347 Tests, deployt 17:05, lokal 3 Commits vor GitHub, Push nur mit Dirks Freigabe):**
 >   Log 22.09.: 107 Webhooks (102 in der Welle 15:00–15:30, danach bis 16:40 nur 3 → Tageslimit 30 Min vermutlich verbraucht, Dirk prüft in
 >   SalesFrank), 0 automatische Einladungen, 42 abgelehnt, 46 Prüfung (alle von Dirk erledigt), 19 ohne Inhalt, keine Fehler. Von Hand eingeladen:

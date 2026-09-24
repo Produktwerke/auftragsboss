@@ -122,13 +122,20 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
       const vor7Tagen = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       const vor14Tagen = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
       const monatsbeginn = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-      const [angebote7Tage, kiEventsMonat, rueckfragenDoks] = await Promise.all([
+      const [angebote7Tage, kiEventsMonat, rueckfragenDoks, nichtZustellbarLogs] = await Promise.all([
         prisma.dokument.count({ where: { art: "ANGEBOT", erstelltAm: { gte: vor7Tagen } } }),
         prisma.event.findMany({ where: { typ: "KI_AUFRUF", erstelltAm: { gte: monatsbeginn } }, select: { dataJson: true } }),
         prisma.dokument.findMany({
           where: { kundenRueckfrageAm: { gte: vor14Tagen } },
           select: { handwerkerId: true, nummer: true, kundenRueckfrageAm: true },
           orderBy: { kundenRueckfrageAm: "desc" },
+        }),
+        // Von Meta abgewiesene WhatsApp-Nachrichten (24.09.2026): Einladung oder Antwort kam nie an.
+        prisma.adminLog.findMany({
+          where: { aktion: { in: ["WHATSAPP_NICHT_ZUSTELLBAR", "LEAD_EINLADUNG_FEHLGESCHLAGEN"] }, erstelltAm: { gte: vor7Tagen } },
+          select: { handwerkerId: true, betrieb: true, detail: true, erstelltAm: true },
+          orderBy: { erstelltAm: "desc" },
+          take: 20,
         }),
       ]);
 
@@ -169,6 +176,9 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
         zahlungOffen: abos
           .filter((a) => a.zahlungOffenSeit)
           .map((a) => ({ id: a.handwerkerId, firma: firmaVon.get(a.handwerkerId) ?? "Unbekannt", seit: a.zahlungOffenSeit as Date, versuche: a.zahlungFehlversuche })),
+        nichtZustellbar: nichtZustellbarLogs
+          .filter((l) => l.handwerkerId && firmaVon.has(l.handwerkerId))
+          .map((l) => ({ id: l.handwerkerId as string, firma: firmaVon.get(l.handwerkerId as string) || l.betrieb || "Unbekannt", detail: l.detail, datum: l.erstelltAm })),
       };
 
       const f = (req.query.filter ?? "alle") as BetriebsFilter;

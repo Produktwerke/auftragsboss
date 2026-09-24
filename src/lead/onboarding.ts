@@ -141,6 +141,16 @@ export async function legeLeadAnUndLadeEin(
 }
 
 /**
+ * Wartezeit vor der Antwort auf einen Knopfdruck (24.09.2026). Der Knopfdruck ist eine
+ * Kundennachricht und öffnet Metas 24-Stunden-Fenster für freie Antworten. Unsere Antwort
+ * ging bisher unter einer Sekunde nach dem Webhook raus und wurde einmal mit 131047
+ * („außerhalb des Fensters") abgewiesen, während derselbe Ablauf bei anderen Leads klappte.
+ * Ein kurzer Abstand nimmt dem Rennen die Spitze.
+ */
+export const KNOPF_ANTWORT_WARTEZEIT_MS = 2000;
+const warte = (ms: number) => (ms > 0 ? new Promise<void>((r) => setTimeout(r, ms)) : Promise.resolve());
+
+/**
  * Klick auf einen Onboarding-Knopf verarbeiten (aus dem Webhook, ohne KI).
  * Idempotent: doppelt zugestellte Klicks lösen keine doppelte Aufforderung aus.
  */
@@ -149,6 +159,7 @@ export async function verarbeiteOnboardingKnopf(
   handwerker: Handwerker,
   payload: string,
   sender: LeadSender = echterSender,
+  warteMs: number = KNOPF_ANTWORT_WARTEZEIT_MS,
 ): Promise<void> {
   if (payload === KNOPF_JA || payload === KNOPF_AUSPROBIEREN) {
     // Schutz gegen doppelte Webhooks/Doppelklicks binnen Sekunden.
@@ -161,6 +172,7 @@ export async function verarbeiteOnboardingKnopf(
       handwerkerId: handwerker.id,
       data: { knopf: payload === KNOPF_JA ? "ja" : "ausprobieren" },
     });
+    await warte(warteMs);
     await sender.text(handwerker.whatsappNummer, AUFFORDERUNG);
     return;
   }
@@ -172,6 +184,7 @@ export async function verarbeiteOnboardingKnopf(
       data: { onboardingStatus: "ERKLAERT" },
     });
     await spurEvent(prisma, "LEAD_KNOPF", { handwerkerId: handwerker.id, data: { knopf: "erklaeren" } });
+    await warte(warteMs);
     await sender.knoepfe(handwerker.whatsappNummer, ERKLAERUNG, [
       { id: KNOPF_AUSPROBIEREN, titel: "Angebot ausprobieren" },
     ]);

@@ -96,7 +96,7 @@ describe("Lead-Onboarding: Knopf-Klicks", () => {
   it("Klick auf Ja → genau EINE Aufforderung, Status WARTET_AUF_AUFTRAG", async () => {
     const { p, aufrufe } = fakePrisma();
     const { sender, gesendet } = fakeSender();
-    await verarbeiteOnboardingKnopf(p, lead("EINGELADEN"), KNOPF_JA, sender);
+    await verarbeiteOnboardingKnopf(p, lead("EINGELADEN"), KNOPF_JA, sender, 0);
     expect(gesendet).toHaveLength(1);
     expect(gesendet[0].art).toBe("text");
     expect(String(gesendet[0].args[1])).toContain("Sprachnachricht");
@@ -113,7 +113,7 @@ describe("Lead-Onboarding: Knopf-Klicks", () => {
   it("Klick auf Kurz erklären → kurze Erklärung mit Ausprobieren-Knopf", async () => {
     const { p } = fakePrisma();
     const { sender, gesendet } = fakeSender();
-    await verarbeiteOnboardingKnopf(p, lead("EINGELADEN"), KNOPF_ERKLAEREN, sender);
+    await verarbeiteOnboardingKnopf(p, lead("EINGELADEN"), KNOPF_ERKLAEREN, sender, 0);
     expect(gesendet).toHaveLength(1);
     expect(gesendet[0].art).toBe("knoepfe");
     expect(String(gesendet[0].args[1])).toContain("Preise musst du nicht diktieren");
@@ -125,6 +125,15 @@ describe("Lead-Onboarding: Knopf-Klicks", () => {
     const { sender, gesendet } = fakeSender();
     await verarbeiteOnboardingKnopf(p, lead("EINGELADEN"), "FREMD", sender);
     expect(gesendet).toHaveLength(0);
+  });
+
+  it("wartet vor der Antwort kurz (Metas 24-h-Fenster öffnet mit dem Knopfdruck, 24.09.2026)", async () => {
+    const { p } = fakePrisma();
+    const { sender, gesendet } = fakeSender();
+    const start = Date.now();
+    await verarbeiteOnboardingKnopf(p, lead("EINGELADEN"), KNOPF_JA, sender, 120);
+    expect(gesendet).toHaveLength(1);
+    expect(Date.now() - start).toBeGreaterThanOrEqual(100);
   });
 });
 

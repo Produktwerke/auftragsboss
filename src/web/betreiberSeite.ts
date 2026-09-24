@@ -177,6 +177,8 @@ export interface Alarme {
   rueckfragen: Array<{ id: string; firma: string; nummer: string; datum: Date }>;
   /** Stripe-Abos mit offener, fehlgeschlagener Zahlung. */
   zahlungOffen?: Array<{ id: string; firma: string; seit: Date; versuche: number }>;
+  /** Von Meta abgewiesene WhatsApp-Nachrichten der letzten 7 Tage (Admin-Protokoll). */
+  nichtZustellbar?: Array<{ id: string; firma: string; detail: string; datum: Date }>;
 }
 
 function alarmBox(basis: string, a: Alarme): string {
@@ -199,6 +201,11 @@ function alarmBox(basis: string, a: Alarme): string {
   for (const z of a.zahlungOffen ?? []) {
     zeilen.push(
       `<li>💳 Zahlung offen bei <a href="${basis}/betrieb/${z.id}"><b>${escapeHtml(anzeigeName(z))}</b></a> seit ${datumDE(z.seit)} (${z.versuche} Fehlversuch${z.versuche === 1 ? "" : "e"}) — Stripe wiederholt den Einzug, Betrieb ist informiert</li>`,
+    );
+  }
+  for (const n of a.nichtZustellbar ?? []) {
+    zeilen.push(
+      `<li>📵 WhatsApp an <a href="${basis}/betrieb/${n.id}"><b>${escapeHtml(anzeigeName(n))}</b></a> nicht zugestellt (${datumDE(n.datum)}): ${escapeHtml(n.detail)} — anrufen oder per Vorlage erneut anschreiben</li>`,
     );
   }
   if (!zeilen.length) return "";

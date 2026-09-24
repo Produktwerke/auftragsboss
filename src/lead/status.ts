@@ -47,11 +47,26 @@ const EVENT_JE_ZUSTAND: Record<string, string> = {
   EINLADUNG_FEHLGESCHLAGEN: "LEAD_EINLADUNG_FEHLGESCHLAGEN",
 };
 
+/** Admin-Protokoll-Aktion für jede von Meta abgewiesene Nachricht an einen bekannten Betrieb. */
+export const AKTION_NICHT_ZUSTELLBAR = "WHATSAPP_NICHT_ZUSTELLBAR";
+
+/** Lesbare Erklärung der häufigsten Meta-Fehlercodes (für Admin-Protokoll und Warnsignal). */
+export function metaFehlerText(code: number | null | undefined, titel?: string | null): string {
+  switch (code) {
+    case 131047: return "Meta 131047: freie Antwort außerhalb des 24-Stunden-Fensters abgewiesen, der Betrieb hat nichts erhalten";
+    case 131026: return "Meta 131026: Nummer nicht bei WhatsApp erreichbar";
+    case 131049: return "Meta 131049: Meta hat die Nachricht wegen Nutzer-Limits zurückgehalten";
+    case 130472: return "Meta 130472: Nummer nimmt gerade keine Marketing-Nachrichten an";
+    default: return code ? `Meta ${code}${titel ? `: ${titel}` : ""}` : "Meta-Fehler ohne Code";
+  }
+}
+
 /**
- * Einen Meta-Status-Callback auf den Lead anwenden. Gibt den neuen Zustand
- * zurück (fürs Log) oder null, wenn nichts zu tun war (kein Lead, kein
- * relevanter Übergang). Fehlerfälle landen zusätzlich im Admin-Protokoll,
- * damit der Betreiber sieht, dass eine Einladung nie ankam.
+ * Einen Meta-Status-Callback anwenden. Für Leads treibt er das Zustandsmodell
+ * (Rückgabe = neuer Zustand, sonst null). Seit 24.09.2026 landet außerdem JEDE
+ * abgewiesene Nachricht („failed") an einen bekannten Betrieb im Admin-Protokoll
+ * und als Event, egal in welchem Zustand: vorher war z. B. eine gescheiterte
+ * Antwort auf einen Knopfdruck nirgends sichtbar (Malerbetrieb Schwarz, 131047).
  */
 export async function verarbeiteNachrichtStatus(prisma: PrismaClient, meldung: MetaStatusMeldung): Promise<string | null> {
   const nummer = (meldung.recipient_id ?? "").replace(/\D/g, "");
@@ -60,9 +75,22 @@ export async function verarbeiteNachrichtStatus(prisma: PrismaClient, meldung: M
     where: { whatsappNummer: nummer },
     select: { id: true, leadQuelle: true, onboardingStatus: true, firma: true, name: true },
   });
-  if (!h || !h.leadQuelle) return null;
+  if (!h) return null;
 
-  const neu = naechsterZustand(h.onboardingStatus, meldung.status);
+  const neu = h.leadQuelle ? naechsterZustand(h.onboardingStatus, meldung.status) : null;
+  if (meldung.status === "failed" && neu !== "EINLADUNG_FEHLGESCHLAGEN") {
+    // Kein Zustandswechsel (oder kein Lead), aber Meta hat eine Nachricht abgewiesen: sichtbar machen.
+    const fehler = meldung.errors?.[0];
+    await spurEvent(prisma, "NACHRICHT_FEHLGESCHLAGEN", { handwerkerId: h.id, data: { code: fehler?.code ?? null, zustand: h.onboardingStatus ?? null } });
+    await prisma.adminLog.create({
+      data: {
+        aktion: AKTION_NICHT_ZUSTELLBAR,
+        handwerkerId: h.id,
+        betrieb: h.firma || h.name || `+${nummer}`,
+        detail: `WhatsApp-Nachricht nicht zugestellt (${metaFehlerText(fehler?.code, fehler?.title)})${h.onboardingStatus ? `; Lead-Zustand: ${zustandLabel(h.onboardingStatus)}` : ""}`,
+      },
+    });
+  }
   if (!neu) return null;
 
   // Nur setzen, wenn der Zustand inzwischen nicht weitergewandert ist (Race mit Knopfklick).

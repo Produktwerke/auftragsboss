@@ -378,6 +378,9 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
       if (!h.leadQuelle) return reply.code(400).send({ fehler: "Kein Lead: die Vorlagen sind nur für eingeladene Betriebe gedacht." });
       const art = req.body.art === "aufforderung" ? "aufforderung" : req.body.art === "erklaerung" ? "erklaerung" : null;
       if (!art) return reply.code(400).send({ fehler: "Unbekannte Vorlage." });
+      if (h.onboardingStatus === "MARKETING_ABBESTELLT") {
+        return reply.code(409).send({ fehler: "Der Betrieb hat Marketing-Nachrichten von uns in WhatsApp abbestellt (Meta 131050). Vorlagen kommen nicht mehr an, bleibt nur ein Anruf." });
+      }
       const ok = await sendeLeadVorlage(prisma, h, art, "vom Betreiber ausgelöst");
       return ok
         ? reply.send({ ok: true, meldung: `${art === "erklaerung" ? "Erklärung" : "Aufforderung"} per Vorlage gesendet.` })

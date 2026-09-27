@@ -164,6 +164,17 @@ describe("Lead-Onboarding: Rückfall-Vorlagen (24.09.2026)", () => {
     const aktionen = aufrufe.adminLog.map((a) => (a as { aktion: string }).aktion);
     expect(aktionen).toEqual(["LEAD_VORLAGE_GESENDET", "LEAD_VORLAGE_GESENDET", "LEAD_VORLAGE_FEHLGESCHLAGEN"]);
   });
+
+  it("sendeLeadVorlage: nichts senden, wenn der Betrieb Marketing-Nachrichten abbestellt hat (Meta 131050, 27.09.2026)", async () => {
+    const { p, aufrufe } = fakePrisma();
+    const { sender, gesendet } = fakeSender();
+    expect(await sendeLeadVorlage(p, lead("MARKETING_ABBESTELLT"), "erklaerung", "vom Betreiber ausgelöst", sender)).toBe(false);
+    expect(gesendet).toHaveLength(0);
+    expect(aufrufe.events).toHaveLength(0);
+    const log = aufrufe.adminLog[0] as { aktion: string; detail: string };
+    expect(log.aktion).toBe("LEAD_VORLAGE_FEHLGESCHLAGEN");
+    expect(log.detail).toContain("abbestellt");
+  });
 });
 
 describe("Lead-Onboarding: erste echte Eingabe", () => {

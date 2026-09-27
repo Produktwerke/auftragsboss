@@ -204,8 +204,12 @@ function alarmBox(basis: string, a: Alarme): string {
     );
   }
   for (const n of a.nichtZustellbar ?? []) {
+    // 131050 = Marketing abbestellt: eine weitere Vorlage wäre der falsche Rat.
+    const rat = n.detail.includes("131050")
+      ? "nur noch per Anruf erreichbar, Erinnerung und Vorlagen sind für diesen Betrieb gesperrt"
+      : "anrufen oder per Vorlage erneut anschreiben";
     zeilen.push(
-      `<li>📵 WhatsApp an <a href="${basis}/betrieb/${n.id}"><b>${escapeHtml(anzeigeName(n))}</b></a> nicht zugestellt (${datumDE(n.datum)}): ${escapeHtml(n.detail)} — anrufen oder per Vorlage erneut anschreiben</li>`,
+      `<li>📵 WhatsApp an <a href="${basis}/betrieb/${n.id}"><b>${escapeHtml(anzeigeName(n))}</b></a> nicht zugestellt (${datumDE(n.datum)}): ${escapeHtml(n.detail)} — ${rat}</li>`,
     );
   }
   if (!zeilen.length) return "";
@@ -434,11 +438,11 @@ export function betreiberDetail(args: {
 
   ${b.leadQuelle ? `<div class="karte">
     <h2 style="margin-top:0;">Lead erneut anschreiben (Vorlage)</h2>
-    <p class="hinweis" style="margin-top:0;">Wenn Meta unsere Antwort auf einen Knopfdruck abgewiesen hat (Warnsignal „nicht zugestellt"), geht derselbe Inhalt hier als genehmigte Vorlage raus, mit kurzer Entschuldigung vorweg.</p>
+    ${b.onboardingStatus === "MARKETING_ABBESTELLT" ? `<p class="hinweis" style="margin:0;">Der Betrieb hat Marketing-Nachrichten von uns in WhatsApp abbestellt (Meta 131050). Erinnerung und Vorlagen kommen nicht mehr an. Es bleibt ein Anruf, oder er schreibt von sich aus.</p>` : `<p class="hinweis" style="margin-top:0;">Wenn Meta unsere Antwort auf einen Knopfdruck abgewiesen hat (Warnsignal „nicht zugestellt"), geht derselbe Inhalt hier als genehmigte Vorlage raus, mit kurzer Entschuldigung vorweg.</p>
     <p style="display:flex;gap:10px;flex-wrap:wrap;margin:0;">
       <form class="inline" data-post="${aktion("lead-vorlage")}"><input type="hidden" name="art" value="erklaerung"><button class="kn">Erklärung senden</button><div class="meldung"></div></form>
       <form class="inline" data-post="${aktion("lead-vorlage")}"><input type="hidden" name="art" value="aufforderung"><button class="kn" style="background:#5a616b;">Aufforderung zur Sprachnachricht senden</button><div class="meldung"></div></form>
-    </p>
+    </p>`}
   </div>` : ""}
 
   <div class="karte">
@@ -736,7 +740,7 @@ export function betreiberFunnel(args: { basis: string; ergebnis: FunnelErgebnis;
   const offene = ergebnis.offeneLeads
     .map(
       (l) =>
-        `<tr><td><a href="${basis}/betrieb/${l.id}"><b>${escapeHtml(l.anzeige)}</b></a></td><td>${escapeHtml(quelleLabel(l.quelle === "DIREKT" ? null : l.quelle))}</td><td><span class="badge ${l.zustand === "EINLADUNG_FEHLGESCHLAGEN" ? "b-warn" : "b-neutral"}">${escapeHtml(l.zustandLabel)}</span></td><td style="text-align:right;">${l.tage}</td><td>${l.erinnert ? "ja" : "–"}</td></tr>`,
+        `<tr><td><a href="${basis}/betrieb/${l.id}"><b>${escapeHtml(l.anzeige)}</b></a></td><td>${escapeHtml(quelleLabel(l.quelle === "DIREKT" ? null : l.quelle))}</td><td><span class="badge ${l.zustand === "EINLADUNG_FEHLGESCHLAGEN" || l.zustand === "MARKETING_ABBESTELLT" ? "b-warn" : "b-neutral"}">${escapeHtml(l.zustandLabel)}</span></td><td style="text-align:right;">${l.tage}</td><td>${l.erinnert ? "ja" : "–"}</td></tr>`,
     )
     .join("");
 

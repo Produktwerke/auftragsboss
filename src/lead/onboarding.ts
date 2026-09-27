@@ -109,12 +109,26 @@ export const VORLAGE_ERKLAERUNG_KNOPF = "Angebot ausprobieren";
  */
 export async function sendeLeadVorlage(
   prisma: PrismaClient,
-  handwerker: Pick<Handwerker, "id" | "whatsappNummer" | "firma" | "name">,
+  handwerker: Pick<Handwerker, "id" | "whatsappNummer" | "firma" | "name"> & { onboardingStatus?: string | null },
   art: LeadVorlageArt,
   grund: string,
   sender: Pick<LeadSender, "vorlage"> = echterSender,
 ): Promise<boolean> {
   const vorlage = art === "erklaerung" ? vorlageErklaerungName() : vorlageAufforderungName();
+  const betrieb = handwerker.firma || handwerker.name || `+${handwerker.whatsappNummer}`;
+  // 27.09.2026: Meta 131050 (status.ts MARKETING_ABBESTELLT). Der Betrieb hat Marketing-Nachrichten
+  // von uns abbestellt; eine Vorlage käme nicht an und würde nur das nächste 131050 auslösen.
+  if (handwerker.onboardingStatus === "MARKETING_ABBESTELLT") {
+    await prisma.adminLog.create({
+      data: {
+        aktion: "LEAD_VORLAGE_FEHLGESCHLAGEN",
+        handwerkerId: handwerker.id,
+        betrieb,
+        detail: `Vorlage ${vorlage} nicht gesendet (${grund}): der Betrieb hat Marketing-Nachrichten von uns in WhatsApp abbestellt.`,
+      },
+    });
+    return false;
+  }
   const knoepfe = art === "erklaerung" ? [KNOPF_AUSPROBIEREN] : [];
   const ok = await sender.vorlage(handwerker.whatsappNummer, vorlage, [], knoepfe);
   await spurEvent(prisma, "LEAD_VORLAGE_GESENDET", { handwerkerId: handwerker.id, data: { art, ok, grund } });
@@ -122,7 +136,7 @@ export async function sendeLeadVorlage(
     data: {
       aktion: ok ? "LEAD_VORLAGE_GESENDET" : "LEAD_VORLAGE_FEHLGESCHLAGEN",
       handwerkerId: handwerker.id,
-      betrieb: handwerker.firma || handwerker.name || `+${handwerker.whatsappNummer}`,
+      betrieb,
       detail: ok
         ? `${art === "erklaerung" ? "Erklärung" : "Aufforderung"} per Vorlage ${vorlage} gesendet (${grund})`
         : `Vorlage ${vorlage} nicht angenommen (${grund}). Ist sie bei Meta genehmigt?`,

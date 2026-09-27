@@ -99,6 +99,43 @@ describe("Lead-Zustände aus Meta-Status", () => {
     expect(sperre.aufrufe.adminLog).toHaveLength(1); // nur „nicht zugestellt", kein Vorlagen-Eintrag
   });
 
+  it("Meta 131050 (Marketing abbestellt, 27.09.2026, Malermeister Fabian): Lead wandert nach MARKETING_ABBESTELLT, deutsches Protokoll, keine Vorlage", async () => {
+    const { p, aufrufe } = fakePrisma({ leadQuelle: "TELEFON", onboardingStatus: "GELESEN" });
+    const { sender, gesendet } = fakeVorlage();
+    const neu = await verarbeiteNachrichtStatus(
+      p,
+      { recipient_id: "4917612345678", status: "failed", errors: [{ code: 131050, title: "Unable to deliver the message. This recipient has chosen to stop receiving marketing messages on WhatsApp from your business" }] },
+      { sender },
+    );
+    expect(neu).toBe("MARKETING_ABBESTELLT");
+    const um = aufrufe.updateMany[0] as { where: { onboardingStatus: string }; data: { onboardingStatus: string } };
+    expect(um.where.onboardingStatus).toBe("GELESEN"); // Race-sicher
+    expect(um.data.onboardingStatus).toBe("MARKETING_ABBESTELLT");
+    const logs = aufrufe.adminLog.map((a) => (a as { data: { aktion: string; detail: string } }).data);
+    expect(logs[0].aktion).toBe("WHATSAPP_NICHT_ZUSTELLBAR");
+    expect(logs[0].detail).toContain("abbestellt");
+    expect(logs[0].detail).not.toContain("stop receiving"); // kein englischer Meta-Text mehr im Cockpit
+    expect(logs[1].aktion).toBe("LEAD_MARKETING_ABBESTELLT");
+    expect(logs[1].detail).toContain("vorher: gelesen");
+    expect(aufrufe.events.map((e) => (e as { data: { typ: string } }).data.typ)).toEqual(["NACHRICHT_FEHLGESCHLAGEN", "LEAD_MARKETING_ABBESTELLT"]);
+    expect(gesendet).toHaveLength(0);
+    expect(zustandLabel("MARKETING_ABBESTELLT")).toBe("Marketing abbestellt (WhatsApp)");
+  });
+
+  it("131050 ändert nichts bei aktiven Betrieben, Nicht-Leads und verlorenen Races; nur das Protokoll bleibt", async () => {
+    const aktiv = fakePrisma({ leadQuelle: "TELEFON", onboardingStatus: "AKTIV" });
+    expect(await verarbeiteNachrichtStatus(aktiv.p, { recipient_id: "4917612345678", status: "failed", errors: [{ code: 131050 }] })).toBeNull();
+    expect(aktiv.aufrufe.updateMany).toHaveLength(0);
+    expect(aktiv.aufrufe.adminLog).toHaveLength(1);
+    const kein = fakePrisma({ leadQuelle: null, onboardingStatus: null });
+    expect(await verarbeiteNachrichtStatus(kein.p, { recipient_id: "4917612345678", status: "failed", errors: [{ code: 131050 }] })).toBeNull();
+    expect(kein.aufrufe.updateMany).toHaveLength(0);
+    const race = fakePrisma({ leadQuelle: "TELEFON", onboardingStatus: "ERKLAERT" }, 0);
+    expect(await verarbeiteNachrichtStatus(race.p, { recipient_id: "4917612345678", status: "failed", errors: [{ code: 131050 }] })).toBeNull();
+    expect(race.aufrufe.adminLog).toHaveLength(1);
+    expect(race.aufrufe.events).toHaveLength(1);
+  });
+
   it("abgewiesene Nachricht an einen normalen Betrieb (kein Lead) landet ebenfalls im Admin-Protokoll", async () => {
     const { p, aufrufe } = fakePrisma({ leadQuelle: null, onboardingStatus: null });
     expect(await verarbeiteNachrichtStatus(p, { recipient_id: "4917612345678", status: "failed", errors: [{ code: 131026 }] })).toBeNull();

@@ -4,6 +4,8 @@
 //
 //   EINGELADEN → ZUGESTELLT → GELESEN → (ERKLAERT | WARTET_AUF_AUFTRAG) → AKTIV
 //        └→ EINLADUNG_FEHLGESCHLAGEN (Nummer nicht bei WhatsApp o. ä.)
+//        └→ MARKETING_ABBESTELLT (27.09.2026: Meta 131050, der Betrieb hat Marketing-
+//           Nachrichten von uns in WhatsApp abbestellt → keine Erinnerung, keine Vorlagen mehr)
 //
 // Die ersten drei Übergänge kommen aus Metas Status-Callbacks (delivered/read/
 // failed), die im selben Webhook wie die Nachrichten ankommen. Sie werden nur
@@ -29,6 +31,12 @@ export const FRUEHE_ZUSTAENDE = new Set(["EINGELADEN", "ZUGESTELLT", "GELESEN"])
 
 /** Zustände, in denen eine Erinnerung sinnvoll ist (eingeladen, aber nichts eingesprochen). */
 export const ERINNERBARE_ZUSTAENDE = new Set(["EINGELADEN", "ZUGESTELLT", "GELESEN", "ERKLAERT"]);
+
+/** Meta 131050: der Empfänger hat Marketing-Nachrichten unseres Kontos in WhatsApp abbestellt. */
+export const META_MARKETING_ABBESTELLT = 131050;
+export const ZUSTAND_MARKETING_ABBESTELLT = "MARKETING_ABBESTELLT";
+/** Zustände, aus denen ein Lead bei 131050 nach MARKETING_ABBESTELLT wandert (AKTIV nutzt den Dienst und bleibt). */
+export const ABBESTELLBARE_ZUSTAENDE = new Set(["ZUGESTELLT", "GELESEN", "ERKLAERT", "WARTET_AUF_AUFTRAG"]);
 
 /**
  * Nächster Lead-Zustand aus einem Meta-Status. Rein, testbar. `null` = keine Änderung.
@@ -58,6 +66,7 @@ export function metaFehlerText(code: number | null | undefined, titel?: string |
     case 131026: return "Meta 131026: Nummer nicht bei WhatsApp erreichbar";
     case 131049: return "Meta 131049: Meta hat die Nachricht wegen Nutzer-Limits zurückgehalten";
     case 130472: return "Meta 130472: Nummer nimmt gerade keine Marketing-Nachrichten an";
+    case META_MARKETING_ABBESTELLT: return "Meta 131050: der Betrieb hat Marketing-Nachrichten von uns in WhatsApp abbestellt, Vorlagen und Erinnerungen kommen nicht mehr an";
     default: return code ? `Meta ${code}${titel ? `: ${titel}` : ""}` : "Meta-Fehler ohne Code";
   }
 }
@@ -103,6 +112,27 @@ export async function verarbeiteNachrichtStatus(
       },
     });
 
+    // Abbestellt (27.09.2026, Malermeister Fabian): Bei 131050 hat der Betrieb in WhatsApp „keine
+    // Marketing-Nachrichten" für unser Konto gewählt. Erinnerung, Rückfall-Vorlage und Cockpit-Knöpfe
+    // würden genauso scheitern → eigener Zustand, der sie alle sperrt (Race-sicher wie oben).
+    if (fehler?.code === META_MARKETING_ABBESTELLT && h.leadQuelle && h.onboardingStatus && ABBESTELLBARE_ZUSTAENDE.has(h.onboardingStatus)) {
+      const erg = await prisma.handwerker.updateMany({
+        where: { id: h.id, onboardingStatus: h.onboardingStatus },
+        data: { onboardingStatus: ZUSTAND_MARKETING_ABBESTELLT },
+      });
+      if (erg.count === 0) return null;
+      await spurEvent(prisma, "LEAD_MARKETING_ABBESTELLT", { handwerkerId: h.id, data: { vorher: h.onboardingStatus } });
+      await prisma.adminLog.create({
+        data: {
+          aktion: "LEAD_MARKETING_ABBESTELLT",
+          handwerkerId: h.id,
+          betrieb: h.firma || h.name || `+${nummer}`,
+          detail: `Lead auf „Marketing abbestellt" gesetzt (vorher: ${zustandLabel(h.onboardingStatus)}). Keine Erinnerung und keine Vorlagen mehr; erreichbar nur noch per Anruf oder wenn der Betrieb selbst schreibt.`,
+        },
+      });
+      return ZUSTAND_MARKETING_ABBESTELLT;
+    }
+
     // Rückfallweg (24.09.2026): War es unsere Antwort auf einen Knopfdruck (131047, Lead in
     // ERKLAERT/WARTET_AUF_AUFTRAG), geht derselbe Inhalt als Vorlage raus. Höchstens einmal je
     // 30 Minuten, damit eine abgewiesene Vorlage keine Schleife auslöst.
@@ -137,7 +167,7 @@ export async function verarbeiteNachrichtStatus(
         aktion: "LEAD_EINLADUNG_FEHLGESCHLAGEN",
         handwerkerId: h.id,
         betrieb: h.firma || h.name || `+${nummer}`,
-        detail: `WhatsApp-Einladung nicht zustellbar${fehler?.code ? ` (Meta ${fehler.code}${fehler.title ? `: ${fehler.title}` : ""})` : ""}`,
+        detail: `WhatsApp-Einladung nicht zustellbar (${metaFehlerText(fehler?.code, fehler?.title)})`,
       },
     });
   }
@@ -154,6 +184,7 @@ export function zustandLabel(z: string | null): string {
     case "WARTET_AUF_AUFTRAG": return "hat Ja geklickt";
     case "AKTIV": return "aktiv";
     case "EINLADUNG_FEHLGESCHLAGEN": return "Einladung nicht zustellbar";
+    case ZUSTAND_MARKETING_ABBESTELLT: return "Marketing abbestellt (WhatsApp)";
     default: return z ?? "–";
   }
 }

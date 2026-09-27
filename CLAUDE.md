@@ -136,6 +136,22 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 27.09.2026 — META 131050 „MARKETING ABBESTELLT" (676876e, 357 Tests, deployt 12:46; Push weiterhin nur mit Dirks Freigabe):**
+>   Warnsignal vom 25.09.: die Lead-Erinnerung an Malermeister Fabian kam mit Meta 131050 zurück (der Betrieb hat in WhatsApp „keine
+>   Marketing-Nachrichten" für unser Konto gewählt). Im Cockpit stand der englische Meta-Text plus der Rat „per Vorlage erneut anschreiben",
+>   der genauso gescheitert wäre. GEBAUT: `lead/status.ts` kennt 131050 (deutsch in `metaFehlerText`), neuer Lead-Zustand
+>   `MARKETING_ABBESTELLT` (aus ZUGESTELLT/GELESEN/ERKLAERT/WARTET_AUF_AUFTRAG, Race-sicher per updateMany, Event + AdminLog
+>   LEAD_MARKETING_ABBESTELLT; AKTIV bleibt). Der Zustand ist nicht erinnerbar (Job lässt ihn aus), `sendeLeadVorlage` sendet nichts,
+>   Route lead-vorlage antwortet 409, Detailseite zeigt statt der Knöpfe den Hinweis, Warnsignal rät zum Anruf, Funnel-Badge gelb.
+>   Fabian steht noch auf „gelesen": der Zustand wird erst beim nächsten 131050 gesetzt (Erinnerung war einmalig, automatisch geht nichts
+>   mehr raus). Rückfall-Vorlagen `lead_erklaerung`/`lead_aufforderung` seit 27.09. bei Meta GENEHMIGT. Schwarz: Erinnerung 26.09. 10:00
+>   ohne Reaktion; Plan: Montag 28.09. früh einmal „Erklärung senden", danach nur noch Anruf. E-MAIL-WELLE: Mail 1 am 24.09. 00:01 raus
+>   (Text in Mailchimp abweichend von der Endfassung), 3 Antworten am selben Tag (Steininger: will Aufmaß + Schnittstelle; Redzic: Demo,
+>   Kosten, Datenschutz, Maßgenauigkeit; Stöckle: Absage), Antwortentwürfe per Outlook-COM im Entwurfsordner dirk@auftragsboss.de
+>   (Dirk hat sie gekürzt). In der versendeten Mail: tel:-Platzhalter `+49SALESFRANK-NUMMER` und `*|Company|*` unaufgelöst → in den
+>   Mailchimp-Vorlagen korrigieren; Antwortende (Stöckle zwingend) aus der Serie nehmen. Wächter: Dateikarten im Temp-Ordner sind ROT,
+>   Outlook-COM auf den Posteingang geht.
+
 > **Update 24.09.2026 — EINLADUNGEN GEPRÜFT, ABGEWIESENE ANTWORTEN SICHTBAR (fec641d, 351 Tests, deployt 12:28; lokal 9 Commits vor GitHub, Push nur mit Dirks Freigabe):**
 >   Lead-Auswertung 24.09.: 11 Telefon-Leads, 11 Einladungen gesendet + zugestellt, 9 gelesen, 3 „Kurz erklären" (Schwarz, Innen.Art, Londi), 0 Eingaben.
 >   Log: 5 automatische Einladungen 23.09. (08:02–08:11), 1 am 24.09. 09:03; neues Bewertungsformat 0 Ausfälle; Meta-Status 23.09. 8 sent/6 delivered/

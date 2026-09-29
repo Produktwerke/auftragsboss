@@ -136,6 +136,30 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **Update 29.09.2026 — ERKLÄRVIDEO STATT KNÖPFE IN DER ERSTNACHRICHT (d85451d, 380 Tests, deployt 16:13; Push weiterhin nur mit Dirks Freigabe):**
+>   ANLASS: Aktivierungsproblem. Einziges Angebot aus der Telefonkampagne: BMA Malermeisterbetrieb am 25.09. (46 Min nach der Erinnerung
+>   gelesen, AGB akzeptiert, drei Sprachnachrichten, eine Rückfrage, Angebot nach 2:10 Min, 5 Positionen ohne Preise, 68 ct KI-Kosten; Link am
+>   Handy geöffnet, danach nichts mehr). DIRKS ENTSCHEIDUNG: Knöpfe [Ja, los geht's]/[Kurz erklären] entfallen, jeder bekommt zuerst ein
+>   Video (49 s); Erinnerung nach zwei Tagen nur kurzer Text; bereits Eingeladene bekommen das Video einmalig, wenn sie gelesen, aber nichts
+>   eingesprochen haben.
+>   VIDEO: Dirks Datei war H.265 (HEVC), Meta nimmt nur MP4 mit H.264 + AAC bis 16 MB → `scripts/video-h264.ps1` (Windows-Bordmittel,
+>   braucht das Paket „HEVC-Videoerweiterungen") → `marketing/auftragsboss-video.mp4` (600 x 1280, 7,05 MB; `marketing/*.mp4` ist
+>   gitignored). Dirk lädt sie nach IONOS `public` → https://auftragsboss.de/auftragsboss-video.mp4 (Austausch = Datei überschreiben).
+>   CODE: `lead/video.ts` (Adresse, `videoBereit` prüft Erreichbarkeit + Format und lädt die Datei nur bei Änderung neu, Texte/Namen der
+>   neuen Vorlagen, einmaliges Nachfassen); `whatsapp/send.ts` (Vorlage mit Video-Kopf, `sendeWhatsAppVideo`); `lead/onboarding.ts` sendet
+>   die Einladung zuerst als Video-Vorlage ohne Anrede und ohne Knöpfe, sonst die bisherige mit Knöpfen (Event LEAD_EINLADUNG_GESENDET
+>   trägt `vorlage` + `video`); `pipeline.ts` schickt Direkt-Testern das Video zur Begrüßung als normale Nachricht; `jobs/leadErinnerung.ts`
+>   versucht `lead_erinnerung_kurz`, sonst die alte Erinnerung; Cockpit: Lead-Auswertung Abschnitt „Erklärvideo nachschicken" (POST
+>   `/stasi/funnel/video-nachfassen`), Detailseite Knopf „Erklärvideo senden" (art video); `lead/status.ts` kennt 131052/131053.
+>   KEIN .env-EINTRAG NÖTIG: alles schaltet von selbst um, sobald das Video online ist und Meta die Vorlagen annimmt; bis dahin wie bisher.
+>   Abschalten: `EINLADUNG_VIDEO_URL=aus`. META: vier neue Vorlagen (MARKETING, de, ohne Platzhalter, ohne Knöpfe, Fußzeile KI-Hinweis):
+>   `einladung_video`, `test_starten_video`, `video_nachfassen` (Video-Kopf), `lead_erinnerung_kurz` (nur Text). Anlegen durch Dirk:
+>   `su - auftragsboss -c 'cd ~/app && npx tsx src/lead-vorlagen-anlegen.ts'` (lädt das Video von der Adresse, prüft es und gibt es Meta per
+>   Resumable Upload als Muster mit; App-Kennung aus `/app` oder `META_APP_ID`; `… status` zeigt den Stand).
+>   OFFEN: Video hochladen → Skript starten → Genehmigung → Cockpit „Video an N Leads senden". WhatsApp meldet keine Videoaufrufe; die
+>   Stufe „Knopf geklickt" entfällt für neue Leads. `.claude/launch.json` korrigiert (alter `--prefix voiceprotokoll-guard`), die lokale
+>   Vorschau läuft wieder (Demo-Login aus devServer.ts).
+
 > **Update 27.09.2026 — META 131050 „MARKETING ABBESTELLT" (676876e, 357 Tests, deployt 12:46; Push weiterhin nur mit Dirks Freigabe):**
 >   Warnsignal vom 25.09.: die Lead-Erinnerung an Malermeister Fabian kam mit Meta 131050 zurück (der Betrieb hat in WhatsApp „keine
 >   Marketing-Nachrichten" für unser Konto gewählt). Im Cockpit stand der englische Meta-Text plus der Rat „per Vorlage erneut anschreiben",

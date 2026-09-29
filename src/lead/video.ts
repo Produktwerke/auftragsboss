@@ -39,7 +39,8 @@ export const vorlageErinnerungKurz = (env: NodeJS.ProcessEnv = process.env) => e
 // Texte der Vorlagen (eine Quelle für das Anlege-Skript). Bewusst ohne Platzhalter und ohne
 // „du" oder „Sie": Anna siezt am Telefon, AuftragsBoss duzt im Chat, die Einladung steht dazwischen.
 // Hausregel: keine Gedankenstriche. Meta-Grenze: 1024 Zeichen.
-const VIDEO_SATZ = "Im Video oben sieht man in unter einer Minute, wie aus einer Sprachnachricht ein fertiger Angebotsentwurf wird.";
+// 29.09.2026 (Dirk): ohne Zeitangabe „in unter einer Minute".
+const VIDEO_SATZ = "Im Video oben sieht man, wie aus einer Sprachnachricht ein fertiger Angebotsentwurf wird.";
 export const VIDEO_TEXT_TELEFON =
   "Hallo, danke für das nette Telefonat!\n\n" +
   VIDEO_SATZ +
@@ -56,7 +57,7 @@ export const ERINNERUNG_KURZ_TEXT =
   "Hallo, kurze Erinnerung von AuftragsBoss: Der kostenlose Test wartet noch.\n\n" +
   "Einfach hier eine Sprachnachricht mit dem nächsten Auftrag schicken, der Angebotsentwurf kommt nach etwa zwei Minuten.";
 /** Bildunterschrift, wenn das Video als normale Nachricht zur Begrüßung rausgeht. */
-export const VIDEO_BEGRUESSUNG_TEXT = "🎬 So funktioniert AuftragsBoss, in unter einer Minute.";
+export const VIDEO_BEGRUESSUNG_TEXT = "🎬 So funktioniert AuftragsBoss.";
 
 /** Prüft die Bytes einer Videodatei gegen Metas Vorgaben. Rein, testbar. */
 export function pruefeVideoBytes(bytes: Uint8Array): { ok: boolean; grund?: string } {

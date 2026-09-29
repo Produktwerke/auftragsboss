@@ -10,8 +10,13 @@
 //   lead_erinnerung_kurz  Erinnerung nach zwei Tagen, kurzer Text ohne Knöpfe
 //
 // Läuft auf dem Server (Token aus der .env), VERÄNDERT etwas bei Meta → nur mit Dirks Freigabe:
-//   cd /home/auftragsboss/app && npx tsx src/lead-vorlagen-anlegen.ts          # anlegen (idempotent)
-//   cd /home/auftragsboss/app && npx tsx src/lead-vorlagen-anlegen.ts status   # nur Status abfragen
+//   cd /home/auftragsboss/app && npx tsx src/lead-vorlagen-anlegen.ts                 # anlegen (idempotent)
+//   cd /home/auftragsboss/app && npx tsx src/lead-vorlagen-anlegen.ts status          # nur Status abfragen
+//   cd /home/auftragsboss/app && npx tsx src/lead-vorlagen-anlegen.ts aktualisieren   # geänderte Texte nachziehen
+//
+// „aktualisieren" vergleicht den Text bei Meta mit dem im Code und ändert abweichende Vorlagen.
+// Meta erlaubt das nur bei Status APPROVED, REJECTED oder PAUSED (nicht während der Prüfung),
+// höchstens einmal je 24 Stunden und zehnmal je 30 Tage; danach prüft Meta die Vorlage erneut.
 //
 // Für die Video-Vorlagen muss das Video online sein (Standard https://auftragsboss.de/auftragsboss-video.mp4,
 // MP4 mit H.264 und AAC, höchstens 16 MB). Das Skript lädt es von dort, prüft das Format und gibt es Meta
@@ -43,6 +48,9 @@ import {
 
 const WABA_ID = process.env.WHATSAPP_WABA_ID?.trim() || "1680177866376806"; // Produktions-WABA „AuftragsBoss"
 const nurStatus = process.argv.includes("status");
+const aktualisieren = process.argv.includes("aktualisieren");
+const AENDERBAR = new Set(["APPROVED", "REJECTED", "PAUSED"]);
+const glatt = (t: string) => t.replace(/\r\n/g, "\n").trim();
 
 type Vorlage = { name: string; text: string; knopf?: string; video?: boolean };
 const vorlagen: Vorlage[] = [
@@ -59,10 +67,18 @@ const graph = `https://graph.facebook.com/${cfg.GRAPH_API_VERSION}`;
 const basis = `${graph}/${WABA_ID}/message_templates`;
 const kopf = { Authorization: `Bearer ${cfg.WHATSAPP_ACCESS_TOKEN}`, "Content-Type": "application/json" };
 
-type Stand = { id: string; name: string; status: string; language: string; category: string; rejected_reason?: string };
+type Stand = {
+  id: string;
+  name: string;
+  status: string;
+  language: string;
+  category: string;
+  rejected_reason?: string;
+  components?: Array<{ type?: string; text?: string }>;
+};
 
 async function status(name: string): Promise<Stand[]> {
-  const res = await fetch(`${basis}?name=${encodeURIComponent(name)}&fields=id,name,status,language,category,rejected_reason`, { headers: kopf });
+  const res = await fetch(`${basis}?name=${encodeURIComponent(name)}&fields=id,name,status,language,category,rejected_reason,components`, { headers: kopf });
   if (!res.ok) throw new Error(`Statusabfrage ${name}: ${res.status} ${await res.text()}`);
   const j = (await res.json()) as { data?: Stand[] };
   return (j.data ?? []).filter((v) => v.name === name);
@@ -140,18 +156,34 @@ async function holeVideoKennung(): Promise<string | null> {
   return h;
 }
 
-async function anlegen(v: Vorlage, video: string | null): Promise<string> {
+function bausteine(v: Vorlage, video: string | null): unknown[] {
   const components: unknown[] = [];
   if (video) components.push({ type: "HEADER", format: "VIDEO", example: { header_handle: [video] } });
   components.push({ type: "BODY", text: v.text }, { type: "FOOTER", text: VORLAGEN_FUSSZEILE });
   if (v.knopf) components.push({ type: "BUTTONS", buttons: [{ type: "QUICK_REPLY", text: v.knopf }] });
+  return components;
+}
+
+async function anlegen(v: Vorlage, video: string | null): Promise<string> {
   const res = await fetch(basis, {
     method: "POST",
     headers: kopf,
-    body: JSON.stringify({ name: v.name, language: "de", category: "MARKETING", components }),
+    body: JSON.stringify({ name: v.name, language: "de", category: "MARKETING", components: bausteine(v, video) }),
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`Anlegen ${v.name}: ${res.status} ${text}`);
+  return text;
+}
+
+/** Bestehende Vorlage ändern (nur bei APPROVED, REJECTED, PAUSED). Meta prüft sie danach erneut. */
+async function aendern(id: string, v: Vorlage, video: string | null): Promise<string> {
+  const res = await fetch(`${graph}/${id}`, {
+    method: "POST",
+    headers: kopf,
+    body: JSON.stringify({ components: bausteine(v, video) }),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Ändern ${v.name}: ${res.status} ${text}`);
   return text;
 }
 
@@ -165,7 +197,27 @@ for (const v of vorlagen) {
   if (vorhanden.length) {
     for (const s of vorhanden) {
       const grund = s.rejected_reason && s.rejected_reason !== "NONE" ? `, Ablehnungsgrund ${s.rejected_reason}` : "";
-      console.log(`• ${v.name} (${s.language}, ${s.category}): ${s.status}${grund}, Meta-ID ${s.id}`);
+      const beiMeta = glatt(s.components?.find((c) => c.type === "BODY")?.text ?? "");
+      const gleich = beiMeta === glatt(v.text);
+      console.log(`• ${v.name} (${s.language}, ${s.category}): ${s.status}${grund}, Meta-ID ${s.id}${gleich ? "" : ", TEXT WEICHT VOM CODE AB"}`);
+      if (gleich || !aktualisieren) continue;
+      if (!AENDERBAR.has(s.status)) {
+        console.log(`  Änderung noch nicht möglich: Meta prüft die Vorlage gerade (${s.status}). Nach der Prüfung noch einmal mit „aktualisieren" starten.`);
+        process.exitCode = 1;
+        continue;
+      }
+      const video = v.video ? await holeVideoKennung() : null;
+      if (v.video && !video) {
+        console.error(`  ✗ ${v.name}: Änderung ausgelassen, weil das Mustervideo fehlt.`);
+        process.exitCode = 1;
+        continue;
+      }
+      try {
+        console.log(`  → ändere den Text (${v.text.length} Zeichen) … ${await aendern(s.id, v, video)}`);
+      } catch (err) {
+        console.error(`  ✗ ${err instanceof Error ? err.message : String(err)}`);
+        process.exitCode = 1;
+      }
     }
     continue;
   }

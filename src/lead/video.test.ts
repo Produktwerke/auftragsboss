@@ -70,6 +70,7 @@ describe("Erklärvideo: Einstellung und Dateiprüfung", () => {
       expect(t).not.toMatch(/[—–]/);
       expect(t).not.toContain("{{");
       expect(t).not.toContain("\n\n\n");
+      expect(t).not.toContain("unter einer Minute"); // Dirk, 29.09.2026: keine Zeitangabe zum Video
       expect(t).not.toMatch(/\b(du|dir|dich|dein|deine|Sie|Ihnen|Ihr|Ihre)\b/);
       expect(t).toContain("Sprachnachricht");
     }

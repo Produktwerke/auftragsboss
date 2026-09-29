@@ -156,7 +156,11 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   `einladung_video`, `test_starten_video`, `video_nachfassen` (Video-Kopf), `lead_erinnerung_kurz` (nur Text). Anlegen durch Dirk:
 >   `su - auftragsboss -c 'cd ~/app && npx tsx src/lead-vorlagen-anlegen.ts'` (lädt das Video von der Adresse, prüft es und gibt es Meta per
 >   Resumable Upload als Muster mit; App-Kennung aus `/app` oder `META_APP_ID`; `… status` zeigt den Stand).
->   OFFEN: Video hochladen → Skript starten → Genehmigung → Cockpit „Video an N Leads senden". WhatsApp meldet keine Videoaufrufe; die
+>   STAND 29.09. 16:35: Video liegt online (7.391.442 Bytes = die umgewandelte H.264-Datei, hochgeladen 16:19), Dirk hat das Skript
+>   gestartet (Vorlagen bei Meta angelegt, Stand unbekannt, Abfrage nur durch Dirk). Danach Dirks Textwunsch: „in unter einer Minute"
+>   gestrichen (8da1021, deployt 16:34). Weil die Vorlagen schon bei Meta lagen: neuer Skript-Modus `… aktualisieren` (ändert
+>   abweichende Texte, sobald Meta es zulässt: nur APPROVED/REJECTED/PAUSED, einmal je 24 h, danach erneute Prüfung).
+>   OFFEN: Genehmigung abwarten → `aktualisieren` → erneute Genehmigung → Cockpit „Video an N Leads senden". WhatsApp meldet keine Videoaufrufe; die
 >   Stufe „Knopf geklickt" entfällt für neue Leads. `.claude/launch.json` korrigiert (alter `--prefix voiceprotokoll-guard`), die lokale
 >   Vorschau läuft wieder (Demo-Login aus devServer.ts).
 

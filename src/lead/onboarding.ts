@@ -15,10 +15,16 @@
 // WICHTIG (Meta): Die Erstnachricht MUSS eine genehmigte Vorlage sein
 // (business-initiiert). Das Opt-in wird mit Zeitpunkt und Quelle am
 // Handwerker dokumentiert (Meta-Vorgabe bei Akquise-Nachrichten).
+//
+// Seit 29.09.2026 (Dirk, Aktivierungsproblem): Ist das Erklärvideo erreichbar, geht die
+// Einladung als Vorlage MIT VIDEO und OHNE Knöpfe raus (video.ts). Die Knopf-Einladung
+// bleibt als Rückfall, solange Meta die Video-Vorlage nicht annimmt; die Knöpfe in bereits
+// verschickten Nachrichten funktionieren weiter.
 import type { Handwerker, PrismaClient } from "@prisma/client";
 import { sendeWhatsAppText, sendeWhatsAppKnoepfe, sendeWhatsAppVorlage } from "../whatsapp/send.js";
 import { spurEvent } from "../analytics/event.js";
 import { normalisiereHandy } from "../config.js";
+import { videoBereit, vorlageVideoTelefon, vorlageVideoWebsite } from "./video.js";
 
 // Kennungen der Antwort-Knöpfe (kommen im Webhook als knopfPayload zurück).
 export const KNOPF_JA = "LEAD_JA";
@@ -75,11 +81,14 @@ export type LeadSender = {
   vorlage: typeof sendeWhatsAppVorlage;
   text: typeof sendeWhatsAppText;
   knoepfe: typeof sendeWhatsAppKnoepfe;
+  /** Adresse des Erklärvideos, wenn es verwendbar ist (fehlt in Tests: Einladung wie bisher). */
+  videoUrl?: () => Promise<string | null>;
 };
 const echterSender: LeadSender = {
   vorlage: sendeWhatsAppVorlage,
   text: sendeWhatsAppText,
   knoepfe: sendeWhatsAppKnoepfe,
+  videoUrl: () => videoBereit(),
 };
 
 // ── Vorlagen als Rückfallweg (24.09.2026) ────────────────────────────────
@@ -193,13 +202,27 @@ export async function legeLeadAnUndLadeEin(
     data: { quelle: handwerker.optInQuelle },
   });
 
-  const ok = await sender.vorlage(nummer, args.vorlage ?? leadVorlagenName(), args.ohneAnrede ? [] : [anrede], [KNOPF_JA, KNOPF_ERKLAEREN]);
-  if (!ok) {
+  // Zuerst die Einladung mit Erklärvideo (ohne Platzhalter, ohne Knöpfe). Nimmt Meta sie
+  // nicht an (noch nicht genehmigt, pausiert) oder ist das Video nicht erreichbar, geht die
+  // bisherige Einladung mit den zwei Knöpfen raus: eine Einladung darf nie ausfallen.
+  const bisherige = args.vorlage ?? leadVorlagenName();
+  const video = sender.videoUrl ? await sender.videoUrl() : null;
+  let gesendet: string | null = null;
+  if (video) {
+    const mitVideo = handwerker.leadQuelle === "WEBSITE" ? vorlageVideoWebsite() : vorlageVideoTelefon();
+    if (await sender.vorlage(nummer, mitVideo, [], [], video)) gesendet = mitVideo;
+    else console.warn(`🎬 Video-Einladung ${mitVideo} nicht angenommen (bei Meta genehmigt?), sende ${bisherige} mit Knöpfen.`);
+  }
+  const mitVideoGesendet = gesendet !== null;
+  if (!gesendet && (await sender.vorlage(nummer, bisherige, args.ohneAnrede ? [] : [anrede], [KNOPF_JA, KNOPF_ERKLAEREN]))) {
+    gesendet = bisherige;
+  }
+  if (!gesendet) {
     // Lead bleibt angelegt (Opt-in ist dokumentiert) — der Betreiber sieht den
     // Fehler und kann es erneut versuchen (z. B. Vorlage noch nicht genehmigt).
     return { fehler: "Lead angelegt, aber die WhatsApp-Einladung konnte nicht gesendet werden. Ist die Vorlage bei Meta genehmigt?" };
   }
-  await spurEvent(prisma, "LEAD_EINLADUNG_GESENDET", { handwerkerId: handwerker.id });
+  await spurEvent(prisma, "LEAD_EINLADUNG_GESENDET", { handwerkerId: handwerker.id, data: { vorlage: gesendet, video: mitVideoGesendet } });
   return { handwerker };
 }
 

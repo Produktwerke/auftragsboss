@@ -44,6 +44,7 @@ import { einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
 import { cockpitLink, einstellungenLink } from "./tokens.js";
 import { hatAdminSitzung } from "./adminAuth.js";
 import { legeLeadAnUndLadeEin, sendeLeadVorlage } from "../lead/onboarding.js";
+import { ladeVideoNachfassKandidaten, sendeVideoAnLead, sendeVideoNachfassen, videoBereit } from "../lead/video.js";
 import { WEBTEST_NUMMER } from "./webtest.js";
 import { berechneFunnel } from "../lead/funnel.js";
 import { betreiberSalesFrank } from "./betreiberSeite.js";
@@ -376,10 +377,15 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
       const h = await prisma.handwerker.findUnique({ where: { id: req.params.id } });
       if (!h) return reply.code(404).send({ fehler: "Betrieb nicht gefunden" });
       if (!h.leadQuelle) return reply.code(400).send({ fehler: "Kein Lead: die Vorlagen sind nur für eingeladene Betriebe gedacht." });
-      const art = req.body.art === "aufforderung" ? "aufforderung" : req.body.art === "erklaerung" ? "erklaerung" : null;
+      const art = req.body.art === "aufforderung" ? "aufforderung" : req.body.art === "erklaerung" ? "erklaerung" : req.body.art === "video" ? "video" : null;
       if (!art) return reply.code(400).send({ fehler: "Unbekannte Vorlage." });
       if (h.onboardingStatus === "MARKETING_ABBESTELLT") {
         return reply.code(409).send({ fehler: "Der Betrieb hat Marketing-Nachrichten von uns in WhatsApp abbestellt (Meta 131050). Vorlagen kommen nicht mehr an, bleibt nur ein Anruf." });
+      }
+      if (art === "video") {
+        // Erklärvideo (29.09.2026) als Vorlage video_nachfassen an diesen einen Lead.
+        const erg = await sendeVideoAnLead(prisma, h, "vom Betreiber ausgelöst");
+        return erg.ok ? reply.send({ ok: true, meldung: "Erklärvideo per Vorlage gesendet." }) : reply.code(502).send({ fehler: erg.fehler });
       }
       const ok = await sendeLeadVorlage(prisma, h, art, "vom Betreiber ausgelöst");
       return ok
@@ -669,7 +675,27 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
       angeboteJeBetrieb: new Map(angebote.map((a) => [a.handwerkerId, a._count._all])),
       aboBetriebe: new Set(abos.map((a) => a.handwerkerId)),
     });
-    return reply.type("text/html; charset=utf-8").send(betreiberFunnel({ basis: z.basis, ergebnis, tage, erinnerungAktiv: featureConfig().FEATURE_LEAD_ERINNERUNG }));
+    // Erklärvideo nachschicken (29.09.2026): wer hat gelesen, aber nichts eingesprochen?
+    const [videoKandidaten, videoAdresse] = await Promise.all([ladeVideoNachfassKandidaten(prisma), videoBereit()]);
+    return reply.type("text/html; charset=utf-8").send(betreiberFunnel({
+      basis: z.basis,
+      ergebnis,
+      tage,
+      erinnerungAktiv: featureConfig().FEATURE_LEAD_ERINNERUNG,
+      videoNachfassen: {
+        bereit: videoAdresse !== null,
+        kandidaten: videoKandidaten.map((k) => ({ id: k.id, anzeige: k.firma.trim() || k.name.trim() || "(ohne Namen)", zustand: k.onboardingStatus })),
+      },
+    }));
+  });
+
+  // Einmalig das Erklärvideo an alle Leads senden, die gelesen, aber nichts eingesprochen haben.
+  for (const pfad of beide("/funnel/video-nachfassen")) app.post<{ Params: { token?: string } }>(pfad, async (req, reply) => {
+    if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
+    const e = await sendeVideoNachfassen(prisma);
+    if (e.kandidaten === 0) return reply.send({ ok: true, meldung: "Niemand offen: alle haben das Video schon oder noch nichts gelesen." });
+    if (e.gesendet === 0) return reply.code(502).send({ fehler: e.fehler ?? "Nichts gesendet." });
+    return reply.send({ ok: true, meldung: `Erklärvideo an ${e.gesendet} ${e.gesendet === 1 ? "Lead" : "Leads"} gesendet${e.fehlgeschlagen ? `, ${e.fehlgeschlagen} fehlgeschlagen (Admin-Protokoll)` : ""}.` });
   });
 
 

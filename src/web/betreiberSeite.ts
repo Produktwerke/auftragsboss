@@ -442,6 +442,7 @@ export function betreiberDetail(args: {
     <p style="display:flex;gap:10px;flex-wrap:wrap;margin:0;">
       <form class="inline" data-post="${aktion("lead-vorlage")}"><input type="hidden" name="art" value="erklaerung"><button class="kn">Erklärung senden</button><div class="meldung"></div></form>
       <form class="inline" data-post="${aktion("lead-vorlage")}"><input type="hidden" name="art" value="aufforderung"><button class="kn" style="background:#5a616b;">Aufforderung zur Sprachnachricht senden</button><div class="meldung"></div></form>
+      <form class="inline" data-post="${aktion("lead-vorlage")}" data-frage="Das Erklärvideo jetzt per WhatsApp an diesen Betrieb senden?"><input type="hidden" name="art" value="video"><button class="kn" style="background:#1f6f43;">🎬 Erklärvideo senden</button><div class="meldung"></div></form>
     </p>`}
   </div>` : ""}
 
@@ -713,8 +714,35 @@ export function betreiberUmsatz(args: {
 }
 
 /** Lead-Auswertung (Etappe 2): Funnel je Quelle + offene Leads zum Nachfassen. */
-export function betreiberFunnel(args: { basis: string; ergebnis: FunnelErgebnis; tage: number | null; erinnerungAktiv: boolean }): string {
+export function betreiberFunnel(args: {
+  basis: string;
+  ergebnis: FunnelErgebnis;
+  tage: number | null;
+  erinnerungAktiv: boolean;
+  /** Erklärvideo einmalig nachschicken (29.09.2026): Leads, die gelesen, aber nichts eingesprochen haben. */
+  videoNachfassen?: { bereit: boolean; kandidaten: Array<{ id: string; anzeige: string; zustand: string | null }> };
+}): string {
   const { basis, ergebnis, tage, erinnerungAktiv } = args;
+  const vk = args.videoNachfassen?.kandidaten ?? [];
+  const videoKarte = !args.videoNachfassen
+    ? ""
+    : `
+  <h2>Erklärvideo nachschicken</h2>
+  <p class="unter">Einmalig an Leads, die die Einladung gelesen, aber noch nichts eingesprochen haben und das Video noch nicht kennen. Neue Einladungen enthalten das Video von selbst.</p>
+  <div class="karte">
+    ${
+      vk.length === 0
+        ? `<span style="color:#888;font-size:13.5px;">Niemand offen.</span>`
+        : `<p style="margin-top:0;">${vk.length} ${vk.length === 1 ? "Lead" : "Leads"}: ${vk
+            .map((k) => `<a href="${basis}/betrieb/${k.id}"><b>${escapeHtml(k.anzeige)}</b></a> <span style="color:#8a9099;">(${escapeHtml(zustandLabel(k.zustand))})</span>`)
+            .join(", ")}</p>
+    ${
+      args.videoNachfassen.bereit
+        ? `<form class="inline" data-post="${basis}/funnel/video-nachfassen" data-frage="Das Erklärvideo jetzt per WhatsApp an ${vk.length} ${vk.length === 1 ? "Lead" : "Leads"} senden?"><button class="kn">Video an ${vk.length} ${vk.length === 1 ? "Lead" : "Leads"} senden</button><div class="meldung"></div></form>`
+        : `<p class="hinweis" style="margin:0;">Das Video ist unter seiner Adresse noch nicht erreichbar oder hat das falsche Format (MP4 mit H.264, höchstens 16 MB). Sobald es online ist, erscheint hier der Knopf.</p>`
+    }`
+    }
+  </div>`;
   const zeitraumLink = (t: number | null, label: string) =>
     t === tage ? `<b>${label}</b>` : `<a href="${basis}/funnel${t ? `?tage=${t}` : ""}">${label}</a>`;
 
@@ -766,7 +794,8 @@ export function betreiberFunnel(args: { basis: string; ergebnis: FunnelErgebnis;
     <thead><tr><th>Betrieb</th><th>Quelle</th><th>Zustand</th><th style="text-align:right;">Tage seit Einladung</th><th>Erinnert</th></tr></thead>
     <tbody>${offene || `<tr><td colspan="5" style="text-align:center;color:#888;padding:20px;">Keine offenen Leads.</td></tr>`}</tbody>
   </table>
-  </div>`,
+  </div>
+  ${videoKarte}`,
   );
 }
 

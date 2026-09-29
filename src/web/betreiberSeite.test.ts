@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { betreiberListe, betreiberDetail, betreiberUmsatz, istInaktiv, type BetriebZeile } from "./betreiberSeite.js";
+import { betreiberListe, betreiberDetail, betreiberFunnel, betreiberUmsatz, istInaktiv, type BetriebZeile } from "./betreiberSeite.js";
 
 const TAG = 24 * 60 * 60 * 1000;
 
@@ -142,6 +142,17 @@ describe("betreiberDetail", () => {
     }
   });
 
+  it("Lead: Knopf zum Senden des Erklärvideos; nach Marketing-Abbestellung nur der Hinweis (29.09.2026)", () => {
+    const lead = { ...zeile(), blockiertGrund: null, blockiertAm: null, gewerkTyp: "MALER", ort: "Berlin", leadQuelle: "TELEFON", onboardingStatus: "GELESEN" };
+    const offen = detailHtml({ betrieb: lead });
+    expect(offen).toContain('name="art" value="video"');
+    expect(offen).toContain("Erklärvideo senden");
+    const abbestellt = detailHtml({ betrieb: { ...lead, onboardingStatus: "MARKETING_ABBESTELLT" } });
+    expect(abbestellt).not.toContain('name="art" value="video"');
+    expect(abbestellt).toContain("abbestellt");
+    expect(detailHtml()).not.toContain("Erklärvideo senden"); // kein Lead: keine Karte
+  });
+
   it("ohne Abo: Anlegen-Knopf, kein Kündigen", () => {
     const html = detailHtml();
     expect(html).toContain("Abo anlegen");
@@ -204,6 +215,32 @@ describe("betreiberDetail", () => {
     expect(html).toContain("entsperren");
     expect(html).toContain("Zahlung offen");
     expect(html).not.toContain(`data-post="/admin/tok/betrieb/h1/blockieren"`);
+  });
+});
+
+describe("betreiberFunnel: Erklärvideo nachschicken", () => {
+  const ergebnis = { quellen: [], offeneLeads: [] };
+  const kandidaten = [
+    { id: "a1", anzeige: "Malerbetrieb <Schwarz>", zustand: "ERKLAERT" },
+    { id: "a2", anzeige: "Innen.Art", zustand: "GELESEN" },
+  ];
+
+  it("Video online: Kandidaten mit Zustand und ein Knopf mit Rückfrage", () => {
+    const html = betreiberFunnel({ basis: "/stasi", ergebnis, tage: null, erinnerungAktiv: true, videoNachfassen: { bereit: true, kandidaten } });
+    expect(html).toContain("Erklärvideo nachschicken");
+    expect(html).toContain("Malerbetrieb &lt;Schwarz&gt;");
+    expect(html).toContain("Erklärung angesehen");
+    expect(html).toContain('data-post="/stasi/funnel/video-nachfassen"');
+    expect(html).toContain("Video an 2 Leads senden");
+  });
+
+  it("Video noch nicht online: Hinweis statt Knopf; niemand offen: kein Knopf", () => {
+    const ohne = betreiberFunnel({ basis: "/stasi", ergebnis, tage: null, erinnerungAktiv: true, videoNachfassen: { bereit: false, kandidaten } });
+    expect(ohne).not.toContain("video-nachfassen");
+    expect(ohne).toContain("noch nicht erreichbar");
+    const leer = betreiberFunnel({ basis: "/stasi", ergebnis, tage: null, erinnerungAktiv: true, videoNachfassen: { bereit: true, kandidaten: [] } });
+    expect(leer).toContain("Niemand offen");
+    expect(leer).not.toContain("video-nachfassen");
   });
 });
 

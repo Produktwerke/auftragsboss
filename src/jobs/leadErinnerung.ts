@@ -1,11 +1,13 @@
 // Lead-Erinnerung (Etappe 2, 15.09.2026): Wer eingeladen wurde, aber nach ein
 // paar Tagen nichts eingesprochen hat, bekommt GENAU EINE Erinnerung als
-// genehmigte Meta-Vorlage (business-initiiert, mit denselben zwei Knöpfen wie
-// die Einladung). Hinter einem Feature-Flag, weil die Vorlage erst bei Meta
+// genehmigte Meta-Vorlage (business-initiiert). Seit 29.09.2026 ein kurzer Text
+// ohne Knöpfe (lead_erinnerung_kurz); die frühere Vorlage mit den zwei Knöpfen
+// bleibt als Rückfall. Hinter einem Feature-Flag, weil die Vorlage erst bei Meta
 // genehmigt sein muss und Dirk den Ton vorher live sehen will.
 //
 //   FEATURE_LEAD_ERINNERUNG=1      Job scharf (Standard: aus)
-//   LEAD_VORLAGE_ERINNERUNG=…      Vorlagenname (Standard: lead_erinnerung, {{1}} = Anrede)
+//   LEAD_VORLAGE_ERINNERUNG_KURZ=… Vorlagenname (Standard: lead_erinnerung_kurz, ohne Platzhalter)
+//   LEAD_VORLAGE_ERINNERUNG=…      Rückfall (Standard: lead_erinnerung, {{1}} = Anrede, zwei Knöpfe)
 //   LEAD_ERINNERUNG_TAGE=2         Tage nach der Einladung
 //
 // Idempotent über das Event LEAD_ERINNERUNG. Läuft täglich 10:00 (nach den
@@ -17,6 +19,7 @@ import { sendeWhatsAppVorlage } from "../whatsapp/send.js";
 import { spurEvent } from "../analytics/event.js";
 import { KNOPF_ERKLAEREN, KNOPF_JA } from "../lead/onboarding.js";
 import { ERINNERBARE_ZUSTAENDE } from "../lead/status.js";
+import { vorlageErinnerungKurz } from "../lead/video.js";
 
 const TAG_MS = 24 * 60 * 60 * 1000;
 
@@ -73,18 +76,25 @@ export async function sendeLeadErinnerungen(
     });
     if (!faelligFuerErinnerung(h, new Set(events.map((e) => e.typ)), tage, jetzt)) continue;
 
+    // Seit 29.09.2026 (Dirk): kurzer Text ohne Knöpfe. Solange Meta die neue Vorlage nicht
+    // annimmt, geht die bisherige Erinnerung mit den zwei Knöpfen raus.
     const anrede = h.name.trim() || h.firma.trim() || "Boss";
-    const ok = await sende(h.whatsappNummer, vorlageErinnerung(), [anrede], [KNOPF_JA, KNOPF_ERKLAEREN]);
+    let vorlage = vorlageErinnerungKurz();
+    let ok = await sende(h.whatsappNummer, vorlage, [], []);
+    if (!ok) {
+      vorlage = vorlageErinnerung();
+      ok = await sende(h.whatsappNummer, vorlage, [anrede], [KNOPF_JA, KNOPF_ERKLAEREN]);
+    }
     const betrieb = h.firma || h.name || `+${h.whatsappNummer}`;
     if (ok) {
       ergebnis.gesendet++;
-      await spurEvent(prisma, "LEAD_ERINNERUNG", { handwerkerId: h.id, data: { nachTagen: tage, zustand: h.onboardingStatus } });
+      await spurEvent(prisma, "LEAD_ERINNERUNG", { handwerkerId: h.id, data: { nachTagen: tage, zustand: h.onboardingStatus, vorlage } });
       await prisma.adminLog.create({
-        data: { aktion: "LEAD_ERINNERUNG", handwerkerId: h.id, betrieb, detail: `Erinnerung per WhatsApp (${tage} Tage nach Einladung, Zustand ${h.onboardingStatus})` },
+        data: { aktion: "LEAD_ERINNERUNG", handwerkerId: h.id, betrieb, detail: `Erinnerung per WhatsApp (${tage} Tage nach Einladung, Zustand ${h.onboardingStatus}, Vorlage ${vorlage})` },
       });
     } else {
       ergebnis.fehlgeschlagen++;
-      console.warn(`Lead-Erinnerung an ${betrieb} nicht gesendet (Vorlage ${vorlageErinnerung()} genehmigt?)`);
+      console.warn(`Lead-Erinnerung an ${betrieb} nicht gesendet (Vorlagen ${vorlageErinnerungKurz()} und ${vorlageErinnerung()} genehmigt?)`);
     }
   }
   return ergebnis;

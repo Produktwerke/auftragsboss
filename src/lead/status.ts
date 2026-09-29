@@ -66,6 +66,8 @@ export function metaFehlerText(code: number | null | undefined, titel?: string |
     case 131026: return "Meta 131026: Nummer nicht bei WhatsApp erreichbar";
     case 131049: return "Meta 131049: Meta hat die Nachricht wegen Nutzer-Limits zurückgehalten";
     case 130472: return "Meta 130472: Nummer nimmt gerade keine Marketing-Nachrichten an";
+    case 131052:
+    case 131053: return `Meta ${code}: Meta konnte das Video oder Bild nicht laden (Adresse erreichbar? Video als MP4 mit H.264, höchstens 16 MB?)`;
     case META_MARKETING_ABBESTELLT: return "Meta 131050: der Betrieb hat Marketing-Nachrichten von uns in WhatsApp abbestellt, Vorlagen und Erinnerungen kommen nicht mehr an";
     default: return code ? `Meta ${code}${titel ? `: ${titel}` : ""}` : "Meta-Fehler ohne Code";
   }

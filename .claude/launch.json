@@ -4,7 +4,7 @@
     {
       "name": "dev-editor",
       "runtimeExecutable": "C:/Program Files/nodejs/npm.cmd",
-      "runtimeArgs": ["--prefix", "voiceprotokoll-guard", "run", "dev:editor"],
+      "runtimeArgs": ["run", "dev:editor"],
       "port": 3020,
       "env": { "PORT": "3020", "DATABASE_URL": "file:./dev.db", "PATH": "C:/Program Files/nodejs;${env:PATH}" }
     }

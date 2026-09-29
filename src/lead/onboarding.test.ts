@@ -75,6 +75,49 @@ describe("Lead-Onboarding: anlegen + einladen", () => {
     expect(vorlage?.args[1]).toBe("test_starten");
   });
 
+  it("mit Erklärvideo (29.09.2026): Einladung als Video-Vorlage ohne Anrede und ohne Knöpfe", async () => {
+    const { p, aufrufe } = fakePrisma();
+    const { sender, gesendet } = fakeSender();
+    sender.videoUrl = async () => "https://auftragsboss.de/auftragsboss-video.mp4";
+    const erg = await legeLeadAnUndLadeEin(p, { nummer: "0176 1234567", anrede: "Herr Müller", firma: "Maler Müller" }, sender);
+    expect("handwerker" in erg).toBe(true);
+    expect(gesendet).toHaveLength(1);
+    expect(gesendet[0].args).toEqual(["491761234567", "einladung_video", [], [], "https://auftragsboss.de/auftragsboss-video.mp4"]);
+    const einladung = aufrufe.events.map((e) => (e as { data: { typ: string; dataJson: string } }).data).find((e) => e.typ === "LEAD_EINLADUNG_GESENDET");
+    expect(JSON.parse(einladung!.dataJson)).toEqual({ vorlage: "einladung_video", video: true });
+  });
+
+  it("mit Erklärvideo: Website-Interessenten bekommen test_starten_video", async () => {
+    const { p } = fakePrisma();
+    const { sender, gesendet } = fakeSender();
+    sender.videoUrl = async () => "https://auftragsboss.de/auftragsboss-video.mp4";
+    await legeLeadAnUndLadeEin(p, { nummer: "0176 1234567", anrede: "Kai", leadQuelle: "WEBSITE", vorlage: "test_starten" }, sender);
+    expect(gesendet[0].args[1]).toBe("test_starten_video");
+    expect(gesendet[0].args[3]).toEqual([]);
+  });
+
+  it("Video-Vorlage von Meta nicht angenommen: die bisherige Einladung mit Knöpfen geht raus", async () => {
+    const { p, aufrufe } = fakePrisma();
+    const { sender, gesendet } = fakeSender();
+    sender.videoUrl = async () => "https://auftragsboss.de/auftragsboss-video.mp4";
+    (sender.vorlage as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
+    const erg = await legeLeadAnUndLadeEin(p, { nummer: "0176 1234567", anrede: "Herr Müller" }, sender);
+    expect("handwerker" in erg).toBe(true);
+    expect((sender.vorlage as ReturnType<typeof vi.fn>).mock.calls[0]?.[1]).toBe("einladung_video");
+    expect((sender.vorlage as ReturnType<typeof vi.fn>).mock.calls[1]).toEqual(["491761234567", "angebot_ausprobieren", ["Herr Müller"], [KNOPF_JA, KNOPF_ERKLAEREN]]);
+    expect(gesendet).toHaveLength(1); // der abgewiesene Versuch zählt nicht als gesendet
+    const einladung = aufrufe.events.map((e) => (e as { data: { typ: string; dataJson: string } }).data).find((e) => e.typ === "LEAD_EINLADUNG_GESENDET");
+    expect(JSON.parse(einladung!.dataJson)).toEqual({ vorlage: "angebot_ausprobieren", video: false });
+  });
+
+  it("Video nicht erreichbar: Einladung wie bisher", async () => {
+    const { p } = fakePrisma();
+    const { sender, gesendet } = fakeSender();
+    sender.videoUrl = async () => null;
+    await legeLeadAnUndLadeEin(p, { nummer: "0176 1234567", anrede: "Herr Müller" }, sender);
+    expect(gesendet[0].args).toEqual(["491761234567", "angebot_ausprobieren", ["Herr Müller"], [KNOPF_JA, KNOPF_ERKLAEREN]]);
+  });
+
   it("lehnt unbrauchbare Nummer und vorhandene Nummer ab", async () => {
     const { p } = fakePrisma();
     const { sender } = fakeSender();

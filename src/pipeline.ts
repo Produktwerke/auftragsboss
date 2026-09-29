@@ -15,7 +15,8 @@
 import { PrismaClient, type Handwerker, type Vorgang } from "@prisma/client";
 import { ladeAudio, ladeBild, MediumZuGross, BILD_MAX_BYTES, AUDIO_MAX_BYTES } from "./whatsapp/media.js";
 import { erkenneBildTyp } from "./betrieb/bildpruefung.js";
-import { sendeWhatsAppText, sendeWhatsAppKnoepfe } from "./whatsapp/send.js";
+import { sendeWhatsAppText, sendeWhatsAppKnoepfe, sendeWhatsAppVideo } from "./whatsapp/send.js";
+import { videoBereit, VIDEO_BEGRUESSUNG_TEXT } from "./lead/video.js";
 import { transkribiereAudio } from "./ai/transcribe.js";
 import { liesBildNotiz } from "./ai/bildLesen.js";
 import { analysiereWandfoto, bereinigeAnalyse, fotoAlsDialogText, fotoHinweiseKurz, fotoNachfassHinweis, type WandfotoAnalyse } from "./ai/wandfoto.js";
@@ -296,6 +297,18 @@ export async function verarbeiteNachricht(args: {
           `👋 Willkommen beim AuftragsBoss-Test!\n\nSprich einfach eine kurze *Sprachnachricht*: Kunde, Adresse und was gemacht werden soll. Ich mache in Sekunden ein fertiges Angebot draus.\n\nDu kannst AuftragsBoss ${direkttestConfig().DIREKTTEST_TAGE} Tage kostenlos testen. 🎙️` +
           anmeldeHinweis,
       );
+      // Erklärvideo zur Begrüßung (29.09.2026): Wer uns zuerst anschreibt, hat das
+      // 24-Stunden-Fenster geöffnet, das Video geht als normale Nachricht raus (keine Vorlage
+      // nötig). Nur wenn es erreichbar ist; ein Fehler hier hält die Verarbeitung nie auf.
+      try {
+        const video = await videoBereit();
+        if (video) {
+          const ok = await sendeWhatsAppVideo(vonNummer, video, VIDEO_BEGRUESSUNG_TEXT);
+          await spurEvent(prisma, "LEAD_VIDEO_GESENDET", { handwerkerId: handwerker.id, data: { art: "begruessung", ok } });
+        }
+      } catch (err) {
+        console.warn("Erklärvideo zur Begrüßung nicht gesendet:", err instanceof Error ? err.message : err);
+      }
       // kein return — die eigentliche Nachricht wird gleich weiterverarbeitet
     }
     // Startnachricht von der Landingpage („ich möchte 14 Tage kostenlos testen"):

@@ -160,7 +160,14 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   gestartet (Vorlagen bei Meta angelegt, Stand unbekannt, Abfrage nur durch Dirk). Danach Dirks Textwunsch: „in unter einer Minute"
 >   gestrichen (8da1021, deployt 16:34). Weil die Vorlagen schon bei Meta lagen: neuer Skript-Modus `… aktualisieren` (ändert
 >   abweichende Texte, sobald Meta es zulässt: nur APPROVED/REJECTED/PAUSED, einmal je 24 h, danach erneute Prüfung).
->   OFFEN: Genehmigung abwarten → `aktualisieren` → erneute Genehmigung → Cockpit „Video an N Leads senden". WhatsApp meldet keine Videoaufrufe; die
+>   STAND 01.10. 14:00: Patch-Tag durch Dirk (16 Updates, Kernel 6.8.0-146, Nachkontrolle ohne Befund, Restore-Probe 04:45 OK). Meta
+>   hatte alle vier Vorlagen genehmigt, Dirk hat `aktualisieren` ausgeführt: die drei Video-Vorlagen sind mit dem neuen Text ERNEUT in
+>   Prüfung, `lead_erinnerung_kurz` ist genehmigt. LEHRE: Während Meta eine geänderte Vorlage prüft, ist auch die vorher genehmigte Fassung
+>   nicht sendbar (132001 „does not exist in de"); Dirks Knopfdruck „Video an 11 Leads senden" brach deshalb beim ersten Lead ab, nichts
+>   ging raus. Künftig Textwünsche VOR dem Anlegen klären oder eine neue Vorlage unter neuem Namen anlegen statt eine genehmigte zu ändern.
+>   Korrektur 03ebb0f (381 Tests, deployt 14:00): das Nachfassen lässt Leads mit gemeldetem 131050 aus, auch wenn ihr Zustand noch der
+>   alte ist (Fabian stand in der Liste). Server-Zeiten in Logs und Datenbank sind UTC.
+>   OFFEN: zweite Genehmigung abwarten (`… status`) → Cockpit „Video an N Leads senden". WhatsApp meldet keine Videoaufrufe; die
 >   Stufe „Knopf geklickt" entfällt für neue Leads. `.claude/launch.json` korrigiert (alter `--prefix voiceprotokoll-guard`), die lokale
 >   Vorschau läuft wieder (Demo-Login aus devServer.ts).
 

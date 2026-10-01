@@ -172,6 +172,15 @@ describe("Erklärvideo: einmalig nachschicken", () => {
     expect(faelligFuerVideoNachfassen(lead, [einladung, { typ: "LEAD_VIDEO_GESENDET", dataJson: '{"art":"nachfassen"}' }])).toBe(false);
   });
 
+  it("nicht fällig: Marketing abbestellt (Meta 131050), auch wenn der Zustand noch GELESEN ist (Fabian, 01.10.2026)", () => {
+    const abbestellt = { typ: "NACHRICHT_FEHLGESCHLAGEN", dataJson: '{"code":131050,"zustand":"GELESEN"}' };
+    expect(faelligFuerVideoNachfassen(lead, [einladung, abbestellt])).toBe(false);
+    expect(faelligFuerVideoNachfassen(lead, [einladung, { typ: "LEAD_MARKETING_ABBESTELLT", dataJson: "{}" }])).toBe(false);
+    // Ein anderer Fehlschlag (131047, Antwort hing fest) sperrt nicht: genau diese Leads sollen das Video bekommen.
+    expect(faelligFuerVideoNachfassen(lead, [einladung, { typ: "NACHRICHT_FEHLGESCHLAGEN", dataJson: '{"code":131047}' }])).toBe(true);
+    expect(faelligFuerVideoNachfassen(lead, [einladung, { typ: "NACHRICHT_FEHLGESCHLAGEN", dataJson: "kaputt" }])).toBe(true);
+  });
+
   function fakePrisma() {
     const aufrufe: { events: unknown[]; adminLog: Array<{ aktion: string; detail: string }> } = { events: [], adminLog: [] };
     const p = {

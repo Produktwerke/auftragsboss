@@ -145,8 +145,21 @@ export function faelligFuerVideoNachfassen(
   const einladungen = ereignisse.filter((e) => e.typ === "LEAD_EINLADUNG_GESENDET");
   if (einladungen.length === 0) return false; // nie eingeladen: nichts nachzufassen
   if (einladungen.some((e) => istVideoEinladung(e.dataJson))) return false; // hatte das Video schon
+  // Wer Marketing-Nachrichten abbestellt hat (Meta 131050), bekommt nichts mehr, auch wenn sein
+  // Zustand noch der alte ist: bei Malermeister Fabian kam der Fehler am 25.09.2026, bevor es den
+  // Zustand MARKETING_ABBESTELLT gab, er stand am 01.10. trotzdem in der Nachfass-Liste.
+  if (ereignisse.some((e) => e.typ === "LEAD_MARKETING_ABBESTELLT" || (e.typ === "NACHRICHT_FEHLGESCHLAGEN" && metaCode(e.dataJson) === 131050))) return false;
   return !ereignisse.some((e) => e.typ === "LEAD_VIDEO_GESENDET");
 }
+
+const metaCode = (dataJson: string): number | null => {
+  try {
+    const code = (JSON.parse(dataJson) as { code?: unknown }).code;
+    return typeof code === "number" ? code : null;
+  } catch {
+    return null;
+  }
+};
 
 export interface VideoKandidat {
   id: string;
@@ -164,7 +177,7 @@ export async function ladeVideoNachfassKandidaten(prisma: PrismaClient): Promise
   });
   if (leads.length === 0) return [];
   const events = await prisma.event.findMany({
-    where: { handwerkerId: { in: leads.map((l) => l.id) }, typ: { in: ["LEAD_EINLADUNG_GESENDET", "LEAD_VIDEO_GESENDET"] } },
+    where: { handwerkerId: { in: leads.map((l) => l.id) }, typ: { in: ["LEAD_EINLADUNG_GESENDET", "LEAD_VIDEO_GESENDET", "NACHRICHT_FEHLGESCHLAGEN", "LEAD_MARKETING_ABBESTELLT"] } },
     select: { handwerkerId: true, typ: true, dataJson: true },
   });
   return leads

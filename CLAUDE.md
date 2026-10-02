@@ -186,9 +186,13 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   Reihenfolge für künftige Videos: `video-h264.ps1` (nur bei H.265), dann IMMER `node scripts/video-whatsapp-fix.cjs ein aus`,
 >   dann zu IONOS, dann Probe ans eigene Handy, erst danach an Leads. ✅ BESTÄTIGT 02.10. 14:35: Dirk hat die umgebaute Datei
 >   hochgeladen (online 7.391.402 Bytes, 14:29), Probe `video_nachfassen` an sein Handy: Video spielt. Ursache war also der Dateiaufbau.
->   Neue Einladungen und Begrüßungen laufen damit mit funktionierendem Video. OFFEN (Dirks Entscheidung): ob die zehn Leads, die um
->   13:47 die nicht abspielbare Fassung bekamen, das Video noch einmal erhalten (dafür müsste die Nachfass-Liste Ereignisse vor dem
->   Austausch um 12:30 UTC als „fehlerhaft" werten, oder je Lead der Knopf auf der Detailseite).
+>   Neue Einladungen und Begrüßungen laufen damit mit funktionierendem Video.
+>   ERNEUTER VERSAND FREIGESCHALTET (Dirks Entscheidung „Variante 1"; 57a0c0d, 386 Tests, deployt 02.10. 14:37): `lead/video.ts`
+>   `VIDEO_FEHLERHAFT_BIS` (02.10.2026 12:30 UTC); ein Ereignis LEAD_VIDEO_GESENDET davor zählt nicht als „hat das Video bekommen",
+>   ein Versand danach sperrt wie gewohnt (`hatteFehlerhaftesVideo`, Kandidat `erneut`, eigener Grund im Admin-Protokoll). Die Karte
+>   „Erklärvideo nachschicken" nennt, wie viele die Wiederholung bekommen. Datenbank-Kontrolle 14:40 (nur lesend): genau die zehn
+>   Leads stehen wieder in der Liste, Fabian (131050) bleibt draußen. Den Knopf drückt Dirk; bei künftigen Video-Vorfällen den
+>   Zeitpunkt in `VIDEO_FEHLERHAFT_BIS` anpassen statt Ereignisse zu löschen.
 >   OFFEN: Reaktionen der zehn Leads beobachten (Eingaben, AGB, Angebote); erste automatische Video-Einladung nach einem Anna-Anruf
 >   im Log prüfen. WhatsApp meldet keine Videoaufrufe; die
 >   Stufe „Knopf geklickt" entfällt für neue Leads. `.claude/launch.json` korrigiert (alter `--prefix voiceprotokoll-guard`), die lokale

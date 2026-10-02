@@ -44,7 +44,9 @@ import { einstellungenTokenBereit } from "../betrieb/betriebsdaten.js";
 import { cockpitLink, einstellungenLink } from "./tokens.js";
 import { hatAdminSitzung } from "./adminAuth.js";
 import { legeLeadAnUndLadeEin, sendeLeadVorlage } from "../lead/onboarding.js";
-import { ladeVideoNachfassKandidaten, sendeVideoAnLead, sendeVideoNachfassen, videoBereit } from "../lead/video.js";
+import { istProbeArt, ladeVideoNachfassKandidaten, sendeVideoAnLead, sendeVideoNachfassen, sendeVorlagenProbe, videoBereit } from "../lead/video.js";
+import { betreiberConfig } from "../config.js";
+import { maskiereNummer } from "../whatsapp/maskierung.js";
 import { WEBTEST_NUMMER } from "./webtest.js";
 import { berechneFunnel } from "../lead/funnel.js";
 import { betreiberSalesFrank } from "./betreiberSeite.js";
@@ -686,7 +688,18 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
         bereit: videoAdresse !== null,
         kandidaten: videoKandidaten.map((k) => ({ id: k.id, anzeige: k.firma.trim() || k.name.trim() || "(ohne Namen)", zustand: k.onboardingStatus })),
       },
+      probeHandy: betreiberConfig().BETREIBER_HANDY ? maskiereNummer(betreiberConfig().BETREIBER_HANDY ?? undefined) : null,
     }));
+  });
+
+  // Probe (02.10.2026): eine der Lead-Vorlagen an das Betreiber-Handy senden, nie an andere Nummern.
+  for (const pfad of beide("/funnel/vorlage-probe")) app.post<{ Params: { token?: string }; Body: { art?: string } }>(pfad, async (req, reply) => {
+    if (!zugang(req).ok) return reply.code(404).send({ fehler: "nicht gefunden" });
+    if (!istProbeArt(req.body?.art)) return reply.code(400).send({ fehler: "Unbekannte Vorlage." });
+    const erg = await sendeVorlagenProbe(prisma, req.body.art, betreiberConfig().BETREIBER_HANDY);
+    return erg.ok
+      ? reply.send({ ok: true, meldung: `Vorlage ${erg.vorlage} an dein Handy gesendet.` })
+      : reply.code(502).send({ fehler: erg.fehler });
   });
 
   // Einmalig das Erklärvideo an alle Leads senden, die gelesen, aber nichts eingesprochen haben.

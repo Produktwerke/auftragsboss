@@ -2,6 +2,7 @@ import { jsonInsSkript } from "./jsonInsSkript.js";
 import { EMPFEHLUNGS_PRAEMIE_EUR } from "../empfehlung.js";
 import { quelleLabel, zustandLabel } from "../lead/status.js";
 import type { FunnelErgebnis } from "../lead/funnel.js";
+import { PROBE_ARTEN } from "../lead/video.js";
 import type { ChatKennzahlen } from "../analytics/chatKennzahlen.js";
 // Betreiber-Cockpit (Stufe 1): Kundenliste + Kundendetail mit Verwaltungs-
 // Aktionen (Kontakt ändern, blockieren, Gutschrift, löschen) und Usage-Zahlen.
@@ -721,8 +722,27 @@ export function betreiberFunnel(args: {
   erinnerungAktiv: boolean;
   /** Erklärvideo einmalig nachschicken (29.09.2026): Leads, die gelesen, aber nichts eingesprochen haben. */
   videoNachfassen?: { bereit: boolean; kandidaten: Array<{ id: string; anzeige: string; zustand: string | null }> };
+  /** Maskierte Betreiber-Nummer für die Vorlagen-Probe; null = keine hinterlegt; fehlt = Karte nicht zeigen. */
+  probeHandy?: string | null;
 }): string {
   const { basis, ergebnis, tage, erinnerungAktiv } = args;
+  const probeKarte =
+    args.probeHandy === undefined
+      ? ""
+      : `
+  <h2>Vorlage an mein Handy senden (Test)</h2>
+  <p class="unter">Schickt die gewählte Nachricht genau so, wie ein Lead sie bekommt, aber nur an die hinterlegte Betreiber-Nummer${args.probeHandy ? ` (${escapeHtml(args.probeHandy)})` : ""}.</p>
+  <div class="karte">
+    ${
+      args.probeHandy
+        ? `<form class="zeile" data-post="${basis}/funnel/vorlage-probe">
+      <select name="art">${PROBE_ARTEN.map((p) => `<option value="${p.art}">${escapeHtml(p.label)}</option>`).join("")}</select>
+      <button class="kn">An mein Handy senden</button>
+      <div class="meldung"></div>
+    </form>`
+        : `<p class="hinweis" style="margin:0;">Es ist keine Betreiber-Nummer hinterlegt (BETREIBER_HANDY in der Server-Konfiguration).</p>`
+    }
+  </div>`;
   const vk = args.videoNachfassen?.kandidaten ?? [];
   const videoKarte = !args.videoNachfassen
     ? ""
@@ -795,7 +815,8 @@ export function betreiberFunnel(args: {
     <tbody>${offene || `<tr><td colspan="5" style="text-align:center;color:#888;padding:20px;">Keine offenen Leads.</td></tr>`}</tbody>
   </table>
   </div>
-  ${videoKarte}`,
+  ${videoKarte}
+  ${probeKarte}`,
   );
 }
 

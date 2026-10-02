@@ -217,6 +217,58 @@ export async function sendeVideoAnLead(
   return ok ? { ok: true } : { ok: false, fehler: `Meta hat die Vorlage ${vorlage} nicht angenommen. Ist sie genehmigt?` };
 }
 
+// ── Probe an das Betreiber-Handy ─────────────────────────────────────────
+// Dirk, 02.10.2026: „Können wir eine Test-WhatsApp auch an meine Nummer senden?" Der Knopf in der
+// Lead-Auswertung schickt eine der vier Vorlagen genau so, wie ein Lead sie bekommt, aber nur an
+// BETREIBER_HANDY. Es gibt bewusst kein Nummernfeld: Marketing-Vorlagen an beliebige Nummern
+// brauchen eine Einwilligung, die läuft über „Telefon-Lead einladen".
+export type ProbeArt = "einladung_telefon" | "einladung_website" | "nachfassen" | "erinnerung";
+
+export const PROBE_ARTEN: ReadonlyArray<{ art: ProbeArt; label: string }> = [
+  { art: "einladung_telefon", label: "Einladung nach Telefonat (mit Video)" },
+  { art: "einladung_website", label: "Einladung von der Website (mit Video)" },
+  { art: "nachfassen", label: "Video nachschicken (mit Video)" },
+  { art: "erinnerung", label: "Erinnerung nach zwei Tagen (nur Text)" },
+];
+
+export function probeVorlage(art: ProbeArt): { vorlage: string; mitVideo: boolean } {
+  switch (art) {
+    case "einladung_telefon": return { vorlage: vorlageVideoTelefon(), mitVideo: true };
+    case "einladung_website": return { vorlage: vorlageVideoWebsite(), mitVideo: true };
+    case "nachfassen": return { vorlage: vorlageVideoNachfassen(), mitVideo: true };
+    case "erinnerung": return { vorlage: vorlageErinnerungKurz(), mitVideo: false };
+  }
+}
+
+export function istProbeArt(wert: unknown): wert is ProbeArt {
+  return PROBE_ARTEN.some((p) => p.art === wert);
+}
+
+/** Eine Vorlage als Probe an das Betreiber-Handy senden. Schreibt nur ins Admin-Protokoll. */
+export async function sendeVorlagenProbe(
+  prisma: PrismaClient,
+  art: ProbeArt,
+  betreiberHandy: string | null | undefined,
+  deps: VideoAbhaengigkeiten = {},
+): Promise<{ ok: true; vorlage: string } | { ok: false; fehler: string }> {
+  if (!betreiberHandy) return { ok: false, fehler: "Keine Betreiber-Nummer hinterlegt (BETREIBER_HANDY in der Server-Konfiguration)." };
+  const { vorlage, mitVideo } = probeVorlage(art);
+  let video: string | undefined;
+  if (mitVideo) {
+    const adresse = await (deps.video ?? (() => videoBereit()))();
+    if (!adresse) return { ok: false, fehler: "Das Erklärvideo ist nicht erreichbar oder hat das falsche Format (MP4 mit H.264, höchstens 16 MB)." };
+    video = adresse;
+  }
+  const ok = await (deps.sende ?? sendeWhatsAppVorlage)(betreiberHandy, vorlage, [], [], video);
+  await prisma.adminLog.create({
+    data: {
+      aktion: ok ? "VORLAGE_PROBE" : "VORLAGE_PROBE_FEHLGESCHLAGEN",
+      detail: ok ? `Probe der Vorlage ${vorlage} an das Betreiber-Handy gesendet` : `Probe der Vorlage ${vorlage} von Meta nicht angenommen. Ist sie genehmigt?`,
+    },
+  });
+  return ok ? { ok: true, vorlage } : { ok: false, fehler: `Meta hat die Vorlage ${vorlage} nicht angenommen. Ist sie genehmigt?` };
+}
+
 /** Einmalig an alle, die gelesen, aber nichts eingesprochen haben. */
 export async function sendeVideoNachfassen(
   prisma: PrismaClient,

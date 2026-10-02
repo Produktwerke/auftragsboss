@@ -7,8 +7,10 @@ import {
   VIDEO_TEXT_WEBSITE,
   VIDEO_URL_STANDARD,
   faelligFuerVideoNachfassen,
+  istProbeArt,
   pruefeVideoBytes,
   sendeVideoAnLead,
+  sendeVorlagenProbe,
   vergissVideoPruefung,
   videoBereit,
   videoUrl,
@@ -207,6 +209,34 @@ describe("Erklärvideo: einmalig nachschicken", () => {
     expect(erg.ok).toBe(false);
     expect(aufrufe.events).toHaveLength(0);
     expect(aufrufe.adminLog[0]?.aktion).toBe("LEAD_VIDEO_FEHLGESCHLAGEN");
+  });
+
+  it("Probe an das Betreiber-Handy: Video-Vorlagen mit Video-Kopf, Erinnerung ohne; nur Admin-Protokoll", async () => {
+    const { p, aufrufe } = fakePrisma();
+    const sende = vi.fn(async () => true);
+    expect(await sendeVorlagenProbe(p, "einladung_telefon", "4917600000000", { sende: sende as never, video })).toEqual({ ok: true, vorlage: "einladung_video" });
+    expect(sende).toHaveBeenLastCalledWith("4917600000000", "einladung_video", [], [], "https://auftragsboss.de/auftragsboss-video.mp4");
+    await sendeVorlagenProbe(p, "einladung_website", "4917600000000", { sende: sende as never, video });
+    expect(sende).toHaveBeenLastCalledWith("4917600000000", "test_starten_video", [], [], "https://auftragsboss.de/auftragsboss-video.mp4");
+    await sendeVorlagenProbe(p, "erinnerung", "4917600000000", { sende: sende as never, video: async () => null });
+    expect(sende).toHaveBeenLastCalledWith("4917600000000", "lead_erinnerung_kurz", [], [], undefined);
+    expect(aufrufe.events).toHaveLength(0); // eine Probe ist kein Lead-Ereignis
+    expect(aufrufe.adminLog.map((a) => a.aktion)).toEqual(["VORLAGE_PROBE", "VORLAGE_PROBE", "VORLAGE_PROBE"]);
+  });
+
+  it("Probe: ohne Betreiber-Nummer, ohne Video oder bei Ablehnung durch Meta kommt eine klare Meldung", async () => {
+    const { p, aufrufe } = fakePrisma();
+    const sende = vi.fn(async () => true);
+    const ohneNummer = await sendeVorlagenProbe(p, "nachfassen", null, { sende: sende as never, video });
+    expect(ohneNummer.ok === false && ohneNummer.fehler).toContain("Betreiber-Nummer");
+    const ohneVideo = await sendeVorlagenProbe(p, "nachfassen", "4917600000000", { sende: sende as never, video: async () => null });
+    expect(ohneVideo.ok === false && ohneVideo.fehler).toContain("Erklärvideo");
+    expect(sende).not.toHaveBeenCalled();
+    const abgelehnt = await sendeVorlagenProbe(p, "nachfassen", "4917600000000", { sende: vi.fn(async () => false) as never, video });
+    expect(abgelehnt.ok === false && abgelehnt.fehler).toContain("video_nachfassen");
+    expect(aufrufe.adminLog.at(-1)?.aktion).toBe("VORLAGE_PROBE_FEHLGESCHLAGEN");
+    expect(istProbeArt("nachfassen")).toBe(true);
+    expect(istProbeArt("irgendwas")).toBe(false);
   });
 
   it("kein Versand ohne erreichbares Video und nicht an Betriebe, die Marketing abbestellt haben", async () => {

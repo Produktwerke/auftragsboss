@@ -242,6 +242,17 @@ describe("betreiberFunnel: Erklärvideo nachschicken", () => {
     expect(leer).toContain("Niemand offen");
     expect(leer).not.toContain("video-nachfassen");
   });
+
+  it("Probe an das Betreiber-Handy: Auswahl der vier Vorlagen, maskierte Nummer, ohne Nummer nur ein Hinweis", () => {
+    const mit = betreiberFunnel({ basis: "/stasi", ergebnis, tage: null, erinnerungAktiv: true, probeHandy: "4917******71" });
+    expect(mit).toContain('data-post="/stasi/funnel/vorlage-probe"');
+    expect(mit).toContain("4917******71");
+    for (const art of ["einladung_telefon", "einladung_website", "nachfassen", "erinnerung"]) expect(mit).toContain(`value="${art}"`);
+    const ohne = betreiberFunnel({ basis: "/stasi", ergebnis, tage: null, erinnerungAktiv: true, probeHandy: null });
+    expect(ohne).not.toContain("vorlage-probe");
+    expect(ohne).toContain("keine Betreiber-Nummer");
+    expect(betreiberFunnel({ basis: "/stasi", ergebnis, tage: null, erinnerungAktiv: true })).not.toContain("an mein Handy");
+  });
 });
 
 describe("betreiberUmsatz", () => {

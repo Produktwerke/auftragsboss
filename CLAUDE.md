@@ -219,8 +219,8 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   (Dirks Entscheidung): die drei Handys (Chat, Editor, PDF) sind raus, weil Video und Animation denselben Ablauf zeigen; geblieben
 >   sind das Tablet und darunter der Knopf „Beispiel-Angebot als PDF ansehen" (`.pdf-btn`, öffnet `angebot-beispiel.pdf` im neuen
 >   Tab). `shot-whatsapp.jpg`, `shot-editor.jpg`, `shot-pdf.jpg` werden nicht mehr eingebunden (Dateien bleiben liegen).
->   Preiskarten: Schild am Profi-Tarif „★ Empfohlen" statt „★ Beliebt" (Landingpage; `web/aboSeite.ts` zieht mit, live erst mit
->   dem nächsten Deploy). Überschrift des Tablet-Abschnitts: „Unterwegs am Handy. Im Büro am Tablet oder PC." ✅ Dirk 02.10.
+>   Preiskarten: Schild am Profi-Tarif „★ Empfohlen" statt „★ Beliebt" (Landingpage; `web/aboSeite.ts` zieht mit, auf Dirks Wort
+>   deployt 02.10. 15:15, 386 Tests, /health 200). Überschrift des Tablet-Abschnitts: „Unterwegs am Handy. Im Büro am Tablet oder PC." ✅ Dirk 02.10.
 >   nachmittags: `index.html` mit allen Änderungen bei IONOS hochgeladen; danach auf sein Wort nach GitHub gepusht.
 >   Dirk hatte um 14:56 die erste Fassung hochgeladen (mit Pille, alter Umbruch) → **IONOS-Upload durch Dirk erneut: `index.html` +
 >   `chat-animation.html`** (`auftragsboss-video-poster.jpg` und das Video liegen schon dort).

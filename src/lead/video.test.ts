@@ -18,12 +18,24 @@ import {
 import { baueVideoNachricht, baueVorlagenNachricht } from "../whatsapp/send.js";
 import { metaFehlerText } from "./status.js";
 
-const mp4 = (bild: string, groesse = 4096): Uint8Array => {
-  const b = Buffer.alloc(groesse);
-  b.write("\0\0\0\x20ftypisom", 0, "latin1");
-  b.write(bild, 200, "latin1");
-  b.write("mp4a", 400, "latin1");
-  return new Uint8Array(b);
+const block = (typ: string, inhalt: Buffer): Buffer => {
+  const kopf = Buffer.alloc(8);
+  kopf.writeUInt32BE(8 + inhalt.length, 0);
+  kopf.write(typ, 4, "latin1");
+  return Buffer.concat([kopf, inhalt]);
+};
+/** Kleine MP4-Attrappe mit echtem Blockaufbau: ftyp, [uuid], moov und mdat in wählbarer Reihenfolge. */
+const mp4 = (
+  bild: string,
+  groesse = 4096,
+  aufbau: { uuid?: boolean; moovAmEnde?: boolean; fuellblock?: boolean } = {},
+): Uint8Array => {
+  const ftyp = block("ftyp", Buffer.from("mp42\0\0\0\0mp41isom", "latin1"));
+  const moov = block("moov", Buffer.from(`....${bild}........mp4a....`, "latin1"));
+  const zusatz = [...(aufbau.uuid ? [block("uuid", Buffer.alloc(32))] : []), ...(aufbau.fuellblock ? [block("free", Buffer.alloc(8))] : [])];
+  const rest = groesse - ftyp.length - moov.length - zusatz.reduce((n, z) => n + z.length, 0) - 8;
+  const mdat = block("mdat", Buffer.alloc(Math.max(0, rest)));
+  return new Uint8Array(Buffer.concat(aufbau.moovAmEnde ? [ftyp, ...zusatz, mdat, moov] : [ftyp, moov, ...zusatz, mdat]));
 };
 
 /** Falsches Netz: eine Videodatei unter einer Adresse, zählt Kopf- und Vollabrufe. */
@@ -64,6 +76,19 @@ describe("Erklärvideo: Einstellung und Dateiprüfung", () => {
     expect(pruefeVideoBytes(new Uint8Array(Buffer.from("<html>nicht gefunden</html>"))).grund).toContain("keine MP4");
     expect(pruefeVideoBytes(new Uint8Array(0)).ok).toBe(false);
     expect(pruefeVideoBytes(mp4("avc1", 16 * 1024 * 1024 + 1)).grund).toContain("16 MB");
+  });
+
+  it("Aufbau wie von der Windows-Umwandlung (uuid-Block, Inhaltsverzeichnis am Ende) wird abgelehnt (02.10.2026, Video auf dem Handy nicht abspielbar)", () => {
+    const windows = pruefeVideoBytes(mp4("avc1", 4096, { uuid: true, moovAmEnde: true }));
+    expect(windows.ok).toBe(false);
+    expect(windows.grund).toContain("uuid");
+    expect(windows.grund).toContain("video-whatsapp-fix");
+    expect(pruefeVideoBytes(mp4("avc1", 4096, { moovAmEnde: true })).grund).toContain("Dateiende");
+    expect(pruefeVideoBytes(mp4("avc1", 4096, { uuid: true })).ok).toBe(false);
+    // So sieht eine umgebaute bzw. mit ffmpeg erzeugte Datei aus: ftyp, moov, (free,) mdat.
+    expect(pruefeVideoBytes(mp4("avc1", 4096, { fuellblock: true }))).toEqual({ ok: true });
+    // Abgeschnittene Datei: letzter Block reicht über das Dateiende hinaus.
+    expect(pruefeVideoBytes(mp4("avc1").subarray(0, 3000)).grund).toContain("keine MP4");
   });
 
   it("Vorlagentexte: höchstens 1024 Zeichen, keine Gedankenstriche, keine Platzhalter, kein du oder Sie", () => {

@@ -59,15 +59,57 @@ export const ERINNERUNG_KURZ_TEXT =
 /** Bildunterschrift, wenn das Video als normale Nachricht zur Begrüßung rausgeht. */
 export const VIDEO_BEGRUESSUNG_TEXT = "🎬 So funktioniert AuftragsBoss.";
 
-/** Prüft die Bytes einer Videodatei gegen Metas Vorgaben. Rein, testbar. */
+/** Blöcke der obersten Ebene einer MP4-Datei, in Dateireihenfolge. `null` = nicht sauber aufgebaut. */
+export function mp4Bloecke(puffer: Buffer): string[] | null {
+  const typen: string[] = [];
+  let o = 0;
+  while (o + 8 <= puffer.length) {
+    let groesse = puffer.readUInt32BE(o);
+    let kopf = 8;
+    if (groesse === 1) {
+      if (o + 16 > puffer.length) return null;
+      groesse = Number(puffer.readBigUInt64BE(o + 8));
+      kopf = 16;
+    } else if (groesse === 0) {
+      groesse = puffer.length - o;
+    }
+    if (groesse < kopf || o + groesse > puffer.length) return null;
+    typen.push(puffer.toString("latin1", o + 4, o + 8));
+    o += groesse;
+  }
+  return o === puffer.length && typen.length > 0 ? typen : null;
+}
+
+/** Blöcke, die auf oberster Ebene vorkommen dürfen (free/skip/wide sind leere Füllblöcke). */
+const MP4_ERLAUBT = new Set(["ftyp", "moov", "mdat", "free", "skip", "wide"]);
+
+/**
+ * Prüft die Bytes einer Videodatei gegen Metas Vorgaben UND gegen die strenge Prüfung der
+ * WhatsApp-App auf dem Handy. Rein, testbar.
+ *
+ * 02.10.2026: Die mit Windows umgewandelte Datei (H.264 + AAC, von Meta angenommen und zugestellt)
+ * ließ sich auf dem Handy nicht abspielen: „Dieses Video ist nicht verfügbar, da mit der Videodatei
+ * etwas nicht stimmt". Ihr Aufbau war ftyp, uuid, mdat, moov: ein Windows-eigener Zusatzblock und
+ * das Inhaltsverzeichnis am Dateiende. Verlangt wird deshalb: ftyp zuerst, moov vor mdat, keine
+ * fremden Blöcke. scripts/video-whatsapp-fix.cjs baut eine Datei entsprechend um.
+ */
 export function pruefeVideoBytes(bytes: Uint8Array): { ok: boolean; grund?: string } {
   if (bytes.length === 0) return { ok: false, grund: "Datei ist leer" };
   if (bytes.length > VIDEO_MAX_BYTES) return { ok: false, grund: `Datei hat ${(bytes.length / 1024 / 1024).toFixed(1)} MB, Meta erlaubt 16 MB` };
   const puffer = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const hat = (marke: string) => puffer.includes(marke, 0, "latin1");
-  if (!puffer.subarray(0, 64).includes("ftyp", 0, "latin1")) return { ok: false, grund: "keine MP4-Datei" };
+  const bloecke = mp4Bloecke(puffer);
+  if (!bloecke || bloecke[0] !== "ftyp") return { ok: false, grund: "keine MP4-Datei" };
   if (hat("hvc1") || hat("hev1")) return { ok: false, grund: "Bildformat H.265 (HEVC), WhatsApp verlangt H.264. Umwandeln mit scripts/video-h264.ps1" };
   if (!hat("avc1")) return { ok: false, grund: "kein H.264-Bild gefunden, WhatsApp verlangt MP4 mit H.264 und AAC" };
+  const moov = bloecke.indexOf("moov");
+  const mdat = bloecke.indexOf("mdat");
+  if (moov < 0 || mdat < 0) return { ok: false, grund: "unvollständige MP4-Datei (Inhaltsverzeichnis oder Daten fehlen)" };
+  const fremd = bloecke.filter((t) => !MP4_ERLAUBT.has(t));
+  if (fremd.length > 0 || moov > mdat) {
+    const was = fremd.length > 0 ? `Zusatzblock ${[...new Set(fremd)].join(", ")}` : "Inhaltsverzeichnis am Dateiende";
+    return { ok: false, grund: `Aufbau der Datei passt nicht für WhatsApp (${was}), Handys melden dann einen Fehler in der Videodatei. Umbauen mit scripts/video-whatsapp-fix.cjs` };
+  }
   return { ok: true };
 }
 

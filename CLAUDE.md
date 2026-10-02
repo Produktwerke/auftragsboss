@@ -219,7 +219,8 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   (Dirks Entscheidung): die drei Handys (Chat, Editor, PDF) sind raus, weil Video und Animation denselben Ablauf zeigen; geblieben
 >   sind das Tablet und darunter der Knopf „Beispiel-Angebot als PDF ansehen" (`.pdf-btn`, öffnet `angebot-beispiel.pdf` im neuen
 >   Tab). `shot-whatsapp.jpg`, `shot-editor.jpg`, `shot-pdf.jpg` werden nicht mehr eingebunden (Dateien bleiben liegen).
->   → **IONOS-Upload durch Dirk: `index.html`** (enthält Zusammenlegung + Verkleinerung).
+>   Preiskarten: Schild am Profi-Tarif „★ Empfohlen" statt „★ Beliebt" (Landingpage; `web/aboSeite.ts` zieht mit, live erst mit
+>   dem nächsten Deploy). → **IONOS-Upload durch Dirk: `index.html`** (enthält Zusammenlegung, Verkleinerung, „Empfohlen").
 >   Dirk hatte um 14:56 die erste Fassung hochgeladen (mit Pille, alter Umbruch) → **IONOS-Upload durch Dirk erneut: `index.html` +
 >   `chat-animation.html`** (`auftragsboss-video-poster.jpg` und das Video liegen schon dort).
 >   Standbilder aus einem Video ohne ffmpeg: kurzer Ausschnitt per Windows-MediaTranscoder (TrimStartTime), davon das Vorschaubild.

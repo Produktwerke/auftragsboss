@@ -99,7 +99,7 @@ export function aboSeite(args: {
           ${TARIF_KARTEN.map(
             (t) => `
           <div class="tarif${t.beliebt ? " beliebt" : ""}">
-            ${t.beliebt ? `<span class="tarif-flag">Beliebt</span>` : ""}
+            ${t.beliebt ? `<span class="tarif-flag">Empfohlen</span>` : ""}
             <div class="tarif-name">${t.name}</div>
             <div class="tarif-preis">${t.preis} €<span> / Monat</span></div>
             <div class="tarif-m">bis zu ${t.angebote} Angebote im Monat</div>

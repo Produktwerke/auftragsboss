@@ -184,9 +184,11 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   geprüft durch Vorschaubild vom Anfang + dekodierten Ausschnitt vom Ende); `pruefeVideoBytes` verlangt diesen Aufbau, der Server
 >   verwendet die alte Online-Datei nicht mehr (Rückfall auf Knopf-Vorlagen). Heute gingen KEINE neuen Einladungen mit dem Video raus.
 >   Reihenfolge für künftige Videos: `video-h264.ps1` (nur bei H.265), dann IMMER `node scripts/video-whatsapp-fix.cjs ein aus`,
->   dann zu IONOS, dann Probe ans eigene Handy, erst danach an Leads. OFFEN: Dirk lädt die umgebaute `marketing/auftragsboss-video.mp4`
->   (7.391.402 Bytes) hoch und testet per Probe-Knopf; klappt es, entscheiden, ob die zehn Leads das Video noch einmal bekommen
->   (Detailseite „Erklärvideo senden" je Lead); klappt es nicht, echte Neukodierung mit ffmpeg (Server oder Dirks Schnittprogramm).
+>   dann zu IONOS, dann Probe ans eigene Handy, erst danach an Leads. ✅ BESTÄTIGT 02.10. 14:35: Dirk hat die umgebaute Datei
+>   hochgeladen (online 7.391.402 Bytes, 14:29), Probe `video_nachfassen` an sein Handy: Video spielt. Ursache war also der Dateiaufbau.
+>   Neue Einladungen und Begrüßungen laufen damit mit funktionierendem Video. OFFEN (Dirks Entscheidung): ob die zehn Leads, die um
+>   13:47 die nicht abspielbare Fassung bekamen, das Video noch einmal erhalten (dafür müsste die Nachfass-Liste Ereignisse vor dem
+>   Austausch um 12:30 UTC als „fehlerhaft" werten, oder je Lead der Knopf auf der Detailseite).
 >   OFFEN: Reaktionen der zehn Leads beobachten (Eingaben, AGB, Angebote); erste automatische Video-Einladung nach einem Anna-Anruf
 >   im Log prüfen. WhatsApp meldet keine Videoaufrufe; die
 >   Stufe „Knopf geklickt" entfällt für neue Leads. `.claude/launch.json` korrigiert (alter `--prefix voiceprotokoll-guard`), die lokale

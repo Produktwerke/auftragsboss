@@ -143,6 +143,7 @@
   .sec-h .eyebrow{justify-content:center;margin-bottom:14px;}
   .sec-h h2{font-size:clamp(25px,3.6vw,36px);letter-spacing:-.015em;margin:0 0 8px;font-weight:800;text-transform:uppercase;text-wrap:balance;}
   .sec-h p{margin:0;color:var(--muted);font-size:16px;}
+  .sec-h p b{color:var(--ink);}
 
   /* Tiles */
   .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
@@ -181,11 +182,6 @@
   .lern-claim b{color:var(--ink);}
   .lern-claim .opt{display:block;margin-top:8px;font-size:13px;color:var(--dim);font-family:var(--mono);}
   /* Betriebliches Gedächtnis */
-  .mem{max-width:820px;margin:0 auto;}
-  .mem-list{display:flex;flex-direction:column;gap:12px;margin-bottom:22px;}
-  .mem-q{background:var(--bg2);border:1px solid var(--hair);border-left:3px solid var(--signal);border-radius:var(--r);padding:15px 18px;color:var(--ink);font-size:15px;line-height:1.5;}
-  .mem-note{text-align:center;color:var(--muted);font-size:15px;line-height:1.65;margin:0;}
-  .mem-note b{color:var(--ink);}
   /* Nichts lernen. Einfach WhatsApp. */
   .einfach{max-width:820px;margin:0 auto;text-align:center;background:var(--bg2);border:1px solid var(--hair);border-radius:var(--r-lg);padding:40px 28px;}
   .einfach .eyebrow{justify-content:center;}
@@ -724,7 +720,7 @@
     <div class="sec-h">
       <span class="eyebrow lbl">Dein Betrieb, nicht irgendeiner</span>
       <h2>Nicht irgendein Angebot. Deins.</h2>
-      <p>AuftragsBoss lernt deinen Betrieb kennen. Lade einfach ein paar deiner bisherigen Angebote hoch, AuftragsBoss liest daraus, wie du Leistungen beschreibst, welche Positionen du nutzt und welche Preise du ansetzt.</p>
+      <p><b>Je besser AuftragsBoss dich kennt, desto weniger musst du erklären.</b> Lade einfach ein paar deiner bisherigen Angebote hoch, AuftragsBoss liest daraus, wie du Leistungen beschreibst, welche Positionen du nutzt und welche Preise du ansetzt.</p>
     </div>
     <div class="steps">
       <div class="step"><span class="step-n">01</span><h3>Alte Angebote hochladen</h3><p>PDF oder Word, ein paar reichen. Ganz ohne Abtippen.</p></div>
@@ -733,23 +729,8 @@
       <div class="step-arrow" aria-hidden="true">→</div>
       <div class="step"><span class="step-n">03</span><h3>Neue Angebote passen zu dir</h3><p>Deine Preise schlägt es dir beim nächsten Mal vor. Du entscheidest.</p></div>
     </div>
-    <p class="lern-claim"><b>Deine Formulierungen. Deine Positionen. Deine Preise.</b> AuftragsBoss merkt sich, wie dein Betrieb arbeitet, und nutzt dieses Wissen beim nächsten Angebot.<span class="opt">Alles optional. Ohne Upload legst du genauso sofort los.</span></p>
-  </section>
-
-  <!-- BETRIEBLICHES GEDÄCHTNIS -->
-  <section class="sec" id="gedaechtnis">
-    <div class="sec-h">
-      <span class="eyebrow lbl">Privates Betriebswissen</span>
-      <h2>Je besser AuftragsBoss dich kennt, desto weniger musst du erklären.</h2>
-    </div>
-    <div class="mem">
-      <div class="mem-list">
-        <div class="mem-q">„Du führst Türzargen immer als eigene Position auf?"</div>
-        <div class="mem-q">„Bei möblierten Räumen nutzt du eine eigene Abdeckposition?"</div>
-        <div class="mem-q">„Preise aus deinen früheren Angeboten? Werden dir als Vorschlag angezeigt."</div>
-      </div>
-      <p class="mem-note">Aus deinen bestätigten Angeboten baut AuftragsBoss nach und nach ein <b>privates Betriebsgedächtnis</b> auf und schlägt dir beispielsweise passende Preise vor. Nichts geht ungeprüft an den Kunden, du entscheidest bei jedem Angebot.</p>
-    </div>
+    <!-- Zusammengelegt mit dem früheren Abschnitt „Betriebliches Gedächtnis" (02.10.2026) -->
+    <p class="lern-claim"><b>Deine Formulierungen. Deine Positionen. Deine Preise.</b> Aus deinen hochgeladenen und bestätigten Angeboten entsteht nach und nach ein <b>privates Betriebsgedächtnis</b>, das nur dein Betrieb nutzt. Nichts geht ungeprüft an den Kunden, du entscheidest bei jedem Angebot.<span class="opt">Alles optional. Ohne Upload legst du genauso sofort los.</span></p>
   </section>
 
   <!-- WARUM / Wer zuerst anbietet -->

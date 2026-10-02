@@ -173,6 +173,9 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   Video-Vorlage raus. Kontrolle nur lesend per ssh: Skript über stdin mit `sqlite3 -readonly` auf Event/AdminLog plus pm2-Log
 >   (Zeilen „WhatsApp-Status" mit sent/delivered/read/failed, ohne Nummer). Das Log maskiert `/stasi/funnel/video-nachfassen` als
 >   `/stasi/funnel/[token]`.
+>   PROBE AN DAS BETREIBER-HANDY (b1c9046, 384 Tests, deployt 02.10. 13:54): Lead-Auswertung, Karte „Vorlage an mein Handy senden
+>   (Test)" mit Auswahl der vier neuen Vorlagen, POST `/stasi/funnel/vorlage-probe`, Versand nur an `BETREIBER_HANDY`
+>   (`sendeVorlagenProbe` in lead/video.ts, AdminLog VORLAGE_PROBE, kein Nummernfeld).
 >   OFFEN: Reaktionen der zehn Leads beobachten (Eingaben, AGB, Angebote); erste automatische Video-Einladung nach einem Anna-Anruf
 >   im Log prüfen. WhatsApp meldet keine Videoaufrufe; die
 >   Stufe „Knopf geklickt" entfällt für neue Leads. `.claude/launch.json` korrigiert (alter `--prefix voiceprotokoll-guard`), die lokale

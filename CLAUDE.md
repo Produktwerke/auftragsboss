@@ -193,6 +193,9 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   „Erklärvideo nachschicken" nennt, wie viele die Wiederholung bekommen. Datenbank-Kontrolle 14:40 (nur lesend): genau die zehn
 >   Leads stehen wieder in der Liste, Fabian (131050) bleibt draußen. Den Knopf drückt Dirk; bei künftigen Video-Vorfällen den
 >   Zeitpunkt in `VIDEO_FEHLERHAFT_BIS` anpassen statt Ereignisse zu löschen.
+>   ✅ ERNEUT GESENDET 02.10. 14:43 (Dirk per Knopf): 10 von 10 von Meta angenommen, nach einer Minute 10 zugestellt, kein
+>   Fehlschlag, keine Abbestellung; die Liste ist danach leer (Sperre greift wieder). Zählung nur lesend: Scratchpad-Skript über
+>   stdin, das die Zeilen „WhatsApp-Status" ab einem Zeitstempel nach sent/delivered/read auszählt.
 >   OFFEN: Reaktionen der zehn Leads beobachten (Eingaben, AGB, Angebote); erste automatische Video-Einladung nach einem Anna-Anruf
 >   im Log prüfen. WhatsApp meldet keine Videoaufrufe; die
 >   Stufe „Knopf geklickt" entfällt für neue Leads. `.claude/launch.json` korrigiert (alter `--prefix voiceprotokoll-guard`), die lokale

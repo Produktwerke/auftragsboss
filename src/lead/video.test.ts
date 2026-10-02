@@ -6,7 +6,9 @@ import {
   VIDEO_TEXT_TELEFON,
   VIDEO_TEXT_WEBSITE,
   VIDEO_URL_STANDARD,
+  VIDEO_FEHLERHAFT_BIS,
   faelligFuerVideoNachfassen,
+  hatteFehlerhaftesVideo,
   istProbeArt,
   pruefeVideoBytes,
   sendeVideoAnLead,
@@ -206,6 +208,20 @@ describe("Erklärvideo: einmalig nachschicken", () => {
     // Ein anderer Fehlschlag (131047, Antwort hing fest) sperrt nicht: genau diese Leads sollen das Video bekommen.
     expect(faelligFuerVideoNachfassen(lead, [einladung, { typ: "NACHRICHT_FEHLGESCHLAGEN", dataJson: '{"code":131047}' }])).toBe(true);
     expect(faelligFuerVideoNachfassen(lead, [einladung, { typ: "NACHRICHT_FEHLGESCHLAGEN", dataJson: "kaputt" }])).toBe(true);
+  });
+
+  it("nicht abspielbare Fassung vom 02.10.2026: wer nur sie bekam, ist einmal erneut fällig; nach dem neuen Versand nicht mehr", () => {
+    const fehlerhaft = { typ: "LEAD_VIDEO_GESENDET", dataJson: '{"art":"nachfassen"}', erstelltAm: new Date("2026-10-02T11:47:05Z") };
+    const funktionierend = { typ: "LEAD_VIDEO_GESENDET", dataJson: '{"art":"nachfassen"}', erstelltAm: new Date("2026-10-02T12:45:00Z") };
+    expect(faelligFuerVideoNachfassen(lead, [einladung, fehlerhaft])).toBe(true);
+    expect(hatteFehlerhaftesVideo([einladung, fehlerhaft])).toBe(true);
+    expect(faelligFuerVideoNachfassen(lead, [einladung, fehlerhaft, funktionierend])).toBe(false);
+    expect(hatteFehlerhaftesVideo([einladung, fehlerhaft, funktionierend])).toBe(false);
+    expect(hatteFehlerhaftesVideo([einladung])).toBe(false);
+    expect(VIDEO_FEHLERHAFT_BIS.toISOString()).toBe("2026-10-02T12:30:00.000Z");
+    // Wer inzwischen aktiv ist oder Marketing abbestellt hat, bekommt auch die Wiederholung nicht.
+    expect(faelligFuerVideoNachfassen({ ...lead, onboardingStatus: "AKTIV" }, [einladung, fehlerhaft])).toBe(false);
+    expect(faelligFuerVideoNachfassen(lead, [einladung, fehlerhaft, { typ: "NACHRICHT_FEHLGESCHLAGEN", dataJson: '{"code":131050}' }])).toBe(false);
   });
 
   function fakePrisma() {

@@ -232,6 +232,9 @@ describe("betreiberFunnel: Erklärvideo nachschicken", () => {
     expect(html).toContain("Erklärung angesehen");
     expect(html).toContain('data-post="/stasi/funnel/video-nachfassen"');
     expect(html).toContain("Video an 2 Leads senden");
+    expect(html).not.toContain("nicht abspielen");
+    const erneut = betreiberFunnel({ basis: "/stasi", ergebnis, tage: null, erinnerungAktiv: true, videoNachfassen: { bereit: true, kandidaten: kandidaten.map((k) => ({ ...k, erneut: true })) } });
+    expect(erneut).toContain("2 davon haben am 02.10.2026 die Fassung bekommen, die sich nicht abspielen ließ");
   });
 
   it("Video noch nicht online: Hinweis statt Knopf; niemand offen: kein Knopf", () => {

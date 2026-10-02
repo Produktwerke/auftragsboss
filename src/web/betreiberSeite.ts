@@ -721,7 +721,7 @@ export function betreiberFunnel(args: {
   tage: number | null;
   erinnerungAktiv: boolean;
   /** Erklärvideo einmalig nachschicken (29.09.2026): Leads, die gelesen, aber nichts eingesprochen haben. */
-  videoNachfassen?: { bereit: boolean; kandidaten: Array<{ id: string; anzeige: string; zustand: string | null }> };
+  videoNachfassen?: { bereit: boolean; kandidaten: Array<{ id: string; anzeige: string; zustand: string | null; erneut?: boolean }> };
   /** Maskierte Betreiber-Nummer für die Vorlagen-Probe; null = keine hinterlegt; fehlt = Karte nicht zeigen. */
   probeHandy?: string | null;
 }): string {
@@ -756,6 +756,7 @@ export function betreiberFunnel(args: {
         : `<p style="margin-top:0;">${vk.length} ${vk.length === 1 ? "Lead" : "Leads"}: ${vk
             .map((k) => `<a href="${basis}/betrieb/${k.id}"><b>${escapeHtml(k.anzeige)}</b></a> <span style="color:#8a9099;">(${escapeHtml(zustandLabel(k.zustand))})</span>`)
             .join(", ")}</p>
+    ${vk.some((k) => k.erneut) ? `<p class="hinweis" style="margin-top:0;">${vk.filter((k) => k.erneut).length} davon haben am 02.10.2026 die Fassung bekommen, die sich nicht abspielen ließ. Sie erhalten das funktionierende Video einmal erneut.</p>` : ""}
     ${
       args.videoNachfassen.bereit
         ? `<form class="inline" data-post="${basis}/funnel/video-nachfassen" data-frage="Das Erklärvideo jetzt per WhatsApp an ${vk.length} ${vk.length === 1 ? "Lead" : "Leads"} senden?"><button class="kn">Video an ${vk.length} ${vk.length === 1 ? "Lead" : "Leads"} senden</button><div class="meldung"></div></form>`

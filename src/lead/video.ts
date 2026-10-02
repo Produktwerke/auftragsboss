@@ -177,10 +177,27 @@ const istVideoEinladung = (dataJson: string): boolean => {
   }
 };
 
+/**
+ * Bis zu diesem Zeitpunkt ging die nicht abspielbare Fassung des Videos raus (02.10.2026: zehn Leads
+ * um 13:47 Uhr; die umgebaute Datei lag ab 14:29 Uhr online). Ein Versand davor zählt nicht als
+ * „hat das Video bekommen": Dirks Entscheidung vom selben Tag, diesen Leads das funktionierende
+ * Video noch einmal zu schicken. Ein Versand danach sperrt wie gewohnt.
+ */
+export const VIDEO_FEHLERHAFT_BIS = new Date("2026-10-02T12:30:00Z");
+
+type VideoEreignis = { typ: string; dataJson: string; erstelltAm?: Date };
+const istVideoVersand = (e: VideoEreignis) => e.typ === "LEAD_VIDEO_GESENDET";
+const warFehlerhaft = (e: VideoEreignis) => istVideoVersand(e) && e.erstelltAm !== undefined && e.erstelltAm < VIDEO_FEHLERHAFT_BIS;
+
+/** Hat dieser Lead nur die nicht abspielbare Fassung bekommen? (für den Hinweis im Cockpit) */
+export function hatteFehlerhaftesVideo(ereignisse: ReadonlyArray<VideoEreignis>): boolean {
+  return ereignisse.some(warFehlerhaft) && !ereignisse.some((e) => istVideoVersand(e) && !warFehlerhaft(e));
+}
+
 /** Soll dieser Lead das Video einmalig nachgeschickt bekommen? Rein, testbar. */
 export function faelligFuerVideoNachfassen(
   h: { leadQuelle: string | null; onboardingStatus: string | null; blockiert: boolean },
-  ereignisse: ReadonlyArray<{ typ: string; dataJson: string }>,
+  ereignisse: ReadonlyArray<VideoEreignis>,
 ): boolean {
   if (!h.leadQuelle || h.blockiert) return false;
   if (!h.onboardingStatus || !NACHFASS_ZUSTAENDE.has(h.onboardingStatus)) return false;
@@ -191,7 +208,7 @@ export function faelligFuerVideoNachfassen(
   // Zustand noch der alte ist: bei Malermeister Fabian kam der Fehler am 25.09.2026, bevor es den
   // Zustand MARKETING_ABBESTELLT gab, er stand am 01.10. trotzdem in der Nachfass-Liste.
   if (ereignisse.some((e) => e.typ === "LEAD_MARKETING_ABBESTELLT" || (e.typ === "NACHRICHT_FEHLGESCHLAGEN" && metaCode(e.dataJson) === 131050))) return false;
-  return !ereignisse.some((e) => e.typ === "LEAD_VIDEO_GESENDET");
+  return !ereignisse.some((e) => istVideoVersand(e) && !warFehlerhaft(e));
 }
 
 const metaCode = (dataJson: string): number | null => {
@@ -209,6 +226,8 @@ export interface VideoKandidat {
   firma: string;
   name: string;
   onboardingStatus: string | null;
+  /** Hat am 02.10.2026 die nicht abspielbare Fassung bekommen und erhält das Video deshalb noch einmal. */
+  erneut?: boolean;
 }
 
 export async function ladeVideoNachfassKandidaten(prisma: PrismaClient): Promise<VideoKandidat[]> {
@@ -220,11 +239,19 @@ export async function ladeVideoNachfassKandidaten(prisma: PrismaClient): Promise
   if (leads.length === 0) return [];
   const events = await prisma.event.findMany({
     where: { handwerkerId: { in: leads.map((l) => l.id) }, typ: { in: ["LEAD_EINLADUNG_GESENDET", "LEAD_VIDEO_GESENDET", "NACHRICHT_FEHLGESCHLAGEN", "LEAD_MARKETING_ABBESTELLT"] } },
-    select: { handwerkerId: true, typ: true, dataJson: true },
+    select: { handwerkerId: true, typ: true, dataJson: true, erstelltAm: true },
   });
+  const jeLead = (id: string) => events.filter((e) => e.handwerkerId === id);
   return leads
-    .filter((l) => faelligFuerVideoNachfassen(l, events.filter((e) => e.handwerkerId === l.id)))
-    .map((l) => ({ id: l.id, whatsappNummer: l.whatsappNummer, firma: l.firma, name: l.name, onboardingStatus: l.onboardingStatus }));
+    .filter((l) => faelligFuerVideoNachfassen(l, jeLead(l.id)))
+    .map((l) => ({
+      id: l.id,
+      whatsappNummer: l.whatsappNummer,
+      firma: l.firma,
+      name: l.name,
+      onboardingStatus: l.onboardingStatus,
+      erneut: hatteFehlerhaftesVideo(jeLead(l.id)),
+    }));
 }
 
 export interface VideoAbhaengigkeiten {
@@ -319,7 +346,10 @@ export async function sendeVideoNachfassen(
   const kandidaten = await ladeVideoNachfassKandidaten(prisma);
   const ergebnis: { kandidaten: number; gesendet: number; fehlgeschlagen: number; fehler?: string } = { kandidaten: kandidaten.length, gesendet: 0, fehlgeschlagen: 0 };
   for (const k of kandidaten) {
-    const e = await sendeVideoAnLead(prisma, k, "einmaliges Nachfassen: gelesen, nichts eingesprochen", deps);
+    const grund = k.erneut
+      ? "erneut: die Fassung vom 02.10.2026 ließ sich nicht abspielen"
+      : "einmaliges Nachfassen: gelesen, nichts eingesprochen";
+    const e = await sendeVideoAnLead(prisma, k, grund, deps);
     if (e.ok) ergebnis.gesendet++;
     else {
       ergebnis.fehlgeschlagen++;

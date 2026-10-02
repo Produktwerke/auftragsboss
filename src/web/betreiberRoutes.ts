@@ -686,7 +686,7 @@ export async function betreiberRoutes(app: FastifyInstance): Promise<void> {
       erinnerungAktiv: featureConfig().FEATURE_LEAD_ERINNERUNG,
       videoNachfassen: {
         bereit: videoAdresse !== null,
-        kandidaten: videoKandidaten.map((k) => ({ id: k.id, anzeige: k.firma.trim() || k.name.trim() || "(ohne Namen)", zustand: k.onboardingStatus })),
+        kandidaten: videoKandidaten.map((k) => ({ id: k.id, anzeige: k.firma.trim() || k.name.trim() || "(ohne Namen)", zustand: k.onboardingStatus, erneut: k.erneut === true })),
       },
       probeHandy: betreiberConfig().BETREIBER_HANDY ? maskiereNummer(betreiberConfig().BETREIBER_HANDY ?? undefined) : null,
     }));

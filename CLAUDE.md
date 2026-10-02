@@ -215,8 +215,11 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   ABSCHNITTE ZUSAMMENGELEGT (Dirks Wunsch): „Betriebliches Gedächtnis" (`#gedaechtnis`, drei Zitat-Karten) ist in „Nicht irgendein
 >   Angebot. Deins." (`#lernen`) aufgegangen: dessen Überschrift „Je besser AuftragsBoss dich kennt …" ist jetzt der erste, fette Satz
 >   der Einleitung, der Schlusssatz nennt das private Betriebsgedächtnis („das nur dein Betrieb nutzt", „du entscheidest bei jedem
->   Angebot"). Keine neue Behauptung gegenüber vorher. OFFEN (Dirks Entscheidung): Abschnitt „Unterwegs am Handy. Im Büro am Tablet."
->   verkleinern (nur Tablet + Knopf zum Beispiel-PDF, mein Vorschlag) oder ganz streichen; die drei Handys doppeln Video und Animation.
+>   Angebot"). Keine neue Behauptung gegenüber vorher. ABSCHNITT „Unterwegs am Handy. Im Büro am Tablet." VERKLEINERT
+>   (Dirks Entscheidung): die drei Handys (Chat, Editor, PDF) sind raus, weil Video und Animation denselben Ablauf zeigen; geblieben
+>   sind das Tablet und darunter der Knopf „Beispiel-Angebot als PDF ansehen" (`.pdf-btn`, öffnet `angebot-beispiel.pdf` im neuen
+>   Tab). `shot-whatsapp.jpg`, `shot-editor.jpg`, `shot-pdf.jpg` werden nicht mehr eingebunden (Dateien bleiben liegen).
+>   → **IONOS-Upload durch Dirk: `index.html`** (enthält Zusammenlegung + Verkleinerung).
 >   Dirk hatte um 14:56 die erste Fassung hochgeladen (mit Pille, alter Umbruch) → **IONOS-Upload durch Dirk erneut: `index.html` +
 >   `chat-animation.html`** (`auftragsboss-video-poster.jpg` und das Video liegen schon dort).
 >   Standbilder aus einem Video ohne ffmpeg: kurzer Ausschnitt per Windows-MediaTranscoder (TrimStartTime), davon das Vorschaubild.

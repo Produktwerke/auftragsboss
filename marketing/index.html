@@ -235,9 +235,6 @@
   .poslist .hint b{color:var(--signal);font-family:var(--mono);}
 
   /* Screenshots */
-  .shots{display:flex;justify-content:center;align-items:center;gap:14px;flex-wrap:nowrap;}
-  .shots .pcol{flex:0 1 250px;min-width:0;}
-  .flow{flex:0 0 auto;color:var(--signal);font-size:34px;font-weight:900;line-height:1;transform:translateY(-26px);}
   .pcol{width:100%;max-width:264px;text-align:center;}
   .phone{width:100%;aspect-ratio:9/19;background:#050608;border-radius:34px;padding:8px;
     border:1px solid var(--steel2);box-shadow:0 34px 70px rgba(0,0,0,.6),inset 0 0 0 2px rgba(255,255,255,.03);position:relative;}
@@ -305,7 +302,8 @@
     animation:bob 1.5s ease-in-out infinite;}
   @keyframes bob{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,4px);}}
   @media(prefers-reduced-motion:reduce){.scrollpille{animation:none;}}
-  .shots-lead.shots-tab{max-width:640px;margin:84px auto 0;text-align:center;}
+  .shots-lead.shots-tab{max-width:640px;margin:0 auto;text-align:center;}
+  .pdf-btn{display:inline-block;margin-top:22px;}
   .shots-tab .tab{aspect-ratio:4/3;}
   .tab .statusbar{height:27px;padding:0 18px;font-size:11.5px;}
   .tab .statusbar .sig{height:9px;} .tab .statusbar .bat{width:19px;height:9px;}
@@ -399,9 +397,6 @@
     .hero-inner{padding:0 20px;}
     .grid4{grid-template-columns:1fr 1fr;}
     .steps,.karten,.vgrid,.vs{grid-template-columns:1fr;}
-    .shots{flex-direction:column;max-width:300px;margin:0 auto;}
-    .shots .pcol{flex:0 1 auto;width:100%;max-width:100%;}
-    .flow{transform:rotate(90deg);}
     .demo{flex-direction:column;text-align:left;} .demo .box-diktat{flex:0 1 auto;width:100%;} .demo .arrow{transform:rotate(90deg);}
     .karte.top{margin-top:14px;}
     .vlist{grid-template-columns:1fr;}
@@ -760,35 +755,14 @@
       <span class="eyebrow lbl">Handy oder Büro</span>
       <h2>Unterwegs am Handy. Im Büro am Tablet.</h2>
       <p>Angebote entstehen per Sprachnachricht.<br>Prüfen und feinschleifen kannst du, wo es dir passt.</p>
-      <p class="scroll-tip">↕ In den Screenshots durch den ganzen Ablauf scrollen</p>
+      <p class="scroll-tip">↕ Im Screenshot durch das ganze Angebot scrollen</p>
     </div>
 
-    <!-- Handys zuerst, mit Fluss-Pfeilen (eins entsteht aus dem anderen) -->
-    <div class="shots">
-      <div class="pcol">
-        <div class="phone"><div class="shot"><div class="statusbar"><span>9:41</span><span class="si"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div><div class="shot-screen"><img src="shot-whatsapp.jpg?v=maler" alt="WhatsApp-Chat mit AuftragsBoss" loading="lazy"></div><span class="scrollpille">↕ scrollen</span></div></div>
-        <div class="pcap">WhatsApp-Chat<small>Sprachnachricht rein, Angebot-Link raus</small></div>
-      </div>
-
-      <div class="flow" aria-hidden="true">→</div>
-
-      <div class="pcol">
-        <div class="phone"><div class="shot"><div class="statusbar"><span>9:41</span><span class="si"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div><div class="shot-screen"><img src="shot-editor.jpg?v=maler" alt="Angebot im Editor bearbeiten" loading="lazy"></div><span class="scrollpille">↕ scrollen</span></div></div>
-        <div class="pcap">Angebot bearbeiten<small>Positionen prüfen, Preise ergänzen</small></div>
-      </div>
-
-      <div class="flow" aria-hidden="true">→</div>
-
-      <div class="pcol">
-        <div class="phone"><div class="shot zoom" data-pdf="angebot-beispiel.pdf?v=maler" role="button" tabindex="0" aria-label="Fertiges Angebot als PDF öffnen"><div class="statusbar"><span>9:41</span><span class="si"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div><div class="shot-screen"><img src="shot-pdf.jpg?v=maler" alt="Fertiges Angebot als PDF" loading="lazy"></div><span class="scrollpille zoompille">📄 PDF öffnen</span></div></div>
-        <div class="pcap">Fertiges Angebot<small>Als PDF, tippen zum Öffnen</small></div>
-      </div>
-    </div>
-
-    <!-- Tablet danach -->
+    <!-- Nur noch das Tablet: die drei Handys (Chat, Editor, PDF) zeigten denselben Ablauf wie Video und Chat-Animation (02.10.2026) -->
     <div class="shots-lead shots-tab">
       <div class="tab"><div class="shot"><div class="statusbar"><span>9:41</span><span class="si"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"></span></span></div><div class="shot-screen"><img src="shot-tablet.jpg?v=maler" alt="Angebot am Tablet im Büro prüfen" loading="lazy"></div><span class="scrollpille">↕ scrollen</span></div></div>
       <div class="pcap">Am PC oder am Tablet im Büro<small>Positionen und Preise in Ruhe prüfen</small></div>
+      <a class="cta pdf-btn" href="angebot-beispiel.pdf?v=maler" target="_blank" rel="noopener">📄 Beispiel-Angebot als PDF ansehen</a>
     </div>
   </section>
 

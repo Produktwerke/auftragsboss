@@ -519,6 +519,48 @@
   .ts-qr img{border-radius:10px;background:#fff;padding:6px;}
   .ts-wa{display:block;margin-top:12px;color:var(--ink);font-size:13.5px;}
   @media (max-width:640px){.ts-wege{grid-template-columns:1fr;}}
+
+  /* Erklärvideo: Knopf im Hero, Handy-Rahmen in „So geht's", großes Fenster darüber */
+  .video-btn{display:inline-flex;align-items:center;gap:11px;margin:0 0 20px;padding:8px 18px 8px 8px;border-radius:999px;
+    background:transparent;border:1px solid var(--steel2);color:var(--ink);font:inherit;font-weight:700;font-size:14.5px;cursor:pointer;
+    transition:background .15s,border-color .15s;}
+  .video-btn:hover{border-color:var(--signal);background:var(--bg3);}
+  .video-btn:focus-visible,.vplay:focus-visible,.vo-x:focus-visible{outline:2px solid var(--signal);outline-offset:3px;}
+  .vb-play{width:32px;height:32px;border-radius:50%;background:var(--signal);display:grid;place-items:center;flex:0 0 auto;}
+  .vb-play::before,.vplay .pk::before{content:"";display:block;border-style:solid;border-color:transparent transparent transparent var(--signal-ink);}
+  .vb-play::before{border-width:6.5px 0 6.5px 10px;margin-left:3px;}
+  .video-btn small{color:var(--muted);font-family:var(--mono);font-size:11.5px;font-weight:400;margin-left:5px;}
+  .vrow{display:flex;align-items:center;justify-content:center;gap:clamp(28px,5vw,64px);margin:0 0 22px;
+    background:var(--bg2);border:1px solid var(--hair);border-radius:var(--r-lg);padding:28px;}
+  .vphone-col{flex:0 0 270px;max-width:100%;}
+  .phone.vid{aspect-ratio:auto;}
+  .vscreen{position:relative;width:100%;aspect-ratio:600/1280;border-radius:27px;overflow:hidden;background:#000;}
+  .vscreen video{width:100%;height:100%;display:block;object-fit:cover;}
+  .vplay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;border:0;padding:0;cursor:pointer;
+    background:linear-gradient(rgba(6,7,9,.18),rgba(6,7,9,.5));color:#fff;font:inherit;}
+  .vplay[hidden]{display:none;}
+  .vplay .pk{width:72px;height:72px;border-radius:50%;background:var(--signal);display:grid;place-items:center;box-shadow:0 12px 30px rgba(0,0,0,.5);transition:transform .15s;}
+  .vplay:hover .pk{transform:scale(1.06);}
+  .vplay .pk::before{border-width:14px 0 14px 22px;margin-left:6px;}
+  .vplay .pt{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.03em;background:rgba(6,7,9,.8);padding:5px 12px;border-radius:20px;}
+  .vtext{flex:0 1 430px;min-width:0;}
+  .vtext h3{font-size:clamp(20px,2.4vw,26px);margin:12px 0 18px;letter-spacing:-.01em;line-height:1.2;text-wrap:balance;}
+  .vsteps{list-style:none;margin:0;padding:0;counter-reset:vs;display:flex;flex-direction:column;gap:15px;}
+  .vsteps li{position:relative;padding-left:42px;color:var(--muted);font-size:15px;line-height:1.5;counter-increment:vs;}
+  .vsteps li::before{content:counter(vs,decimal-leading-zero);position:absolute;left:0;top:2px;font-family:var(--mono);font-weight:700;color:var(--signal);font-size:13px;letter-spacing:.08em;}
+  .vsteps li b{color:var(--ink);display:block;}
+  .vo{position:fixed;inset:0;z-index:210;background:rgba(6,7,9,.92);display:flex;align-items:center;justify-content:center;padding:16px;}
+  .vo[hidden]{display:none;}
+  .vo video{width:min(100%,calc(min(88vh,900px) * 600 / 1280));height:auto;aspect-ratio:600/1280;border-radius:18px;background:#000;
+    box-shadow:0 30px 80px rgba(0,0,0,.7);display:block;}
+  .vo-x{position:fixed;top:12px;right:16px;background:none;border:0;color:#fff;font-size:34px;line-height:1;opacity:.8;cursor:pointer;padding:4px 10px;}
+  .vo-x:hover{opacity:1;}
+  @media (max-width:780px){
+    .vrow{flex-direction:column;padding:22px 18px;}
+    .vphone-col{flex:0 0 auto;width:min(270px,100%);}
+    .vtext{flex:0 1 auto;width:100%;}
+  }
+  @media (max-width:560px){ .video-btn{width:100%;justify-content:center;} }
 </style>
 </head>
 <body>
@@ -553,6 +595,10 @@
           <span class="cta-nr">Nachricht an <b>+49&nbsp;174&nbsp;9364823</b></span>
         </div>
       </div>
+      <button class="video-btn" type="button" data-video-gross>
+        <span class="vb-play" aria-hidden="true"></span>
+        <span>Video ansehen<small>49 Sek.</small></span>
+      </button>
       <div class="hero-trust">
         <span><b>✓</b> 14 Tage gratis testen</span>
         <span><b>✓</b> Keine Anmeldung</span>
@@ -597,6 +643,28 @@
   <section class="sec" id="so">
     <div class="sec-h"><span class="eyebrow lbl">So geht's</span><h2>Du misst. AuftragsBoss rechnet.</h2>
       <p>Wandlängen und Raumhöhe messen, ein Foto je Fenster oder Tür, den Auftrag einsprechen. Das macht AuftragsBoss daraus.</p></div>
+    <!-- Erklärvideo (dieselbe Datei, die auch per WhatsApp verschickt wird); lädt erst beim Klick -->
+    <div class="vrow">
+      <div class="vphone-col">
+        <div class="phone vid">
+          <div class="vscreen">
+            <video id="soVideo" src="auftragsboss-video.mp4" poster="auftragsboss-video-poster.jpg" preload="none" playsinline></video>
+            <button class="vplay" id="soPlay" type="button" aria-label="Video abspielen, 49 Sekunden">
+              <span class="pk" aria-hidden="true"></span><span class="pt">Video ansehen · 49 Sek.</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="vtext">
+        <span class="lbl">Im Video · 49 Sekunden</span>
+        <h3>Ein echter Auftrag, von der Sprachnachricht bis zum PDF.</h3>
+        <ol class="vsteps">
+          <li><b>Einsprechen.</b> Raum, Maße und Arbeiten als Sprachnachricht, dazu ein Foto je Fenster oder Tür.</li>
+          <li><b>AuftragsBoss rechnet.</b> Erkennt Fenster und Türen, rechnet die Flächen und baut die Positionen.</li>
+          <li><b>Prüfen und senden.</b> Preise ergänzen, als PDF herunterladen oder per E&#8209;Mail verschicken.</li>
+        </ol>
+      </div>
+    </div>
     <div class="demo">
       <div class="box box-diktat">
         <span class="lbl">Das schickt der Maler</span>
@@ -849,6 +917,12 @@
 <!-- Zoom-Overlay fürs Angebot -->
 <div id="lightbox" aria-hidden="true"><span class="lb-x" aria-hidden="true">✕</span><div class="lb-inner"></div></div>
 
+<!-- Erklärvideo groß (Knopf im Hero) -->
+<div class="vo" id="videoOverlay" hidden>
+  <button class="vo-x" id="voSchliessen" type="button" aria-label="Video schließen">×</button>
+  <video id="voVideo" src="auftragsboss-video.mp4" poster="auftragsboss-video-poster.jpg" preload="none" playsinline controls></video>
+</div>
+
 <!-- Test starten am PC: QR-Code fürs Handy oder Nummer eintragen (WhatsApp kommt von uns) -->
 <div class="ts-overlay" id="tsOverlay" hidden>
   <div class="ts-box" role="dialog" aria-modal="true" aria-labelledby="tsTitel">
@@ -932,6 +1006,25 @@
   });
   window.addEventListener('resize',function(){screens.forEach(pruefe);});
 })();
+
+  // Erklärvideo: Knopf im Hero öffnet es groß, im Abschnitt „So geht's" läuft es im Handy-Rahmen. Geladen wird erst beim Klick.
+  (function(){
+    var ov = document.getElementById('videoOverlay'), gross = document.getElementById('voVideo');
+    var klein = document.getElementById('soVideo'), start = document.getElementById('soPlay');
+    if(!ov || !gross) return;
+    function spiele(v){ var p = v.play(); if(p && p.catch) p.catch(function(){}); }
+    function oeffnen(){ if(klein) klein.pause(); ov.hidden = false; spiele(gross); }
+    function schliessen(){ if(ov.hidden) return; gross.pause(); ov.hidden = true; }
+    document.querySelectorAll('[data-video-gross]').forEach(function(b){ b.addEventListener('click', oeffnen); });
+    document.getElementById('voSchliessen').addEventListener('click', schliessen);
+    ov.addEventListener('click', function(e){ if(e.target === ov) schliessen(); });
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') schliessen(); });
+    if(klein && start){
+      start.addEventListener('click', function(){ start.hidden = true; klein.controls = true; spiele(klein); });
+      // Nach dem Ende wieder Standbild und Abspielknopf zeigen
+      klein.addEventListener('ended', function(){ klein.controls = false; klein.load(); start.hidden = false; });
+    }
+  })();
 
   // Preiskarten + Hero-Knopf „Per WhatsApp testen": am Handy direkt WhatsApp (Link), am PC das Fenster mit QR-Code und Nummernformular.
   (function(){

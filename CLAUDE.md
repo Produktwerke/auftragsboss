@@ -196,6 +196,16 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   ✅ ERNEUT GESENDET 02.10. 14:43 (Dirk per Knopf): 10 von 10 von Meta angenommen, nach einer Minute 10 zugestellt, kein
 >   Fehlschlag, keine Abbestellung; die Liste ist danach leer (Sperre greift wieder). Zählung nur lesend: Scratchpad-Skript über
 >   stdin, das die Zeilen „WhatsApp-Status" ab einem Zeitstempel nach sent/delivered/read auszählt.
+>   VIDEO AUF DER WEBSITE (02.10., Dirks Auftrag „baue beide Stellen"): `marketing/index.html` zeigt das Erklärvideo an zwei Stellen.
+>   (1) Hero: Knopf „Video ansehen 49 Sek." (`.video-btn`, `data-video-gross`) unter den Test-Knöpfen, öffnet das Video groß
+>   (`#videoOverlay`, schließen per ×, Klick daneben oder Esc). (2) Abschnitt „So geht's": Handy-Rahmen mit Standbild und
+>   Abspielknopf (`.vrow`, spielt im Rahmen, nach dem Ende wieder Standbild) plus drei Schritte daneben. Beide nutzen dieselbe Datei
+>   `auftragsboss-video.mp4` wie WhatsApp (`preload="none"`, lädt erst beim Klick); Standbild `marketing/auftragsboss-video-poster.jpg`
+>   (Bild bei Sekunde 8, 600 x 1280, 88 KB). Lokale Vorschau neu: `.claude/launch.json` Konfiguration `landingpage` (Port 3031,
+>   `scripts/vorschau-landingpage.cjs`, ohne Zusatzpakete, liefert Teilabrufe fürs Spulen). Geprüft am PC und in Handybreite:
+>   Abspielen, Schließen, Ende, kein Überlauf, keine Konsolenfehler. Im zweispaltigen Hero endet der Text jetzt rund 70 px unter der
+>   Chat-Animation (vorher bündig). → **IONOS-Upload durch Dirk: `index.html` + `auftragsboss-video-poster.jpg`** (Video liegt schon dort).
+>   Standbilder aus einem Video ohne ffmpeg: kurzer Ausschnitt per Windows-MediaTranscoder (TrimStartTime), davon das Vorschaubild.
 >   OFFEN: Reaktionen der zehn Leads beobachten (Eingaben, AGB, Angebote); erste automatische Video-Einladung nach einem Anna-Anruf
 >   im Log prüfen. WhatsApp meldet keine Videoaufrufe; die
 >   Stufe „Knopf geklickt" entfällt für neue Leads. `.claude/launch.json` korrigiert (alter `--prefix voiceprotokoll-guard`), die lokale

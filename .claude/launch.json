@@ -7,6 +7,13 @@
       "runtimeArgs": ["run", "dev:editor"],
       "port": 3020,
       "env": { "PORT": "3020", "DATABASE_URL": "file:./dev.db", "PATH": "C:/Program Files/nodejs;${env:PATH}" }
+    },
+    {
+      "name": "landingpage",
+      "runtimeExecutable": "C:/Program Files/nodejs/node.exe",
+      "runtimeArgs": ["scripts/vorschau-landingpage.cjs"],
+      "port": 3031,
+      "env": { "PORT": "3031" }
     }
   ]
 }

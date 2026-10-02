@@ -229,7 +229,8 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   SALESFRANK: seit dem 28.09. (17 Anrufe) ist KEIN Anruf mehr bei uns angekommen, auch am 02.10. bis 15:32 nicht, obwohl Dirk Anna
 >   vormittags und erneut gegen 15:18 eingeschaltet hat. Unser Eingang ist erreichbar (Probe mit falschem Geheimnis: 404, im Log
 >   sichtbar). Ursache liegt bei SalesFrank (Anrufliste von heute dort ansehen: gar keine Anrufe = Liste/Limit/Guthaben; Anrufe
->   vorhanden = Aktion „nach dem Anruf" fehlt). Anrufe je Tag bisher: 22.09. 92, 23.09. 84, 24.09. 54, 25.09. 9, 28.09. 17.
+>   vorhanden = Aktion „nach dem Anruf" fehlt). Dirk 02.10.: Anna telefoniert gerade nicht (Freitag), für ihn in Ordnung; am Montag
+>   05.10. nachsehen, ob wieder Anrufe ankommen und die erste Einladung mit Video-Vorlage rausgeht. Anrufe je Tag bisher: 22.09. 92, 23.09. 84, 24.09. 54, 25.09. 9, 28.09. 17.
 >   OFFEN: Reaktionen der zehn Leads beobachten (Eingaben, AGB, Angebote); erste automatische Video-Einladung nach einem Anna-Anruf
 >   im Log prüfen. WhatsApp meldet keine Videoaufrufe; die
 >   Stufe „Knopf geklickt" entfällt für neue Leads. `.claude/launch.json` korrigiert (alter `--prefix voiceprotokoll-guard`), die lokale

@@ -167,7 +167,14 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   ging raus. Künftig Textwünsche VOR dem Anlegen klären oder eine neue Vorlage unter neuem Namen anlegen statt eine genehmigte zu ändern.
 >   Korrektur 03ebb0f (381 Tests, deployt 14:00): das Nachfassen lässt Leads mit gemeldetem 131050 aus, auch wenn ihr Zustand noch der
 >   alte ist (Fabian stand in der Liste). Server-Zeiten in Logs und Datenbank sind UTC.
->   OFFEN: zweite Genehmigung abwarten (`… status`) → Cockpit „Video an N Leads senden". WhatsApp meldet keine Videoaufrufe; die
+>   STAND 02.10. 13:50: zweite Genehmigung da. Dirk hat um 13:47 „Video an 10 Leads senden" gedrückt: 10 von 10 von Meta angenommen
+>   (Babace, Innen.Art, Damian Grade, Renovierungsprofi-Krez, Putz Shalaj, ATAC, Londi, Fischer, Schwarz, Antenucci; Fabian ausgelassen),
+>   nach 30 Sekunden 9 zugestellt, 1 gelesen, kein Fehlschlag. SalesFrank läuft seit 02.10. wieder; neue Einladungen gehen jetzt mit
+>   Video-Vorlage raus. Kontrolle nur lesend per ssh: Skript über stdin mit `sqlite3 -readonly` auf Event/AdminLog plus pm2-Log
+>   (Zeilen „WhatsApp-Status" mit sent/delivered/read/failed, ohne Nummer). Das Log maskiert `/stasi/funnel/video-nachfassen` als
+>   `/stasi/funnel/[token]`.
+>   OFFEN: Reaktionen der zehn Leads beobachten (Eingaben, AGB, Angebote); erste automatische Video-Einladung nach einem Anna-Anruf
+>   im Log prüfen. WhatsApp meldet keine Videoaufrufe; die
 >   Stufe „Knopf geklickt" entfällt für neue Leads. `.claude/launch.json` korrigiert (alter `--prefix voiceprotokoll-guard`), die lokale
 >   Vorschau läuft wieder (Demo-Login aus devServer.ts).
 

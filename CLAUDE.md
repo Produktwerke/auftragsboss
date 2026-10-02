@@ -208,6 +208,10 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   entfernt (die Überschrift in „So geht's" bleibt); damit endet die Zeile „14 Tage gratis testen" wieder bündig mit der
 >   Chat-Animation. Chat-Animation: der leere Chat war schmaler als der gefüllte (Breite hing am längsten sichtbaren Text, weil der
 >   äußere Rahmen keine eigene Breite hatte) → `chat-animation.html` Klasse `.rahmen` mit fester Breite (gemessen: leer = gefüllt).
+>   Höhe: der Chat füllt jetzt die Höhe seines iframes (Chat und Nachrichtenbereich als Flex-Spalten statt fester 417 px); im
+>   zweispaltigen Hero (ab 1239 px) streckt sich `.hero-visual` auf die Höhe des Textblocks, die Bildunterschrift „Maße + Fotos
+>   rein …" steht damit immer auf Höhe der Zeile „14 Tage gratis testen" (Chromium gemessen: beide Mitten gleich; Dirk nutzt
+>   Firefox, dort nach dem Hochladen ansehen). Einspaltig bleibt der iframe 530 px hoch.
 >   Dirk hatte um 14:56 die erste Fassung hochgeladen (mit Pille, alter Umbruch) → **IONOS-Upload durch Dirk erneut: `index.html` +
 >   `chat-animation.html`** (`auftragsboss-video-poster.jpg` und das Video liegen schon dort).
 >   Standbilder aus einem Video ohne ffmpeg: kurzer Ausschnitt per Windows-MediaTranscoder (TrimStartTime), davon das Vorschaubild.

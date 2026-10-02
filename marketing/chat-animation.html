@@ -8,12 +8,14 @@
   }
   *{box-sizing:border-box}
   html,body{background:transparent}
+  /* Der Chat füllt die Höhe des Rahmens, in den die Seite ihn einbettet: die Seite bestimmt die Höhe,
+     die Bildunterschrift sitzt immer an der Unterkante (bündig mit der Zeile „14 Tage gratis testen"). */
   body{margin:0;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);
-       min-height:100vh;display:flex;align-items:flex-start;justify-content:flex-end;padding:2px 2px 14px}
+       height:100vh;display:flex;align-items:stretch;justify-content:flex-end;padding:2px 2px 0}
   /* Feste Breite am Rahmen: ohne sie richtet sich die Breite nach dem längsten sichtbaren Text,
      der leere Chat war dann schmaler als der gefüllte. */
-  .rahmen{width:100%;max-width:410px;flex:0 0 auto}
-  .chat{width:100%;background:linear-gradient(180deg,#12151b,#0f1217);
+  .rahmen{width:100%;max-width:410px;flex:0 0 auto;display:flex;flex-direction:column;min-height:0}
+  .chat{width:100%;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:linear-gradient(180deg,#12151b,#0f1217);
         border:1px solid var(--steel);border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,.5);overflow:hidden}
   .head{display:flex;align-items:center;gap:11px;padding:14px 16px;background:#11151b;border-bottom:1px solid var(--steel)}
   .av{width:40px;height:40px;border-radius:11px;overflow:hidden;background:#0E0F12;border:1px solid var(--steel);flex:0 0 auto}
@@ -21,7 +23,7 @@
   .who b{font-size:17px;display:block;line-height:1.2}
   .who span{font-size:13px;color:var(--wa)}
   .head .ico{margin-left:auto;color:var(--wa);font-size:18px}
-  .body{padding:16px 16px 20px;height:417px;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:10px;
+  .body{padding:16px 16px 20px;flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:10px;
         background:radial-gradient(circle at 12% 8%,rgba(255,196,38,.04),transparent 40%),#0c0f14}
   .body::-webkit-scrollbar{display:none}
   /* schiebt die Nachrichten an den unteren Rand; beim Überlaufen wird normal gescrollt */
@@ -63,7 +65,7 @@
   .done .ok{color:var(--signal);font-weight:700}
   .done .pdf{display:inline-flex;align-items:center;gap:7px;margin-top:9px;background:var(--signal);color:#1A1400;
              font-weight:700;font-size:14px;padding:8px 13px;border-radius:8px}
-  .caption{margin-top:14px;text-align:center;color:var(--dim);font-family:var(--mono);font-size:13px;letter-spacing:.04em}
+  .caption{flex:0 0 auto;margin-top:14px;line-height:18px;text-align:center;color:var(--dim);font-family:var(--mono);font-size:13px;letter-spacing:.04em}
 </style></head>
 <body>
   <div class="rahmen">

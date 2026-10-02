@@ -420,6 +420,12 @@
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;} *{transition:none!important;}}
   /* Hero: eingebettete Chat-Animation (iframe, kollisionsfrei, freifliegend) */
   .hero-chat{width:100%;max-width:430px;height:530px;margin-left:auto;border:0;background:transparent;display:block;}
+  /* Zweispaltig: der Chat reicht bis zur Unterkante des Textblocks, seine Bildunterschrift steht damit
+     auf Höhe der Zeile „14 Tage gratis testen", egal wie der Text links umbricht. */
+  @media (min-width:1239px){
+    .hero-visual{align-self:stretch;display:flex;flex-direction:column;}
+    .hero-chat{flex:1 1 0;height:auto;min-height:480px;}
+  }
   /* Trennlinie zwischen Hero und erstem Abschnitt */
   .hero-sep-wrap{max-width:1238px;margin:0 auto;padding:26px 40px 0;}
   .hero-sep{height:1px;background:linear-gradient(90deg,transparent,var(--steel2) 12%,var(--steel2) 88%,transparent);}

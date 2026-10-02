@@ -203,8 +203,10 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   `auftragsboss-video.mp4` wie WhatsApp (`preload="none"`, lädt erst beim Klick); Standbild `marketing/auftragsboss-video-poster.jpg`
 >   (Bild bei Sekunde 8, 600 x 1280, 88 KB). Lokale Vorschau neu: `.claude/launch.json` Konfiguration `landingpage` (Port 3031,
 >   `scripts/vorschau-landingpage.cjs`, ohne Zusatzpakete, liefert Teilabrufe fürs Spulen). Geprüft am PC und in Handybreite:
->   Abspielen, Schließen, Ende, kein Überlauf, keine Konsolenfehler. Im zweispaltigen Hero endet der Text jetzt rund 70 px unter der
->   Chat-Animation (vorher bündig). → **IONOS-Upload durch Dirk: `index.html` + `auftragsboss-video-poster.jpg`** (Video liegt schon dort).
+>   Abspielen, Schließen, Ende, kein Überlauf, keine Konsolenfehler. Danach Dirks Wünsche: Einleitungstext ohne einzelnes Wort in
+>   der letzten Zeile (`text-wrap:pretty` + geschütztes Leerzeichen vor „Angebote."), Pille „Du misst. AuftragsBoss rechnet." im Hero
+>   entfernt (die Überschrift in „So geht's" bleibt); damit endet die Zeile „14 Tage gratis testen" wieder bündig mit der
+>   Chat-Animation. → **IONOS-Upload durch Dirk: `index.html` + `auftragsboss-video-poster.jpg`** (Video liegt schon dort).
 >   Standbilder aus einem Video ohne ffmpeg: kurzer Ausschnitt per Windows-MediaTranscoder (TrimStartTime), davon das Vorschaubild.
 >   OFFEN: Reaktionen der zehn Leads beobachten (Eingaben, AGB, Angebote); erste automatische Video-Einladung nach einem Anna-Anruf
 >   im Log prüfen. WhatsApp meldet keine Videoaufrufe; die

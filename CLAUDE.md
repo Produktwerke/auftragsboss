@@ -220,7 +220,8 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   sind das Tablet und darunter der Knopf „Beispiel-Angebot als PDF ansehen" (`.pdf-btn`, öffnet `angebot-beispiel.pdf` im neuen
 >   Tab). `shot-whatsapp.jpg`, `shot-editor.jpg`, `shot-pdf.jpg` werden nicht mehr eingebunden (Dateien bleiben liegen).
 >   Preiskarten: Schild am Profi-Tarif „★ Empfohlen" statt „★ Beliebt" (Landingpage; `web/aboSeite.ts` zieht mit, live erst mit
->   dem nächsten Deploy). → **IONOS-Upload durch Dirk: `index.html`** (enthält Zusammenlegung, Verkleinerung, „Empfohlen").
+>   dem nächsten Deploy). Überschrift des Tablet-Abschnitts: „Unterwegs am Handy. Im Büro am Tablet oder PC." ✅ Dirk 02.10.
+>   nachmittags: `index.html` mit allen Änderungen bei IONOS hochgeladen; danach auf sein Wort nach GitHub gepusht.
 >   Dirk hatte um 14:56 die erste Fassung hochgeladen (mit Pille, alter Umbruch) → **IONOS-Upload durch Dirk erneut: `index.html` +
 >   `chat-animation.html`** (`auftragsboss-video-poster.jpg` und das Video liegen schon dort).
 >   Standbilder aus einem Video ohne ffmpeg: kurzer Ausschnitt per Windows-MediaTranscoder (TrimStartTime), davon das Vorschaubild.

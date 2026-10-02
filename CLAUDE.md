@@ -225,6 +225,11 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   Dirk hatte um 14:56 die erste Fassung hochgeladen (mit Pille, alter Umbruch) → **IONOS-Upload durch Dirk erneut: `index.html` +
 >   `chat-animation.html`** (`auftragsboss-video-poster.jpg` und das Video liegen schon dort).
 >   Standbilder aus einem Video ohne ffmpeg: kurzer Ausschnitt per Windows-MediaTranscoder (TrimStartTime), davon das Vorschaubild.
+>   STAND 02.10. 15:32: nach dem erneuten Versand drei Lesemeldungen (zwei davon in derselben Sekunde), keine Eingabe eines Leads.
+>   SALESFRANK: seit dem 28.09. (17 Anrufe) ist KEIN Anruf mehr bei uns angekommen, auch am 02.10. bis 15:32 nicht, obwohl Dirk Anna
+>   vormittags und erneut gegen 15:18 eingeschaltet hat. Unser Eingang ist erreichbar (Probe mit falschem Geheimnis: 404, im Log
+>   sichtbar). Ursache liegt bei SalesFrank (Anrufliste von heute dort ansehen: gar keine Anrufe = Liste/Limit/Guthaben; Anrufe
+>   vorhanden = Aktion „nach dem Anruf" fehlt). Anrufe je Tag bisher: 22.09. 92, 23.09. 84, 24.09. 54, 25.09. 9, 28.09. 17.
 >   OFFEN: Reaktionen der zehn Leads beobachten (Eingaben, AGB, Angebote); erste automatische Video-Einladung nach einem Anna-Anruf
 >   im Log prüfen. WhatsApp meldet keine Videoaufrufe; die
 >   Stufe „Knopf geklickt" entfällt für neue Leads. `.claude/launch.json` korrigiert (alter `--prefix voiceprotokoll-guard`), die lokale

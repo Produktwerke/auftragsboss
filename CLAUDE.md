@@ -156,9 +156,12 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 >   OFFEN FÜRS AUFTAUEN: Reaktionen der zehn Leads, die am 02.10. das Video bekamen; E-Mail-Welle in Mailchimp (Texte und Listen
 >   liegen fertig); Dialogpost-Anschreiben; vor einem SalesFrank-Neustart den Gesprächsleitfaden schärfen (Anna stellte die
 >   WhatsApp-Frage in mindestens zwei Gesprächen nicht, obwohl der Angerufene zuhörte).
->   ÜBERREST AUF DEM SERVER: `src/dialog.sammelmodus.test.ts` liegt noch in `/home/auftragsboss/app/src`, obwohl am 13.09. mit
->   a38e7ec gelöscht (das Entpacken eines Deploy-Pakets löscht keine Dateien). Harmlos, auf dem Server laufen keine Tests; beim
->   nächsten Deploy mit entfernen.
+>   ✅ ÜBERREST AUF DEM SERVER WEGGERÄUMT (04.11.2026): `src/dialog.sammelmodus.test.ts` lag noch in `/home/auftragsboss/app/src`,
+>   obwohl am 13.09. mit a38e7ec gelöscht. Toter Code: die Datei holte sich `istFertigWunsch`, `istBestaetigung` und `raumBilanz`
+>   aus `dialog.ts`, die es dort seit dem Sammelmodus-Umbau nicht mehr gibt. Vor dem Löschen geprüft, dass kein anderer Code darauf
+>   verweist; App unberührt, kein Neustart nötig. `src` ist damit im Repo und auf dem Server deckungsgleich (je 55 Testdateien).
+>   MERKE: Ein Deploy überschreibt nur, er löscht nie. Im Repo entfernte Dateien bleiben auf dem Server liegen und müssen von Hand
+>   weg; beim Aufräumen hilft der Vergleich `diff -rq` gegen eine Kopie des Server-`src` (mit `--strip-trailing-cr`).
 >   ⚠️ LEHRE 04.11., kostete unnötige Arbeit: Beim Sitzungsstart war dieser PC auf GitHub-Stand, die 30 Oktober-Commits landeten
 >   erst danach auf origin. Aus „am Heim-PC gibt es nichts zu pushen" wurde fälschlich geschlossen, die Oktober-Arbeit liege nur
 >   auf dem Server, und sie wurde von dort als Doppel-Commit zurückgeholt (wieder verworfen, Repo ist sauber). REGEL: Vor jeder

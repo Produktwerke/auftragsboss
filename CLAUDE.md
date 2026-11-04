@@ -136,6 +136,39 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
 
 ## Stand (August 2026)
 
+> **🧊 PROJEKT RUHT SEIT ANFANG OKTOBER 2026 (Dirks Entscheidung, bestätigt 04.11.2026; kein technischer Grund):**
+>   Wer hier neu anfängt: Es ist nichts kaputt. SalesFrank ist seit dem 28.09. inaktiv (letzter Tag mit Anrufen: 17), die
+>   Telefonkampagne und damit das Lead-Onboarding liegen bewusst still. Stille Logs, seit Wochen gleich große Backups und
+>   ausbleibende Anrufe sind die Ruhe, nicht ein Ausfall. Der letzte inhaltliche Eintrag (02.10.) endet mit „am Montag 05.10.
+>   nachsehen, ob wieder Anrufe ankommen" — dieser Punkt ist durch die Pause erledigt, nicht vergessen worden.
+>   STAND BEIM EINFRIEREN (geprüft 04.11.2026): alles deployt, Repo und Server stimmen Datei für Datei überein, 0 Typfehler,
+>   386 Tests grün. Alle vier neuen Vorlagen sind bei Meta genehmigt (`lead_erinnerung_kurz` am 01.10., die drei Video-Vorlagen
+>   in der zweiten Prüfung am 02.10.). Fehlerprotokoll des Servers leer seit 03.10.
+>   PATCH-TAG 02.11.2026 ERLEDIGT (Dirk, nach der automatischen Erinnerungsmail vom 01.11.): 17 Updates, 0 Pakete entfernt,
+>   Kernel 6.8.0-146 → 147, Node 24.22.2, npm 11.19.1, Caddy 2.11.7. Das Update startete `pm2-auftragsboss.service` selbst neu,
+>   danach Systemneustart; die App kam allein hoch, alle sechs Jobs angemeldet, `/health` liefert `"db":"ok"`. Nächtliches Backup
+>   03:15 läuft, Rückspiel-Probe 01.11. bestanden inklusive Kopie außer Haus, Wachhund stündlich ohne Alarm, Platte 8 % von 87 GB.
+>   Zwei Zeilen in der Update-Ausgabe sehen schlimm aus, sind harmlos: `[: Illegal number: yes` (Schnitzer im AppArmor-Skript von
+>   Ubuntu, Profile wurden danach geladen) und „Detected old npm client, removing" (Node bringt sein npm selbst mit).
+>   WAS WEITERLÄUFT, ohne Aufsicht zu brauchen: Backup täglich 03:15, Wachhund stündlich :20, Rückspiel-Probe am Monatsersten
+>   04:45, Patch-Tag-Erinnerung am Monatsersten 09:00. Die Patch-Mail kommt also weiter; abarbeiten, solange Kundendaten auf dem
+>   Server liegen (fünf Minuten, Ablauf siehe Mail und `scripts/RESTORE-RUNBOOK.md`).
+>   OFFEN FÜRS AUFTAUEN: Reaktionen der zehn Leads, die am 02.10. das Video bekamen; E-Mail-Welle in Mailchimp (Texte und Listen
+>   liegen fertig); Dialogpost-Anschreiben; vor einem SalesFrank-Neustart den Gesprächsleitfaden schärfen (Anna stellte die
+>   WhatsApp-Frage in mindestens zwei Gesprächen nicht, obwohl der Angerufene zuhörte).
+>   ÜBERREST AUF DEM SERVER: `src/dialog.sammelmodus.test.ts` liegt noch in `/home/auftragsboss/app/src`, obwohl am 13.09. mit
+>   a38e7ec gelöscht (das Entpacken eines Deploy-Pakets löscht keine Dateien). Harmlos, auf dem Server laufen keine Tests; beim
+>   nächsten Deploy mit entfernen.
+>   ⚠️ LEHRE 04.11., kostete unnötige Arbeit: Beim Sitzungsstart war dieser PC auf GitHub-Stand, die 30 Oktober-Commits landeten
+>   erst danach auf origin. Aus „am Heim-PC gibt es nichts zu pushen" wurde fälschlich geschlossen, die Oktober-Arbeit liege nur
+>   auf dem Server, und sie wurde von dort als Doppel-Commit zurückgeholt (wieder verworfen, Repo ist sauber). REGEL: Vor jeder
+>   Aussage über Abweichungen zwischen Repo, GitHub und Server erneut `git fetch` und `git status -sb` lesen, auch wenn zu
+>   Sitzungsbeginn schon geholt wurde. Und ein Vergleich Repo gegen Server braucht `diff --strip-trailing-cr`: sonst sehen 160
+>   Dateien verschieden aus, die sich nur in Windows- gegen Linux-Zeilenenden unterscheiden.
+>   ⚠️ Nach längerer Pause oder nach einem Pull mit Schema-Änderungen zuerst `npx prisma generate` (lokal mit
+>   `$env:DATABASE_URL="file:./dev.db"`), sonst meldet die Typprüfung rund 20 Fehler über fehlende Felder wie `agbAkzeptiertAm`,
+>   `guthabenEuro` oder die Tabelle `Mitarbeiter`. Das ist kein Codefehler, nur ein veralteter Datenbank-Zugriffscode.
+
 > **Update 29.09.2026 — ERKLÄRVIDEO STATT KNÖPFE IN DER ERSTNACHRICHT (d85451d, 380 Tests, deployt 16:13; Push weiterhin nur mit Dirks Freigabe):**
 >   ANLASS: Aktivierungsproblem. Einziges Angebot aus der Telefonkampagne: BMA Malermeisterbetrieb am 25.09. (46 Min nach der Erinnerung
 >   gelesen, AGB akzeptiert, drei Sprachnachrichten, eine Rückfrage, Angebot nach 2:10 Min, 5 Positionen ohne Preise, 68 ct KI-Kosten; Link am

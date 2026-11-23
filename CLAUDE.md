@@ -1599,6 +1599,23 @@ laufende `dev:editor`/`dev`-Tasks stoppen.
   erst, sobald der Betrieb im System ist. (Logo lädt jeder Betrieb selbst hoch —
   das alte graue `Logo.jpg` ist nur noch Demo-Vorgabe in preisliste.json.)
 
+## Arbeitsweise: eingebaute Werkzeuge bevorzugen
+
+Für Lesen, Suchen und normale Dateiänderungen im Projekt bevorzugt die eingebauten
+Dateiwerkzeuge verwenden. Shell-Befehle nur einsetzen, wenn die eingebauten Werkzeuge für die
+Aufgabe nicht ausreichen.
+
+Konkret:
+- Read statt cat, head, tail
+- Grep statt grep oder rg
+- Glob beziehungsweise die Dateisuche statt Shell-Auflistungen
+- Edit und Write statt echo, printf oder sed zum Ändern von Dateien
+
+Shell nur verwenden, wenn für die Aufgabe tatsächlich ein externes Programm oder eine
+Shell-Funktion erforderlich ist.
+
+Diese Anweisung ist eine Arbeitspräferenz und keine Sicherheitsregel.
+
 ## Arbeitskonventionen
 
 - Deutsche Domänenbegriffe im Code (Handwerker, Vorgang, Angebot, Gewährleistung).
